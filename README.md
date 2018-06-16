@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/kubernetes-sigs/controller-tools.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/controller-tools "Travis")
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/controller-tools)](https://goreportcard.com/report/github.com/kubernetes-sigs/controller-tools)
+[![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/controller-tools)](https://goreportcard.com/report/sigs.k8s.io/controller-tools)
 
 # Kubernetes controller-tools Project
 
@@ -10,7 +10,7 @@ The Kubernetes controller-tools Project is a set of go libraries for building Co
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
 
-controller-tools is a subproject of the [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) project
+controller-tools is a subproject of the [kubebuilder](https://sigs.k8s.io/kubebuilder) project
 in sig apimachinery.
 
 You can reach the maintainers of this project at:
