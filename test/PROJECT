@@ -1,0 +1,3 @@
+version: "2"
+domain: example.com
+repo: sigs.k8s.io/controller-tools/test
