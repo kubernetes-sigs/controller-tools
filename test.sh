@@ -144,5 +144,4 @@ gometalinter.v2 --disable-all \
 
 header_text "running go test"
 
-go test ./pkg/... -parallel 4
-
+go test ./pkg/... ./test/... ./cmd/... -parallel 4
