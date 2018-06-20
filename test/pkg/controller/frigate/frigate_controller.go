@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package firstmate
+package frigate
 
 import (
 	"context"
 	"log"
 	"reflect"
 
-	crewv1beta1 "sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1beta1"
+	shipv1 "sigs.k8s.io/controller-tools/test/pkg/apis/ship/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -41,13 +41,13 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new FirstMate Controller and adds it to the Manager.  The Manager will set fields on the Controller
+// Add creates a new Frigate Controller and adds it to the Manager.  The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this crew.Add(mrg) to install this Controller
+// USER ACTION REQUIRED: update cmd/manager/main.go to call this ship.Add(mrg) to install this Controller
 func Add(mrg manager.Manager) error {
 	// Create a new controller
-	c, err := controller.New("firstmate-controller", mrg, controller.Options{
-		Reconcile: &ReconcileFirstMate{
+	c, err := controller.New("frigate-controller", mrg, controller.Options{
+		Reconcile: &ReconcileFrigate{
 			client: mrg.GetClient(),
 		},
 	})
@@ -55,17 +55,17 @@ func Add(mrg manager.Manager) error {
 		return err
 	}
 
-	// Watch for changes to FirstMate
-	err = c.Watch(&source.Kind{Type: &crewv1beta1.FirstMate{}}, &handler.Enqueue{})
+	// Watch for changes to Frigate
+	err = c.Watch(&source.Kind{Type: &shipv1.Frigate{}}, &handler.Enqueue{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by FirstMate - change this for objects you create
+	// Uncomment watch a Deployment created by Frigate - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
 		IsController: true,
-		OwnerType:    &crewv1beta1.FirstMate{},
+		OwnerType:    &shipv1.Frigate{},
 	})
 	if err != nil {
 		return err
@@ -74,18 +74,18 @@ func Add(mrg manager.Manager) error {
 	return nil
 }
 
-// ReconcileFirstMate reconciles a FirstMate object
-type ReconcileFirstMate struct {
+// ReconcileFrigate reconciles a Frigate object
+type ReconcileFrigate struct {
 	client client.Client
 }
 
-// Reconcile reads that state of the cluster for a FirstMate object and makes changes based on the state read
-// and what is in the FirstMate.Spec
+// Reconcile reads that state of the cluster for a Frigate object and makes changes based on the state read
+// and what is in the Frigate.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the FirstMate instance
-	instance := &crewv1beta1.FirstMate{}
+func (r *ReconcileFrigate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the Frigate instance
+	instance := &shipv1.Frigate{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -106,11 +106,11 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 			Namespace: instance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				// TODO(user): Important to copy this line to any object you create so it can be tied back to
-				// the FirstMate and cause a reconcile when it changes
+				// the Frigate and cause a reconcile when it changes
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   crewv1beta1.SchemeGroupVersion.Group,
-					Version: crewv1beta1.SchemeGroupVersion.Version,
-					Kind:    "FirstMate",
+					Group:   shipv1.SchemeGroupVersion.Group,
+					Version: shipv1.SchemeGroupVersion.Version,
+					Kind:    "Frigate",
 				}),
 			},
 		},

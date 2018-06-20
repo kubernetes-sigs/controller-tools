@@ -17,10 +17,10 @@ limitations under the License.
 package apis
 
 import (
-	"sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1beta1"
+	"sigs.k8s.io/controller-tools/test/pkg/apis/ship/v1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes,  v1beta1.AddToScheme)
+	AddToSchemes = append(AddToSchemes,  v1.AddToScheme)
 }

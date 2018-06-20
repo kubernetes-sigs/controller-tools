@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	"reflect"
@@ -26,17 +26,17 @@ import (
 )
 
 func TestStorage(t *testing.T) {
-	instance := &FirstMate{
+	instance := &Frigate{
 		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"},
 	}
 	if err := c.Create(context.TODO(), instance); err != nil {
-		t.Logf("Could not create FirstMate %v", err)
+		t.Logf("Could not create Frigate %v", err)
 		t.FailNow()
 	}
 
-	read := &FirstMate{}
+	read := &Frigate{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
-		t.Logf("Could not get FirstMate %v", err)
+		t.Logf("Could not get Frigate %v", err)
 		t.FailNow()
 	}
 	if !reflect.DeepEqual(read, instance) {
@@ -48,12 +48,12 @@ func TestStorage(t *testing.T) {
 	new.Labels = map[string]string{"hello": "world"}
 
 	if err := c.Update(context.TODO(), new); err != nil {
-		t.Logf("Could not create FirstMate %v", err)
+		t.Logf("Could not create Frigate %v", err)
 		t.FailNow()
 	}
 
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
-		t.Logf("Could not get FirstMate %v", err)
+		t.Logf("Could not get Frigate %v", err)
 		t.FailNow()
 	}
 	if !reflect.DeepEqual(read, new) {
@@ -62,12 +62,12 @@ func TestStorage(t *testing.T) {
 	}
 
 	if err := c.Delete(context.TODO(), instance); err != nil {
-		t.Logf("Could not get FirstMate %v", err)
+		t.Logf("Could not get Frigate %v", err)
 		t.FailNow()
 	}
 
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, instance); err == nil {
-		t.Logf("Found deleted FirstMate")
+		t.Logf("Found deleted Frigate")
 		t.FailNow()
 	}
 }

@@ -18,10 +18,10 @@ limitations under the License.
 
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/crew
+// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/ship
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=crew.example.com
-package v1beta1
+// +groupName=ship.example.com
+package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ import (
 var KnownTypes = []runtime.Object{}
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "crew.example.com", Version: "v1beta1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "ship.example.com", Version: "v1"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {

@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apis
+package controller
 
 import (
-	"sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1beta1"
+	
+	"sigs.k8s.io/controller-tools/test/pkg/controller/frigate"
 )
 
 func init() {
-	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes,  v1beta1.AddToScheme)
+	// Create the Controller and add it to the Manager.
+	AddToManagerFuncs = append(AddToManagerFuncs, frigate.Add)
 }

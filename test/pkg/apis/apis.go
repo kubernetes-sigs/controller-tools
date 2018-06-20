@@ -1,4 +1,5 @@
 /*
+Copyright 2018 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +29,5 @@ var AddToSchemes runtime.SchemeBuilder
 
 // AddToScheme adds all Resources to the Scheme
 func AddToScheme(s *runtime.Scheme) {
-	for _, f := range AddToSchemes {
-		f(s)
-	}
+	AddToSchemes.AddToScheme(s)
 }

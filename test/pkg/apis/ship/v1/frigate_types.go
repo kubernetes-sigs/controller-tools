@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,14 +23,14 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// FirstMateSpec defines the desired state of FirstMate
-type FirstMateSpec struct {
+// FrigateSpec defines the desired state of Frigate
+type FrigateSpec struct {
     // INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
 }
 
-// FirstMateStatus defines the observed state of FirstMate
-type FirstMateStatus struct {
+// FrigateStatus defines the observed state of Frigate
+type FrigateStatus struct {
     // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
 }
@@ -38,24 +38,24 @@ type FirstMateStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object 
 
-// FirstMate
+// Frigate
 // +k8s:openapi-gen=true
-type FirstMate struct {
+type Frigate struct {
     metav1.TypeMeta   `json:",inline"`
     metav1.ObjectMeta `json:"metadata,omitempty"`
 
-    Spec   FirstMateSpec   `json:"spec,omitempty"`
-    Status FirstMateStatus `json:"status,omitempty"`
+    Spec   FrigateSpec   `json:"spec,omitempty"`
+    Status FrigateStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object 
 
-type FirstMateList struct {
+type FrigateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []FirstMate `json:"items"`
+	Items           []Frigate `json:"items"`
 }
 
 func init() {
-	KnownTypes = append(KnownTypes, &FirstMate{}, &FirstMateList{})
+	KnownTypes = append(KnownTypes, &Frigate{}, &FrigateList{})
 }
