@@ -14,7 +14,7 @@
 
 package main
 
-import "sigs.k8s.io/controller-tools/cmd/controller-tools/cmd"
+import "sigs.k8s.io/controller-tools/cmd/controller-scaffold/cmd"
 
 func main() {
 	cmd.Execute()

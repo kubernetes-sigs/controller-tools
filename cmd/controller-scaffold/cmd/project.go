@@ -37,16 +37,20 @@ var dkr *manager.Dockerfile
 // projectCmd represents the project command
 var projectCmd = &cobra.Command{
 	Use:   "project",
-	Short: "Scaffold a basic project.",
-	Long: `Scaffold a basic project including:
+	Short: "Scaffold a Controller project.",
+	Long: `Scaffold a Controller project.
 
-- Writing or updating a Gopkg.toml with project dependencies
-- Writing a boilerplate license file
-- Writing a PROJECT file with the domain
-- Writing a cmd/manager/main.go to run Controllers
+Writes the following files:
+- a PROJECT file with the domain
+- a cmd/manager/main.go to run Controllers
+- a Makefile to build the project
+- a Gopkg.toml with project dependencies
+- a boilerplate license file
+
+project will prompt the user to run 'dep ensure' after writing the project files.
 `,
 	Example: `# Scaffold a project
-controller-tools scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors"
+controller-scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors"
 
 # Fetch the dependencies
 dep ensure
@@ -69,12 +73,12 @@ dep ensure
 		err = s.Execute(scaffold.Options{
 			ProjectPath:     prj.Path(),
 			BoilerplatePath: bp.Path(),
-		}, gopkg, mrg, dkr, &manager.APIs{}, &manager.Controller{})
+		}, gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{})
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Println("Run `dep ensure` to fetch dependencies [y/n]?")
+		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
 		if yesno() {
 			c := exec.Command("dep", "ensure")
 			c.Stderr = os.Stderr
@@ -86,13 +90,11 @@ dep ensure
 		} else {
 			fmt.Println("Skipping `dep ensure`.  Dependencies will not be fetched.")
 		}
-
-		fmt.Println("Next: Scaffold a new API with `controller-tools scaffold resource`.")
 	},
 }
 
 func init() {
-	scaffoldCmd.AddCommand(projectCmd)
+	rootCmd.AddCommand(projectCmd)
 
 	prj = project.ForFlags(projectCmd.Flags())
 	bp = project.BoilerplateForFlags(projectCmd.Flags())

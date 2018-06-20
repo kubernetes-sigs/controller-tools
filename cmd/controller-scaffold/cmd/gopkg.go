@@ -31,9 +31,12 @@ var gopkgCmd = &cobra.Command{
 	Long: `Write or update a managed Gopkg.toml with base Kubernetes transitive deps.
 Will fail if the Gopkg.toml exists and is unmanaged.  Will keep use changes
 made above the delimiter.`,
-	Example: `controller-tools scaffold gopkg`,
+	Example: `controller-scaffold gopkg`,
 	Run: func(cmd *cobra.Command, args []string) {
-		s := &scaffold.Scaffold{}
+		s := &scaffold.Scaffold{
+			BoilerplateOptional: true,
+			ProjectOptional:     true,
+		}
 		err := s.Execute(scaffold.Options{
 			ProjectPath:     prj.Path(),
 			BoilerplatePath: bp.Path(),
@@ -45,6 +48,6 @@ made above the delimiter.`,
 }
 
 func init() {
-	scaffoldCmd.AddCommand(gopkgCmd)
+	rootCmd.AddCommand(gopkgCmd)
 	gopkglocal = project.GopkgTomlForFlags(projectCmd.Flags())
 }

@@ -27,20 +27,23 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "controller-tools",
+	Use:   "controller-scaffold",
 	Short: "A reference implementation scaffolding tool for Kubernetes APIs.",
 	Long:  `A reference implementation scaffolding tool for Kubernetes APIs.`,
-	Example: `	# Scaffold a project
-	controller-tools scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors"
+	Example: `	# Scaffold a new project
+	controller-scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors"
 	
 	# Create a frigates resource with Group: ship, Version: v1beta1 and Kind: Frigate
-	controller-tools scaffold resource --group ship --version v1beta1 --kind Frigate
+	controller-scaffold api --group ship --version v1beta1 --kind Frigate
 
-	# Create a Frigate Controller
-	controller-tools scaffold controller --group ship --version v1beta1 --kind Frigate
+	# Generate project code and build
+	make
 
-	# Run the Controller against a Kubernetes cluster using the users kubeconfig file
-	 go run ./cmd/manager/main.go
+	# Install CRDs into the Kubernetes cluster
+	kubectl apply -f config/crds
+
+	# Run against the Kubernetes cluster
+	./bin/manager
 `,
 }
 
