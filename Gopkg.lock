@@ -497,6 +497,18 @@
   version = "kubernetes-1.10.0"
 
 [[projects]]
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+  ]
+  revision = "4347b330d0ff094db860f2f75fa725b4f4b53618"
+  version = "kubernetes-1.10.1"
+
+[[projects]]
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -649,6 +661,7 @@
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/controller",
+    "pkg/envtest",
     "pkg/event",
     "pkg/handler",
     "pkg/internal/controller",
@@ -663,7 +676,7 @@
     "pkg/source",
     "pkg/source/internal"
   ]
-  revision = "e06131a0d732a61f88e6b69ce3c304c367ee72a5"
+  revision = "a5ba2dc7a0eacc313263ca8b129f855379e756fb"
 
 [[projects]]
   name = "sigs.k8s.io/testing_frameworks"
@@ -676,6 +689,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6bafebb7f1bc36b04a30f9c13cd03540c99052e8c5a53b842f1b6cf672f091f1"
+  inputs-digest = "3bd007c344570e85dc1b094b85a7c7fc4186b5f90db10ba51a3c8355c202fd7c"
   solver-name = "gps-cdcl"
   solver-version = 1
