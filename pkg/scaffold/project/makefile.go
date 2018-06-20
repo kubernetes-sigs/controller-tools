@@ -17,64 +17,79 @@ limitations under the License.
 package project
 
 import (
+	"fmt"
 	"io"
+	"log"
 	"path/filepath"
 	"text/template"
-
-	"log"
 )
 
-// Main scaffolds a simple main file
-type Main struct {
-	// OutputPath is the output file location
+// Makefile scaffolds the Makefile
+type Makefile struct {
+	// OutputPath is the output file location - defaults to Makefile
 	OutputPath string
 
-	// Boilerplate is the boilerplate header to use
-	Boilerplate string
+	// Project is the project
+	Project Project
 }
 
 // Name is the name of the template
-func (Main) Name() string {
-	return "doc-go"
+func (Makefile) Name() string {
+	return "makefile"
 }
 
 // Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt
-func (d *Main) Path() string {
-	dir := filepath.Join("main.go")
-	if d.OutputPath != "" {
-		dir = d.OutputPath
+func (m *Makefile) Path() string {
+	dir := filepath.Join("Makefile")
+	if m.OutputPath != "" {
+		dir = m.OutputPath
 	}
 	return dir
 }
 
-// SetBoilerplate implements scaffold.Boilerplate.
-func (d *Main) SetBoilerplate(b string) {
-	d.Boilerplate = b
+// SetProject injects the Project
+func (m *Makefile) SetProject(p Project) {
+	m.Project = p
 }
 
 // Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (d *Main) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
+func (m *Makefile) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
 	if len(b) > 0 {
 		// Do nothing if the file exists
 		return nil
 	}
-	temp, err := t.Parse(mainTemplate)
+
+	temp, err := t.Parse(makefileTemplate)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(m.Path())
 	w := wr()
 	defer func() {
 		if err := w.Close(); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	return temp.Execute(w, d)
+	return temp.Execute(w, m)
 }
 
-var mainTemplate = `{{.Boilerplate}}
+var makefileTemplate = `
+all: test manager
 
-package main
+# Generate code
+generate: 
+	go generate {{ .Project.Repo }}/pkg/... {{ .Project.Repo }}/cmd/...
 
-func main() {}
+# Run tests
+test: generate
+	go test {{ .Project.Repo }}/pkg/... {{ .Project.Repo }}/cmd/... -coverprofile cover.out
+
+# Build manager binary
+manager: generate
+	go build -o bin/manager {{ .Project.Repo }}/cmd/manager
+
+# Install CRDs into a cluster
+install:
+	kubectl apply -f config/crds
 `

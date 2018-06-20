@@ -23,6 +23,8 @@ import (
 
 	"log"
 
+	"fmt"
+
 	flag "github.com/spf13/pflag"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
@@ -74,6 +76,7 @@ func (m *Cmd) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) 
 		return err
 	}
 
+	fmt.Println(m.Path())
 	w := wr()
 	defer func() {
 		if err := w.Close(); err != nil {

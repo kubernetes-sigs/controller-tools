@@ -19,85 +19,93 @@ package resource
 import (
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
 	"text/template"
 
+	"strings"
+
+	"github.com/markbates/inflect"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/util"
 )
 
 var _ scaffold.Name = &AddResource{}
 var _ scaffold.Template = &AddResource{}
 
-// AddResource scaffolds the manager init code.
-type AddResource struct {
+// CRD scaffolds the manager init code.
+type CRD struct {
 	// OutputPath is the output file to write
 	OutputPath string
+
+	// Scope is Namespaced or Cluster
+	Scope string
+
+	// Plural is the plural lowercase of kind
+	Plural string
 
 	// Resource is a resource in the API group
 	*Resource
 
 	// Project is the project
 	Project project.Project
+
+	// PrintCreated will print the file it creates
+	PrintCreated bool
 }
 
 // Name implements scaffold.Name
-func (AddResource) Name() string {
-	return "pkg-resource-go"
+func (CRD) Name() string {
+	return "crd-resource-yaml"
 }
 
 // Path implements scaffold.Path.  Defaults to cmd/manager/setup/group_version_kind_init
-func (a AddResource) Path() string {
-	dir := filepath.Join("pkg", "apis", fmt.Sprintf(
-		"add_%s_%s.go", a.Group, a.Version))
+func (a CRD) Path() string {
+	dir := filepath.Join("config", "crds", fmt.Sprintf(
+		"%s_%s_%s.yaml", a.Group, a.Version, strings.ToLower(a.Kind)))
 	if a.OutputPath != "" {
 		dir = a.OutputPath
 	}
 	return dir
 }
 
-// SetBoilerplate implements scaffold.Boilerplate.
-func (a *AddResource) SetBoilerplate(b string) {
-	a.Boilerplate = b
-}
-
 // SetProject injects the Project
-func (a *AddResource) SetProject(p project.Project) {
+func (a *CRD) SetProject(p project.Project) {
 	a.Project = p
 }
 
 // Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (a AddResource) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
+func (a CRD) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
 	// Already exists, do nothing
 	if len(b) > 0 {
 		return nil
 	}
 
-	temp, err := t.Parse(managerInitTemplate)
+	a.Scope = "Namespaced"
+	if !a.Namespaced {
+		a.Scope = "Cluster"
+	}
+	if a.Plural == "" {
+		a.Plural = strings.ToLower(inflect.Pluralize(a.Kind))
+	}
+	temp, err := t.Parse(crdTemplate)
 	if err != nil {
 		return err
 	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, a)
+	return util.WriteTemplate(temp, a, wr)
 }
 
-var managerInitTemplate = `{{ .Boilerplate }}
-
-package apis
-
-import (
-	"{{ .Project.Repo }}/pkg/apis/{{ .Group }}/{{ .Version }}"
-)
-
-func init() {
-	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes,  {{ .Version }}.AddToScheme)
-}
+var crdTemplate = `apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: {{ .Plural }}.{{ .Group }}.{{ .Project.Domain }}
+spec:
+  group: {{ .Group }}.{{ .Project.Domain }}
+  version: "{{ .Version }}"
+  names:
+    kind: {{ .Kind }}
+    plural: {{ .Plural }}
+  scope: {{ .Scope }}
 `

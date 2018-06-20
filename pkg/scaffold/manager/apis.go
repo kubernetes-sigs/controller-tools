@@ -105,8 +105,6 @@ var AddToSchemes runtime.SchemeBuilder
 
 // AddToScheme adds all Resources to the Scheme
 func AddToScheme(s *runtime.Scheme) {
-	for _, f := range AddToSchemes {
-		f(s)
-	}
+	AddToSchemes.AddToScheme(s)
 }
 `

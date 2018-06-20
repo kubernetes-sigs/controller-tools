@@ -65,6 +65,8 @@ func (t TypesTest) Execute(b []byte, temp *template.Template, wr func() io.Write
 		return err
 	}
 
+	fmt.Println(t.Path())
+
 	w := wr()
 	defer func() {
 		if err := w.Close(); err != nil {
@@ -76,6 +78,61 @@ func (t TypesTest) Execute(b []byte, temp *template.Template, wr func() io.Write
 
 var typesTestTemplate = `{{ .Boilerplate }}
 
-package {{.Version}}
+package {{ .Version }}
 
+import (
+	"reflect"
+	"testing"
+
+	"golang.org/x/net/context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+)
+
+func TestStorage(t *testing.T) {
+	instance := &{{ .Kind }}{
+		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"},
+	}
+	if err := c.Create(context.TODO(), instance); err != nil {
+		t.Logf("Could not create {{ .Kind }} %v", err)
+		t.FailNow()
+	}
+
+	read := &{{ .Kind }}{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
+		t.Logf("Could not get {{ .Kind }} %v", err)
+		t.FailNow()
+	}
+	if !reflect.DeepEqual(read, instance) {
+		t.Logf("Created and Read do not match")
+		t.FailNow()
+	}
+
+	new := read.DeepCopy()
+	new.Labels = map[string]string{"hello": "world"}
+
+	if err := c.Update(context.TODO(), new); err != nil {
+		t.Logf("Could not create {{ .Kind }} %v", err)
+		t.FailNow()
+	}
+
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
+		t.Logf("Could not get {{ .Kind }} %v", err)
+		t.FailNow()
+	}
+	if !reflect.DeepEqual(read, new) {
+		t.Logf("Updated and Read do not match")
+		t.FailNow()
+	}
+
+	if err := c.Delete(context.TODO(), instance); err != nil {
+		t.Logf("Could not get {{ .Kind }} %v", err)
+		t.FailNow()
+	}
+
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, instance); err == nil {
+		t.Logf("Found deleted {{ .Kind }}")
+		t.FailNow()
+	}
+}
 `

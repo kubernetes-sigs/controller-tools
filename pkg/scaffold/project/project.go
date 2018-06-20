@@ -48,7 +48,7 @@ type Project struct {
 
 // Name is the name of the template
 func (Project) Name() string {
-	return "project-go"
+	return "project"
 }
 
 // Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt

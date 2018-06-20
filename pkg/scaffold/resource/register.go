@@ -33,6 +33,7 @@ var _ scaffold.Template = &RegisterGo{}
 type RegisterGo struct {
 	// Resource is the resource to scaffold the types_test.go file for
 	*Resource
+
 	// OutputPath is the output file to write
 	OutputPath string
 }

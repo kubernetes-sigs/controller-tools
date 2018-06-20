@@ -104,6 +104,8 @@ func (m *Controller) Execute(b []byte, t *template.Template, wr func() io.WriteC
 		m.GroupDomain = m.Group + "." + m.Project.Domain
 	}
 
+	fmt.Println(m.Path())
+
 	w := wr()
 	defer func() {
 		if err := w.Close(); err != nil {
@@ -218,8 +220,8 @@ func (r *Reconcile{{ .Kind }}) Reconcile(request reconcile.Request) (reconcile.R
 				// TODO(user): Important to copy this line to any object you create so it can be tied back to
 				// the {{ .Kind }} and cause a reconcile when it changes
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   "{{ .GroupDomain }}",
-					Version: "{{ .Version }}",
+					Group:   {{ .Group }}{{ .Version }}.SchemeGroupVersion.Group,
+					Version: {{ .Group }}{{ .Version }}.SchemeGroupVersion.Version,
 					Kind:    "{{ .Kind }}",
 				}),
 			},

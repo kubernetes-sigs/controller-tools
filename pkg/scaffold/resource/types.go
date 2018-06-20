@@ -65,6 +65,8 @@ func (t *Types) Execute(b []byte, temp *template.Template, wr func() io.WriteClo
 		return err
 	}
 
+	fmt.Println(t.Path())
+
 	w := wr()
 	defer func() {
 		if err := w.Close(); err != nil {

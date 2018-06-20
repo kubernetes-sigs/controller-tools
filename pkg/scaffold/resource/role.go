@@ -19,19 +19,19 @@ package resource
 import (
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
 	"text/template"
 
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/util"
 )
 
 var _ scaffold.Name = &AddResource{}
 var _ scaffold.Template = &AddResource{}
 
-// AddResource scaffolds the manager init code.
-type AddResource struct {
+// Role scaffolds the a role for RBAC permissions to a CRD
+type Role struct {
 	// OutputPath is the output file to write
 	OutputPath string
 
@@ -43,61 +43,51 @@ type AddResource struct {
 }
 
 // Name implements scaffold.Name
-func (AddResource) Name() string {
-	return "pkg-resource-go"
+func (Role) Name() string {
+	return "role-resource-yaml"
 }
 
 // Path implements scaffold.Path.  Defaults to cmd/manager/setup/group_version_kind_init
-func (a AddResource) Path() string {
-	dir := filepath.Join("pkg", "apis", fmt.Sprintf(
-		"add_%s_%s.go", a.Group, a.Version))
-	if a.OutputPath != "" {
-		dir = a.OutputPath
+func (r Role) Path() string {
+	dir := filepath.Join("config", "manager", fmt.Sprintf(
+		"%s_role_rbac.yaml", r.Group))
+	if r.OutputPath != "" {
+		dir = r.OutputPath
 	}
 	return dir
 }
 
-// SetBoilerplate implements scaffold.Boilerplate.
-func (a *AddResource) SetBoilerplate(b string) {
-	a.Boilerplate = b
-}
-
 // SetProject injects the Project
-func (a *AddResource) SetProject(p project.Project) {
-	a.Project = p
+func (r *Role) SetProject(p project.Project) {
+	r.Project = p
 }
 
 // Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (a AddResource) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
+func (r Role) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
 	// Already exists, do nothing
 	if len(b) > 0 {
 		return nil
 	}
 
-	temp, err := t.Parse(managerInitTemplate)
+	temp, err := t.Parse(roleTemplate)
 	if err != nil {
 		return err
 	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, a)
+	return util.WriteTemplate(temp, r, wr)
 }
 
-var managerInitTemplate = `{{ .Boilerplate }}
+var roleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: {{.Group}}-role
+rules:
+- apiGroups:
+  - {{ .Group }}.{{ .Project.Domain }}
+  resources:
+  - '*'
+  verbs:
+  - '*'
 
-package apis
-
-import (
-	"{{ .Project.Repo }}/pkg/apis/{{ .Group }}/{{ .Version }}"
-)
-
-func init() {
-	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes,  {{ .Version }}.AddToScheme)
-}
 `
