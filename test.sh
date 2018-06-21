@@ -137,7 +137,7 @@ gometalinter.v2 --disable-all \
     --enable=lll \
     --dupl-threshold=400 \
     --enable=dupl \
-    ./pkg/...
+    ./pkg/... ./test/... ./cmd/...
 # TODO: Enable these as we fix them to make them pass
 #    --enable=maligned \
 #    --enable=safesql \
