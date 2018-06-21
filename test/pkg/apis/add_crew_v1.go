@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/crew
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=crew.example.com
-package v1beta1
+package apis
+
+import (
+	"sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1"
+)
+
+func init() {
+	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
+	AddToSchemes = append(AddToSchemes, v1.AddToScheme)
+}

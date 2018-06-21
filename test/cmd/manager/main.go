@@ -42,8 +42,10 @@ func main() {
 
 	log.Printf("Registering Components.")
 
-	// Setup all Resources
-	apis.AddToScheme(mrg.GetScheme())
+	// Setup Scheme for all resources
+	if err := apis.AddToScheme(mrg.GetScheme()); err != nil {
+		log.Fatal(err)
+	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mrg); err != nil {

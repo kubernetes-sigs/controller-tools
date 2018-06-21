@@ -6,7 +6,7 @@ metadata:
   name: crew-role
 rules:
 - apiGroups:
-  - crew.example.com
+  - crew.k8s.io
   resources:
   - '*'
   verbs:

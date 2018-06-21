@@ -16,11 +16,12 @@ limitations under the License.
 
 // NOTE: Boilerplate only.  Ignore this file.
 
+// Package v1beta1 contains API Schema definitions for the ship v1beta1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/crew
+// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/ship
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=crew.example.com
+// +groupName=ship.k8s.io
 package v1beta1
 
 import (
@@ -29,10 +30,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// KnownTypes is a collection of types to register with a Scheme
 var KnownTypes = []runtime.Object{}
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "crew.example.com", Version: "v1beta1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "ship.k8s.io", Version: "v1beta1"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -45,13 +47,12 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// SchemeBuilder adds new types to a Scheme
+	SchemeBuilder = runtime.NewSchemeBuilder(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(SchemeGroupVersion, KnownTypes...)
+		metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+		return nil
+	})
+	// AddToScheme adds types to a Scheme
+	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-// Adds the list of known types to Scheme.
-func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion, KnownTypes...)
-	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	return nil
-}

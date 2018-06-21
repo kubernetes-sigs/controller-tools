@@ -1,7 +1,6 @@
 required = [
     "github.com/emicklei/go-restful",
-    "github.com/onsi/ginkgo", # for integration testing
-    "github.com/spf13/pflag",
+    "github.com/onsi/gomega", # for test matchers
     "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
     "sigs.k8s.io/controller-runtime/pkg/client/config",
@@ -188,7 +187,7 @@ revision="f08db293d3ef80052d6513ece19792642a289fea"
 name="sigs.k8s.io/testing_frameworks"
 revision="f53464b8b84b4507805a0b033a8377b225163fea"
 
-[[constraint]]
+[[override]]
 name = "github.com/thockin/logr"
 source = "https://github.com/directxman12/logr.git"
 branch = "features/structed"

@@ -24,10 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddToSchemes should be used to add new API groupversions to the Scheme
+// AddToSchemes may be used to add all resources defined in the project to a Scheme
 var AddToSchemes runtime.SchemeBuilder
 
 // AddToScheme adds all Resources to the Scheme
-func AddToScheme(s *runtime.Scheme) {
-	AddToSchemes.AddToScheme(s)
+func AddToScheme(s *runtime.Scheme) error {
+	return AddToSchemes.AddToScheme(s)
 }

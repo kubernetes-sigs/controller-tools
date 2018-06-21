@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package v1beta1 contains API Schema definitions for the ship v1beta1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/ship
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=ship.example.com
-package v1
+// +groupName=ship.k8s.io
+package v1beta1

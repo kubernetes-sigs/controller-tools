@@ -21,7 +21,6 @@ import (
 	"log"
 	"reflect"
 
-	crewv1beta1 "sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	crewv1 "sigs.k8s.io/controller-tools/test/pkg/apis/crew/v1"
 )
 
 /**
@@ -45,18 +45,24 @@ import (
 // and Start it when the Manager is Started.
 // USER ACTION REQUIRED: update cmd/manager/main.go to call this crew.Add(mrg) to install this Controller
 func Add(mrg manager.Manager) error {
+	return add(mrg, newReconcile(mrg))
+}
+
+// newReconcile returns a new reconcile.Reconcile
+func newReconcile(mrg manager.Manager) reconcile.Reconcile {
+	return &ReconcileFirstMate{client: mrg.GetClient()}
+}
+
+// add adds a new Controller to mrg with r as the reconcile.Reconcile
+func add(mrg manager.Manager, r reconcile.Reconcile) error {
 	// Create a new controller
-	c, err := controller.New("firstmate-controller", mrg, controller.Options{
-		Reconcile: &ReconcileFirstMate{
-			client: mrg.GetClient(),
-		},
-	})
+	c, err := controller.New("firstmate-controller", mrg, controller.Options{Reconcile: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to FirstMate
-	err = c.Watch(&source.Kind{Type: &crewv1beta1.FirstMate{}}, &handler.Enqueue{})
+	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.Enqueue{})
 	if err != nil {
 		return err
 	}
@@ -65,7 +71,7 @@ func Add(mrg manager.Manager) error {
 	// Uncomment watch a Deployment created by FirstMate - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
 		IsController: true,
-		OwnerType:    &crewv1beta1.FirstMate{},
+		OwnerType:    &crewv1.FirstMate{},
 	})
 	if err != nil {
 		return err
@@ -85,17 +91,16 @@ type ReconcileFirstMate struct {
 // a Deployment as an example
 func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the FirstMate instance
-	instance := &crewv1beta1.FirstMate{}
+	instance := &crewv1.FirstMate{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
-		} else {
-			// Error reading the object - requeue the request.
-			return reconcile.Result{}, err
 		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
 	}
 
 	// TODO(user): Change this to be the object type created by your controller
@@ -108,8 +113,8 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 				// TODO(user): Important to copy this line to any object you create so it can be tied back to
 				// the FirstMate and cause a reconcile when it changes
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   crewv1beta1.SchemeGroupVersion.Group,
-					Version: crewv1beta1.SchemeGroupVersion.Version,
+					Group:   crewv1.SchemeGroupVersion.Group,
+					Version: crewv1.SchemeGroupVersion.Version,
 					Kind:    "FirstMate",
 				}),
 			},
@@ -137,7 +142,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	found := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating deployment %+v\n", deploy)
+		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.client.Create(context.TODO(), deploy)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -150,7 +155,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	// Update the found object and write the result back if there are any changes
 	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
 		found.Spec = deploy.Spec
-		log.Printf("Updating deployment %+v\n", found)
+		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.client.Update(context.TODO(), found)
 		if err != nil {
 			return reconcile.Result{}, err

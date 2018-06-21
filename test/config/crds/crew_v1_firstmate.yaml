@@ -3,11 +3,11 @@ kind: CustomResourceDefinition
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: frigates.ship.example.com
+  name: firstmates.crew.k8s.io
 spec:
-  group: ship.example.com
+  group: crew.k8s.io
   version: "v1"
   names:
-    kind: Frigate
-    plural: frigates
+    kind: FirstMate
+    plural: firstmates
   scope: Namespaced

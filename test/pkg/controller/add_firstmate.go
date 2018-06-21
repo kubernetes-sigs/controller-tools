@@ -17,11 +17,10 @@ limitations under the License.
 package controller
 
 import (
-	
 	"sigs.k8s.io/controller-tools/test/pkg/controller/firstmate"
 )
 
 func init() {
-	// Create the Controller and add it to the Manager.
+	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
 	AddToManagerFuncs = append(AddToManagerFuncs, firstmate.Add)
 }
