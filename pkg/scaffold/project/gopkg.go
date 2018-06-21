@@ -115,6 +115,7 @@ const defaultHeader = "# STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT
 
 const defaultUserContent = `required = [
     "github.com/emicklei/go-restful",
+	"github.com/onsi/ginkgo", # for test framework
     "github.com/onsi/gomega", # for test matchers
     "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
