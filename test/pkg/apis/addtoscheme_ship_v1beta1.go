@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,5 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package generate contains libraries for generating code to use with controller-runtime
-package generate
+package apis
+
+import (
+	"sigs.k8s.io/controller-tools/test/pkg/apis/ship/v1beta1"
+)
+
+func init() {
+	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
+	AddToSchemes = append(AddToSchemes, v1beta1.AddToScheme)
+}
