@@ -83,6 +83,15 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 			if err := c.Run(); err != nil {
 				log.Fatal(err)
 			}
+
+			fmt.Println("Running make...")
+			c = exec.Command("make") // #nosec
+			c.Stderr = os.Stderr
+			c.Stdout = os.Stdout
+			fmt.Println(strings.Join(c.Args, " "))
+			if err := c.Run(); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			fmt.Println("Skipping `dep ensure`.  Dependencies will not be fetched.")
 		}

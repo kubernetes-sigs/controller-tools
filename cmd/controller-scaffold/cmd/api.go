@@ -20,6 +20,9 @@ import (
 	"os"
 	"os/exec"
 
+	"path/filepath"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
@@ -45,6 +48,15 @@ After the scaffold is written, api will run make on the project.
 	Example: `	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
 	controller-scaffold api --group ship --version v1beta1 --kind Frigate
 
+	# Edit the API Scheme
+	nano pkg/apis/ship/v1beta1/frigate_types.go
+
+	# Edit the Controller
+	nano pkg/controller/frigate/frigate_controller.go
+
+	# Edit the Controller Test
+	nano pkg/controller/frigate/frigate_controller_test.go
+
 	# Install CRDs into the Kubernetes cluster using kubectl apply
 	make install
 
@@ -62,6 +74,11 @@ After the scaffold is written, api will run make on the project.
 		fmt.Println("Writing scaffold for you to edit...")
 
 		if re {
+			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
+			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
+				fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
+
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
 				&resource.Register{Resource: r},
 				&resource.Types{Resource: r},
@@ -80,6 +97,11 @@ After the scaffold is written, api will run make on the project.
 		}
 
 		if c {
+			fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
+				fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
+			fmt.Println(filepath.Join("pkg", "apis", strings.ToLower(r.Kind),
+				fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
+
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
 				&controller.Controller{Resource: r},
 				&controller.AddController{Resource: r},
