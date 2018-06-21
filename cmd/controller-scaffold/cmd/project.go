@@ -69,7 +69,8 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 
 		s = &scaffold.Scaffold{}
 		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
-			gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{})
+			gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{},
+			&project.GitIgnore{})
 		if err != nil {
 			log.Fatal(err)
 		}

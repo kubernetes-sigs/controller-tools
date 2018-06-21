@@ -17,7 +17,9 @@ limitations under the License.
 package manager
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
@@ -32,6 +34,12 @@ type APIs struct {
 	Comments []string
 }
 
+var deepCopy = strings.Join([]string{
+	"//go:generate go run",
+	"../../vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go",
+	"-O zz_generated.deepcopy",
+	"-i ./..."}, " ")
+
 // GetInput implements input.File
 func (a *APIs) GetInput() (input.Input, error) {
 	if a.Path == "" {
@@ -40,8 +48,7 @@ func (a *APIs) GetInput() (input.Input, error) {
 	if len(a.Comments) == 0 {
 		a.Comments = append(a.Comments,
 			"// Generate deepcopy for apis",
-			"//go:generate go run ../../vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -i ./... -h ../../"+
-				a.BoilerplatePath)
+			fmt.Sprintf("%s -h ../../%s", deepCopy, a.BoilerplatePath))
 	}
 	a.TemplateBody = apisTemplate
 	return a.Input, nil
