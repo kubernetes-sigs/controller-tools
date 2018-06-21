@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: ship-role
+rules:
+- apiGroups:
+  - ship.k8s.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+
