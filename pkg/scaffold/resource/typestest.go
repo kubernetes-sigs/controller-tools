@@ -26,7 +26,7 @@ import (
 
 var _ input.File = &TypesTest{}
 
-// TypesTest scaffolds the types_test.go file for testing APIsGo
+// TypesTest scaffolds the pkg/apis/group/version/kind_types_test.go file to test the API schema
 type TypesTest struct {
 	input.Input
 

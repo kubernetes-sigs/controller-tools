@@ -22,10 +22,10 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ input.File = &RegisterGo{}
+var _ input.File = &Register{}
 
-// RegisterGo scaffolds the register.go file for defining APIsGo
-type RegisterGo struct {
+// Register scaffolds the pkg/apis/group/version/register.go file
+type Register struct {
 	input.Input
 
 	// Resource is the resource to scaffold the types_test.go file for
@@ -33,7 +33,7 @@ type RegisterGo struct {
 }
 
 // GetInput implements input.File
-func (r *RegisterGo) GetInput() (input.Input, error) {
+func (r *Register) GetInput() (input.Input, error) {
 	if r.Path == "" {
 		r.Path = filepath.Join("pkg", "apis", r.Resource.Group, r.Resource.Version, "register.go")
 	}

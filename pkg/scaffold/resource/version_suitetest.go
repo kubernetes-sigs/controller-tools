@@ -25,7 +25,7 @@ import (
 
 var _ input.File = &TypesTest{}
 
-// VersionSuiteTest scaffolds the version_suite_test.go file
+// VersionSuiteTest scaffolds the version_suite_test.go file to setup the versions test
 type VersionSuiteTest struct {
 	input.Input
 

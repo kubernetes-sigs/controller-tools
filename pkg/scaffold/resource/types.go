@@ -26,7 +26,7 @@ import (
 
 var _ input.File = &Types{}
 
-// Types scaffolds the types.go file for defining APIsGo
+// Types scaffolds the pkg/apis/group/version/kind_types.go file to define the schema for an API
 type Types struct {
 	input.Input
 

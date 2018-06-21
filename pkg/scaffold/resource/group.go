@@ -24,7 +24,7 @@ import (
 
 var _ input.File = &Group{}
 
-// Group scaffolds the group.go
+// Group scaffolds the pkg/apis/group/group.go
 type Group struct {
 	input.Input
 

@@ -41,7 +41,7 @@ type Controller struct {
 
 // GetInput implements input.File
 func (a *Controller) GetInput() (input.Input, error) {
-	// Use the k8s.io/api package for core AddResource
+	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",
 		"admissionregistration": "k8s.io",

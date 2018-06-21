@@ -22,10 +22,10 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ input.File = &APIsDocGo{}
+var _ input.File = &Doc{}
 
-// APIsDocGo writes the doc.go file in the pkg/apis/group/version directory
-type APIsDocGo struct {
+// Doc scaffolds the pkg/apis/group/version/doc.go directory
+type Doc struct {
 	input.Input
 
 	// Resource is a resource for the API version
@@ -36,7 +36,7 @@ type APIsDocGo struct {
 }
 
 // GetInput implements input.File
-func (a *APIsDocGo) GetInput() (input.Input, error) {
+func (a *Doc) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "apis", a.Resource.Group, a.Resource.Version, "doc.go")
 	}

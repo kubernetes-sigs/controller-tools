@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ input.File = &AddResource{}
+var _ input.File = &CRD{}
 
-// CRD scaffolds the manager init code.
+// CRD scaffolds a CRD yaml file.
 type CRD struct {
 	input.Input
 

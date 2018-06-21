@@ -63,13 +63,13 @@ After the scaffold is written, api will run make on the project.
 
 		if re {
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
-				&resource.RegisterGo{Resource: r},
+				&resource.Register{Resource: r},
 				&resource.Types{Resource: r},
 				&resource.VersionSuiteTest{Resource: r},
 				&resource.TypesTest{Resource: r},
-				&resource.APIsDocGo{Resource: r},
+				&resource.Doc{Resource: r},
 				&resource.Group{Resource: r},
-				&resource.AddResource{Resource: r},
+				&resource.AddToScheme{Resource: r},
 				&resource.CRD{Resource: r},
 				&resource.Role{Resource: r},
 				&resource.RoleBinding{Resource: r},

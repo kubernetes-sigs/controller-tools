@@ -23,9 +23,9 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ input.File = &AddResource{}
+var _ input.File = &RoleBinding{}
 
-// RoleBinding scaffolds the a role binding for RBAC permissions to a CRD
+// RoleBinding scaffolds the config/manager/group_rolebinding_rbac.yaml file
 type RoleBinding struct {
 	input.Input
 

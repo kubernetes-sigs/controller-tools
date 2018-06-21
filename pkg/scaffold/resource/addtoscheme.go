@@ -23,10 +23,10 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ input.File = &AddResource{}
+var _ input.File = &AddToScheme{}
 
-// AddResource scaffolds the manager init code.
-type AddResource struct {
+// AddToScheme scaffolds the code to add the resource to a SchemeBuilder.
+type AddToScheme struct {
 	input.Input
 
 	// Resource is a resource in the API group
@@ -34,10 +34,10 @@ type AddResource struct {
 }
 
 // GetInput implements input.File
-func (a *AddResource) GetInput() (input.Input, error) {
+func (a *AddToScheme) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
-			"add_%s_%s.go", a.Resource.Group, a.Resource.Version))
+			"addtoscheme_%s_%s.go", a.Resource.Group, a.Resource.Version))
 	}
 	a.TemplateBody = addResourceTemplate
 	return a.Input, nil
