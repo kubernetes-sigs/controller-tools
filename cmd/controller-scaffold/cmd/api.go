@@ -23,33 +23,33 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
 var r *resource.Resource
 
-// resourceCmd represents the resource command
-var resourceCmd = &cobra.Command{
+// APICmd represents the resource command
+var APICmd = &cobra.Command{
 	Use:   "api",
 	Short: "Scaffold a Kubernetes API",
 	Long: `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
-When run, api will prompt the user for whether it should scaffold the Resource / Controller.  Once
-the scaffold is written, api will run make to generate code, run go tests, and build the manager
-command.
+api will prompt the user for if it should scaffold the Resource and / or Controller.  To only
+scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
+the schema for a Resource without writing a Controller, select "n" for Controller.
+
+After the scaffold is written, api will run make on the project.
 `,
 	Example: `	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
-	controller-tools api --group ship --version v1beta1 --kind Frigate
+	controller-scaffold api --group ship --version v1beta1 --kind Frigate
 
-	# Run code generators, test and build.
-	make
+	# Install CRDs into the Kubernetes cluster using kubectl apply
+	make install
 
-	# Install CRDs into the Kubernetes cluster
-	kubectl apply -f config/crds
-
-	# Run against the Kubernetes cluster
-	./bin/manager
+	# Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
+	make run
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		project.DieIfNoProject()
@@ -62,7 +62,7 @@ command.
 		fmt.Println("Writing scaffold for you to edit...")
 
 		if re {
-			err := (&scaffold.Scaffold{}).Execute(scaffold.Options{},
+			err := (&scaffold.Scaffold{}).Execute(input.Options{},
 				&resource.RegisterGo{Resource: r},
 				&resource.Types{Resource: r},
 				&resource.VersionSuiteTest{Resource: r},
@@ -80,16 +80,19 @@ command.
 		}
 
 		if c {
-			ctrl := &controller.Controller{Resource: r}
-			in := &controller.AddController{Resource: r}
-			err := (&scaffold.Scaffold{}).Execute(scaffold.Options{}, ctrl, in)
+			err := (&scaffold.Scaffold{}).Execute(input.Options{},
+				&controller.Controller{Resource: r},
+				&controller.AddController{Resource: r},
+				&controller.Test{Resource: r},
+				&controller.SuiteTest{Resource: r},
+			)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
 		fmt.Println("Running make...")
-		cm := exec.Command("make")
+		cm := exec.Command("make") // #nosec
 		cm.Stderr = os.Stderr
 		cm.Stdout = os.Stdout
 		if err := cm.Run(); err != nil {
@@ -99,6 +102,6 @@ command.
 }
 
 func init() {
-	rootCmd.AddCommand(resourceCmd)
-	r = resource.ForFlags(resourceCmd.Flags())
+	rootCmd.AddCommand(APICmd)
+	r = resource.ForFlags(APICmd.Flags())
 }

@@ -18,63 +18,18 @@ package scaffold
 
 import (
 	"io"
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
+	"fmt"
+
+	"log"
+
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
-
-// Template implements a scaffoldable component
-type Template interface {
-	// Path returns the path of the file to write
-	Path() string
-
-	// Execute parses t and executes it to write to wr
-	Execute(old []byte, t *template.Template, wr func() io.WriteCloser) error
-}
-
-// Validate allows a Template to validate
-type Validate interface {
-	// Validate returns true if the template has valid values
-	Validate() error
-}
-
-// Name allows a Template to have a name
-type Name interface {
-	// Name returns the name of the template
-	Name() string
-}
-
-// Project allows a Template to get the Project
-type Project interface {
-	// SetProject sets the project
-	SetProject(project.Project)
-}
-
-// Boilerplate allows a Template to get the Boilerplate to put at the top of go files
-type Boilerplate interface {
-	// SetBoilerplate sets the boilerplate file content
-	SetBoilerplate(string)
-}
-
-// BoilerplatePath allows a Template to get the path to the boilerplate file
-type BoilerplatePath interface {
-	// SetBoilerplatePath sets the path to the boilerplate file
-	SetBoilerplatePath(string)
-}
-
-// Options are the options for executing scaffold templates
-type Options struct {
-	// BoilerplatePath is the path to the boilerplate file
-	BoilerplatePath string
-
-	// Path is the path to the project
-	ProjectPath string
-}
 
 // Scaffold writes Templates to scaffold new files
 type Scaffold struct {
@@ -92,20 +47,26 @@ type Scaffold struct {
 	ProjectOptional bool
 }
 
-func (s *Scaffold) setFieldsAndValidate(t Template) error {
+func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	// Set boilerplate on templates
-	if b, ok := t.(BoilerplatePath); ok {
+	if b, ok := t.(input.BoilerplatePath); ok {
 		b.SetBoilerplatePath(s.BoilerplatePath)
 	}
-	if b, ok := t.(Boilerplate); ok {
+	if b, ok := t.(input.Boilerplate); ok {
 		b.SetBoilerplate(s.Boilerplate)
 	}
-	if b, ok := t.(Project); ok {
-		b.SetProject(s.Project)
+	if b, ok := t.(input.Domain); ok {
+		b.SetDomain(s.Project.Domain)
+	}
+	if b, ok := t.(input.Version); ok {
+		b.SetVersion(s.Project.Version)
+	}
+	if b, ok := t.(input.Repo); ok {
+		b.SetRepo(s.Project.Repo)
 	}
 
 	// Validate the template is ok
-	if v, ok := t.(Validate); ok {
+	if v, ok := t.(input.Validate); ok {
 		if err := v.Validate(); err != nil {
 			return err
 		}
@@ -121,10 +82,13 @@ func (s *Scaffold) getProject(path string) (project.Project, error) {
 	return project.GetProject(path)
 }
 
-func (s *Scaffold) defaultFunc(options *Options) error {
+func (s *Scaffold) defaultOptions(options *input.Options) error {
+	// Use the default Boilerplate path if unset
 	if options.BoilerplatePath == "" {
 		options.BoilerplatePath = project.BoilerplatePath()
 	}
+
+	// Use the default Project path if unset
 	if options.ProjectPath == "" {
 		options.ProjectPath = project.Path()
 	}
@@ -144,50 +108,87 @@ func (s *Scaffold) defaultFunc(options *Options) error {
 	return nil
 }
 
-// Execute executes the Templates
-func (s *Scaffold) Execute(options Options, elem ...Template) error {
-	if err := s.defaultFunc(&options); err != nil {
+// Execute executes scaffolding the Files
+func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
+	if err := s.defaultOptions(&options); err != nil {
 		return err
 	}
-	for _, t := range elem {
-		err := s.setFieldsAndValidate(t)
-		if err != nil {
-			return err
-		}
-
-		b, _ := ioutil.ReadFile(t.Path())
-
-		// Write the template
-		temp := newTemplate(t)
-		err = t.Execute(b, temp, func() io.WriteCloser { return newWriteCloser(t.Path()) })
-		if err != nil {
+	for _, f := range files {
+		if err := s.doFile(f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func newWriteCloser(path string) io.WriteCloser {
+// doFile scaffolds a single file
+func (s *Scaffold) doFile(e input.File) error {
+	// Set common fields
+	err := s.setFieldsAndValidate(e)
+	if err != nil {
+		return err
+	}
+
+	// Get the template input params
+	i, err := e.GetInput()
+	if err != nil {
+		return err
+	}
+
+	// Check if the file to write already exists
+	if _, err := os.Stat(i.Path); err == nil {
+		switch i.IfExistsAction {
+		case input.Overwrite:
+		case input.Skip:
+			return nil
+		case input.Error:
+			return fmt.Errorf("%s already exists", i.Path)
+		}
+	}
+
+	if err := s.doTemplate(i, e); err != nil {
+		return err
+	}
+	return nil
+}
+
+// doTemplate executes the template for a file using the input
+func (*Scaffold) doTemplate(i input.Input, e input.File) error {
+	temp, err := newTemplate(e).Parse(i.TemplateBody)
+	if err != nil {
+		return err
+	}
+	f, err := newWriteCloser(i.Path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	return temp.Execute(f, e)
+}
+
+// newWriteCloser returns a WriteCloser to write scaffold to
+func newWriteCloser(path string) (io.WriteCloser, error) {
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	fi, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+	fi, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return fi
+	return fi, nil
 }
 
-func newTemplate(t Template) *template.Template {
-	name := ""
-	if n, ok := t.(Name); ok {
-		name = n.Name()
-	}
-	return template.New(name).Funcs(template.FuncMap{
+// newTemplate a new template with common functions
+func newTemplate(t input.File) *template.Template {
+	return template.New(fmt.Sprintf("%T", t)).Funcs(template.FuncMap{
 		"title": strings.Title,
 		"lower": strings.ToLower,
 	})

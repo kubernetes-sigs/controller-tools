@@ -20,20 +20,17 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io"
-	"path/filepath"
+	"io/ioutil"
 	"strings"
-	"text/template"
 
-	"log"
-
-	flag "github.com/spf13/pflag"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &GopkgToml{}
 
 // GopkgToml writes a templatefile for Gopkg.toml
 type GopkgToml struct {
-	// OutputPath is the output location of the file to write
-	OutputPath string
+	input.Input
 
 	// ManagedHeader is the header to write after the user owned pieces and before the managed parts of the Gopkg.toml
 	ManagedHeader string
@@ -62,74 +59,31 @@ type Stanza struct {
 	Revision string
 }
 
-// Name is the name of the template
-func (GopkgToml) Name() string {
-	return "gopkgtoml"
-}
-
-// Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt
-func (g *GopkgToml) Path() string {
-	dir := filepath.Join("Gopkg.toml")
-	if g.OutputPath != "" {
-		dir = g.OutputPath
+// GetInput implements input.File
+func (g *GopkgToml) GetInput() (input.Input, error) {
+	if g.Path == "" {
+		g.Path = "Gopkg.toml"
 	}
-	return dir
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (g *GopkgToml) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
 	if g.ManagedHeader == "" {
 		g.ManagedHeader = defaultHeader
-
 	}
+
+	// Set the user content to be used if the Gopkg.toml doesn't exist
 	if g.DefaultUserContent == "" {
-		// Set the user content
 		g.DefaultUserContent = defaultUserContent
 	}
 
-	// Set the user content from the last file
-	var err error
-	g.UserContent, err = g.getUserContent(b)
+	// Set the user owned content from the last Gopkg.toml file - e.g. everything before the header
+	lastBytes, err := ioutil.ReadFile(g.Path)
 	if err != nil {
-		return err
+		g.UserContent = g.DefaultUserContent
+	} else if g.UserContent, err = g.getUserContent(lastBytes); err != nil {
+		return input.Input{}, err
 	}
 
-	t, err = t.Parse(depTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return t.Execute(w, g)
+	g.TemplateBody = depTemplate
+	return g.Input, nil
 }
-
-const defaultHeader = "# STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE."
-
-const defaultUserContent = `required = [
-    "github.com/emicklei/go-restful",
-    "github.com/onsi/ginkgo", # for integration testing
-    "github.com/spf13/pflag",
-    "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
-    "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
-    "sigs.k8s.io/controller-runtime/pkg/client/config",
-    "sigs.k8s.io/controller-runtime/pkg/controller",
-    "sigs.k8s.io/controller-runtime/pkg/handler",
-    "sigs.k8s.io/controller-runtime/pkg/manager",
-    "sigs.k8s.io/controller-runtime/pkg/runtime/signals",
-    "sigs.k8s.io/controller-runtime/pkg/source",
-    "sigs.k8s.io/testing_frameworks/integration", # for integration testing
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
-    ]
-
-[prune]
-  go-tests = true
-
-`
 
 func (g *GopkgToml) getUserContent(b []byte) (string, error) {
 	if len(b) == 0 {
@@ -156,6 +110,28 @@ func (g *GopkgToml) getUserContent(b []byte) (string, error) {
 	}
 	return strings.Join(userLines, "\n"), nil
 }
+
+const defaultHeader = "# STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE."
+
+const defaultUserContent = `required = [
+    "github.com/emicklei/go-restful",
+    "github.com/onsi/gomega", # for test matchers
+    "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
+    "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
+    "sigs.k8s.io/controller-runtime/pkg/client/config",
+    "sigs.k8s.io/controller-runtime/pkg/controller",
+    "sigs.k8s.io/controller-runtime/pkg/handler",
+    "sigs.k8s.io/controller-runtime/pkg/manager",
+    "sigs.k8s.io/controller-runtime/pkg/runtime/signals",
+    "sigs.k8s.io/controller-runtime/pkg/source",
+    "sigs.k8s.io/testing_frameworks/integration", # for integration testing
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    ]
+
+[prune]
+  go-tests = true
+
+`
 
 var depTemplate = `{{ .UserContent }}
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
@@ -335,13 +311,8 @@ revision="f08db293d3ef80052d6513ece19792642a289fea"
 name="sigs.k8s.io/testing_frameworks"
 revision="f53464b8b84b4507805a0b033a8377b225163fea"
 
-[[constraint]]
+[[override]]
 name = "github.com/thockin/logr"
 source = "https://github.com/directxman12/logr.git"
 branch = "features/structed"
 `
-
-// GopkgTomlForFlags registers flags for GopkgToml fields and returns the GopkgToml
-func GopkgTomlForFlags(_ *flag.FlagSet) *GopkgToml {
-	return &GopkgToml{}
-}

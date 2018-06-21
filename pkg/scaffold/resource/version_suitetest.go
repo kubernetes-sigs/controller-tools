@@ -18,24 +18,19 @@ package resource
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
-	"text/template"
 
-	"log"
-
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Template = &TypesTest{}
-var _ scaffold.Name = &TypesTest{}
+var _ input.File = &TypesTest{}
 
 // VersionSuiteTest scaffolds the version_suite_test.go file
 type VersionSuiteTest struct {
+	input.Input
+
 	// Resource is the resource to scaffold the types_test.go file for
-	*Resource
-	// OutputPath is the output file to write
-	OutputPath string
+	Resource *Resource
 }
 
 // Name implements scaffold.Name
@@ -43,41 +38,19 @@ func (VersionSuiteTest) Name() string {
 	return "version-suite-test-go"
 }
 
-// Path implements scaffold.Path.  Defaults to pkg/apis/group/version/kind_types_test.go
-func (t VersionSuiteTest) Path() string {
-	dir := filepath.Join("pkg", "apis", t.Group, t.Version)
-	if t.OutputPath != "" {
-		dir = t.OutputPath
+// GetInput implements input.File
+func (v *VersionSuiteTest) GetInput() (input.Input, error) {
+	if v.Path == "" {
+		v.Path = filepath.Join("pkg", "apis", v.Resource.Group, v.Resource.Version,
+			fmt.Sprintf("%s_suite_test.go", v.Resource.Version))
 	}
-
-	return filepath.Join(dir, fmt.Sprintf("%s_suite_test.go", t.Version))
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (t VersionSuiteTest) Execute(b []byte, temp *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := temp.Parse(veersionSuiteTestTemplate)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(t.Path())
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, t)
+	v.TemplateBody = veersionSuiteTestTemplate
+	return v.Input, nil
 }
 
 var veersionSuiteTestTemplate = `{{ .Boilerplate }}
 
-package {{ .Version }}
+package {{ .Resource.Version }}
 
 import (
 	"log"

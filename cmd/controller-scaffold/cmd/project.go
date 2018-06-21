@@ -24,6 +24,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/manager"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
@@ -34,26 +35,23 @@ var gopkg *project.GopkgToml
 var mrg *manager.Cmd
 var dkr *manager.Dockerfile
 
-// projectCmd represents the project command
-var projectCmd = &cobra.Command{
+// ProjectCmd represents the project command
+var ProjectCmd = &cobra.Command{
 	Use:   "project",
-	Short: "Scaffold a Controller project.",
-	Long: `Scaffold a Controller project.
+	Short: "Scaffold a new project.",
+	Long: `Scaffold a project.
 
 Writes the following files:
-- a PROJECT file with the domain
-- a cmd/manager/main.go to run Controllers
+- a boilerplate license file
+- a PROJECT file with the domain and repo
 - a Makefile to build the project
 - a Gopkg.toml with project dependencies
-- a boilerplate license file
+- a cmd/manager/main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
 `,
-	Example: `# Scaffold a project
+	Example: `# Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
 controller-scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors"
-
-# Fetch the dependencies
-dep ensure
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		// project and boilerplate must come before main so the boilerplate exists
@@ -61,26 +59,24 @@ dep ensure
 			BoilerplateOptional: true,
 			ProjectOptional:     true,
 		}
-		err := s.Execute(scaffold.Options{
-			ProjectPath:     prj.Path(),
-			BoilerplatePath: bp.Path(),
-		}, prj, bp)
+
+		p, _ := prj.GetInput()
+		b, _ := bp.GetInput()
+		err := s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, prj, bp)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		s = &scaffold.Scaffold{}
-		err = s.Execute(scaffold.Options{
-			ProjectPath:     prj.Path(),
-			BoilerplatePath: bp.Path(),
-		}, gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{})
+		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
+			gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{})
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
 		if yesno() {
-			c := exec.Command("dep", "ensure")
+			c := exec.Command("dep", "ensure") // #nosec
 			c.Stderr = os.Stderr
 			c.Stdout = os.Stdout
 			fmt.Println(strings.Join(c.Args, " "))
@@ -94,11 +90,11 @@ dep ensure
 }
 
 func init() {
-	rootCmd.AddCommand(projectCmd)
+	rootCmd.AddCommand(ProjectCmd)
 
-	prj = project.ForFlags(projectCmd.Flags())
-	bp = project.BoilerplateForFlags(projectCmd.Flags())
-	gopkg = project.GopkgTomlForFlags(projectCmd.Flags())
-	mrg = manager.ForFlags(projectCmd.Flags())
-	dkr = manager.DockerfileForFlags(projectCmd.Flags())
+	prj = project.ForFlags(ProjectCmd.Flags())
+	bp = project.BoilerplateForFlags(ProjectCmd.Flags())
+	gopkg = &project.GopkgToml{}
+	mrg = &manager.Cmd{}
+	dkr = &manager.Dockerfile{}
 }

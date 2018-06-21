@@ -17,72 +17,41 @@ limitations under the License.
 package resource
 
 import (
-	"fmt"
-	"io"
-	"log"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Name = &RegisterGo{}
-var _ scaffold.Template = &RegisterGo{}
+var _ input.File = &RegisterGo{}
 
 // RegisterGo scaffolds the register.go file for defining APIsGo
 type RegisterGo struct {
+	input.Input
+
 	// Resource is the resource to scaffold the types_test.go file for
-	*Resource
-
-	// OutputPath is the output file to write
-	OutputPath string
+	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (RegisterGo) Name() string {
-	return "register-go"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/apis/group/version/register.go
-func (r *RegisterGo) Path() string {
-	dir := filepath.Join("pkg", "apis", r.Group, r.Version)
-	if r.OutputPath != "" {
-		dir = r.OutputPath
+// GetInput implements input.File
+func (r *RegisterGo) GetInput() (input.Input, error) {
+	if r.Path == "" {
+		r.Path = filepath.Join("pkg", "apis", r.Resource.Group, r.Resource.Version, "register.go")
 	}
-	return filepath.Join(dir, fmt.Sprintf("register.go"))
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (r *RegisterGo) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	// Don't overwrite
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := t.Parse(registerTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, r)
+	r.TemplateBody = registerTemplate
+	return r.Input, nil
 }
 
 var registerTemplate = `{{ .Boilerplate }}
 
 // NOTE: Boilerplate only.  Ignore this file.
 
+// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen={{ .Project.Repo }}/pkg/apis/{{ .Group }}
+// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}
 // +k8s:defaulter-gen=TypeMeta
-// +groupName={{ .Group }}.{{ .Project.Domain }}
-package {{.Version}}
+// +groupName={{ .Resource.Group }}.{{ .Domain }}
+package {{.Resource.Version}}
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,10 +59,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// KnownTypes is a collection of types to register with a Scheme
 var KnownTypes = []runtime.Object{}
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Group }}.{{ .Project.Domain }}", Version: "{{ .Version }}"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Resource.Group }}.{{ .Domain }}", Version: "{{ .Resource.Version }}"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -106,14 +76,13 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// SchemeBuilder adds new types to a Scheme
+	SchemeBuilder = runtime.NewSchemeBuilder(func(scheme *runtime.Scheme) error {
+		scheme.AddKnownTypes(SchemeGroupVersion, KnownTypes...)
+		metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+		return nil
+	})
+	// AddToScheme adds types to a Scheme
+	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-// Adds the list of known types to Scheme.
-func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion, KnownTypes...)
-	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	return nil
-}
 `

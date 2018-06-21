@@ -18,22 +18,19 @@ package project
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"text/template"
 	"time"
 
-	"log"
-
 	flag "github.com/spf13/pflag"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &Boilerplate{}
 
 // Boilerplate scaffolds a boilerplate header file.
 type Boilerplate struct {
-	// OutputPath is the output location of the file to write
-	OutputPath string
+	input.Input
 
 	// License is the License type to write
 	License string
@@ -43,89 +40,31 @@ type Boilerplate struct {
 
 	// Year is the copyright year
 	Year string
-
-	// Boilerplate is the boilerplate to write.  Defaults to License + Owner + Year
-	Boilerplate []byte
 }
 
-// Name is the name of the boilerplate template
-func (p Boilerplate) Name() string {
-	switch p.License {
+// GetInput implements input.File
+func (c *Boilerplate) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = filepath.Join("hack", "boilerplate.go.txt")
+	}
+
+	// Boilerplate given
+	if len(c.Boilerplate) > 0 {
+		c.TemplateBody = c.Boilerplate
+		return c.Input, nil
+	}
+
+	// Pick a template boilerplate option
+	if c.Year == "" {
+		c.Year = fmt.Sprintf("%v", time.Now().Year())
+	}
+	switch c.License {
 	case "", "apache2":
-		return "boilerplate-apache"
+		c.TemplateBody = apache
 	case "none":
-		return "boilerplate-none"
-	default:
-		return "boilerplate-unspecified"
+		c.TemplateBody = none
 	}
-}
-
-// Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt
-func (p *Boilerplate) Path() string {
-	dir := filepath.Join("hack", "boilerplate.go.txt")
-	if p.OutputPath != "" {
-		dir = p.OutputPath
-	}
-	return dir
-}
-
-func (p *Boilerplate) write(t *template.Template, wr func() io.WriteCloser) error {
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return t.Execute(w, p)
-}
-
-func (p *Boilerplate) writeBoilerplate(wr func() io.WriteCloser) error {
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	_, err := w.Write([]byte(p.Boilerplate))
-	return err
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (p *Boilerplate) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-
-	if p.Year == "" {
-		p.Year = fmt.Sprintf("%v", time.Now().Year())
-	}
-
-	err := os.MkdirAll(filepath.Dir(p.Path()), 0700)
-	if err != nil {
-		return err
-	}
-
-	if len(p.Boilerplate) <= 0 {
-		switch p.License {
-		case "", "apache2":
-			t, err = t.Parse(apache)
-			if err != nil {
-				return err
-			}
-			return p.write(t, wr)
-		case "none":
-			t, err = t.Parse(none)
-			if err != nil {
-				return err
-			}
-			return p.write(t, wr)
-		default:
-			return fmt.Errorf("unrecognized LICENSE %s", p.License)
-		}
-	}
-
-	return p.writeBoilerplate(wr)
+	return c.Input, nil
 }
 
 var apache = `/*
@@ -151,7 +90,7 @@ var none = `/*
 // BoilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
 func BoilerplateForFlags(f *flag.FlagSet) *Boilerplate {
 	b := &Boilerplate{}
-	f.StringVar(&b.OutputPath, "path", "", "domain for groups")
+	f.StringVar(&b.Path, "path", "", "domain for groups")
 	f.StringVar(&b.License, "license", "apache2",
 		"license to use to boilerplate.  Maybe one of apache2,none")
 	f.StringVar(&b.Owner, "owner", "",
@@ -167,5 +106,6 @@ func GetBoilerplate(path string) (string, error) {
 
 // BoilerplatePath returns the default path to the boilerplate file
 func BoilerplatePath() string {
-	return (&Boilerplate{}).Path()
+	i, _ := (&Boilerplate{}).GetInput()
+	return i.Path
 }

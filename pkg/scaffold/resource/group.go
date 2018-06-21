@@ -17,62 +17,32 @@ limitations under the License.
 package resource
 
 import (
-	"io"
-	"log"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Name = &Group{}
-var _ scaffold.Template = &Group{}
+var _ input.File = &Group{}
 
 // Group scaffolds the group.go
 type Group struct {
-	// OutputPath is the output file to write
-	OutputPath string
+	input.Input
 
 	// Resource is a resource in the API group
-	*Resource
+	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (Group) Name() string {
-	return "group-go"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/apis/group/group.go
-func (g Group) Path() string {
-	dir := filepath.Join("pkg", "apis", g.Group, "group.go")
-	if g.OutputPath != "" {
-		dir = g.OutputPath
+// GetInput implements input.File
+func (g *Group) GetInput() (input.Input, error) {
+	if g.Path == "" {
+		g.Path = filepath.Join("pkg", "apis", g.Resource.Group, "group.go")
 	}
-	return dir
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (g Group) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := t.Parse(groupTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, g)
+	g.TemplateBody = groupTemplate
+	return g.Input, nil
 }
 
 var groupTemplate = `{{ .Boilerplate }}
 
-// Package {{ .Group }} contains {{ .Group }} API versions
-package {{ .Group }}
+// Package {{ .Resource.Group }} contains {{ .Resource.Group }} API versions
+package {{ .Resource.Group }}
 `

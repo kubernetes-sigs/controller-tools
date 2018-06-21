@@ -18,62 +18,29 @@ package resource
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/util"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Name = &AddResource{}
-var _ scaffold.Template = &AddResource{}
+var _ input.File = &AddResource{}
 
 // RoleBinding scaffolds the a role binding for RBAC permissions to a CRD
 type RoleBinding struct {
-	// OutputPath is the output file to write
-	OutputPath string
+	input.Input
 
 	// Resource is a resource in the API group
-	*Resource
-
-	// Project is the project
-	Project project.Project
+	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (RoleBinding) Name() string {
-	return "role-resource-yaml"
-}
-
-// Path implements scaffold.Path.  Defaults to cmd/manager/setup/group_version_kind_init
-func (r RoleBinding) Path() string {
-	dir := filepath.Join("config", "manager", fmt.Sprintf(
-		"%s_rolebinding_rbac.yaml", r.Group))
-	if r.OutputPath != "" {
-		dir = r.OutputPath
+// GetInput implements input.File
+func (r *RoleBinding) GetInput() (input.Input, error) {
+	if r.Path == "" {
+		r.Path = filepath.Join("config", "manager", fmt.Sprintf(
+			"%s_rolebinding_rbac.yaml", r.Resource.Group))
 	}
-	return dir
-}
-
-// SetProject injects the Project
-func (r *RoleBinding) SetProject(p project.Project) {
-	r.Project = p
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (r RoleBinding) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	// Already exists, do nothing
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := t.Parse(roleBindingTemplate)
-	if err != nil {
-		return err
-	}
-	return util.WriteTemplate(temp, r, wr)
+	r.TemplateBody = roleBindingTemplate
+	return r.Input, nil
 }
 
 var roleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
@@ -81,11 +48,11 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: {{ .Group }}-rolebinding
+  name: {{ .Resource.Group }}-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Group }}-role
+  name: {{ .Resource.Group }}-role
 subjects:
 - kind: ServiceAccount
   name: default

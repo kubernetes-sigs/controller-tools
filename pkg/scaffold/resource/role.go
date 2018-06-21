@@ -18,62 +18,27 @@ package resource
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/util"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
-
-var _ scaffold.Name = &AddResource{}
-var _ scaffold.Template = &AddResource{}
 
 // Role scaffolds the a role for RBAC permissions to a CRD
 type Role struct {
-	// OutputPath is the output file to write
-	OutputPath string
+	input.Input
 
 	// Resource is a resource in the API group
-	*Resource
-
-	// Project is the project
-	Project project.Project
+	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (Role) Name() string {
-	return "role-resource-yaml"
-}
-
-// Path implements scaffold.Path.  Defaults to cmd/manager/setup/group_version_kind_init
-func (r Role) Path() string {
-	dir := filepath.Join("config", "manager", fmt.Sprintf(
-		"%s_role_rbac.yaml", r.Group))
-	if r.OutputPath != "" {
-		dir = r.OutputPath
+// GetInput implements input.File
+func (r *Role) GetInput() (input.Input, error) {
+	if r.Path == "" {
+		r.Path = filepath.Join("config", "manager", fmt.Sprintf(
+			"%s_role_rbac.yaml", r.Resource.Group))
 	}
-	return dir
-}
-
-// SetProject injects the Project
-func (r *Role) SetProject(p project.Project) {
-	r.Project = p
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (r Role) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	// Already exists, do nothing
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := t.Parse(roleTemplate)
-	if err != nil {
-		return err
-	}
-	return util.WriteTemplate(temp, r, wr)
+	r.TemplateBody = roleTemplate
+	return r.Input, nil
 }
 
 var roleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
@@ -81,10 +46,10 @@ kind: ClusterRole
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: {{.Group}}-role
+  name: {{.Resource.Group}}-role
 rules:
 - apiGroups:
-  - {{ .Group }}.{{ .Project.Domain }}
+  - {{ .Resource.Group }}.{{ .Domain }}
   resources:
   - '*'
   verbs:

@@ -19,22 +19,23 @@ package project
 import (
 	"fmt"
 	"go/build"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	flag "github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &Project{}
 
 // Project scaffolds the PROJECT file with project metadata
 type Project struct {
-	// OutputPath is the output file location - defaults to PROJECT
-	OutputPath string `yaml:",omitempty"`
+	// Path is the output file location - defaults to PROJECT
+	Path string `yaml:",omitempty"`
 
 	// Version is the project version - defaults to "2"
 	Version string `yaml:"version,omitempty"`
@@ -46,18 +47,28 @@ type Project struct {
 	Repo string `yaml:"repo,omitempty"`
 }
 
-// Name is the name of the template
-func (Project) Name() string {
-	return "project"
-}
-
-// Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt
-func (p *Project) Path() string {
-	dir := filepath.Join("PROJECT")
-	if p.OutputPath != "" {
-		dir = p.OutputPath
+// GetInput implements input.File
+func (c *Project) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = "PROJECT"
 	}
-	return dir
+	if c.Repo == "" {
+		r, err := c.defaultRepo()
+		if err != nil {
+			return input.Input{}, err
+		}
+		c.Repo = r
+	}
+
+	out, err := yaml.Marshal(c)
+	if err != nil {
+		return input.Input{}, err
+	}
+
+	return input.Input{
+		Path:         c.Path,
+		TemplateBody: string(out),
+	}, nil
 }
 
 func (Project) defaultRepo() (string, error) {
@@ -90,36 +101,6 @@ func (Project) defaultRepo() (string, error) {
 	return repo, err
 }
 
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (p *Project) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-
-	if p.Repo == "" {
-		r, err := p.defaultRepo()
-		if err != nil {
-			return err
-		}
-		p.Repo = r
-	}
-
-	out, err := yaml.Marshal(p)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	_, err = w.Write(out)
-	return err
-}
-
 // GetProject reads the project file and deserializes it into a Project
 func GetProject(path string) (Project, error) {
 	in, err := ioutil.ReadFile(path)
@@ -146,7 +127,8 @@ func ForFlags(f *flag.FlagSet) *Project {
 
 // Path returns the default location for the PROJECT file
 func Path() string {
-	return (&Project{}).Path()
+	i, _ := (&Project{}).GetInput()
+	return i.Path
 }
 
 // DieIfNoProject checks to make sure the command is run from a directory containing a project file.

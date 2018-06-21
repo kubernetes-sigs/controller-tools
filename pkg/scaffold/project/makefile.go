@@ -17,79 +17,53 @@ limitations under the License.
 package project
 
 import (
-	"fmt"
-	"io"
-	"log"
-	"path/filepath"
-	"text/template"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &Makefile{}
 
 // Makefile scaffolds the Makefile
 type Makefile struct {
-	// OutputPath is the output file location - defaults to Makefile
-	OutputPath string
-
-	// Project is the project
-	Project Project
+	input.Input
 }
 
-// Name is the name of the template
-func (Makefile) Name() string {
-	return "makefile"
-}
-
-// Path implements scaffold.Path.  Defaults to hack/boilerplate.go.txt
-func (m *Makefile) Path() string {
-	dir := filepath.Join("Makefile")
-	if m.OutputPath != "" {
-		dir = m.OutputPath
+// GetInput implements input.File
+func (c *Makefile) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = "Makefile"
 	}
-	return dir
-}
-
-// SetProject injects the Project
-func (m *Makefile) SetProject(p Project) {
-	m.Project = p
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (m *Makefile) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-
-	temp, err := t.Parse(makefileTemplate)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(m.Path())
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, m)
+	c.TemplateBody = makefileTemplate
+	return c.Input, nil
 }
 
 var makefileTemplate = `
 all: test manager
 
-# Generate code
-generate: 
-	go generate {{ .Project.Repo }}/pkg/... {{ .Project.Repo }}/cmd/...
-
 # Run tests
-test: generate
-	go test {{ .Project.Repo }}/pkg/... {{ .Project.Repo }}/cmd/... -coverprofile cover.out
+test: generate fmt vet
+	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 # Build manager binary
-manager: generate
-	go build -o bin/manager {{ .Project.Repo }}/cmd/manager
+manager: generate fmt vet
+	go build -o bin/manager {{ .Repo }}/cmd/manager
+
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet
+	go run ./cmd/manager/main.go
 
 # Install CRDs into a cluster
 install:
 	kubectl apply -f config/crds
+
+# Run go fmt against code
+fmt:
+	go fmt ./pkg/... ./cmd/...
+
+# Run go vet against code
+vet:
+	go vet ./pkg/... ./cmd/...
+
+# Generate code
+generate:
+	go generate ./pkg/... ./cmd/...
 `

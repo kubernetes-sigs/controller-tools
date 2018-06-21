@@ -18,25 +18,20 @@ package resource
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 	"strings"
-	"text/template"
 
-	"log"
-
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Template = &TypesTest{}
-var _ scaffold.Name = &TypesTest{}
+var _ input.File = &TypesTest{}
 
 // TypesTest scaffolds the types_test.go file for testing APIsGo
 type TypesTest struct {
+	input.Input
+
 	// Resource is the resource to scaffold the types_test.go file for
-	*Resource
-	// OutputPath is the output file to write
-	OutputPath string
+	Resource *Resource
 }
 
 // Name implements scaffold.Name
@@ -44,95 +39,57 @@ func (TypesTest) Name() string {
 	return "types-test-go"
 }
 
-// Path implements scaffold.Path.  Defaults to pkg/apis/group/version/kind_types_test.go
-func (t TypesTest) Path() string {
-	dir := filepath.Join("pkg", "apis", t.Group, t.Version)
-	if t.OutputPath != "" {
-		dir = t.OutputPath
+// GetInput implements input.File
+func (t *TypesTest) GetInput() (input.Input, error) {
+	if t.Path == "" {
+		t.Path = filepath.Join("pkg", "apis", t.Resource.Group, t.Resource.Version,
+			fmt.Sprintf("%s_types_test.go", strings.ToLower(t.Resource.Kind)))
 	}
-
-	return filepath.Join(dir, fmt.Sprintf("%s_types_test.go", strings.ToLower(t.Kind)))
+	t.TemplateBody = typesTestTemplate
+	t.IfExistsAction = input.Error
+	return t.Input, nil
 }
 
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (t TypesTest) Execute(b []byte, temp *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		return fmt.Errorf("%s already exists", t.Path())
-	}
-
-	temp, err := temp.Parse(typesTestTemplate)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(t.Path())
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, t)
+// Validate validates the values
+func (t *TypesTest) Validate() error {
+	return t.Resource.Validate()
 }
 
 var typesTestTemplate = `{{ .Boilerplate }}
 
-package {{ .Version }}
+package {{ .Resource.Version }}
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestStorage(t *testing.T) {
-	instance := &{{ .Kind }}{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"},
-	}
-	if err := c.Create(context.TODO(), instance); err != nil {
-		t.Logf("Could not create {{ .Kind }} %v", err)
-		t.FailNow()
-	}
+	key := types.NamespacedName{Name: "foo", Namespace: "default"}
+	created := &{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	g := gomega.NewGomegaWithT(t)
 
-	read := &{{ .Kind }}{}
-	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
-		t.Logf("Could not get {{ .Kind }} %v", err)
-		t.FailNow()
-	}
-	if !reflect.DeepEqual(read, instance) {
-		t.Logf("Created and Read do not match")
-		t.FailNow()
-	}
+	// Test Create
+	fetched := &{{ .Resource.Kind }}{}
+	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
 
-	new := read.DeepCopy()
-	new.Labels = map[string]string{"hello": "world"}
+	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(fetched).To(gomega.Equal(created))
 
-	if err := c.Update(context.TODO(), new); err != nil {
-		t.Logf("Could not create {{ .Kind }} %v", err)
-		t.FailNow()
-	}
+	// Test Updating the Labels
+	updated := fetched.DeepCopy()
+	updated.Labels = map[string]string{"hello": "world"}
+	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
-	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, read); err != nil {
-		t.Logf("Could not get {{ .Kind }} %v", err)
-		t.FailNow()
-	}
-	if !reflect.DeepEqual(read, new) {
-		t.Logf("Updated and Read do not match")
-		t.FailNow()
-	}
+	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(fetched).To(gomega.Equal(updated))
 
-	if err := c.Delete(context.TODO(), instance); err != nil {
-		t.Logf("Could not get {{ .Kind }} %v", err)
-		t.FailNow()
-	}
-
-	if err := c.Get(context.TODO(), types.NamespacedName{Name: "foo", Namespace: "default"}, instance); err == nil {
-		t.Logf("Found deleted {{ .Kind }}")
-		t.FailNow()
-	}
+	// Test Delete
+	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
 }
 `

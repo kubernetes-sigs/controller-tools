@@ -17,58 +17,25 @@ limitations under the License.
 package manager
 
 import (
-	"io"
-	"log"
 	"path/filepath"
-	"text/template"
+
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &Controller{}
 
 // Controller scaffolds a controller.go to add Controllers to a manager.Cmd
 type Controller struct {
-	// OutputPath is the output file to write
-	OutputPath string
-
-	// Boilerplate is the boilerplate header to write
-	Boilerplate string
+	input.Input
 }
 
-// Name is the name of the template
-func (Controller) Name() string {
-	return "manager-controller-go"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/controller/controller.go
-func (m *Controller) Path() string {
-	dir := filepath.Join("pkg", "controller", "controller.go")
-	if m.OutputPath != "" {
-		dir = m.OutputPath
+// GetInput implements input.File
+func (c *Controller) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = filepath.Join("pkg", "controller", "controller.go")
 	}
-	return dir
-}
-
-// SetBoilerplate implements scaffold.Boilerplate.
-func (m *Controller) SetBoilerplate(b string) {
-	m.Boilerplate = b
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (m *Controller) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-	temp, err := t.Parse(controllerTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, m)
+	c.TemplateBody = controllerTemplate
+	return c.Input, nil
 }
 
 var controllerTemplate = `{{ .Boilerplate }}
@@ -79,10 +46,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// Adds registers functions to add Controllers to the Cmd
+// AddToManagerFuncs is a list of functions to add all Controllers to the Manager
 var AddToManagerFuncs []func(manager.Manager) error
 
-// Add adds all Controllers to the Cmd
+// AddToManager adds all Controllers to the Manager
 func AddToManager(m manager.Manager) error {
 	for _, f := range AddToManagerFuncs {
 		if err := f(m); err != nil {

@@ -17,29 +17,20 @@ limitations under the License.
 package controller
 
 import (
-	"fmt"
-	"io"
 	"path"
 	"path/filepath"
 	"strings"
-	"text/template"
 
-	"log"
-
-	flag "github.com/spf13/pflag"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
+	input.Input
+
 	// Resource is the Resource to make the Controller for
-	*resource.Resource
-
-	// OutputPath is the output location of the scaffold file
-	OutputPath string
-
-	// Boilerplate is the boilerplate header to apply
-	Boilerplate string
+	Resource *resource.Resource
 
 	// ResourcePackage is the package of the Resource
 	ResourcePackage string
@@ -48,35 +39,8 @@ type Controller struct {
 	GroupDomain string
 }
 
-// Name is the name of the template
-func (Controller) Name() string {
-	return "controller-go"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/controller/kind/kind_controller
-func (m *Controller) Path() string {
-	dir := filepath.Join("pkg", "controller", strings.ToLower(m.Kind), strings.ToLower(m.Kind)+"_controller.go")
-	if m.OutputPath != "" {
-		dir = m.OutputPath
-	}
-	return dir
-}
-
-// SetBoilerplate implements scaffold.Boilerplate.
-func (m *Controller) SetBoilerplate(b string) {
-	m.Boilerplate = b
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (m *Controller) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		return fmt.Errorf("pkg/controller/%s/controller.go already exists", strings.ToLower(m.Kind))
-	}
-	temp, err := t.Parse(managerTemplate)
-	if err != nil {
-		return err
-	}
-
+// GetInput implements input.File
+func (a *Controller) GetInput() (input.Input, error) {
 	// Use the k8s.io/api package for core AddResource
 	coreGroups := map[string]string{
 		"apps":                  "",
@@ -93,47 +57,35 @@ func (m *Controller) Execute(b []byte, t *template.Template, wr func() io.WriteC
 		"rbac.authorization":    "k8s.io",
 		"storage":               "k8s.io",
 	}
-	if domain, found := coreGroups[m.Group]; found {
-		m.ResourcePackage = path.Join("k8s.io", "api")
-		m.GroupDomain = m.Group
+	if domain, found := coreGroups[a.Resource.Group]; found {
+		a.ResourcePackage = path.Join("k8s.io", "api")
+		a.GroupDomain = a.Resource.Group
 		if domain != "" {
-			m.GroupDomain = m.GroupDomain + "." + domain
+			a.GroupDomain = a.Resource.Group + "." + domain
 		}
 	} else {
-		m.ResourcePackage = path.Join(m.Project.Repo, "pkg", "apis")
-		m.GroupDomain = m.Group + "." + m.Project.Domain
+		a.ResourcePackage = path.Join(a.Repo, "pkg", "apis")
+		a.GroupDomain = a.Resource.Group + "." + a.Domain
 	}
 
-	fmt.Println(m.Path())
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, m)
-}
-
-// ForFlags registers flags for Controller fields and returns the Controller
-func ForFlags(f *flag.FlagSet) *Controller {
-	d := &Controller{
-		Resource: resource.ForFlags(f),
+	if a.Path == "" {
+		a.Path = filepath.Join("pkg", "controller",
+			strings.ToLower(a.Resource.Kind),
+			strings.ToLower(a.Resource.Kind)+"_controller.go")
 	}
-
-	return d
+	a.TemplateBody = controllerTemplate
+	return a.Input, nil
 }
 
-var managerTemplate = `{{ .Boilerplate }}
+var controllerTemplate = `{{ .Boilerplate }}
 
-package {{ lower .Kind }}
+package {{ lower .Resource.Kind }}
 
 import (
 	"context"
 	"log"
 	"reflect"
 
-	{{ .Group }}{{ .Version }} "{{ .ResourcePackage }}/{{ .Group }}/{{ .Version }}"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -146,6 +98,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
 )
 
 /**
@@ -153,31 +106,37 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new {{ .Kind }} Controller and adds it to the Manager.  The Manager will set fields on the Controller
+// Add creates a new {{ .Resource.Kind }} Controller and adds it to the Manager.  The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this {{ .Group }}.Add(mrg) to install this Controller
+// USER ACTION REQUIRED: update cmd/manager/main.go to call this {{ .Resource.Group}}.Add(mrg) to install this Controller
 func Add(mrg manager.Manager) error {
+	return add(mrg, newReconcile(mrg))
+}
+
+// newReconcile returns a new reconcile.Reconcile
+func newReconcile(mrg manager.Manager) reconcile.Reconcile {
+	return &Reconcile{{ .Resource.Kind }}{client: mrg.GetClient()}
+}
+
+// add adds a new Controller to mrg with r as the reconcile.Reconcile
+func add(mrg manager.Manager, r reconcile.Reconcile) error {
 	// Create a new controller
-	c, err := controller.New("{{ lower .Kind }}-controller", mrg, controller.Options{
-		Reconcile: &Reconcile{{ .Kind }}{
-			client: mrg.GetClient(),
-		},
-	})
+	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mrg, controller.Options{Reconcile: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to {{ .Kind }}
-	err = c.Watch(&source.Kind{Type: &{{ .Group }}{{ .Version }}.{{ .Kind }}{}}, &handler.Enqueue{})
+	// Watch for changes to {{ .Resource.Kind }}
+	err = c.Watch(&source.Kind{Type: &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}}, &handler.Enqueue{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by {{ .Kind }} - change this for objects you create
+	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
 		IsController: true,
-		OwnerType:    &{{ .Group }}{{ .Version }}.{{ .Kind }}{},
+		OwnerType:    &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{},
 	})
 	if err != nil {
 		return err
@@ -186,28 +145,27 @@ func Add(mrg manager.Manager) error {
 	return nil
 }
 
-// Reconcile{{ .Kind }} reconciles a {{ .Kind }} object
-type Reconcile{{ .Kind }} struct {
+// Reconcile{{ .Resource.Kind }} reconciles a {{ .Resource.Kind }} object
+type Reconcile{{ .Resource.Kind }} struct {
 	client client.Client
 }
 
-// Reconcile reads that state of the cluster for a {{ .Kind }} object and makes changes based on the state read
-// and what is in the {{ .Kind }}.Spec
+// Reconcile reads that state of the cluster for a {{ .Resource.Kind }} object and makes changes based on the state read
+// and what is in the {{ .Resource.Kind }}.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-func (r *Reconcile{{ .Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the {{ .Kind }} instance
-	instance := &{{ .Group }}{{ .Version }}.{{ .Kind }}{}
+func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the {{ .Resource.Kind }} instance
+	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
 			return reconcile.Result{}, nil
-		} else {
-			// Error reading the object - requeue the request.
-			return reconcile.Result{}, err
 		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
 	}
 
 	// TODO(user): Change this to be the object type created by your controller
@@ -218,11 +176,11 @@ func (r *Reconcile{{ .Kind }}) Reconcile(request reconcile.Request) (reconcile.R
 			Namespace: instance.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				// TODO(user): Important to copy this line to any object you create so it can be tied back to
-				// the {{ .Kind }} and cause a reconcile when it changes
+				// the {{ .Resource.Kind }} and cause a reconcile when it changes
 				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   {{ .Group }}{{ .Version }}.SchemeGroupVersion.Group,
-					Version: {{ .Group }}{{ .Version }}.SchemeGroupVersion.Version,
-					Kind:    "{{ .Kind }}",
+					Group:   {{ .Resource.Group}}{{ .Resource.Version }}.SchemeGroupVersion.Group,
+					Version: {{ .Resource.Group}}{{ .Resource.Version }}.SchemeGroupVersion.Version,
+					Kind:    "{{ .Resource.Kind }}",
 				}),
 			},
 		},
@@ -249,7 +207,7 @@ func (r *Reconcile{{ .Kind }}) Reconcile(request reconcile.Request) (reconcile.R
 	found := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating deployment %+v\n", deploy)
+		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.client.Create(context.TODO(), deploy)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -262,7 +220,7 @@ func (r *Reconcile{{ .Kind }}) Reconcile(request reconcile.Request) (reconcile.R
 	// Update the found object and write the result back if there are any changes
 	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
 		found.Spec = deploy.Spec
-		log.Printf("Updating deployment %+v\n", found)
+		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.client.Update(context.TODO(), found)
 		if err != nil {
 			return reconcile.Result{}, err

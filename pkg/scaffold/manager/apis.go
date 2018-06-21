@@ -17,79 +17,37 @@ limitations under the License.
 package manager
 
 import (
-	"io"
-	"log"
 	"path/filepath"
-	"text/template"
+
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &APIs{}
 
 // APIs scaffolds a apis.go to register types with a Scheme
 type APIs struct {
-	// OutputPath is the output file to write
-	OutputPath string
-
-	// Boilerplate is the boilerplate header to write
-	Boilerplate string
+	input.Input
 
 	// Comments is a list of comments to add to the apis.go
 	Comments []string
-
-	// BoilerplatePath is the path to the go boilerplate file
-	BoilerplatePath string
 }
 
-// Name is the name of the template
-func (APIs) Name() string {
-	return "manager-apis-go"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/apis/apis.go
-func (m *APIs) Path() string {
-	dir := filepath.Join("pkg", "apis", "apis.go")
-	if m.OutputPath != "" {
-		dir = m.OutputPath
+// GetInput implements input.File
+func (a *APIs) GetInput() (input.Input, error) {
+	if a.Path == "" {
+		a.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
-	return dir
-}
-
-// SetBoilerplate implements scaffold.Boilerplate.
-func (m *APIs) SetBoilerplate(b string) {
-	m.Boilerplate = b
-}
-
-// SetBoilerplatePath implements scaffold.BoilerplatePath.
-func (m *APIs) SetBoilerplatePath(p string) {
-	m.BoilerplatePath = p
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (m *APIs) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-
-	if len(m.Comments) == 0 {
-		m.Comments = append(m.Comments,
+	if len(a.Comments) == 0 {
+		a.Comments = append(a.Comments,
 			"// Generate deepcopy for apis",
-			"//go:generate go run ../../vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -i ./... -h ../../"+m.BoilerplatePath)
+			"//go:generate go run ../../vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -i ./... -h ../../"+
+				a.BoilerplatePath)
 	}
-
-	temp, err := t.Parse(setupTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, m)
+	a.TemplateBody = apisTemplate
+	return a.Input, nil
 }
 
-var setupTemplate = `{{ .Boilerplate }}
+var apisTemplate = `{{ .Boilerplate }}
 
 {{ range $line := .Comments }}{{ $line }}
 {{ end }}
@@ -100,11 +58,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// AddToSchemes should be used to add new API groupversions to the Scheme
+// AddToSchemes may be used to add all resources defined in the project to a Scheme
 var AddToSchemes runtime.SchemeBuilder
 
 // AddToScheme adds all Resources to the Scheme
-func AddToScheme(s *runtime.Scheme) {
-	AddToSchemes.AddToScheme(s)
+func AddToScheme(s *runtime.Scheme) error {
+	return AddToSchemes.AddToScheme(s)
 }
 `

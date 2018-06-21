@@ -24,22 +24,15 @@ import (
 
 	"github.com/markbates/inflect"
 	flag "github.com/spf13/pflag"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
 
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
-	// Boilerplate is the contents of the go boilerplate header to write at the top of go files
-	Boilerplate string
-
 	// Namespaced is true if the resource is namespaced
 	Namespaced bool
 
 	// Group is the API Group.  Does not contain the domain.
 	Group string
-
-	// Domain is the domain of the API Group.
-	Project project.Project
 
 	// Version is the API version - e.g. v1beta1
 	Version string
@@ -54,24 +47,8 @@ type Resource struct {
 	ShortNames []string
 }
 
-// SetBoilerplate implements scaffold.Boilerplate.
-func (r *Resource) SetBoilerplate(b string) {
-	r.Boilerplate = b
-}
-
-// SetProject injects the project
-func (r *Resource) SetProject(p project.Project) {
-	r.Project = p
-}
-
 // Validate checks the Resource values to make sure they are valid.
 func (r *Resource) Validate() error {
-	if len(r.Project.Domain) == 0 {
-		return fmt.Errorf("Must specify a Project domain")
-	}
-	if len(r.Project.Repo) == 0 {
-		return fmt.Errorf("Must specify a Project repo")
-	}
 	if len(r.Group) == 0 {
 		return fmt.Errorf("Must specify --group")
 	}

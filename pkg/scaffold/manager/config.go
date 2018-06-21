@@ -17,45 +17,25 @@ limitations under the License.
 package manager
 
 import (
-	"io"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold/util"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
+
+var _ input.File = &Config{}
 
 // Config scaffolds yaml config for the manager.
 type Config struct {
-	// OutputPath is the output file to write
-	OutputPath string
+	input.Input
 }
 
-// Name is the name of the template
-func (Config) Name() string {
-	return "manager-config-yaml"
-}
-
-// Path implements scaffold.Path.  Defaults to pkg/apis/apis.go
-func (m *Config) Path() string {
-	dir := filepath.Join("config", "manager", "manager.yaml")
-	if m.OutputPath != "" {
-		dir = m.OutputPath
+// GetInput implements input.File
+func (c *Config) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = filepath.Join("config", "manager", "manager.yaml")
 	}
-	return dir
-}
-
-// Execute writes the template file to wr.  b is the last value of the file.  temp is a template object.
-func (m *Config) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		// Do nothing if the file exists
-		return nil
-	}
-
-	temp, err := t.Parse(configTemplate)
-	if err != nil {
-		return err
-	}
-	return util.WriteTemplate(temp, m, wr)
+	c.TemplateBody = configTemplate
+	return c.Input, nil
 }
 
 var configTemplate = `apiVersion: v1

@@ -17,70 +17,40 @@ limitations under the License.
 package resource
 
 import (
-	"fmt"
-	"io"
-	"log"
 	"path/filepath"
-	"text/template"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
-var _ scaffold.Name = &APIsDocGo{}
-var _ scaffold.Template = &APIsDocGo{}
+var _ input.File = &APIsDocGo{}
 
 // APIsDocGo writes the doc.go file in the pkg/apis/group/version directory
 type APIsDocGo struct {
-	// Resource is a resource for the API version
-	*Resource
+	input.Input
 
-	// OutputPath is the location to write to
-	OutputPath string
+	// Resource is a resource for the API version
+	Resource *Resource
 
 	// Comments are additional lines to write to the doc.go file
 	Comments []string
 }
 
-// Name is the template name
-func (APIsDocGo) Name() string {
-	return "apis-doc-go"
-}
-
-// Path is the default path to write to
-func (r *APIsDocGo) Path() string {
-	dir := filepath.Join("pkg", "apis", r.Group, r.Version)
-	if r.OutputPath != "" {
-		dir = r.OutputPath
+// GetInput implements input.File
+func (a *APIsDocGo) GetInput() (input.Input, error) {
+	if a.Path == "" {
+		a.Path = filepath.Join("pkg", "apis", a.Resource.Group, a.Resource.Version, "doc.go")
 	}
-	return filepath.Join(dir, fmt.Sprintf("doc.go"))
-}
-
-// Execute implements Template
-func (r *APIsDocGo) Execute(b []byte, t *template.Template, wr func() io.WriteCloser) error {
-	if len(b) > 0 {
-		return nil
-	}
-
-	temp, err := t.Parse(docGoTemplate)
-	if err != nil {
-		return err
-	}
-
-	w := wr()
-	defer func() {
-		if err := w.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	return temp.Execute(w, r)
+	a.TemplateBody = docGoTemplate
+	return a.Input, nil
 }
 
 var docGoTemplate = `{{ .Boilerplate }}
 
+// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen={{ .Project.Repo }}/pkg/apis/{{ .Group }}
+// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}
 // +k8s:defaulter-gen=TypeMeta
-// +groupName={{ .Group }}.{{ .Project.Domain }}
-package {{.Version}}
+// +groupName={{ .Resource.Group }}.{{ .Domain }}
+package {{.Resource.Version}}
 `
