@@ -1,4 +1,3 @@
-path: PROJECT
 version: "2"
 domain: k8s.io
 repo: sigs.k8s.io/controller-tools/test

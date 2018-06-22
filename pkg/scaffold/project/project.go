@@ -19,13 +19,10 @@ package project
 import (
 	"fmt"
 	"go/build"
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	flag "github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
@@ -35,16 +32,9 @@ var _ input.File = &Project{}
 // Project scaffolds the PROJECT file with project metadata
 type Project struct {
 	// Path is the output file location - defaults to PROJECT
-	Path string `yaml:",omitempty"`
+	Path string
 
-	// Version is the project version - defaults to "2"
-	Version string `yaml:"version,omitempty"`
-
-	// Domain is the domain associated with the project and used for API groups
-	Domain string `yaml:"domain,omitempty"`
-
-	// Repo is the go package name of the project root
-	Repo string `yaml:"repo,omitempty"`
+	input.ProjectFile
 }
 
 // GetInput implements input.File
@@ -53,14 +43,14 @@ func (c *Project) GetInput() (input.Input, error) {
 		c.Path = "PROJECT"
 	}
 	if c.Repo == "" {
-		r, err := c.defaultRepo()
+		r, err := c.repoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
 		if err != nil {
 			return input.Input{}, err
 		}
 		c.Repo = r
 	}
 
-	out, err := yaml.Marshal(c)
+	out, err := yaml.Marshal(c.ProjectFile)
 	if err != nil {
 		return input.Input{}, err
 	}
@@ -68,18 +58,20 @@ func (c *Project) GetInput() (input.Input, error) {
 	return input.Input{
 		Path:         c.Path,
 		TemplateBody: string(out),
+		Repo:         c.Repo,
+		Version:      c.Version,
+		Domain:       c.Domain,
 	}, nil
 }
 
-func (Project) defaultRepo() (string, error) {
+func (Project) repoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
 	// Assume the working dir is the root of the repo
-	wd, err := os.Getwd()
+	wd, err := getwd()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	// Strip the GOPATH from the working dir to get the go package of the repo
-	gopath := os.Getenv("GOPATH")
 	if len(gopath) == 0 {
 		gopath = build.Default.GOPATH
 	}
@@ -87,53 +79,16 @@ func (Project) defaultRepo() (string, error) {
 
 	// Make sure the GOPATH is set and the working dir is under the GOPATH
 	if !strings.HasPrefix(filepath.Dir(wd), goSrc) {
-		return "", fmt.Errorf("kubebuilder must be run from the project root under $GOPATH/src/<package>. "+
-			"\nCurrent GOPATH=%s.  \nCurrent directory=%s", gopath, wd)
+		return "", fmt.Errorf("working directory must be a project directory under "+
+			"$GOPATH/src/<project-package>\n- GOPATH=%s\n- WD=%s", gopath, wd)
 	}
 
-	// Prune the base path from the go package for the repo
-	repo := strings.Replace(wd, fmt.Sprintf("%s%s", goSrc, string(filepath.Separator)), "", 1)
-
-	// Make sure the prune did what it was supposed to
-	if strings.Contains(repo, goSrc) {
-		return "", fmt.Errorf("could not parse go package for repo: %s", repo)
+	// Figure out the repo name by removing $GOPATH/src from the working directory - e.g.
+	// '$GOPATH/src/kubernetes-sigs/controller-tools' becomes 'kubernetes-sigs/controller-tools'
+	repo := ""
+	for wd != goSrc {
+		repo = filepath.Join(filepath.Base(wd), repo)
+		wd = filepath.Dir(wd)
 	}
-	return repo, err
-}
-
-// GetProject reads the project file and deserializes it into a Project
-func GetProject(path string) (Project, error) {
-	in, err := ioutil.ReadFile(path)
-	if err != nil {
-		return Project{}, err
-	}
-	p := Project{}
-	err = yaml.Unmarshal(in, &p)
-	if err != nil {
-		return Project{}, err
-	}
-	return p, nil
-}
-
-// ForFlags registers flags for Project fields and returns the Project
-func ForFlags(f *flag.FlagSet) *Project {
-	p := &Project{}
-	f.StringVar(&p.Domain, "domain", "k8s.io", "domain for groups")
-	f.StringVar(&p.Version, "project-version", "2", "project version")
-	f.StringVar(&p.Repo, "repo", "", "name of the github repo.  "+
-		"defaults to the go package of the current working directory.")
-	return p
-}
-
-// Path returns the default location for the PROJECT file
-func Path() string {
-	i, _ := (&Project{}).GetInput()
-	return i.Path
-}
-
-// DieIfNoProject checks to make sure the command is run from a directory containing a project file.
-func DieIfNoProject() {
-	if _, err := os.Stat(Path()); os.IsNotExist(err) {
-		log.Fatalf("Command must be run from a diretory containing %s", Path())
-	}
+	return repo, nil
 }

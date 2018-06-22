@@ -65,7 +65,9 @@ type Domain interface {
 
 // SetDomain sets the domain
 func (i *Input) SetDomain(d string) {
-	i.Domain = d
+	if i.Domain == "" {
+		i.Domain = d
+	}
 }
 
 // Repo allows a repo to be set on an object
@@ -76,7 +78,9 @@ type Repo interface {
 
 // SetRepo sets the repo
 func (i *Input) SetRepo(r string) {
-	i.Repo = r
+	if i.Repo == "" {
+		i.Repo = r
+	}
 }
 
 // Boilerplate allows boilerplate text to be set on an object
@@ -87,7 +91,9 @@ type Boilerplate interface {
 
 // SetBoilerplate sets the boilerplate text
 func (i *Input) SetBoilerplate(b string) {
-	i.Boilerplate = b
+	if i.Boilerplate == "" {
+		i.Boilerplate = b
+	}
 }
 
 // BoilerplatePath allows boilerplate file path to be set on an object
@@ -98,7 +104,9 @@ type BoilerplatePath interface {
 
 // SetBoilerplatePath sets the boilerplate file path
 func (i *Input) SetBoilerplatePath(bp string) {
-	i.BoilerplatePath = bp
+	if i.BoilerplatePath == "" {
+		i.BoilerplatePath = bp
+	}
 }
 
 // Version allows the project version to be set on an object
@@ -109,7 +117,9 @@ type Version interface {
 
 // SetVersion sets the project version
 func (i *Input) SetVersion(v string) {
-	i.Version = v
+	if i.Version == "" {
+		i.Version = v
+	}
 }
 
 // File is a scaffoldable file
@@ -131,4 +141,16 @@ type Options struct {
 
 	// Path is the path to the project
 	ProjectPath string
+}
+
+// ProjectFile is deserialized into a PROJECT file
+type ProjectFile struct {
+	// Version is the project version - defaults to "2"
+	Version string `yaml:"version,omitempty"`
+
+	// Domain is the domain associated with the project and used for API groups
+	Domain string `yaml:"domain,omitempty"`
+
+	// Repo is the go package name of the project root
+	Repo string `yaml:"repo,omitempty"`
 }

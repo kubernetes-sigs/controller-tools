@@ -35,7 +35,7 @@ type GopkgToml struct {
 	// ManagedHeader is the header to write after the user owned pieces and before the managed parts of the Gopkg.toml
 	ManagedHeader string
 
-	// DefaultUserContent is the default content to use for the user owned pieces
+	// DefaultGopkgUserContent is the default content to use for the user owned pieces
 	DefaultUserContent string
 
 	// UserContent is the content to use for the user owned pieces
@@ -65,12 +65,12 @@ func (g *GopkgToml) GetInput() (input.Input, error) {
 		g.Path = "Gopkg.toml"
 	}
 	if g.ManagedHeader == "" {
-		g.ManagedHeader = defaultHeader
+		g.ManagedHeader = DefaultGopkgHeader
 	}
 
 	// Set the user content to be used if the Gopkg.toml doesn't exist
 	if g.DefaultUserContent == "" {
-		g.DefaultUserContent = defaultUserContent
+		g.DefaultUserContent = DefaultGopkgUserContent
 	}
 
 	// Set the user owned content from the last Gopkg.toml file - e.g. everything before the header
@@ -81,16 +81,12 @@ func (g *GopkgToml) GetInput() (input.Input, error) {
 		return input.Input{}, err
 	}
 
+	g.Input.IfExistsAction = input.Overwrite
 	g.TemplateBody = depTemplate
 	return g.Input, nil
 }
 
 func (g *GopkgToml) getUserContent(b []byte) (string, error) {
-	if len(b) == 0 {
-		// Use the default user lines
-		return g.DefaultUserContent, nil
-	}
-
 	// Keep the users lines
 	scanner := bufio.NewScanner(bytes.NewReader(b))
 	userLines := []string{}
@@ -111,11 +107,13 @@ func (g *GopkgToml) getUserContent(b []byte) (string, error) {
 	return strings.Join(userLines, "\n"), nil
 }
 
-const defaultHeader = "# STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE."
+// DefaultGopkgHeader is the default header used to separate user managed lines and controller-manager managed lines
+const DefaultGopkgHeader = "# STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE."
 
-const defaultUserContent = `required = [
+// DefaultGopkgUserContent is the default user managed lines to provide.
+const DefaultGopkgUserContent = `required = [
     "github.com/emicklei/go-restful",
-	"github.com/onsi/ginkgo", # for test framework
+    "github.com/onsi/ginkgo", # for test framework
     "github.com/onsi/gomega", # for test matchers
     "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate

@@ -27,8 +27,10 @@ import (
 
 	"log"
 
+	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
 
 // Scaffold writes Templates to scaffold new files
@@ -42,9 +44,11 @@ type Scaffold struct {
 	BoilerplateOptional bool
 
 	// Project is the project
-	Project project.Project
+	Project input.ProjectFile
 
 	ProjectOptional bool
+
+	GetWriter func(path string) (io.Writer, error)
 }
 
 func (s *Scaffold) setFieldsAndValidate(t input.File) error {
@@ -74,34 +78,46 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	return nil
 }
 
-func (s *Scaffold) getBoilerplate(path string) (string, error) {
-	return project.GetBoilerplate(path)
+// GetProject reads the project file and deserializes it into a Project
+func getProject(path string) (input.ProjectFile, error) {
+	in, err := ioutil.ReadFile(path)
+	if err != nil {
+		return input.ProjectFile{}, err
+	}
+	p := input.ProjectFile{}
+	err = yaml.Unmarshal(in, &p)
+	if err != nil {
+		return input.ProjectFile{}, err
+	}
+	return p, nil
 }
 
-func (s *Scaffold) getProject(path string) (project.Project, error) {
-	return project.GetProject(path)
+// GetBoilerplate reads the boilerplate file
+func getBoilerplate(path string) (string, error) {
+	b, err := ioutil.ReadFile(path)
+	return string(b), err
 }
 
 func (s *Scaffold) defaultOptions(options *input.Options) error {
 	// Use the default Boilerplate path if unset
 	if options.BoilerplatePath == "" {
-		options.BoilerplatePath = project.BoilerplatePath()
+		options.BoilerplatePath = filepath.Join("hack", "boilerplate.go.txt")
 	}
 
 	// Use the default Project path if unset
 	if options.ProjectPath == "" {
-		options.ProjectPath = project.Path()
+		options.ProjectPath = "PROJECT"
 	}
 
 	s.BoilerplatePath = options.BoilerplatePath
 
 	var err error
-	s.Boilerplate, err = s.getBoilerplate(options.BoilerplatePath)
+	s.Boilerplate, err = getBoilerplate(options.BoilerplatePath)
 	if !s.BoilerplateOptional && err != nil {
 		return err
 	}
 
-	s.Project, err = s.getProject(options.ProjectPath)
+	s.Project, err = getProject(options.ProjectPath)
 	if !s.ProjectOptional && err != nil {
 		return err
 	}
@@ -110,6 +126,10 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 
 // Execute executes scaffolding the Files
 func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
+	if s.GetWriter == nil {
+		s.GetWriter = newWriteCloser
+	}
+
 	if err := s.defaultOptions(&options); err != nil {
 		return err
 	}
@@ -153,25 +173,27 @@ func (s *Scaffold) doFile(e input.File) error {
 }
 
 // doTemplate executes the template for a file using the input
-func (*Scaffold) doTemplate(i input.Input, e input.File) error {
+func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
 	temp, err := newTemplate(e).Parse(i.TemplateBody)
 	if err != nil {
 		return err
 	}
-	f, err := newWriteCloser(i.Path)
+	f, err := s.GetWriter(i.Path)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	if c, ok := f.(io.Closer); ok {
+		defer func() {
+			if err := c.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
 	return temp.Execute(f, e)
 }
 
 // newWriteCloser returns a WriteCloser to write scaffold to
-func newWriteCloser(path string) (io.WriteCloser, error) {
+func newWriteCloser(path string) (io.Writer, error) {
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
