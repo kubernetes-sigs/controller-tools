@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,5 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package test provides libaries for integration testing by starting a local control plane
-package test
+/*
+Package generator provides an interface and implementation to provision certificates.
+
+Create an instance of CertGenerator.
+
+	cg := SelfSignedCertGenerator{}
+
+Generate the certificates.
+	certs, err := cg.Generate("foo.bar.com")
+	if err != nil {
+		// handle error
+	}
+*/
+package generator

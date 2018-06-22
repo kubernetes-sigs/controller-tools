@@ -14,18 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package certprovisioner
-
-// Certs hosts a private key, its corresponding serving certificate and
-// the CA certificate that signs the serving certificate.
-type Certs struct {
-	Key    []byte
-	Cert   []byte
-	CACert []byte
-}
-
-// CertProvisioner is an interface to provision the serving certificate.
-type CertProvisioner interface {
-	// ProvisionServingCert returns a Certs struct.
-	ProvisionServingCert() (*Certs, error)
-}
+/*
+Package controllerutil contains utility functions for working with and implementing Controllers.
+*/
+package controllerutil
