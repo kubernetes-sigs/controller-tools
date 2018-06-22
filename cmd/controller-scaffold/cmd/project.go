@@ -19,10 +19,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
 	"strings"
 
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/manager"
@@ -102,9 +102,30 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 func init() {
 	rootCmd.AddCommand(ProjectCmd)
 
-	prj = project.ForFlags(ProjectCmd.Flags())
-	bp = project.BoilerplateForFlags(ProjectCmd.Flags())
+	prj = ProjectForFlags(ProjectCmd.Flags())
+	bp = BoilerplateForFlags(ProjectCmd.Flags())
 	gopkg = &project.GopkgToml{}
 	mrg = &manager.Cmd{}
 	dkr = &manager.Dockerfile{}
+}
+
+// ProjectForFlags registers flags for Project fields and returns the Project
+func ProjectForFlags(f *flag.FlagSet) *project.Project {
+	p := &project.Project{}
+	f.StringVar(&p.Domain, "domain", "k8s.io", "domain for groups")
+	f.StringVar(&p.Version, "project-version", "2", "project version")
+	f.StringVar(&p.Repo, "repo", "", "name of the github repo.  "+
+		"defaults to the go package of the current working directory.")
+	return p
+}
+
+// BoilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
+func BoilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
+	b := &project.Boilerplate{}
+	f.StringVar(&b.Path, "path", "", "domain for groups")
+	f.StringVar(&b.License, "license", "apache2",
+		"license to use to boilerplate.  Maybe one of apache2,none")
+	f.StringVar(&b.Owner, "owner", "",
+		"Owner to add to the copyright")
+	return b
 }

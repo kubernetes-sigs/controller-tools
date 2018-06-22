@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
@@ -64,7 +63,7 @@ After the scaffold is written, api will run make on the project.
 	make run
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		project.DieIfNoProject()
+		DieIfNoProject()
 
 		fmt.Println("Create Resource under pkg/apis [y/n]?")
 		re := yesno()
@@ -126,4 +125,11 @@ After the scaffold is written, api will run make on the project.
 func init() {
 	rootCmd.AddCommand(APICmd)
 	r = resource.ForFlags(APICmd.Flags())
+}
+
+// DieIfNoProject checks to make sure the command is run from a directory containing a project file.
+func DieIfNoProject() {
+	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
+		log.Fatalf("Command must be run from a diretory containing %s", "PROJECT")
+	}
 }

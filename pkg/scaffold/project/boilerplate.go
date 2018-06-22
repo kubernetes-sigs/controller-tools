@@ -18,11 +18,9 @@ package project
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"time"
 
-	flag "github.com/spf13/pflag"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
@@ -84,28 +82,5 @@ limitations under the License.
 */`
 
 var none = `/*
-{{ if .Owner }}Copyright {{ .Year }} {{ .Owner }} {{ end }}.
+{{ if .Owner }}Copyright {{ .Year }} {{ .Owner }}{{ end }}.
 */`
-
-// BoilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
-func BoilerplateForFlags(f *flag.FlagSet) *Boilerplate {
-	b := &Boilerplate{}
-	f.StringVar(&b.Path, "path", "", "domain for groups")
-	f.StringVar(&b.License, "license", "apache2",
-		"license to use to boilerplate.  Maybe one of apache2,none")
-	f.StringVar(&b.Owner, "owner", "",
-		"Owner to add to the copyright")
-	return b
-}
-
-// GetBoilerplate reads the boilerplate file
-func GetBoilerplate(path string) (string, error) {
-	b, err := ioutil.ReadFile(path)
-	return string(b), err
-}
-
-// BoilerplatePath returns the default path to the boilerplate file
-func BoilerplatePath() string {
-	i, _ := (&Boilerplate{}).GetInput()
-	return i.Path
-}
