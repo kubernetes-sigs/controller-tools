@@ -107,7 +107,9 @@ setup_envs
 
 header_text "running go vet"
 
-go vet ./pkg/...
+go generate ./test/pkg/apis/...
+
+go vet ./pkg/... ./test/pkg/... ./test/cmd/... ./cmd/...
 
 # go get is broken for golint.  re-enable this once it is fixed.
 #header_text "running golint"
