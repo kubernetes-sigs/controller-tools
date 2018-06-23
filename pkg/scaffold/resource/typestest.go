@@ -34,11 +34,6 @@ type TypesTest struct {
 	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (TypesTest) Name() string {
-	return "types-test-go"
-}
-
 // GetInput implements input.File
 func (t *TypesTest) GetInput() (input.Input, error) {
 	if t.Path == "" {

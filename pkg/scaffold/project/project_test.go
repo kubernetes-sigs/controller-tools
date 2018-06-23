@@ -24,6 +24,8 @@ var _ = Describe("Project", func() {
 
 	JustBeforeEach(func() {
 		s, result = scaffoldtest.NewTestScaffold(writeToPath, goldenPath)
+		s.BoilerplateOptional = true
+		s.ProjectOptional = true
 	})
 
 	Describe("scaffolding a boilerplate file", func() {

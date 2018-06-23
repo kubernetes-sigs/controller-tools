@@ -82,6 +82,7 @@ var controllerTemplate = `{{ .Boilerplate }}
 package {{ lower .Resource.Kind }}
 
 import (
+	{{ if .Resource.CreateExampleReconcileBody -}}
 	"context"
 	"log"
 	"reflect"
@@ -99,6 +100,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ else -}}
+	"context"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ end -}}
 )
 
 /**
@@ -168,12 +182,13 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 		return reconcile.Result{}, err
 	}
 
+	{{ if .Resource.CreateExampleReconcileBody -}}
 	// TODO(user): Change this to be the object type created by your controller
 	// Define the desired Deployment object
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-deployment",
-			Namespace: instance.Namespace,
+			Namespace: {{ if .Resource.Namespaced}}instance.Namespace{{ else }}"default"{{ end }},
 			OwnerReferences: []metav1.OwnerReference{
 				// TODO(user): Important to copy this line to any object you create so it can be tied back to
 				// the {{ .Resource.Kind }} and cause a reconcile when it changes
@@ -226,6 +241,7 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 			return reconcile.Result{}, err
 		}
 	}
+	{{ end -}}
 
 	return reconcile.Result{}, nil
 }

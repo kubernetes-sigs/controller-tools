@@ -33,22 +33,17 @@ type VersionSuiteTest struct {
 	Resource *Resource
 }
 
-// Name implements scaffold.Name
-func (VersionSuiteTest) Name() string {
-	return "version-suite-test-go"
-}
-
 // GetInput implements input.File
 func (v *VersionSuiteTest) GetInput() (input.Input, error) {
 	if v.Path == "" {
 		v.Path = filepath.Join("pkg", "apis", v.Resource.Group, v.Resource.Version,
 			fmt.Sprintf("%s_suite_test.go", v.Resource.Version))
 	}
-	v.TemplateBody = veersionSuiteTestTemplate
+	v.TemplateBody = versionSuiteTestTemplate
 	return v.Input, nil
 }
 
-var veersionSuiteTestTemplate = `{{ .Boilerplate }}
+var versionSuiteTestTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
