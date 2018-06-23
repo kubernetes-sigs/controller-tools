@@ -557,6 +557,7 @@
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/controller",
+    "pkg/controller/controllerutil",
     "pkg/event",
     "pkg/handler",
     "pkg/internal/controller",
@@ -571,7 +572,7 @@
     "pkg/source",
     "pkg/source/internal"
   ]
-  revision = "e2057787567f444950bb8f05719d6e7fc567d8d9"
+  revision = "bf516694b9a3dac91424d0fb2f8ef47759b8bf69"
 
 [[projects]]
   name = "sigs.k8s.io/testing_frameworks"
@@ -584,6 +585,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b320227f6db36cf21952c2274f4c811cf0cb2fb5b7ffc24e2075f0a8057270de"
+  inputs-digest = "63a61b96ff9732a1faceb9da4788c255d6a8ec9929a05ed272f38212420c6e4f"
   solver-name = "gps-cdcl"
   solver-version = 1

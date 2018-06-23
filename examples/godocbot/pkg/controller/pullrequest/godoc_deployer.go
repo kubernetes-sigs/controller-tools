@@ -28,9 +28,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -50,6 +51,7 @@ type GodocDeployer struct {
 func NewGodocDeployer(mgr manager.Manager) (*GodocDeployer, error) {
 	prReconciler := &pullRequestReconciler{
 		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
 	}
 
 	// Setup a new controller to Reconcile PullRequests
@@ -85,6 +87,7 @@ func NewGodocDeployer(mgr manager.Manager) (*GodocDeployer, error) {
 // the commitID specified in the PullRequest object.
 type pullRequestReconciler struct {
 	Client client.Client
+	scheme *runtime.Scheme
 }
 
 func (r *pullRequestReconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -116,7 +119,7 @@ func (r *pullRequestReconciler) Reconcile(request reconcile.Request) (reconcile.
 		}
 
 		log.Printf("Could not find deployment for PullRequest %v. creating deployment", request)
-		dp, err = deploymentForPullRequest(pr)
+		dp, err = deploymentForPullRequest(pr, r.scheme)
 		if err != nil {
 			log.Printf("error creating new deployment for PullRequest: %v %v", request, err)
 			return reconcile.Result{}, nil
@@ -153,7 +156,7 @@ func (r *pullRequestReconciler) Reconcile(request reconcile.Request) (reconcile.
 }
 
 // deploymentForPullRequest creates a deployment object for a given PullRequest.
-func deploymentForPullRequest(pr *v1alpha1.PullRequest) (*appsv1.Deployment, error) {
+func deploymentForPullRequest(pr *v1alpha1.PullRequest, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
 	// we are good with running with one replica
 	var replicas int32 = 1
 
@@ -175,13 +178,6 @@ func deploymentForPullRequest(pr *v1alpha1.PullRequest) (*appsv1.Deployment, err
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pr.Name,
 			Namespace: pr.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(pr, schema.GroupVersionKind{
-					Group:   v1alpha1.SchemeGroupVersion.Group,
-					Version: v1alpha1.SchemeGroupVersion.Version,
-					Kind:    "PullRequest",
-				}),
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -213,6 +209,8 @@ func deploymentForPullRequest(pr *v1alpha1.PullRequest) (*appsv1.Deployment, err
 			},
 		},
 	}
+
+	controllerutil.SetControllerReference(pr, dep, scheme)
 	return dep, nil
 }
 
