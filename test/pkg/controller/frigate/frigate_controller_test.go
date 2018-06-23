@@ -22,7 +22,6 @@ import (
 
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,7 +40,6 @@ const timeout = time.Second * 5
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	instance := &shipv1beta1.Frigate{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
-	deploy := &appsv1.Deployment{}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -53,19 +51,9 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mrg, recFn)).NotTo(gomega.HaveOccurred())
 	defer close(StartTestManager(mrg, g))
 
-	// Create the Frigate object and expect the Reconcile and Deployment to be created
-	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	// Create the Frigate object and expect the Reconcile
+	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
 
-	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
-
-	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
 }
