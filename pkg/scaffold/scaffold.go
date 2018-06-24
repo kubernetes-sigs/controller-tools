@@ -29,6 +29,9 @@ import (
 
 	"io/ioutil"
 
+	"bytes"
+
+	"golang.org/x/tools/imports"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
@@ -47,6 +50,9 @@ type Scaffold struct {
 	Project input.ProjectFile
 
 	ProjectOptional bool
+
+	// ProjectPath is the relative path to the project root
+	ProjectPath string
 
 	GetWriter func(path string) (io.Writer, error)
 }
@@ -67,6 +73,9 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	}
 	if b, ok := t.(input.Repo); ok {
 		b.SetRepo(s.Project.Repo)
+	}
+	if b, ok := t.(input.ProjecPath); ok {
+		b.SetProjectPath(s.ProjectPath)
 	}
 
 	// Validate the template is ok
@@ -189,7 +198,25 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
 			}
 		}()
 	}
-	return temp.Execute(f, e)
+
+	out := &bytes.Buffer{}
+	err = temp.Execute(out, e)
+	if err != nil {
+		return err
+	}
+	b := out.Bytes()
+
+	// gofmt the imports
+	if filepath.Ext(i.Path) == ".go" {
+		b, err = imports.Process(i.Path, b, nil)
+		if err != nil {
+			fmt.Printf("%s\n", out.Bytes())
+			return err
+		}
+	}
+
+	_, err = f.Write(b)
+	return err
 }
 
 // newWriteCloser returns a WriteCloser to write scaffold to

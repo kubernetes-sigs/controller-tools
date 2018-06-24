@@ -33,6 +33,7 @@ func (c *Makefile) GetInput() (input.Input, error) {
 		c.Path = "Makefile"
 	}
 	c.TemplateBody = makefileTemplate
+	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
 }
 

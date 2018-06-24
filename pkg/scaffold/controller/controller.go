@@ -74,6 +74,7 @@ func (a *Controller) GetInput() (input.Input, error) {
 			strings.ToLower(a.Resource.Kind)+"_controller.go")
 	}
 	a.TemplateBody = controllerTemplate
+	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
 }
 
@@ -82,8 +83,7 @@ var controllerTemplate = `{{ .Boilerplate }}
 package {{ lower .Resource.Kind }}
 
 import (
-	{{ if .Resource.CreateExampleReconcileBody -}}
-	"context"
+{{ if .Resource.CreateExampleReconcileBody }}	"context"
 	"log"
 	"reflect"
 
@@ -100,8 +100,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
-	{{ else -}}
-	"context"
+{{ else }}	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -112,7 +111,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
-	{{ end -}}
+{{ end -}}
 )
 
 /**

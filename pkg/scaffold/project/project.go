@@ -56,11 +56,12 @@ func (c *Project) GetInput() (input.Input, error) {
 	}
 
 	return input.Input{
-		Path:         c.Path,
-		TemplateBody: string(out),
-		Repo:         c.Repo,
-		Version:      c.Version,
-		Domain:       c.Domain,
+		Path:           c.Path,
+		TemplateBody:   string(out),
+		Repo:           c.Repo,
+		Version:        c.Version,
+		Domain:         c.Domain,
+		IfExistsAction: input.Error,
 	}, nil
 }
 

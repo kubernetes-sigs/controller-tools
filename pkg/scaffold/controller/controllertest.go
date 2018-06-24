@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -30,6 +31,9 @@ type Test struct {
 
 	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
+
+	// ResourcePackage is the package of the Resource
+	ResourcePackage string
 }
 
 // GetInput implements input.File
@@ -38,7 +42,31 @@ func (a *Test) GetInput() (input.Input, error) {
 		a.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(a.Resource.Kind), strings.ToLower(a.Resource.Kind)+"_controller_test.go")
 	}
+
+	// Use the k8s.io/api package for core resources
+	coreGroups := map[string]string{
+		"apps":                  "",
+		"admissionregistration": "k8s.io",
+		"apiextensions":         "k8s.io",
+		"authentication":        "k8s.io",
+		"autoscaling":           "",
+		"batch":                 "",
+		"certificates":          "k8s.io",
+		"core":                  "",
+		"extensions":            "",
+		"metrics":               "k8s.io",
+		"policy":                "",
+		"rbac.authorization":    "k8s.io",
+		"storage":               "k8s.io",
+	}
+	if _, found := coreGroups[a.Resource.Group]; found {
+		a.ResourcePackage = path.Join("k8s.io", "api")
+	} else {
+		a.ResourcePackage = path.Join(a.Repo, "pkg", "apis")
+	}
+
 	a.TemplateBody = controllerTestTemplate
+	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
 }
 
@@ -60,14 +88,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
 )
 
 var c client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
-{{ if .Resource.CreateExampleReconcileBody }}var depKey = types.NamespacedName{Name: "foo-deployment"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}{{ end }}
-
+{{ if .Resource.CreateExampleReconcileBody }}var depKey = types.NamespacedName{Name: "foo-deployment"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}
+{{ end }}
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
@@ -84,11 +112,11 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mrg, recFn)).NotTo(gomega.HaveOccurred())
 	defer close(StartTestManager(mrg, g))
 
-	// Create the {{ .Resource.Kind }} object and expect the Reconcile {{ if .Resource.CreateExampleReconcileBody }}and Deployment to be created{{ end }}
+	// Create the {{ .Resource.Kind }} object and expect the Reconcile{{ if .Resource.CreateExampleReconcileBody }} and Deployment to be created{{ end }}
 	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
-	{{ if .Resource.CreateExampleReconcileBody }}
+{{ if .Resource.CreateExampleReconcileBody }}
 	deploy := &appsv1.Deployment{}
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
 		Should(gomega.Succeed())
@@ -101,6 +129,6 @@ func TestReconcile(t *testing.T) {
 
 	// Manually delete Deployment since GC isn't enabled in the test control plane
 	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
-	{{ end }}
+{{ end }}
 }
 `

@@ -126,7 +126,7 @@ var _ = Describe("Resource", func() {
 
 	for i := range resources {
 		r := resources[i]
-		Describe(fmt.Sprintf("scaffolding %s", r.Kind), func() {
+		Describe(fmt.Sprintf("scaffolding API %s", r.Kind), func() {
 			files := []struct {
 				instance input.File
 				file     string
@@ -179,11 +179,11 @@ var _ = Describe("Resource", func() {
 
 			for j := range files {
 				f := files[j]
-				Context("for "+f.file, func() {
-					It("should write the file", func() {
+				Context(f.file, func() {
+					It("should write a file matching the golden file", func() {
 						s, result := scaffoldtest.NewTestScaffold(f.file, f.file)
 						Expect(s.Execute(scaffoldtest.Options(), f.instance)).To(Succeed())
-						Expect(result.Actual.String()).To(Equal(result.Golden))
+						Expect(result.Actual.String()).To(Equal(result.Golden), result.Actual.String())
 					})
 				})
 			}
