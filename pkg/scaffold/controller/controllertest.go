@@ -75,7 +75,7 @@ import (
 var c client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
-{{ if .Resource.Namespaced }}var depKey = types.NamespacedName{Namespace: "default"{{ if .Resource.Namespaced }}, Name: "foo-deployment"{{end}}}{{ end }}
+{{ if .Resource.CreateExampleReconcileBody }}var depKey = types.NamespacedName{Name: "foo-deployment"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}{{ end }}
 
 const timeout = time.Second * 5
 
