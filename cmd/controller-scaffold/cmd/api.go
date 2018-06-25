@@ -19,11 +19,11 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
@@ -31,6 +31,8 @@ import (
 )
 
 var r *resource.Resource
+var resourceFlag, controllerFlag *flag.Flag
+var doResource, doController, doMake bool
 
 // APICmd represents the resource command
 var APICmd = &cobra.Command{
@@ -65,14 +67,18 @@ After the scaffold is written, api will run make on the project.
 	Run: func(cmd *cobra.Command, args []string) {
 		DieIfNoProject()
 
-		fmt.Println("Create Resource under pkg/apis [y/n]?")
-		re := yesno()
-		fmt.Println("Create Controller under pkg/controller [y/n]?")
-		c := yesno()
+		if !resourceFlag.Changed {
+			fmt.Println("Create Resource under pkg/apis [y/n]?")
+			doResource = yesno()
+		}
+		if !controllerFlag.Changed {
+			fmt.Println("Create Controller under pkg/controller [y/n]?")
+			doController = yesno()
+		}
 
 		fmt.Println("Writing scaffold for you to edit...")
 
-		if re {
+		if doResource {
 			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
 				fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
 			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
@@ -95,7 +101,7 @@ After the scaffold is written, api will run make on the project.
 			}
 		}
 
-		if c {
+		if doController {
 			fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 				fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 			fmt.Println(filepath.Join("pkg", "apis", strings.ToLower(r.Kind),
@@ -112,19 +118,29 @@ After the scaffold is written, api will run make on the project.
 			}
 		}
 
-		fmt.Println("Running make...")
-		cm := exec.Command("make") // #nosec
-		cm.Stderr = os.Stderr
-		cm.Stdout = os.Stdout
-		if err := cm.Run(); err != nil {
-			log.Fatal(err)
+		if doMake {
+			fmt.Println("Running make...")
+			cm := exec.Command("make") // #nosec
+			cm.Stderr = os.Stderr
+			cm.Stdout = os.Stdout
+			if err := cm.Run(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(APICmd)
-	r = resource.ForFlags(APICmd.Flags())
+	APICmd.Flags().BoolVar(&doMake, "make", true,
+		"if true, run make after generating files")
+	APICmd.Flags().BoolVar(&doResource, "resource", true,
+		"if set, generate the resource without prompting the user")
+	resourceFlag = APICmd.Flag("resource")
+	APICmd.Flags().BoolVar(&doController, "controller", true,
+		"if set, generate the controller without prompting the user")
+	controllerFlag = APICmd.Flag("controller")
+	r = ResourceForFlags(APICmd.Flags())
 }
 
 // DieIfNoProject checks to make sure the command is run from a directory containing a project file.
@@ -132,4 +148,16 @@ func DieIfNoProject() {
 	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
 		log.Fatalf("Command must be run from a diretory containing %s", "PROJECT")
 	}
+}
+
+// ResourceForFlags registers flags for Resource fields and returns the Resource
+func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
+	r := &resource.Resource{}
+	f.StringVar(&r.Kind, "kind", "", "resource Kind")
+	f.StringVar(&r.Group, "group", "", "resource Group")
+	f.StringVar(&r.Version, "version", "", "resource Version")
+	f.BoolVar(&r.Namespaced, "namespaced", true, "true if the resource is namespaced")
+	f.BoolVar(&r.CreateExampleReconcileBody, "example", true,
+		"true if an example reconcile body should be written")
+	return r
 }

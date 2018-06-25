@@ -161,6 +161,5 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 			return reconcile.Result{}, err
 		}
 	}
-
 	return reconcile.Result{}, nil
 }

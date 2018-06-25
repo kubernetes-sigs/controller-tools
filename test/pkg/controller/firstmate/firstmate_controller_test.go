@@ -34,14 +34,13 @@ import (
 var c client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
-var depKey = types.NamespacedName{Namespace: "default", Name: "foo-deployment"}
+var depKey = types.NamespacedName{Name: "foo-deployment", Namespace: "default"}
 
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 	instance := &crewv1.FirstMate{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
-	deploy := &appsv1.Deployment{}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -54,18 +53,21 @@ func TestReconcile(t *testing.T) {
 	defer close(StartTestManager(mrg, g))
 
 	// Create the FirstMate object and expect the Reconcile and Deployment to be created
-	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+
+	deploy := &appsv1.Deployment{}
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
+		Should(gomega.Succeed())
 
 	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
 	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
+		Should(gomega.Succeed())
 
 	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
+
 }

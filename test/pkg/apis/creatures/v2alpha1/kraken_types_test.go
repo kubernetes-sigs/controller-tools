@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,45 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
-
-import (
-	"fmt"
-	"path/filepath"
-	"strings"
-
-	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-)
-
-var _ input.File = &TypesTest{}
-
-// TypesTest scaffolds the pkg/apis/group/version/kind_types_test.go file to test the API schema
-type TypesTest struct {
-	input.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *Resource
-}
-
-// GetInput implements input.File
-func (t *TypesTest) GetInput() (input.Input, error) {
-	if t.Path == "" {
-		t.Path = filepath.Join("pkg", "apis", t.Resource.Group, t.Resource.Version,
-			fmt.Sprintf("%s_types_test.go", strings.ToLower(t.Resource.Kind)))
-	}
-	t.TemplateBody = typesTestTemplate
-	t.IfExistsAction = input.Error
-	return t.Input, nil
-}
-
-// Validate validates the values
-func (t *TypesTest) Validate() error {
-	return t.Resource.Validate()
-}
-
-var typesTestTemplate = `{{ .Boilerplate }}
-
-package {{ .Resource.Version }}
+package v2alpha1
 
 import (
 	"testing"
@@ -65,11 +27,11 @@ import (
 
 func TestStorage(t *testing.T) {
 	key := types.NamespacedName{Name: "foo", Namespace: "default"}
-	created := &{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	created := &Kraken{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
-	fetched := &{{ .Resource.Kind }}{}
+	fetched := &Kraken{}
 	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
@@ -87,4 +49,3 @@ func TestStorage(t *testing.T) {
 	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
 	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
 }
-`

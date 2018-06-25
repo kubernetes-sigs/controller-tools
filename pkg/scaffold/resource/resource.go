@@ -18,12 +18,10 @@ package resource
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
 	"github.com/markbates/inflect"
-	flag "github.com/spf13/pflag"
 )
 
 // Resource contains the information required to scaffold files for a resource.
@@ -45,18 +43,21 @@ type Resource struct {
 
 	// ShortNames is the list of resource shortnames.
 	ShortNames []string
+
+	// CreateExampleReconcileBody will create a Deployment in the Reconcile example
+	CreateExampleReconcileBody bool
 }
 
 // Validate checks the Resource values to make sure they are valid.
 func (r *Resource) Validate() error {
 	if len(r.Group) == 0 {
-		return fmt.Errorf("Must specify --group")
+		return fmt.Errorf("group cannot be empty")
 	}
 	if len(r.Version) == 0 {
-		return fmt.Errorf("Must specify --version")
+		return fmt.Errorf("version cannot be empty")
 	}
 	if len(r.Kind) == 0 {
-		log.Fatal("Must specify --kind")
+		return fmt.Errorf("kind cannot be empty")
 	}
 
 	rs := inflect.NewDefaultRuleset()
@@ -66,29 +67,18 @@ func (r *Resource) Validate() error {
 
 	groupMatch := regexp.MustCompile("^[a-z]+$")
 	if !groupMatch.MatchString(r.Group) {
-		return fmt.Errorf("--group must match regex ^[a-z]+$ but was (%s)", r.Group)
-	}
-	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)*$")
-	if !versionMatch.MatchString(r.Version) {
-		return fmt.Errorf(
-			"--version has bad format. must match ^v\\d+(alpha\\d+|beta\\d+)*$.  "+
-				"e.g. v1alpha1,v1beta1,v1 but was (%s)", r.Version)
+		return fmt.Errorf("group must match ^[a-z]+$ (was %s)", r.Group)
 	}
 
-	kindMatch := regexp.MustCompile("^[A-Z]+[A-Za-z0-9]*$")
-	if !kindMatch.MatchString(r.Kind) {
-		return fmt.Errorf("--kind must match regex ^[A-Z]+[A-Za-z0-9]*$ but was (%s)", r.Kind)
+	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
+	if !versionMatch.MatchString(r.Version) {
+		return fmt.Errorf(
+			"version must match ^v\\d+(alpha\\d+|beta\\d+)?$ (was %s)", r.Version)
+	}
+
+	if r.Kind != inflect.Camelize(r.Kind) {
+		return fmt.Errorf("Kind must be camelcase (expected %s was %s)", inflect.Camelize(r.Kind), r.Kind)
 	}
 
 	return nil
-}
-
-// ForFlags registers flags for Resource fields and returns the Resource
-func ForFlags(f *flag.FlagSet) *Resource {
-	r := &Resource{}
-	f.StringVar(&r.Kind, "kind", "", "resource Kind")
-	f.StringVar(&r.Group, "group", "", "resource Group")
-	f.StringVar(&r.Version, "version", "", "resource Version")
-	f.BoolVar(&r.Namespaced, "namespaced", true, "true if the resource is namespaced")
-	return r
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project/projectutil"
 )
 
@@ -37,14 +38,34 @@ type TestResult struct {
 	Golden string
 }
 
+// ProjectPath is the path to the controller-tools/test project file
+func ProjectPath() string {
+	root, err := projectutil.GetProjectDir()
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	return filepath.Join(root, "test", "PROJECT")
+}
+
+// BoilerplatePath is the path to the controller-tools/test boilerplate file
+func BoilerplatePath() string {
+	root, err := projectutil.GetProjectDir()
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	return filepath.Join(root, "test", "hack", "boilerplate.go.txt")
+}
+
+// Options are the options for scaffolding in the controller-tools/test directory
+func Options() input.Options {
+	return input.Options{
+		BoilerplatePath: BoilerplatePath(),
+		ProjectPath:     ProjectPath(),
+	}
+}
+
 // NewTestScaffold returns a new Scaffold and TestResult instance for testing
 func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
 	r := &TestResult{}
 
 	// Setup scaffold
 	s := &scaffold.Scaffold{
-		ProjectOptional:     true,
-		BoilerplateOptional: true,
 		GetWriter: func(path string) (io.Writer, error) {
 			defer ginkgo.GinkgoRecover()
 			gomega.Expect(path).To(gomega.Equal(writeToPath))
@@ -52,10 +73,9 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 		},
 	}
 
-	root, err := projectutil.GetProjectDir()
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
 	if len(goldenPath) > 0 {
+		root, err := projectutil.GetProjectDir()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		b, err := ioutil.ReadFile(filepath.Join(root, "test", goldenPath))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		r.Golden = string(b)

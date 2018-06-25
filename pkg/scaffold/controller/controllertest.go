@@ -52,7 +52,9 @@ import (
 
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	{{ if .Resource.CreateExampleReconcileBody -}}
 	appsv1 "k8s.io/api/apps/v1"
+	{{ end -}}
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,15 +65,14 @@ import (
 
 var c client.Client
 
-var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
-var depKey = types.NamespacedName{Namespace: "default", Name: "foo-deployment"}
+var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
+{{ if .Resource.CreateExampleReconcileBody }}var depKey = types.NamespacedName{Name: "foo-deployment"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}{{ end }}
 
 const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	instance := &{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
-	deploy := &appsv1.Deployment{}
+	instance := &{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
@@ -83,20 +84,23 @@ func TestReconcile(t *testing.T) {
 	g.Expect(add(mrg, recFn)).NotTo(gomega.HaveOccurred())
 	defer close(StartTestManager(mrg, g))
 
-	// Create the {{ .Resource.Kind }} object and expect the Reconcile and Deployment to be created
-	g.Expect(c.Create(context.TODO(), instance)).NotTo(gomega.HaveOccurred())
+	// Create the {{ .Resource.Kind }} object and expect the Reconcile {{ if .Resource.CreateExampleReconcileBody }}and Deployment to be created{{ end }}
+	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
+	{{ if .Resource.CreateExampleReconcileBody }}
+	deploy := &appsv1.Deployment{}
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
+		Should(gomega.Succeed())
 
 	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
 	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
-		ShouldNot(gomega.HaveOccurred())
+		Should(gomega.Succeed())
 
 	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
+	{{ end }}
 }
 `

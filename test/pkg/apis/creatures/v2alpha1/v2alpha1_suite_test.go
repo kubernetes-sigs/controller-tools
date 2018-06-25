@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2018 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,38 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
-
-import (
-	"fmt"
-	"path/filepath"
-
-	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-)
-
-var _ input.File = &TypesTest{}
-
-// VersionSuiteTest scaffolds the version_suite_test.go file to setup the versions test
-type VersionSuiteTest struct {
-	input.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *Resource
-}
-
-// GetInput implements input.File
-func (v *VersionSuiteTest) GetInput() (input.Input, error) {
-	if v.Path == "" {
-		v.Path = filepath.Join("pkg", "apis", v.Resource.Group, v.Resource.Version,
-			fmt.Sprintf("%s_suite_test.go", v.Resource.Version))
-	}
-	v.TemplateBody = versionSuiteTestTemplate
-	return v.Input, nil
-}
-
-var versionSuiteTestTemplate = `{{ .Boilerplate }}
-
-package {{ .Resource.Version }}
+package v2alpha1
 
 import (
 	"log"
@@ -84,4 +53,3 @@ func TestMain(m *testing.M) {
 	t.Stop()
 	os.Exit(code)
 }
-`

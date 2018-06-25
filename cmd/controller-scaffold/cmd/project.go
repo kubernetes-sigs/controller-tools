@@ -34,6 +34,8 @@ var bp *project.Boilerplate
 var gopkg *project.GopkgToml
 var mrg *manager.Cmd
 var dkr *manager.Dockerfile
+var dep bool
+var depFlag *flag.Flag
 
 // ProjectCmd represents the project command
 var ProjectCmd = &cobra.Command{
@@ -75,8 +77,11 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 			log.Fatal(err)
 		}
 
-		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
-		if yesno() {
+		if !depFlag.Changed {
+			fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
+			dep = yesno()
+		}
+		if dep {
 			c := exec.Command("dep", "ensure") // #nosec
 			c.Stderr = os.Stderr
 			c.Stdout = os.Stdout
@@ -101,6 +106,10 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 
 func init() {
 	rootCmd.AddCommand(ProjectCmd)
+
+	ProjectCmd.Flags().BoolVar(
+		&dep, "dep", true, "if specified, determines whether dep will be used.")
+	depFlag = ProjectCmd.Flag("dep")
 
 	prj = ProjectForFlags(ProjectCmd.Flags())
 	bp = BoilerplateForFlags(ProjectCmd.Flags())

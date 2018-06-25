@@ -135,8 +135,6 @@ gometalinter.v2 --disable-all \
     --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
-    --line-length=170 \
-    --enable=lll \
     ./pkg/... ./test/... ./cmd/...
 # TODO: Enable these as we fix them to make them pass
 #    --enable=maligned \
