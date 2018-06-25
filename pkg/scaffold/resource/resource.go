@@ -51,13 +51,13 @@ type Resource struct {
 // Validate checks the Resource values to make sure they are valid.
 func (r *Resource) Validate() error {
 	if len(r.Group) == 0 {
-		return fmt.Errorf("must specify group")
+		return fmt.Errorf("group cannot be empty")
 	}
 	if len(r.Version) == 0 {
-		return fmt.Errorf("must specify version")
+		return fmt.Errorf("version cannot be empty")
 	}
 	if len(r.Kind) == 0 {
-		return fmt.Errorf("Must specify kind")
+		return fmt.Errorf("kind cannot be empty")
 	}
 
 	rs := inflect.NewDefaultRuleset()
@@ -67,17 +67,17 @@ func (r *Resource) Validate() error {
 
 	groupMatch := regexp.MustCompile("^[a-z]+$")
 	if !groupMatch.MatchString(r.Group) {
-		return fmt.Errorf("--group must match regex ^[a-z]+$ but was (%s)", r.Group)
+		return fmt.Errorf("group must match ^[a-z]+$ (was %s)", r.Group)
 	}
+
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
 	if !versionMatch.MatchString(r.Version) {
 		return fmt.Errorf(
-			"--version has bad format. must match ^v\\d+(alpha\\d+|beta\\d+)*$.  "+
-				"e.g. v1alpha1,v1beta1,v1 but was (%s)", r.Version)
+			"version must match ^v\\d+(alpha\\d+|beta\\d+)?$ (was %s)", r.Version)
 	}
 
 	if r.Kind != inflect.Camelize(r.Kind) {
-		return fmt.Errorf("Kind must be camelcase expected: %s was: (%s)", inflect.Camelize(r.Kind), r.Kind)
+		return fmt.Errorf("Kind must be camelcase (expected %s was %s)", inflect.Camelize(r.Kind), r.Kind)
 	}
 
 	return nil

@@ -50,26 +50,17 @@ import (
 	"testing"
 	"time"
 
-	{{ if .Resource.CreateExampleReconcileBody }}
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
+	{{ if .Resource.CreateExampleReconcileBody -}}
 	appsv1 "k8s.io/api/apps/v1"
+	{{ end -}}
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
-	{{ else }}
-	"github.com/onsi/gomega"
-	"golang.org/x/net/context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
-	{{ end }}
 )
 
 var c client.Client

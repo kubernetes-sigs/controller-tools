@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"os/exec"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"

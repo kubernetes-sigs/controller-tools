@@ -23,43 +23,58 @@ var _ = Describe("Resource", func() {
 		It("should fail if the Group is not specified", func() {
 			instance := &Resource{Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("group cannot be empty"))
 		})
 
 		It("should fail if the Group is not all lowercase", func() {
 			instance := &Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was Crew)"))
 		})
 
 		It("should fail if the Group contains non-alpha characters", func() {
 			instance := &Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was crew1)"))
 		})
 
 		It("should fail if the Version is not specified", func() {
 			instance := &Resource{Group: "crew", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("version cannot be empty"))
 		})
 
 		It("should fail if the Version does not match the version format", func() {
 			instance := &Resource{Group: "crew", Version: "1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1)`))
 
 			instance = &Resource{Group: "crew", Version: "1beta1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1beta1)`))
 
 			instance = &Resource{Group: "crew", Version: "a1beta1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was a1beta1)`))
 
 			instance = &Resource{Group: "crew", Version: "v1beta", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta)`))
 
 			instance = &Resource{Group: "crew", Version: "v1beta1alpha1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
 		})
 
 		It("should fail if the Kind is not specified", func() {
 			instance := &Resource{Group: "crew", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("kind cannot be empty"))
 		})
 
 		It("should fail if the Kind is not camel cased", func() {
@@ -73,9 +88,13 @@ var _ = Describe("Resource", func() {
 
 			instance = &Resource{Group: "crew", Kind: "firstMate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`Kind must be camelcase (expected FirstMate was firstMate)`))
 
 			instance = &Resource{Group: "crew", Kind: "firstmate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring(
+				`Kind must be camelcase (expected Firstmate was firstmate)`))
 		})
 
 		It("should default the Resource by pluralizing the Kind", func() {
