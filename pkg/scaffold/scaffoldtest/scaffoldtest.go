@@ -64,6 +64,9 @@ func Options() input.Options {
 func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
 	r := &TestResult{}
 
+	root, err := projectutil.GetProjectDir()
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 	// Setup scaffold
 	s := &scaffold.Scaffold{
 		GetWriter: func(path string) (io.Writer, error) {
@@ -71,11 +74,10 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 			gomega.Expect(path).To(gomega.Equal(writeToPath))
 			return &r.Actual, nil
 		},
+		ProjectPath: filepath.Join(root, "test"),
 	}
 
 	if len(goldenPath) > 0 {
-		root, err := projectutil.GetProjectDir()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		b, err := ioutil.ReadFile(filepath.Join(root, "test", goldenPath))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		r.Golden = string(b)

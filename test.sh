@@ -135,12 +135,25 @@ gometalinter.v2 --disable-all \
     --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
-    ./pkg/... ./test/... ./cmd/...
-# TODO: Enable these as we fix them to make them pass
-#    --enable=maligned \
-#    --enable=safesql \
-#    --dupl-threshold=400 \
-#    --enable=dupl \
+    ./pkg/... ./cmd/...
+
+gometalinter.v2 --disable-all \
+    --deadline 5m \
+    --enable=misspell \
+    --enable=structcheck \
+    --enable=golint \
+    --enable=deadcode \
+    --enable=errcheck \
+    --enable=varcheck \
+    --enable=goconst \
+    --enable=gas \
+    --enable=unparam \
+    --enable=ineffassign \
+    --enable=nakedret \
+    --enable=interfacer \
+    --enable=misspell \
+    --enable=gocyclo \
+    ./test/pkg/... ./test/cmd/...
 
 header_text "running go test"
 

@@ -45,10 +45,14 @@ func (a *APIs) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
+
+	b, err := filepath.Rel(filepath.Join(a.Input.ProjectPath, "pkg", "apis"), a.BoilerplatePath)
+	if err != nil {
+		return input.Input{}, err
+	}
 	if len(a.Comments) == 0 {
 		a.Comments = append(a.Comments,
-			"// Generate deepcopy for apis",
-			fmt.Sprintf("%s -h ../../%s", deepCopy, a.BoilerplatePath))
+			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, b))
 	}
 	a.TemplateBody = apisTemplate
 	return a.Input, nil

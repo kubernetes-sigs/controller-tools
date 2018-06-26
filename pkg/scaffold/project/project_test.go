@@ -1,14 +1,11 @@
 package project
 
 import (
-	"io/ioutil"
-	"path/filepath"
-
-	"strings"
-
-	"os"
-
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

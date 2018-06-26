@@ -55,6 +55,9 @@ type Input struct {
 
 	// Repo is the go project package
 	Repo string
+
+	// ProjectPath is the relative path to the project root
+	ProjectPath string
 }
 
 // Domain allows a domain to be set on an object
@@ -119,6 +122,19 @@ type Version interface {
 func (i *Input) SetVersion(v string) {
 	if i.Version == "" {
 		i.Version = v
+	}
+}
+
+// ProjecPath allows the project path to be set on an object
+type ProjecPath interface {
+	// SetProjectPath sets the project file location
+	SetProjectPath(string)
+}
+
+// SetProjectPath sets the project path
+func (i *Input) SetProjectPath(p string) {
+	if i.ProjectPath == "" {
+		i.ProjectPath = p
 	}
 }
 
