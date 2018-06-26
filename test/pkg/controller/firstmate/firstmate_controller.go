@@ -25,10 +25,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -43,33 +44,33 @@ import (
 
 // Add creates a new FirstMate Controller and adds it to the Manager.  The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this crew.Add(mrg) to install this Controller
-func Add(mrg manager.Manager) error {
-	return add(mrg, newReconcile(mrg))
+// USER ACTION REQUIRED: update cmd/manager/main.go to call this crew.Add(mgr) to install this Controller
+func Add(mgr manager.Manager) error {
+	return add(mgr, newReconciler(mgr))
 }
 
-// newReconcile returns a new reconcile.Reconcile
-func newReconcile(mrg manager.Manager) reconcile.Reconcile {
-	return &ReconcileFirstMate{client: mrg.GetClient()}
+// newReconciler returns a new reconcile.Reconciler
+func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+	return &ReconcileFirstMate{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
-// add adds a new Controller to mrg with r as the reconcile.Reconcile
-func add(mrg manager.Manager, r reconcile.Reconcile) error {
+// add adds a new Controller to mgr with r as the reconcile.Reconciler
+func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("firstmate-controller", mrg, controller.Options{Reconcile: r})
+	c, err := controller.New("firstmate-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to FirstMate
-	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.Enqueue{})
+	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
 	// Uncomment watch a Deployment created by FirstMate - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &crewv1.FirstMate{},
 	})
@@ -80,19 +81,24 @@ func add(mrg manager.Manager, r reconcile.Reconcile) error {
 	return nil
 }
 
+var _ reconcile.Reconciler = &ReconcileFirstMate{}
+
 // ReconcileFirstMate reconciles a FirstMate object
 type ReconcileFirstMate struct {
-	client client.Client
+	client.Client
+	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a FirstMate object and makes changes based on the state read
 // and what is in the FirstMate.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
+// Automatically generate RBAC rules to allow the Controller to read and write Deployments
+// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the FirstMate instance
 	instance := &crewv1.FirstMate{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
@@ -109,15 +115,6 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-deployment",
 			Namespace: instance.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				// TODO(user): Important to copy this line to any object you create so it can be tied back to
-				// the FirstMate and cause a reconcile when it changes
-				*metav1.NewControllerRef(instance, schema.GroupVersionKind{
-					Group:   crewv1.SchemeGroupVersion.Group,
-					Version: crewv1.SchemeGroupVersion.Version,
-					Kind:    "FirstMate",
-				}),
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -136,14 +133,17 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 			},
 		},
 	}
+	if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
 
 	// TODO(user): Change this for the object type created by your controller
 	// Check if the Deployment already exists
 	found := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
+	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.client.Create(context.TODO(), deploy)
+		err = r.Create(context.TODO(), deploy)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -156,7 +156,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
 		found.Spec = deploy.Spec
 		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
-		err = r.client.Update(context.TODO(), found)
+		err = r.Update(context.TODO(), found)
 		if err != nil {
 			return reconcile.Result{}, err
 		}

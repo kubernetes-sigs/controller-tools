@@ -58,5 +58,5 @@ type FrigateList struct {
 }
 
 func init() {
-	KnownTypes = append(KnownTypes, &Frigate{}, &FrigateList{})
+	SchemeBuilder.Register(&Frigate{}, &FrigateList{})
 }

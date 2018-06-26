@@ -58,5 +58,5 @@ type FirstMateList struct {
 }
 
 func init() {
-	KnownTypes = append(KnownTypes, &FirstMate{}, &FirstMateList{})
+	SchemeBuilder.Register(&FirstMate{}, &FirstMateList{})
 }

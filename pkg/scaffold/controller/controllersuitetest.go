@@ -81,7 +81,7 @@ func TestMain(m *testing.M) {
 
 // SetupTestReconcile returns a reconcile.Reconcile implementation that delegates to inner and
 // writes the request to requests after Reconcile is finished.
-func SetupTestReconcile(inner reconcile.Reconcile) (reconcile.Reconcile, chan reconcile.Request) {
+func SetupTestReconcile(inner reconcile.Reconciler) (reconcile.Reconciler, chan reconcile.Request) {
 	requests := make(chan reconcile.Request)
 	fn := reconcile.Func(func(req reconcile.Request) (reconcile.Result, error) {
 		result, err := inner.Reconcile(req)
@@ -92,10 +92,10 @@ func SetupTestReconcile(inner reconcile.Reconcile) (reconcile.Reconcile, chan re
 }
 
 // StartTestManager adds recFn
-func StartTestManager(mrg manager.Manager, g *gomega.GomegaWithT) chan struct{} {
+func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) chan struct{} {
 	stop := make(chan struct{})
 	go func() {
-		g.Expect(mrg.Start(stop)).NotTo(gomega.HaveOccurred())
+		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
 	}()
 	return stop
 }

@@ -104,13 +104,13 @@ func TestReconcile(t *testing.T) {
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.
-	mrg, err := manager.New(cfg, manager.Options{})
+	mgr, err := manager.New(cfg, manager.Options{})
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	c = mrg.GetClient()
+	c = mgr.GetClient()
 
-	recFn, requests := SetupTestReconcile(newReconcile(mrg))
-	g.Expect(add(mrg, recFn)).NotTo(gomega.HaveOccurred())
-	defer close(StartTestManager(mrg, g))
+	recFn, requests := SetupTestReconcile(newReconciler(mgr))
+	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	defer close(StartTestManager(mgr, g))
 
 	// Create the {{ .Resource.Kind }} object and expect the Reconcile{{ if .Resource.CreateExampleReconcileBody }} and Deployment to be created{{ end }}
 	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
