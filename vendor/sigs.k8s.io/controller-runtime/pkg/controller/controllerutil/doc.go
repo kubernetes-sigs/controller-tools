@@ -15,18 +15,6 @@ limitations under the License.
 */
 
 /*
-Package certprovisioner provides an interface and implementation to provision certificates.
-
-Create a implementation instance of certprovisioner.
-
-	cp := SelfSignedCertProvisioner{
-		CommonName: "foo.bar.com"
-	}
-
-Provision the certificates.
-	certs, err := cp.ProvisionServingCert()
-	if err != nil {
-		// handle error
-	}
+Package controllerutil contains utility functions for working with and implementing Controllers.
 */
-package certprovisioner
+package controllerutil
