@@ -127,27 +127,27 @@ func Add(mrg manager.Manager) error {
 }
 
 // newReconcile returns a new reconcile.Reconcile
-func newReconcile(mrg manager.Manager) reconcile.Reconcile {
+func newReconcile(mrg manager.Manager) reconcile.Reconciler {
 	return &Reconcile{{ .Resource.Kind }}{client: mrg.GetClient()}
 }
 
 // add adds a new Controller to mrg with r as the reconcile.Reconcile
-func add(mrg manager.Manager, r reconcile.Reconcile) error {
+func add(mrg manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mrg, controller.Options{Reconcile: r})
+	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mrg, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}}, &handler.Enqueue{})
+	err = c.Watch(&source.Kind{Type: &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
 	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{},
 	})
