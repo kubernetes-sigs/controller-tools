@@ -103,6 +103,18 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/google/go-github"
+  packages = ["github"]
+  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
+  version = "v15.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+
+[[projects]]
   name = "github.com/google/gofuzz"
   packages = ["."]
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
@@ -187,10 +199,10 @@
   revision = "8b799c424f57fa123fc63a99d6383bc6e4c02578"
 
 [[projects]]
-  branch = "master"
   name = "github.com/markbates/inflect"
   packages = ["."]
   revision = "dd7de90c06bca70f18136e59dec2270c19a401e7"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -430,7 +442,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "465e6f399236d0ea2466584539d4eab4d3d83720"
+  revision = "56e9b8e653c818f46a96eb4828aba7be54271a69"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -630,7 +642,7 @@
     "cmd/deepcopy-gen/args",
     "pkg/util"
   ]
-  revision = "4c99649af8fee16989100e4cc3e6a75143530b28"
+  revision = "c3e446086d01c937f9ddb9b53da2c49b88a873e0"
 
 [[projects]]
   branch = "master"
@@ -644,7 +656,7 @@
     "parser",
     "types"
   ]
-  revision = "9667b67e4b895d34f09fad596d28f285e0197131"
+  revision = "f659ec9d5207b3bf034eb9b7e22720d360d28712"
 
 [[projects]]
   name = "k8s.io/kube-openapi"
@@ -661,6 +673,7 @@
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/controller",
+    "pkg/controller/controllerutil",
     "pkg/envtest",
     "pkg/event",
     "pkg/handler",
@@ -676,7 +689,7 @@
     "pkg/source",
     "pkg/source/internal"
   ]
-  revision = "a5ba2dc7a0eacc313263ca8b129f855379e756fb"
+  revision = "eb6b5deb0f5f482cb4285551838e1735582e3b27"
 
 [[projects]]
   name = "sigs.k8s.io/testing_frameworks"
@@ -689,6 +702,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3bd007c344570e85dc1b094b85a7c7fc4186b5f90db10ba51a3c8355c202fd7c"
+  inputs-digest = "cc61c027f0e6868b3b19eedec9709e4c0adb81d4f470ca2e6011fbf298690254"
   solver-name = "gps-cdcl"
   solver-version = 1

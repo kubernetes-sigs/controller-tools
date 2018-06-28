@@ -31,7 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/recorder"
 )
 
-// Manager initializes shared dependencies such as Caches and Clients, and provides them to runnables.
+// Manager initializes shared dependencies such as Caches and Clients, and provides them to Runnables.
+// A Manager is required to create Controllers.
 type Manager interface {
 	// Add will set reqeusted dependencies on the component, and cause the component to be
 	// started when Start is called.  Add will inject any dependencies for which the argument
@@ -71,7 +72,7 @@ type Options struct {
 	// Defaults to the kubernetes/client-go scheme.Scheme
 	Scheme *runtime.Scheme
 
-	// Mapper is the rest mapper used to map go types to Kubernetes APIs
+	// MapperProvider provides the rest mapper used to map go types to Kubernetes APIs
 	MapperProvider func(c *rest.Config) (meta.RESTMapper, error)
 
 	// Dependency injection for testing
@@ -95,54 +96,59 @@ func (r RunnableFunc) Start(s <-chan struct{}) error {
 	return r(s)
 }
 
-// New returns a new Manager
+// New returns a new Manager for creating Controllers.
 func New(config *rest.Config, options Options) (Manager, error) {
-	cm := &controllerManager{config: config, scheme: options.Scheme, errChan: make(chan error)}
-
 	// Initialize a rest.config if none was specified
-	if cm.config == nil {
+	if config == nil {
 		return nil, fmt.Errorf("must specify Config")
-	}
-
-	// Use the Kubernetes client-go scheme if none is specified
-	if cm.scheme == nil {
-		cm.scheme = scheme.Scheme
 	}
 
 	// Set default values for options fields
 	options = setOptionsDefaults(options)
 
-	mapper, err := options.MapperProvider(cm.config)
+	// Create the mapper provider
+	mapper, err := options.MapperProvider(config)
 	if err != nil {
 		log.Error(err, "Failed to get API Group-Resources")
 		return nil, err
 	}
 
 	// Create the Client for Write operations.
-	writeObj, err := options.newClient(cm.config, client.Options{Scheme: cm.scheme, Mapper: mapper})
+	writeObj, err := options.newClient(config, client.Options{Scheme: options.Scheme, Mapper: mapper})
 	if err != nil {
 		return nil, err
 	}
 
-	cm.cache, err = options.newCache(cm.config, cache.Options{Scheme: cm.scheme, Mapper: mapper})
+	// Create the cache for the cached read client and registering informers
+	cache, err := options.newCache(config, cache.Options{Scheme: options.Scheme, Mapper: mapper})
 	if err != nil {
 		return nil, err
+
 	}
-
-	cm.fieldIndexes = cm.cache
-	cm.client = client.DelegatingClient{Reader: cm.cache, Writer: writeObj}
-
 	// Create the recorder provider to inject event recorders for the components.
-	cm.recorderProvider, err = options.newRecorderProvider(cm.config, cm.scheme)
+	recorderProvider, err := options.newRecorderProvider(config, options.Scheme)
 	if err != nil {
 		return nil, err
 	}
 
-	return cm, nil
+	return &controllerManager{
+		config:           config,
+		scheme:           options.Scheme,
+		errChan:          make(chan error),
+		cache:            cache,
+		fieldIndexes:     cache,
+		client:           client.DelegatingClient{Reader: cache, Writer: writeObj},
+		recorderProvider: recorderProvider,
+	}, nil
 }
 
 // setOptionsDefaults set default values for Options fields
 func setOptionsDefaults(options Options) Options {
+	// Use the Kubernetes client-go scheme if none is specified
+	if options.Scheme == nil {
+		options.Scheme = scheme.Scheme
+	}
+
 	if options.MapperProvider == nil {
 		options.MapperProvider = apiutil.NewDiscoveryRESTMapper
 	}
@@ -153,7 +159,6 @@ func setOptionsDefaults(options Options) Options {
 	}
 
 	// Allow newCache to be mocked
-	// TODO(directxman12): Figure out how to allow users to request a client without requesting a watch
 	if options.newCache == nil {
 		options.newCache = cache.New
 	}

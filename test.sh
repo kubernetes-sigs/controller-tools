@@ -112,9 +112,9 @@ go generate ./test/pkg/apis/...
 go vet ./pkg/... ./test/pkg/... ./test/cmd/... ./cmd/...
 
 # go get is broken for golint.  re-enable this once it is fixed.
-#header_text "running golint"
-#
-#golint -set_exit_status ./pkg/...
+header_text "running golint"
+
+golint -set_exit_status ./pkg/...
 
 header_text "running gometalinter.v2"
 
@@ -135,25 +135,7 @@ gometalinter.v2 --disable-all \
     --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
-    ./pkg/... ./cmd/...
-
-gometalinter.v2 --disable-all \
-    --deadline 5m \
-    --enable=misspell \
-    --enable=structcheck \
-    --enable=golint \
-    --enable=deadcode \
-    --enable=errcheck \
-    --enable=varcheck \
-    --enable=goconst \
-    --enable=gas \
-    --enable=unparam \
-    --enable=ineffassign \
-    --enable=nakedret \
-    --enable=interfacer \
-    --enable=misspell \
-    --enable=gocyclo \
-    ./test/pkg/... ./test/cmd/...
+    ./pkg/... ./cmd/... ./test/pkg/... ./test/cmd/...
 
 header_text "running go test"
 
@@ -163,3 +145,4 @@ header_text "running test package tests"
 
 cd test
 make
+cd -

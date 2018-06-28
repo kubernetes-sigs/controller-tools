@@ -17,6 +17,9 @@ required = [
 [prune]
   go-tests = true
 
+[[constraint]]
+name="sigs.k8s.io/controller-runtime"
+branch="master"
 
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 

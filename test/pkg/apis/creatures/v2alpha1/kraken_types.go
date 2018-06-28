@@ -60,5 +60,5 @@ type KrakenList struct {
 }
 
 func init() {
-	KnownTypes = append(KnownTypes, &Kraken{}, &KrakenList{})
+	SchemeBuilder.Register(&Kraken{}, &KrakenList{})
 }

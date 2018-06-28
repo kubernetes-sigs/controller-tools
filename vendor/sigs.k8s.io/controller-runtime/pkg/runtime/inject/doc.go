@@ -16,7 +16,7 @@ limitations under the License.
 
 /*
 Package inject defines interfaces and functions for propagating dependencies from a ControllerManager to
-the components registered with it.  Dependencies are propagated to Reconcile, Source, EventHandler and Predicate
+the components registered with it.  Dependencies are propagated to Reconciler, Source, EventHandler and Predicate
 objects which implement the Injectable interfaces.
 */
 package inject

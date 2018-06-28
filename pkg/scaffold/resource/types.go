@@ -102,6 +102,6 @@ type {{.Resource.Kind}}List struct {
 }
 
 func init() {
-	KnownTypes = append(KnownTypes, &{{.Resource.Kind}}{}, &{{.Resource.Kind}}List{})
+	SchemeBuilder.Register(&{{.Resource.Kind}}{}, &{{.Resource.Kind}}List{})
 }
 `

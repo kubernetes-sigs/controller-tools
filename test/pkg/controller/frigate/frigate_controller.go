@@ -21,6 +21,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -37,33 +38,33 @@ import (
 
 // Add creates a new Frigate Controller and adds it to the Manager.  The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this ship.Add(mrg) to install this Controller
-func Add(mrg manager.Manager) error {
-	return add(mrg, newReconcile(mrg))
+// USER ACTION REQUIRED: update cmd/manager/main.go to call this ship.Add(mgr) to install this Controller
+func Add(mgr manager.Manager) error {
+	return add(mgr, newReconciler(mgr))
 }
 
-// newReconcile returns a new reconcile.Reconcile
-func newReconcile(mrg manager.Manager) reconcile.Reconcile {
-	return &ReconcileFrigate{client: mrg.GetClient()}
+// newReconciler returns a new reconcile.Reconciler
+func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+	return &ReconcileFrigate{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
-// add adds a new Controller to mrg with r as the reconcile.Reconcile
-func add(mrg manager.Manager, r reconcile.Reconcile) error {
+// add adds a new Controller to mgr with r as the reconcile.Reconciler
+func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("frigate-controller", mrg, controller.Options{Reconcile: r})
+	c, err := controller.New("frigate-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to Frigate
-	err = c.Watch(&source.Kind{Type: &shipv1beta1.Frigate{}}, &handler.Enqueue{})
+	err = c.Watch(&source.Kind{Type: &shipv1beta1.Frigate{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
 	// Uncomment watch a Deployment created by Frigate - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueOwner{
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &shipv1beta1.Frigate{},
 	})
@@ -74,9 +75,12 @@ func add(mrg manager.Manager, r reconcile.Reconcile) error {
 	return nil
 }
 
+var _ reconcile.Reconciler = &ReconcileFrigate{}
+
 // ReconcileFrigate reconciles a Frigate object
 type ReconcileFrigate struct {
-	client client.Client
+	client.Client
+	scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Frigate object and makes changes based on the state read
@@ -86,7 +90,7 @@ type ReconcileFrigate struct {
 func (r *ReconcileFrigate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Frigate instance
 	instance := &shipv1beta1.Frigate{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.

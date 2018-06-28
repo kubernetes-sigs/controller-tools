@@ -52,9 +52,7 @@ func (in AliasInterfaceSlice) DeepCopyInto(out *AliasInterfaceSlice) {
 		in := &in
 		*out = make(AliasInterfaceSlice, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
+			if (*in)[i] != nil {
 				(*out)[i] = (*in)[i].DeepCopyAliasInterface()
 			}
 		}
@@ -316,9 +314,7 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 		in, out := &in.SliceSlice, &out.SliceSlice
 		*out = make([]Slice, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
+			if (*in)[i] != nil {
 				in, out := &(*in)[i], &(*out)[i]
 				*out = make(Slice, len(*in))
 				copy(*out, *in)
@@ -376,14 +372,10 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 			(*out)[key] = val
 		}
 	}
-	if in.AliasInterface == nil {
-		out.AliasInterface = nil
-	} else {
+	if in.AliasInterface != nil {
 		out.AliasInterface = in.AliasInterface.DeepCopyAliasInterface()
 	}
-	if in.AliasAliasInterface == nil {
-		out.AliasAliasInterface = nil
-	} else {
+	if in.AliasAliasInterface != nil {
 		out.AliasAliasInterface = in.AliasAliasInterface.DeepCopyAliasAliasInterface()
 	}
 	if in.AliasInterfaceMap != nil {
@@ -401,9 +393,7 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 		in, out := &in.AliasInterfaceSlice, &out.AliasInterfaceSlice
 		*out = make(AliasInterfaceSlice, len(*in))
 		for i := range *in {
-			if (*in)[i] == nil {
-				(*out)[i] = nil
-			} else {
+			if (*in)[i] != nil {
 				(*out)[i] = (*in)[i].DeepCopyAliasInterface()
 			}
 		}
