@@ -35,13 +35,17 @@ type ManifestOptions struct {
 	Labels    map[string]string
 }
 
+// SetDefaults sets up the default options for RBAC Manifest generator.
+func (o *ManifestOptions) SetDefaults() {
+	o.Name = "manager"
+	o.InputDir = filepath.Join(".", "pkg")
+	o.OutputDir = filepath.Join(".", "config", "rbac")
+}
+
 // Validate validates the input options.
 func (o *ManifestOptions) Validate() error {
 	if _, err := os.Stat(o.InputDir); err != nil {
 		return fmt.Errorf("invalid input directory '%s' %v", o.InputDir, err)
-	}
-	if _, err := os.Stat(o.OutputDir); err != nil {
-		return fmt.Errorf("invalid output directory '%s' %v", o.OutputDir, err)
 	}
 	return nil
 }
@@ -70,6 +74,10 @@ func Generate(o *ManifestOptions) error {
 		return fmt.Errorf("failed to generate role binding manifests %v", err)
 	}
 
+	err = os.MkdirAll(o.OutputDir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create output dir %v", err)
+	}
 	roleManifestFile := filepath.Join(o.OutputDir, "rbac_role.yaml")
 	if err := ioutil.WriteFile(roleManifestFile, roleManifest, 0666); err != nil {
 		return fmt.Errorf("failed to write role manifest YAML file %v", err)
