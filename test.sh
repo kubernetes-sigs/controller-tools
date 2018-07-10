@@ -135,6 +135,7 @@ gometalinter.v2 --disable-all \
     --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
+    --skip=parse \
     ./pkg/... ./cmd/... ./test/pkg/... ./test/cmd/...
 
 header_text "running go test"
