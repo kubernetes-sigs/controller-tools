@@ -26,7 +26,7 @@ var _ = Describe("Manager", func() {
 			},
 			{
 				file:     filepath.Join("config", "manager", "manager.yaml"),
-				instance: &Config{},
+				instance: &Config{Image: "controller:latest"},
 			},
 			{
 				file:     filepath.Join("pkg", "controller", "controller.go"),
