@@ -25,6 +25,8 @@ var _ input.File = &Makefile{}
 // Makefile scaffolds the Makefile
 type Makefile struct {
 	input.Input
+	// Image is controller manager image name
+	Image string
 }
 
 // GetInput implements input.File
@@ -67,4 +69,12 @@ vet:
 # Generate code
 generate:
 	go generate ./pkg/... ./cmd/...
+
+# Build the docker image
+docker-build: test
+	docker build . -t {{ .Image }}
+
+# Push the docker image
+docker-push:
+	docker push {{ .Image }}
 `

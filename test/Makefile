@@ -28,3 +28,11 @@ vet:
 # Generate code
 generate:
 	go generate ./pkg/... ./cmd/...
+
+# Build the docker image
+docker-build: test
+	docker build . -t controller:latest
+
+# Push the docker image
+docker-push:
+	docker push controller:latest
