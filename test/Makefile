@@ -17,6 +17,10 @@ run: generate fmt vet
 install:
 	kubectl apply -f config/crds
 
+# Generate manifests e.g. CRD, RBAC etc.
+manifests:
+	go run ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+
 # Run go fmt against code
 fmt:
 	go fmt ./pkg/... ./cmd/...
