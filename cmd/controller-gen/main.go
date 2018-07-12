@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
+	crdgenerator "sigs.k8s.io/controller-tools/pkg/crd/generator"
 	"sigs.k8s.io/controller-tools/pkg/generate/rbac"
 )
 
@@ -40,9 +42,9 @@ func main() {
 `,
 	}
 
-	// add RBAC manifests generator as subcommand
 	rootCmd.AddCommand(
 		newRBACCmd(),
+		newCRDCmd(),
 		newAllSubCmd(),
 	)
 
@@ -61,7 +63,7 @@ func newRBACCmd() *cobra.Command {
 		Short: "Generates RBAC manifests",
 		Long: `Generate RBAC manifests from the RBAC annotations in Go source files.
 Usage:
-# rbac generate [--name manager] [--input-dir input_dir] [--output-dir output_dir]
+# controller-gen rbac [--name manager] [--input-dir input_dir] [--output-dir output_dir]
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := rbac.Generate(o); err != nil {
@@ -79,7 +81,42 @@ Usage:
 	return cmd
 }
 
+func newCRDCmd() *cobra.Command {
+	g := &crdgenerator.Generator{}
+
+	cmd := &cobra.Command{
+		Use:   "crd",
+		Short: "Generates CRD manifests",
+		Long: `Generate CRD manifests from the Type definitions in Go source files.
+Usage:
+# controller-gen crd [--domain k8s.io] [--root-path input_dir] [--output-dir output_dir]
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := g.ValidateAndInitFields(); err != nil {
+				log.Fatal(err)
+			}
+			if err := g.Do(); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("CRD files generated, files can be found under path %s.\n", g.OutputDir)
+		},
+	}
+
+	f := cmd.Flags()
+	f.StringVar(&g.RootPath, "root-path", "", "working dir, must have PROJECT file under the path or parent path if domain not set")
+	f.StringVar(&g.OutputDir, "output-dir", "", "output directory, default to 'config/crds' under root path")
+	f.StringVar(&g.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
+	f.StringVar(&g.Namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
+	f.BoolVar(&g.SkipMapValidation, "skip-map-validation", true, "if set to true, skip generating OpenAPI validation schema for map type in CRD.")
+
+	return cmd
+}
+
 func newAllSubCmd() *cobra.Command {
+	var (
+		projectDir, namespace string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "runs all generators for a project",
@@ -88,40 +125,40 @@ Usage:
 # controller-gen all
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			// load default project for populating generator options
-			// TODO: uncomment the following while enabling CRD
-			// projectFile, err := loadProjectFile()
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
+			if projectDir == "" {
+				currDir, err := os.Getwd()
+				if err != nil {
+					log.Fatalf("project-dir missing, failed to use current directory: %v", err)
+				}
+				projectDir = currDir
+			}
+			crdGen := &crdgenerator.Generator{
+				RootPath:  projectDir,
+				OutputDir: filepath.Join(projectDir, "config", "crds"),
+				Namespace: namespace,
+			}
+			if err := crdGen.ValidateAndInitFields(); err != nil {
+				log.Fatal(err)
+			}
+			if err := crdGen.Do(); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("CRD manifests generated under '%s' \n", crdGen.OutputDir)
 
 			// RBAC generation
-			rbacOptions := &rbac.ManifestOptions{}
-			rbacOptions.SetDefaults()
+			rbacOptions := &rbac.ManifestOptions{
+				InputDir:  filepath.Join(projectDir, "pkg"),
+				OutputDir: filepath.Join(projectDir, "config", "rbac"),
+				Name:      "manager",
+			}
 			if err := rbac.Generate(rbacOptions); err != nil {
 				log.Fatal(err)
 			}
 			fmt.Printf("RBAC manifests generated under '%s' directory\n", rbacOptions.OutputDir)
-
-			// Plug-in CRD generation
 		},
 	}
+	f := cmd.Flags()
+	f.StringVar(&projectDir, "project-dir", "", "project directory, it must have PROJECT file")
+	f.StringVar(&namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
 	return cmd
 }
-
-// func loadProjectFile() (*input.ProjectFile, error) {
-// 	// Load the PROJECT file for default options
-// 	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
-// 		return nil, fmt.Errorf("%s file missing", "PROJECT")
-// 	}
-// 	content, err := ioutil.ReadFile("PROJECT")
-// 	if err != nil {
-// 		return nil, fmt.Errorf("Error reading '%s' file %v", "PROJECT", err)
-// 	}
-// 	projectFile := input.ProjectFile{}
-// 	err = yaml.Unmarshal(content, &projectFile)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("Error loading '%s' file %v", "PROJECT", err)
-// 	}
-// 	return &projectFile, nil
-// }
