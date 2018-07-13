@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func TestStorage(t *testing.T) {
+func TestStorageFirstMate(t *testing.T) {
 	key := types.NamespacedName{Name: "foo", Namespace: "default"}
 	created := &FirstMate{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
 	g := gomega.NewGomegaWithT(t)
