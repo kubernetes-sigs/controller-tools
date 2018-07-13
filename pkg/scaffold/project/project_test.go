@@ -184,6 +184,40 @@ Copyright 2019 Example Owners.
 		})
 	})
 
+	Describe("scaffolding a Kustomization", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "default", "kustomization.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with defaults ", func() {
+			It("should match the golden file", func() {
+				instance := &Kustomize{Prefix: "test"}
+				instance.Repo = "sigs.k8s.io/controller-tools/test"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
+	Describe("scaffolding a Kustomize image patch", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "default", "manager_image_patch.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with defaults ", func() {
+			It("should match the golden file", func() {
+				instance := &KustomizeImagePatch{}
+				instance.Repo = "sigs.k8s.io/controller-tools/test"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
 	Describe("scaffolding a .gitignore", func() {
 		BeforeEach(func() {
 			goldenPath = filepath.Join(".gitignore")
