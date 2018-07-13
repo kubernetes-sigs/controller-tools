@@ -137,11 +137,6 @@ var _ = Describe("Resource", func() {
 					instance: &AddToScheme{Resource: r},
 				},
 				{
-					file: filepath.Join("config", "crds",
-						fmt.Sprintf("%s_%s_%s.yaml", r.Group, r.Version, strings.ToLower(r.Kind))),
-					instance: &CRD{Resource: r},
-				},
-				{
 					file:     filepath.Join("pkg", "apis", r.Group, r.Version, "doc.go"),
 					instance: &Doc{Resource: r},
 				},
@@ -152,14 +147,6 @@ var _ = Describe("Resource", func() {
 				{
 					file:     filepath.Join("pkg", "apis", r.Group, r.Version, "register.go"),
 					instance: &Register{Resource: r},
-				},
-				{
-					file:     filepath.Join("config", "manager", r.Group+"_role_rbac.yaml"),
-					instance: &Role{Resource: r},
-				},
-				{
-					file:     filepath.Join("config", "manager", r.Group+"_rolebinding_rbac.yaml"),
-					instance: &RoleBinding{Resource: r},
 				},
 				{
 					file: filepath.Join("pkg", "apis", r.Group, r.Version,

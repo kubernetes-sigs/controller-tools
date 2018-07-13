@@ -65,9 +65,17 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 			ProjectOptional:     true,
 		}
 
-		p, _ := prj.GetInput()
-		b, _ := bp.GetInput()
-		err := s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, prj, bp)
+		p, err := prj.GetInput()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		b, err := bp.GetInput()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, prj, bp)
 		if err != nil {
 			log.Fatal(err)
 		}
