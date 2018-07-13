@@ -162,6 +162,11 @@ var _ = Describe("Resource", func() {
 					file:     filepath.Join("pkg", "apis", r.Group, r.Version, r.Version+"_suite_test.go"),
 					instance: &VersionSuiteTest{Resource: r},
 				},
+				{
+					file: filepath.Join("config", "samples",
+						fmt.Sprintf("%s_%s_%s.yaml", r.Group, r.Version, strings.ToLower(r.Kind))),
+					instance: &CRDSample{Resource: r},
+				},
 			}
 
 			for j := range files {
