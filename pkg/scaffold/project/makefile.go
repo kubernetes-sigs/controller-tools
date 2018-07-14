@@ -40,6 +40,9 @@ func (c *Makefile) GetInput() (input.Input, error) {
 }
 
 var makefileTemplate = `
+# Image URL to use all building/pushing image targets
+IMG ?= controller:latest
+
 all: test manager
 
 # Run tests
@@ -60,9 +63,8 @@ install: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/rbac
 	kubectl apply -f config/crds
-	kubectl apply -f config/manager
+	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
@@ -82,9 +84,11 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build . -t {{ .Image }}
+	docker build . -t ${IMG}
+	@echo "updating kustomize image patch file for manager resource"
+	sed -i 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
 
 # Push the docker image
 docker-push:
-	docker push {{ .Image }}
+	docker push ${IMG}
 `
