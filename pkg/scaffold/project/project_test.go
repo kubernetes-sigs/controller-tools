@@ -174,7 +174,7 @@ Copyright 2019 Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &Makefile{Image: "controller:latest"}
+				instance := &Makefile{Image: "controller:latest", ControllerToolsPath: ".."}
 				instance.Repo = "sigs.k8s.io/controller-tools/test"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 

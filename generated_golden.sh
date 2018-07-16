@@ -20,7 +20,7 @@ go build -o ./bin/controller-scaffold  sigs.k8s.io/controller-tools/cmd/controll
 rm -rf ./test/*
 cd test
 ln -s ../vendor vendor
-../bin/controller-scaffold project --domain k8s.io --license apache2 --owner "The Kubernetes authors" --dep=false
+../bin/controller-scaffold project --domain k8s.io --controller-tools-path ".." --license apache2 --owner "The Kubernetes authors" --dep=false
 ../bin/controller-scaffold api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 ../bin/controller-scaffold api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
 ../bin/controller-scaffold api --group creatures --version v2alpha1 --kind Kraken --namespaced=false --example=false --controller=true --resource=true --make=false
