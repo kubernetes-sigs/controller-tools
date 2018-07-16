@@ -17,7 +17,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - crew
+  - crew.k8s.io
   resources:
   - firstmates
   verbs:
@@ -29,7 +29,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - ship
+  - ship.k8s.io
   resources:
   - frigates
   verbs:
@@ -41,7 +41,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - creatures
+  - creatures.k8s.io
   resources:
   - krakens
   verbs:
