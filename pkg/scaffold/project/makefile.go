@@ -27,12 +27,18 @@ type Makefile struct {
 	input.Input
 	// Image is controller manager image name
 	Image string
+
+	// path for controller-tools pkg
+	ControllerToolsPath string
 }
 
 // GetInput implements input.File
 func (c *Makefile) GetInput() (input.Input, error) {
 	if c.Path == "" {
 		c.Path = "Makefile"
+	}
+	if c.ControllerToolsPath == "" {
+		c.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
 	c.TemplateBody = makefileTemplate
 	c.Input.IfExistsAction = input.Error
@@ -66,7 +72,7 @@ deploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
-	go build -o /tmp/controller-gen sigs.k8s.io/controller-tools/cmd/controller-gen && /tmp/controller-gen all
+	go run {{ .ControllerToolsPath }}/cmd/controller-gen/main.go all
 
 # Run go fmt against code
 fmt:
