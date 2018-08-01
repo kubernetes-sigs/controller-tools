@@ -1,4 +1,4 @@
-apiVersion: crew.k8s.io/v1
+apiVersion: crew.testproject.org/v1
 kind: FirstMate
 metadata:
   labels:

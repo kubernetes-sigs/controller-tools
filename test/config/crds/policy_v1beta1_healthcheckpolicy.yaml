@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: krakens.creatures.testproject.org
+  name: healthcheckpolicies.policy.testproject.org
 spec:
-  group: creatures.testproject.org
+  group: policy.testproject.org
   names:
-    kind: Kraken
-    plural: krakens
+    kind: HealthCheckPolicy
+    plural: healthcheckpolicies
   scope: Cluster
   validation:
     openAPIV3Schema:
@@ -25,7 +25,7 @@ spec:
         status:
           type: object
       type: object
-  version: v2alpha1
+  version: v1beta1
 status:
   acceptedNames:
     kind: ""
