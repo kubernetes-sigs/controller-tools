@@ -17,7 +17,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - crew.k8s.io
+  - crew.testproject.org
   resources:
   - firstmates
   verbs:
@@ -29,7 +29,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - ship.k8s.io
+  - ship.testproject.org
   resources:
   - frigates
   verbs:
@@ -41,7 +41,19 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - creatures.k8s.io
+  - policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - creatures.testproject.org
   resources:
   - krakens
   verbs:

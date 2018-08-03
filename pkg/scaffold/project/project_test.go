@@ -243,7 +243,7 @@ Copyright 2019 Example Owners.
 			It("should match the golden file", func() {
 				instance := &Project{}
 				instance.Version = "2"
-				instance.Domain = "k8s.io"
+				instance.Domain = "testproject.org"
 				instance.Repo = "sigs.k8s.io/controller-tools/test"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
