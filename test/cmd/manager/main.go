@@ -19,6 +19,7 @@ package main
 import (
 	"log"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -44,12 +45,17 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Add apis failed, error: %#v.", err)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Fatal(err)
+		switch err.(type) {
+		case *meta.NoKindMatchError:
+			log.Fatalf("No kind %v found, please install CRD in advance.", err.(*meta.NoKindMatchError).GroupKind)
+		default:
+			log.Fatalf("Add controller failed, error: %#v.", err)
+		}
 	}
 
 	log.Printf("Starting the Cmd.")
