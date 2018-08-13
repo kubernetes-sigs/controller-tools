@@ -60,11 +60,12 @@ type APIs struct {
 }
 
 // NewAPIs returns a new APIs instance with given context.
-func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs, domain string) *APIs {
+func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs, domain, apisPkg string) *APIs {
 	b := &APIs{
 		context:   context,
 		arguments: arguments,
 		Domain:    domain,
+		APIsPkg:   apisPkg,
 	}
 	b.parsePackages()
 	b.parseGroupNames()
@@ -183,15 +184,6 @@ func (b *APIs) parsePackages() {
 
 			unversioned := filepath.Dir(versioned)
 			b.UnversionedPkgs.Insert(unversioned)
-
-			if apis := filepath.Dir(unversioned); apis != b.APIsPkg && len(b.APIsPkg) > 0 {
-				panic(errors.Errorf(
-					"Found multiple apis directory paths: %v and %v.  "+
-						"Do you have a +resource tag on a resource that is not in a version "+
-						"directory?", b.APIsPkg, apis))
-			} else {
-				b.APIsPkg = apis
-			}
 		}
 	}
 }
