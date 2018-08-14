@@ -26,6 +26,7 @@ import (
 	"github.com/ghodss/yaml"
 	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/args"
+	"k8s.io/gengo/types"
 	crdutil "sigs.k8s.io/controller-tools/pkg/crd/util"
 	"sigs.k8s.io/controller-tools/pkg/internal/codegen"
 	"sigs.k8s.io/controller-tools/pkg/internal/codegen/parse"
@@ -39,6 +40,10 @@ type Generator struct {
 	Domain            string
 	Namespace         string
 	SkipMapValidation bool
+
+	// apisPkg is the absolute Go pkg name for current project's 'pkg/apis' pkg.
+	// This is needed to determine if a Type belongs to the project or it is a referred Type.
+	apisPkg string
 }
 
 // ValidateAndInitFields validate and init generator fields.
@@ -61,18 +66,9 @@ func (c *Generator) ValidateAndInitFields() error {
 	// If Domain is not explicitly specified,
 	// try to search for PROJECT file as a basis.
 	if len(c.Domain) == 0 {
-		for {
-			if crdutil.PathHasProjectFile(c.RootPath) {
-				break
-			}
-
-			if crdutil.IsGoSrcPath(c.RootPath) {
-				return fmt.Errorf("failed to find working directory that contains %s", "PROJECT")
-			}
-
-			c.RootPath = path.Dir(c.RootPath)
+		if !crdutil.PathHasProjectFile(c.RootPath) {
+			return fmt.Errorf("PROJECT file missing in dir %s", c.RootPath)
 		}
-
 		c.Domain = crdutil.GetDomainFromProject(c.RootPath)
 	}
 
@@ -80,6 +76,11 @@ func (c *Generator) ValidateAndInitFields() error {
 	apisPath := path.Join(c.RootPath, "pkg/apis")
 	if _, err := os.Stat(apisPath); err != nil {
 		return fmt.Errorf("error validating apis path %s: %v", apisPath, err)
+	}
+
+	c.apisPkg, err = crdutil.DirToGoPkg(apisPath)
+	if err != nil {
+		return err
 	}
 
 	// Init output directory
@@ -114,7 +115,7 @@ func (c *Generator) Do() error {
 	arguments.CustomArgs = &parse.Options{SkipMapValidation: c.SkipMapValidation}
 
 	// TODO: find an elegant way to fulfill the domain in APIs.
-	p := parse.NewAPIs(ctx, arguments, c.Domain)
+	p := parse.NewAPIs(ctx, arguments, c.Domain, c.apisPkg)
 
 	crds := c.getCrds(p)
 
@@ -144,6 +145,10 @@ func (c *Generator) getCrds(p *parse.APIs) map[string]string {
 		for _, v := range g.Versions {
 			for _, r := range v.Resources {
 				crd := r.CRD
+				// ignore types which do not belong to this project
+				if !c.belongsToAPIsPkg(r.Type) {
+					continue
+				}
 				if len(c.Namespace) > 0 {
 					crd.Namespace = c.Namespace
 				}
@@ -163,4 +168,10 @@ func (c *Generator) getCrds(p *parse.APIs) map[string]string {
 	}
 
 	return result
+}
+
+// belongsToAPIsPkg returns true if type t is defined under pkg/apis pkg of
+// current project.
+func (c *Generator) belongsToAPIsPkg(t *types.Type) bool {
+	return strings.HasPrefix(t.Name.Package, c.apisPkg)
 }
