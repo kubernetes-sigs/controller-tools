@@ -26,8 +26,13 @@ import (
 )
 
 func TestStorageHealthCheckPolicy(t *testing.T) {
-	key := types.NamespacedName{Name: "foo", Namespace: "default"}
-	created := &HealthCheckPolicy{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	key := types.NamespacedName{
+		Name: "foo",
+	}
+	created := &HealthCheckPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		}}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
