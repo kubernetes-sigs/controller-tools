@@ -56,31 +56,31 @@ type EnqueueRequestForOwner struct {
 // Create implements EventHandler
 func (e *EnqueueRequestForOwner) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	for _, req := range e.getOwnerReconcileRequest(evt.Meta) {
-		q.AddRateLimited(req)
+		q.Add(req)
 	}
 }
 
 // Update implements EventHandler
 func (e *EnqueueRequestForOwner) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	for _, req := range e.getOwnerReconcileRequest(evt.MetaOld) {
-		q.AddRateLimited(req)
+		q.Add(req)
 	}
 	for _, req := range e.getOwnerReconcileRequest(evt.MetaNew) {
-		q.AddRateLimited(req)
+		q.Add(req)
 	}
 }
 
 // Delete implements EventHandler
 func (e *EnqueueRequestForOwner) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	for _, req := range e.getOwnerReconcileRequest(evt.Meta) {
-		q.AddRateLimited(req)
+		q.Add(req)
 	}
 }
 
 // Generic implements EventHandler
 func (e *EnqueueRequestForOwner) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
 	for _, req := range e.getOwnerReconcileRequest(evt.Meta) {
-		q.AddRateLimited(req)
+		q.Add(req)
 	}
 }
 
@@ -95,7 +95,7 @@ func (e *EnqueueRequestForOwner) parseOwnerTypeGroupKind(scheme *runtime.Scheme)
 	}
 	// Expect only 1 kind.  If there is more than one kind this is probably an edge case such as ListOptions.
 	if len(kinds) != 1 {
-		err := fmt.Errorf("Expected exactly 1 kind for OwnerType")
+		err := fmt.Errorf("Expected exactly 1 kind for OwnerType %T, but found %s kinds", e.OwnerType, kinds)
 		log.Error(err, "", "OwnerType", e.OwnerType, "Kinds", kinds)
 		return err
 
