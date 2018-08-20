@@ -19,7 +19,7 @@ package fake
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"os"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,6 +29,11 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+)
+
+var (
+	log = logf.KBLog.WithName("fake-client")
 )
 
 type fakeClient struct {
@@ -44,7 +49,8 @@ func NewFakeClient(initObjs ...runtime.Object) client.Client {
 	for _, obj := range initObjs {
 		err := tracker.Add(obj)
 		if err != nil {
-			log.Fatalf("failed to add object: %#v, error: %v", obj, err)
+			log.Error(err, "failed to add object", "object", obj)
+			os.Exit(1)
 			return nil
 		}
 	}
@@ -123,6 +129,10 @@ func (c *fakeClient) Update(ctx context.Context, obj runtime.Object) error {
 	return c.tracker.Update(gvr, obj, accessor.GetNamespace())
 }
 
+func (c *fakeClient) Status() client.StatusWriter {
+	return &fakeStatusWriter{client: c}
+}
+
 func getGVRFromObject(obj runtime.Object) (schema.GroupVersionResource, error) {
 	gvk, err := apiutil.GVKForObject(obj, scheme.Scheme)
 	if err != nil {
@@ -130,4 +140,14 @@ func getGVRFromObject(obj runtime.Object) (schema.GroupVersionResource, error) {
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	return gvr, nil
+}
+
+type fakeStatusWriter struct {
+	client *fakeClient
+}
+
+func (sw *fakeStatusWriter) Update(ctx context.Context, obj runtime.Object) error {
+	// TODO(droot): This results in full update of the obj (spec + status). Need
+	// a way to update status field only.
+	return sw.client.Update(ctx, obj)
 }
