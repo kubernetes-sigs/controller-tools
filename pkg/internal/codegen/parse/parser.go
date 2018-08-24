@@ -19,11 +19,11 @@ package parse
 import (
 	"bufio"
 	"go/build"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,7 +129,7 @@ func parseDomainFromFiles(paths []string) string {
 
 			file, err := os.Open(filePath)
 			if err != nil {
-				glog.Fatal(err)
+				log.Fatal(err)
 			}
 			defer file.Close()
 			scanner := bufio.NewScanner(file)
@@ -139,7 +139,7 @@ func parseDomainFromFiles(paths []string) string {
 				}
 			}
 			if err := scanner.Err(); err != nil {
-				glog.Fatal(err)
+				log.Fatal(err)
 			}
 
 			comments := Comments(lines)

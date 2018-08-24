@@ -73,9 +73,6 @@ required = [
 #  name = "github.com/go-openapi/spec"
 #
 #[[constraint]]
-#  name = "github.com/golang/glog"
-#
-#[[constraint]]
 #  name = "sigs.k8s.io/testing_frameworks"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
