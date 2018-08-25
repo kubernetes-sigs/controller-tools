@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -30,7 +29,6 @@ import (
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/namer"
 	"k8s.io/gengo/types"
-	generatorargs "k8s.io/kube-openapi/cmd/openapi-gen/args"
 	openapi "k8s.io/kube-openapi/pkg/common"
 
 	"github.com/golang/glog"
@@ -122,18 +120,13 @@ func Packages(context *generator.Context, arguments *args.GeneratorArgs) generat
 
 `)...)
 
-	reportFilename := "-"
-	if customArgs, ok := arguments.CustomArgs.(*generatorargs.CustomArgs); ok {
-		reportFilename = customArgs.ReportFilename
-	}
-
 	return generator.Packages{
 		&generator.DefaultPackage{
 			PackageName: filepath.Base(arguments.OutputPackagePath),
 			PackagePath: arguments.OutputPackagePath,
 			HeaderText:  header,
 			GeneratorFunc: func(c *generator.Context) (generators []generator.Generator) {
-				return []generator.Generator{NewOpenAPIGen(arguments.OutputFileBaseName, arguments.OutputPackagePath, context, newAPILinter(), reportFilename)}
+				return []generator.Generator{NewOpenAPIGen(arguments.OutputFileBaseName, arguments.OutputPackagePath, context)}
 			},
 			FilterFunc: func(c *generator.Context, t *types.Type) bool {
 				// There is a conflict between this codegen and codecgen, we should avoid types generated for codecgen
@@ -162,24 +155,20 @@ const (
 type openAPIGen struct {
 	generator.DefaultGen
 	// TargetPackage is the package that will get GetOpenAPIDefinitions function returns all open API definitions.
-	targetPackage  string
-	imports        namer.ImportTracker
-	types          []*types.Type
-	context        *generator.Context
-	linter         *apiLinter
-	reportFilename string
+	targetPackage string
+	imports       namer.ImportTracker
+	types         []*types.Type
+	context       *generator.Context
 }
 
-func NewOpenAPIGen(sanitizedName string, targetPackage string, context *generator.Context, linter *apiLinter, reportFilename string) generator.Generator {
+func NewOpenAPIGen(sanitizedName string, targetPackage string, context *generator.Context) generator.Generator {
 	return &openAPIGen{
 		DefaultGen: generator.DefaultGen{
 			OptionalName: sanitizedName,
 		},
-		imports:        generator.NewImportTracker(),
-		targetPackage:  targetPackage,
-		context:        context,
-		linter:         linter,
-		reportFilename: reportFilename,
+		imports:       generator.NewImportTracker(),
+		targetPackage: targetPackage,
+		context:       context,
 	}
 }
 
@@ -253,10 +242,6 @@ func (g *openAPIGen) Init(c *generator.Context, w io.Writer) error {
 }
 
 func (g *openAPIGen) GenerateType(c *generator.Context, t *types.Type, w io.Writer) error {
-	glog.V(5).Infof("validating API rules for type %v", t)
-	if err := g.linter.validate(t); err != nil {
-		return err
-	}
 	glog.V(5).Infof("generating for type %v", t)
 	sw := generator.NewSnippetWriter(w, c, "$", "$")
 	err := newOpenAPITypeWriter(sw).generate(t)
@@ -398,9 +383,8 @@ func (g openAPITypeWriter) generate(t *types.Type) error {
 		if hasOpenAPIDefinitionMethods(t) {
 			g.Do("return $.OpenAPIDefinition|raw${\n"+
 				"Schema: spec.Schema{\n"+
-				"SchemaProps: spec.SchemaProps{\n", args)
-			g.generateDescription(t.CommentLines)
-			g.Do("Type:$.type|raw${}.OpenAPISchemaType(),\n"+
+				"SchemaProps: spec.SchemaProps{\n"+
+				"Type:$.type|raw${}.OpenAPISchemaType(),\n"+
 				"Format:$.type|raw${}.OpenAPISchemaFormat(),\n"+
 				"},\n"+
 				"},\n"+
@@ -448,7 +432,7 @@ func (g openAPITypeWriter) generateStructExtensions(t *types.Type) error {
 	extensions, errors := parseExtensions(t.CommentLines)
 	// Initially, we will only log struct extension errors.
 	if len(errors) > 0 {
-		for _, e := range errors {
+		for e := range errors {
 			glog.V(2).Infof("[%s]: %s\n", t.String(), e)
 		}
 	}
@@ -458,16 +442,17 @@ func (g openAPITypeWriter) generateStructExtensions(t *types.Type) error {
 }
 
 func (g openAPITypeWriter) generateMemberExtensions(m *types.Member, parent *types.Type) error {
-	extensions, parseErrors := parseExtensions(m.CommentLines)
-	validationErrors := validateMemberExtensions(extensions, m)
-	errors := append(parseErrors, validationErrors...)
+	extensions, errors := parseExtensions(m.CommentLines)
 	// Initially, we will only log member extension errors.
 	if len(errors) > 0 {
 		errorPrefix := fmt.Sprintf("[%s] %s:", parent.String(), m.String())
-		for _, e := range errors {
+		for e := range errors {
 			glog.V(2).Infof("%s %s\n", errorPrefix, e)
 		}
 	}
+	// TODO(seans3): Validate member extensions here.
+	// Example: listType extension is only on a Slice.
+	// Example: cross-extension validation - listMapKey only makes sense with listType=map
 	g.emitExtensions(extensions)
 	return nil
 }
@@ -676,29 +661,5 @@ func (g openAPITypeWriter) generateSliceProperty(t *types.Type) error {
 		return fmt.Errorf("slice Element kind %v is not supported in %v", elemType.Kind, t)
 	}
 	g.Do("},\n},\n},\n", nil)
-	return nil
-}
-
-// Finalize prints the API rule violations to report file (if specified from arguments) or stdout (default)
-func (g *openAPIGen) Finalize(c *generator.Context, w io.Writer) error {
-	// If report file isn't specified, return error to force user to choose either stdout ("-") or a file name
-	if len(g.reportFilename) == 0 {
-		return fmt.Errorf("empty report file name: please provide a valid file name or use the default \"-\" (stdout)")
-	}
-	// If stdout is specified, print violations and return error
-	if g.reportFilename == "-" {
-		return g.linter.report(os.Stdout)
-	}
-	// Otherwise, print violations to report file and return nil
-	f, err := os.Create(g.reportFilename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	g.linter.report(f)
-	// NOTE: we don't return error here because we assume that the report file will
-	// get evaluated afterwards to determine if error should be raised. For example,
-	// you can have make rules that compare the report file with existing known
-	// violations (whitelist) and determine no error if no change is detected.
 	return nil
 }

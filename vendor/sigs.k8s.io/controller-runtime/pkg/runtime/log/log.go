@@ -3,20 +3,16 @@
 package log
 
 import (
-	"io"
 	"log"
-	"time"
 
-	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
+	"github.com/thockin/logr"
+	"github.com/thockin/logr/impls/zaplogr"
+	tlogr "github.com/thockin/logr/testing"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // ZapLogger is a Logger implementation.
-// If development is true, a Zap development config will be used
-// (stacktraces on warnings, no sampling), otherwise a Zap production
-// config will be used (stacktraces on errors, sampling).
+// if development is true stack traces will be printed for errors
 func ZapLogger(development bool) logr.Logger {
 	var zapLog *zap.Logger
 	var err error
@@ -29,37 +25,7 @@ func ZapLogger(development bool) logr.Logger {
 	}
 	// who watches the watchmen?
 	fatalIfErr(err, log.Fatalf)
-	return zapr.NewLogger(zapLog)
-}
-
-// ZapLoggerTo returns a new Logger implementation using Zap which logs
-// to the given destination, instead of stderr.  It otherise behaves like
-// ZapLogger.
-func ZapLoggerTo(destWriter io.Writer, development bool) logr.Logger {
-	// this basically mimics New<type>Config, but with a custom sink
-	sink := zapcore.AddSync(destWriter)
-
-	var enc zapcore.Encoder
-	var lvl zap.AtomicLevel
-	var opts []zap.Option
-	if development {
-		encCfg := zap.NewDevelopmentEncoderConfig()
-		enc = zapcore.NewConsoleEncoder(encCfg)
-		lvl = zap.NewAtomicLevelAt(zap.DebugLevel)
-		opts = append(opts, zap.Development(), zap.AddStacktrace(zap.ErrorLevel))
-	} else {
-		encCfg := zap.NewProductionEncoderConfig()
-		enc = zapcore.NewJSONEncoder(encCfg)
-		lvl = zap.NewAtomicLevelAt(zap.InfoLevel)
-		opts = append(opts, zap.AddStacktrace(zap.WarnLevel),
-			zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-				return zapcore.NewSampler(core, time.Second, 100, 100)
-			}))
-	}
-	opts = append(opts, zap.AddCallerSkip(1), zap.ErrorOutput(sink))
-	log := zap.New(zapcore.NewCore(enc, sink, lvl))
-	log = log.WithOptions(opts...)
-	return zapr.NewLogger(log)
+	return zaplogr.NewLogger(zapLog)
 }
 
 func fatalIfErr(err error, f func(format string, v ...interface{})) {
@@ -70,17 +36,23 @@ func fatalIfErr(err error, f func(format string, v ...interface{})) {
 
 // SetLogger sets a concrete logging implementation for all deferred Loggers.
 func SetLogger(l logr.Logger) {
-	Log.Fulfill(l)
+	if Log.promise != nil {
+		Log.promise.Fulfill(l)
+	}
 }
 
 // Log is the base logger used by kubebuilder.  It delegates
 // to another logr.Logger.  You *must* call SetLogger to
 // get any actual logging.
-var Log = NewDelegatingLogger(NullLogger{})
+var Log = &DelegatingLogger{
+	Logger:  tlogr.NullLogger{},
+	promise: &loggerPromise{},
+}
 
 // KBLog is a base parent logger.
 var KBLog logr.Logger
 
 func init() {
+	Log.promise.logger = Log
 	KBLog = Log.WithName("kubebuilder")
 }

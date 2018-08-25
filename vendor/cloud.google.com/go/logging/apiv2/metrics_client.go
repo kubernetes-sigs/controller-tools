@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/version"
-	"github.com/golang/protobuf/proto"
 	gax "github.com/googleapis/gax-go"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
@@ -59,8 +58,8 @@ func defaultMetricsCallOptions() *MetricsCallOptions {
 					codes.Unavailable,
 				}, gax.Backoff{
 					Initial:    100 * time.Millisecond,
-					Max:        60000 * time.Millisecond,
-					Multiplier: 1.3,
+					Max:        1000 * time.Millisecond,
+					Multiplier: 1.2,
 				})
 			}),
 		},
@@ -69,14 +68,12 @@ func defaultMetricsCallOptions() *MetricsCallOptions {
 		ListLogMetrics:  retry[[2]string{"default", "idempotent"}],
 		GetLogMetric:    retry[[2]string{"default", "idempotent"}],
 		CreateLogMetric: retry[[2]string{"default", "non_idempotent"}],
-		UpdateLogMetric: retry[[2]string{"default", "idempotent"}],
+		UpdateLogMetric: retry[[2]string{"default", "non_idempotent"}],
 		DeleteLogMetric: retry[[2]string{"default", "idempotent"}],
 	}
 }
 
 // MetricsClient is a client for interacting with Stackdriver Logging API.
-//
-// Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
 type MetricsClient struct {
 	// The connection to the service.
 	conn *grpc.ClientConn
@@ -134,7 +131,6 @@ func (c *MetricsClient) ListLogMetrics(ctx context.Context, req *loggingpb.ListL
 	ctx = insertMetadata(ctx, c.xGoogMetadata)
 	opts = append(c.CallOptions.ListLogMetrics[0:len(c.CallOptions.ListLogMetrics):len(c.CallOptions.ListLogMetrics)], opts...)
 	it := &LogMetricIterator{}
-	req = proto.Clone(req).(*loggingpb.ListLogMetricsRequest)
 	it.InternalFetch = func(pageSize int, pageToken string) ([]*loggingpb.LogMetric, string, error) {
 		var resp *loggingpb.ListLogMetricsResponse
 		req.PageToken = pageToken
@@ -162,7 +158,6 @@ func (c *MetricsClient) ListLogMetrics(ctx context.Context, req *loggingpb.ListL
 		return nextPageToken, nil
 	}
 	it.pageInfo, it.nextFunc = iterator.NewPageInfo(fetch, it.bufLen, it.takeBuf)
-	it.pageInfo.MaxSize = int(req.PageSize)
 	return it
 }
 

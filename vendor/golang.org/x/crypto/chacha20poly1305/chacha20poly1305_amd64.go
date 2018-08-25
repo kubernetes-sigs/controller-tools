@@ -9,7 +9,6 @@ package chacha20poly1305
 import (
 	"encoding/binary"
 
-	"golang.org/x/crypto/internal/subtle"
 	"golang.org/x/sys/cpu"
 )
 
@@ -20,6 +19,7 @@ func chacha20Poly1305Open(dst []byte, key []uint32, src, ad []byte) bool
 func chacha20Poly1305Seal(dst []byte, key []uint32, src, ad []byte)
 
 var (
+	useASM  = cpu.X86.HasSSSE3
 	useAVX2 = cpu.X86.HasAVX2 && cpu.X86.HasBMI2
 )
 
@@ -47,7 +47,7 @@ func setupState(state *[16]uint32, key *[8]uint32, nonce []byte) {
 }
 
 func (c *chacha20poly1305) seal(dst, nonce, plaintext, additionalData []byte) []byte {
-	if !cpu.X86.HasSSSE3 {
+	if !useASM {
 		return c.sealGeneric(dst, nonce, plaintext, additionalData)
 	}
 
@@ -55,15 +55,12 @@ func (c *chacha20poly1305) seal(dst, nonce, plaintext, additionalData []byte) []
 	setupState(&state, &c.key, nonce)
 
 	ret, out := sliceForAppend(dst, len(plaintext)+16)
-	if subtle.InexactOverlap(out, plaintext) {
-		panic("chacha20poly1305: invalid buffer overlap")
-	}
 	chacha20Poly1305Seal(out[:], state[:], plaintext, additionalData)
 	return ret
 }
 
 func (c *chacha20poly1305) open(dst, nonce, ciphertext, additionalData []byte) ([]byte, error) {
-	if !cpu.X86.HasSSSE3 {
+	if !useASM {
 		return c.openGeneric(dst, nonce, ciphertext, additionalData)
 	}
 
@@ -72,9 +69,6 @@ func (c *chacha20poly1305) open(dst, nonce, ciphertext, additionalData []byte) (
 
 	ciphertext = ciphertext[:len(ciphertext)-16]
 	ret, out := sliceForAppend(dst, len(ciphertext))
-	if subtle.InexactOverlap(out, ciphertext) {
-		panic("chacha20poly1305: invalid buffer overlap")
-	}
 	if !chacha20Poly1305Open(out, state[:], ciphertext, additionalData) {
 		for i := range out {
 			out[i] = 0

@@ -1,4 +1,4 @@
-// Copyright 2014 Google LLC
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,9 +36,11 @@ const (
 	// ScopeCloudPlatform grants permissions to view and manage your data
 	// across Google Cloud Platform services.
 	ScopeCloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
+)
 
-	prodAddr = "https://pubsub.googleapis.com/"
-
+const (
+	prodAddr       = "https://pubsub.googleapis.com/"
+	minAckDeadline = 10 * time.Second
 	maxAckDeadline = 10 * time.Minute
 )
 

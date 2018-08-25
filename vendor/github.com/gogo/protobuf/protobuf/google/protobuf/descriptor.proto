@@ -417,12 +417,10 @@ message FileOptions {
   // determining the namespace.
   optional string php_namespace = 41;
 
-  // The parser stores options it doesn't recognize here.
-  // See the documentation for the "Options" section above.
+  // The parser stores options it doesn't recognize here. See above.
   repeated UninterpretedOption uninterpreted_option = 999;
 
-  // Clients can define custom options in extensions of this message.
-  // See the documentation for the "Options" section above.
+  // Clients can define custom options in extensions of this message. See above.
   extensions 1000 to max;
 
   //reserved 38;

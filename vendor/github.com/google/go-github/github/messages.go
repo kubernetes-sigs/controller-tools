@@ -41,8 +41,6 @@ const (
 var (
 	// eventTypeMapping maps webhooks types to their corresponding go-github struct types.
 	eventTypeMapping = map[string]string{
-		"check_run":                   "CheckRunEvent",
-		"check_suite":                 "CheckSuiteEvent",
 		"commit_comment":              "CommitCommentEvent",
 		"create":                      "CreateEvent",
 		"delete":                      "DeleteEvent",

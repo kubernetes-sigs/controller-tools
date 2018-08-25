@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,14 +44,11 @@ type LoadConfig struct {
 	// If non-nil, the destination table is partitioned by time.
 	TimePartitioning *TimePartitioning
 
-	// Clustering specifies the data clustering configuration for the destination table.
-	Clustering *Clustering
-
 	// Custom encryption configuration (e.g., Cloud KMS keys).
 	DestinationEncryptionConfig *EncryptionConfig
 
-	// Allows the schema of the destination table to be updated as a side effect of
-	// the load job.
+	// SchemaUpdateOptions allows the schema of the destination table to be
+	// updated as a side effect of the load job.
 	SchemaUpdateOptions []string
 }
 
@@ -63,7 +60,6 @@ func (l *LoadConfig) toBQ() (*bq.JobConfiguration, io.Reader) {
 			WriteDisposition:                   string(l.WriteDisposition),
 			DestinationTable:                   l.Dst.toBQ(),
 			TimePartitioning:                   l.TimePartitioning.toBQ(),
-			Clustering:                         l.Clustering.toBQ(),
 			DestinationEncryptionConfiguration: l.DestinationEncryptionConfig.toBQ(),
 			SchemaUpdateOptions:                l.SchemaUpdateOptions,
 		},
@@ -79,7 +75,6 @@ func bqToLoadConfig(q *bq.JobConfiguration, c *Client) *LoadConfig {
 		WriteDisposition:            TableWriteDisposition(q.Load.WriteDisposition),
 		Dst:                         bqToTable(q.Load.DestinationTable, c),
 		TimePartitioning:            bqToTimePartitioning(q.Load.TimePartitioning),
-		Clustering:                  bqToClustering(q.Load.Clustering),
 		DestinationEncryptionConfig: bqToEncryptionConfig(q.Load.DestinationEncryptionConfiguration),
 		SchemaUpdateOptions:         q.Load.SchemaUpdateOptions,
 	}

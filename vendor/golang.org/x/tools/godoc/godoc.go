@@ -10,7 +10,6 @@
 package godoc // import "golang.org/x/tools/godoc"
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"go/ast"
@@ -62,7 +61,6 @@ func (p *Presentation) initFuncMap() {
 		// various helpers
 		"filename": filenameFunc,
 		"repeat":   strings.Repeat,
-		"since":    p.Corpus.pkgAPIInfo.sinceVersionFunc,
 
 		// access to FileInfos (directory listings)
 		"fileInfoName": fileInfoNameFunc,
@@ -189,13 +187,13 @@ func (p *Presentation) infoSnippet_htmlFunc(info SpotInfo) string {
 
 func (p *Presentation) nodeFunc(info *PageInfo, node interface{}) string {
 	var buf bytes.Buffer
-	p.writeNode(&buf, info, info.FSet, node)
+	p.writeNode(&buf, info.FSet, node)
 	return buf.String()
 }
 
 func (p *Presentation) node_htmlFunc(info *PageInfo, node interface{}, linkify bool) string {
 	var buf1 bytes.Buffer
-	p.writeNode(&buf1, info, info.FSet, node)
+	p.writeNode(&buf1, info.FSet, node)
 
 	var buf2 bytes.Buffer
 	if n, _ := node.(ast.Node); n != nil && linkify && p.DeclLinks {
@@ -666,7 +664,6 @@ func (p *Presentation) example_htmlFunc(info *PageInfo, funcName string) string 
 		play := ""
 		if eg.Play != nil && p.ShowPlayground {
 			var buf bytes.Buffer
-			eg.Play.Comments = filterOutBuildAnnotations(eg.Play.Comments)
 			if err := format.Node(&buf, info.FSet, eg.Play); err != nil {
 				log.Print(err)
 			} else {
@@ -693,23 +690,6 @@ func (p *Presentation) example_htmlFunc(info *PageInfo, funcName string) string 
 		}
 	}
 	return buf.String()
-}
-
-func filterOutBuildAnnotations(cg []*ast.CommentGroup) []*ast.CommentGroup {
-	if len(cg) == 0 {
-		return cg
-	}
-
-	for i := range cg {
-		if !strings.HasPrefix(cg[i].Text(), "+build ") {
-			// Found the first non-build tag, return from here until the end
-			// of the slice.
-			return cg[i:]
-		}
-	}
-
-	// There weren't any non-build tags, return an empty slice.
-	return []*ast.CommentGroup{}
 }
 
 // example_nameFunc takes an example function name and returns its display
@@ -910,12 +890,8 @@ func replaceLeadingIndentation(body, oldIndent, newIndent string) string {
 	return buf.String()
 }
 
-// writeNode writes the AST node x to w.
-//
-// The provided fset must be non-nil. The pageInfo is optional. If
-// present, the pageInfo is used to add comments to struct fields to
-// say which version of Go introduced them.
-func (p *Presentation) writeNode(w io.Writer, pageInfo *PageInfo, fset *token.FileSet, x interface{}) {
+// Write an AST node to w.
+func (p *Presentation) writeNode(w io.Writer, fset *token.FileSet, x interface{}) {
 	// convert trailing tabs into spaces using a tconv filter
 	// to ensure a good outcome in most browsers (there may still
 	// be tabs in comments and strings, but converting those into
@@ -924,88 +900,15 @@ func (p *Presentation) writeNode(w io.Writer, pageInfo *PageInfo, fset *token.Fi
 	// TODO(gri) rethink printer flags - perhaps tconv can be eliminated
 	//           with an another printer mode (which is more efficiently
 	//           implemented in the printer than here with another layer)
-
-	var pkgName, structName string
-	var apiInfo pkgAPIVersions
-	if gd, ok := x.(*ast.GenDecl); ok && pageInfo != nil && pageInfo.PDoc != nil &&
-		p.Corpus != nil &&
-		gd.Tok == token.TYPE && len(gd.Specs) != 0 {
-		pkgName = pageInfo.PDoc.ImportPath
-		if ts, ok := gd.Specs[0].(*ast.TypeSpec); ok {
-			if _, ok := ts.Type.(*ast.StructType); ok {
-				structName = ts.Name.Name
-			}
-		}
-		apiInfo = p.Corpus.pkgAPIInfo[pkgName]
-	}
-
-	var out = w
-	var buf bytes.Buffer
-	if structName != "" {
-		out = &buf
-	}
-
 	mode := printer.TabIndent | printer.UseSpaces
-	err := (&printer.Config{Mode: mode, Tabwidth: p.TabWidth}).Fprint(&tconv{p: p, output: out}, fset, x)
+	err := (&printer.Config{Mode: mode, Tabwidth: p.TabWidth}).Fprint(&tconv{p: p, output: w}, fset, x)
 	if err != nil {
 		log.Print(err)
 	}
-
-	// Add comments to struct fields saying which Go version introducd them.
-	if structName != "" {
-		fieldSince := apiInfo.fieldSince[structName]
-		typeSince := apiInfo.typeSince[structName]
-		// Add/rewrite comments on struct fields to note which Go version added them.
-		var buf2 bytes.Buffer
-		buf2.Grow(buf.Len() + len(" // Added in Go 1.n")*10)
-		bs := bufio.NewScanner(&buf)
-		for bs.Scan() {
-			line := bs.Bytes()
-			field := firstIdent(line)
-			var since string
-			if field != "" {
-				since = fieldSince[field]
-				if since != "" && since == typeSince {
-					// Don't highlight field versions if they were the
-					// same as the struct itself.
-					since = ""
-				}
-			}
-			if since == "" {
-				buf2.Write(line)
-			} else {
-				if bytes.Contains(line, slashSlash) {
-					line = bytes.TrimRight(line, " \t.")
-					buf2.Write(line)
-					buf2.WriteString("; added in Go ")
-				} else {
-					buf2.Write(line)
-					buf2.WriteString(" // Go ")
-				}
-				buf2.WriteString(since)
-			}
-			buf2.WriteByte('\n')
-		}
-		w.Write(buf2.Bytes())
-	}
 }
-
-var slashSlash = []byte("//")
 
 // WriteNode writes x to w.
 // TODO(bgarcia) Is this method needed? It's just a wrapper for p.writeNode.
 func (p *Presentation) WriteNode(w io.Writer, fset *token.FileSet, x interface{}) {
-	p.writeNode(w, nil, fset, x)
-}
-
-// firstIdent returns the first identifier in x.
-// This actually parses "identifiers" that begin with numbers too, but we
-// never feed it such input, so it's fine.
-func firstIdent(x []byte) string {
-	x = bytes.TrimSpace(x)
-	i := bytes.IndexFunc(x, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) })
-	if i == -1 {
-		return string(x)
-	}
-	return string(x[:i])
+	p.writeNode(w, fset, x)
 }

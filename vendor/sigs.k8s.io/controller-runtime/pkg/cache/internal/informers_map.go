@@ -163,8 +163,7 @@ func (ip *InformersMap) Get(gvk schema.GroupVersionKind, obj runtime.Object) (*M
 		})
 		i = &MapEntry{
 			Informer: ni,
-			Reader:   CacheReader{indexer: ni.GetIndexer(), groupVersionKind: gvk},
-		}
+			Reader:   CacheReader{indexer: ni.GetIndexer(), groupVersionKind: gvk}}
 		ip.informersByGVK[gvk] = i
 
 		// Start the Informer if need by

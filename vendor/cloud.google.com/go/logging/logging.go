@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -578,10 +578,6 @@ type Entry struct {
 	// if any. If it contains a relative resource name, the name is assumed to
 	// be relative to //tracing.googleapis.com.
 	Trace string
-
-	// Optional. Source code location information associated with the log entry,
-	// if any.
-	SourceLocation *logpb.LogEntrySourceLocation
 }
 
 // HTTPRequest contains an http.Request as well as additional
@@ -794,19 +790,15 @@ func toLogEntry(e Entry) (*logpb.LogEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	if e.Trace == "" && e.HTTPRequest != nil && e.HTTPRequest.Request != nil {
-		e.Trace = e.HTTPRequest.Request.Header.Get("X-Cloud-Trace-Context")
-	}
 	ent := &logpb.LogEntry{
-		Timestamp:      ts,
-		Severity:       logtypepb.LogSeverity(e.Severity),
-		InsertId:       e.InsertID,
-		HttpRequest:    fromHTTPRequest(e.HTTPRequest),
-		Operation:      e.Operation,
-		Labels:         e.Labels,
-		Trace:          e.Trace,
-		Resource:       e.Resource,
-		SourceLocation: e.SourceLocation,
+		Timestamp:   ts,
+		Severity:    logtypepb.LogSeverity(e.Severity),
+		InsertId:    e.InsertID,
+		HttpRequest: fromHTTPRequest(e.HTTPRequest),
+		Operation:   e.Operation,
+		Labels:      e.Labels,
+		Trace:       e.Trace,
+		Resource:    e.Resource,
 	}
 	switch p := e.Payload.(type) {
 	case string:

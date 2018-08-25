@@ -157,7 +157,7 @@ func (p *gostring) Generate(file *generator.FileDescriptor) {
 			continue
 		}
 		p.atleastOne = true
-		packageName := file.GoPackageName()
+		packageName := file.PackageName()
 
 		ccTypeName := generator.CamelCaseSlice(message.TypeName())
 		p.P(`func (this *`, ccTypeName, `) GoString() string {`)

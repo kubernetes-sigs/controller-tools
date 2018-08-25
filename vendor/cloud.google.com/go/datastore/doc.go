@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,6 @@
 
 /*
 Package datastore provides a client for Google Cloud Datastore.
-
-See https://godoc.org/cloud.google.com/go for authentication, timeouts,
-connection pooling and similar aspects of this package.
 
 
 Basic Operations
@@ -41,7 +38,7 @@ Valid value types are:
   - any type whose underlying type is one of the above predeclared types,
   - *Key,
   - GeoPoint,
-  - time.Time (stored with microsecond precision, retrieved as local time),
+  - time.Time (stored with microsecond precision),
   - structs whose fields are all valid value types,
   - pointers to structs whose fields are all valid value types,
   - slices of any of the above,
@@ -484,5 +481,11 @@ directed to the emulator instead of the production Datastore service.
 
 To install and set up the emulator and its environment variables, see the documentation
 at https://cloud.google.com/datastore/docs/tools/datastore-emulator.
+
+Authentication
+
+See examples of authorization and authentication at
+https://godoc.org/cloud.google.com/go#pkg-examples.
+
 */
 package datastore // import "cloud.google.com/go/datastore"

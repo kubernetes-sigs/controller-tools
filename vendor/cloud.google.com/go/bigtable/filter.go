@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Google LLC
+Copyright 2015 Google Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -314,17 +314,4 @@ func (clf cellsPerRowLimitFilter) proto() *btpb.RowFilter {
 	return &btpb.RowFilter{Filter: &btpb.RowFilter_CellsPerRowLimitFilter{CellsPerRowLimitFilter: int32(clf)}}
 }
 
-// RowSampleFilter returns a filter that returns each row with a probability of P (must be in the interval (0, 1)).
-func RowSampleFilter(p float64) Filter {
-	return rowSampleFilter(p)
-}
-
-type rowSampleFilter float64
-
-func (rsf rowSampleFilter) String() string {
-	return fmt.Sprintf("filter(%f)", rsf)
-}
-
-func (rsf rowSampleFilter) proto() *btpb.RowFilter {
-	return &btpb.RowFilter{Filter: &btpb.RowFilter_RowSampleFilter{RowSampleFilter: float64(rsf)}}
-}
+// TODO(dsymonds): More filters: sampling

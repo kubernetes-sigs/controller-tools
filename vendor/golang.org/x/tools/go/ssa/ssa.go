@@ -10,7 +10,7 @@ package ssa
 import (
 	"fmt"
 	"go/ast"
-	"go/constant"
+	exact "go/constant"
 	"go/token"
 	"go/types"
 	"sync"
@@ -404,8 +404,9 @@ type Parameter struct {
 // All source-level constant expressions are represented by a Const
 // of the same type and value.
 //
-// Value holds the value of the constant, independent of its Type(),
-// using go/constant representation, or nil for a typed nil value.
+// Value holds the exact value of the constant, independent of its
+// Type(), using the same representation as package go/exact uses for
+// constants, or nil for a typed nil value.
 //
 // Pos() returns token.NoPos.
 //
@@ -416,7 +417,7 @@ type Parameter struct {
 //
 type Const struct {
 	typ   types.Type
-	Value constant.Value
+	Value exact.Value
 }
 
 // A Global is a named Value holding the address of a package-level
@@ -657,7 +658,7 @@ type ChangeInterface struct {
 // of X, and Program.Method(m) to find the implementation of a method.
 //
 // To construct the zero value of an interface type T, use:
-// 	NewConst(constant.MakeNil(), T, pos)
+// 	NewConst(exact.MakeNil(), T, pos)
 //
 // Pos() returns the ast.CallExpr.Lparen, if the instruction arose
 // from an explicit conversion in the source.

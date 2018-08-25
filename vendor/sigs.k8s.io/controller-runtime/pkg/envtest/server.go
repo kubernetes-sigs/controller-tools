@@ -18,7 +18,6 @@ package envtest
 
 import (
 	"os"
-	"path/filepath"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
@@ -27,34 +26,13 @@ import (
 
 // Default binary path for test framework
 const (
-	envKubeAPIServerBin    = "TEST_ASSET_KUBE_APISERVER"
-	envEtcdBin             = "TEST_ASSET_ETCD"
-	envKubectlBin          = "TEST_ASSET_KUBECTL"
-	envKubebuilderPath     = "KUBEBUILDER_ASSETS"
-	defaultKubebuilderPath = "/usr/local/kubebuilder/bin"
-	StartTimeout           = 60
-	StopTimeout            = 60
+	envKubeAPIServerBin     = "TEST_ASSET_KUBE_APISERVER"
+	envEtcdBin              = "TEST_ASSET_ETCD"
+	defaultKubeAPIServerBin = "/usr/local/kubebuilder/bin/kube-apiserver"
+	defaultEtcdBin          = "/usr/local/kubebuilder/bin/etcd"
+	StartTimeout            = 60
+	StopTimeout             = 60
 )
-
-func defaultAssetPath(binary string) string {
-	assetPath := os.Getenv(envKubebuilderPath)
-	if assetPath == "" {
-		assetPath = defaultKubebuilderPath
-	}
-	return filepath.Join(assetPath, binary)
-
-}
-
-// APIServerDefaultArgs are flags necessary to bring up apiserver.
-// TODO: create test framework interface to append flag to default flags.
-var defaultKubeAPIServerFlags = []string{
-	"--etcd-servers={{ if .EtcdURL }}{{ .EtcdURL.String }}{{ end }}",
-	"--cert-dir={{ .CertDir }}",
-	"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
-	"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-	"--secure-port=0",
-	"--admission-control=AlwaysAdmit",
-}
 
 // Environment creates a Kubernetes test environment that will start / stop the Kubernetes control plane and
 // install extension APIs
@@ -80,18 +58,11 @@ func (te *Environment) Stop() error {
 // Start starts a local Kubernetes server and updates te.ApiserverPort with the port it is listening on
 func (te *Environment) Start() (*rest.Config, error) {
 	te.ControlPlane = integration.ControlPlane{}
-	te.ControlPlane.APIServer = &integration.APIServer{Args: defaultKubeAPIServerFlags}
 	if os.Getenv(envKubeAPIServerBin) == "" {
-		te.ControlPlane.APIServer.Path = defaultAssetPath("kube-apiserver")
+		te.ControlPlane.APIServer = &integration.APIServer{Path: defaultKubeAPIServerBin}
 	}
 	if os.Getenv(envEtcdBin) == "" {
-		te.ControlPlane.Etcd = &integration.Etcd{Path: defaultAssetPath("etcd")}
-	}
-	if os.Getenv(envKubectlBin) == "" {
-		// we can't just set the path manually (it's behind a function), so set the environment variable instead
-		if err := os.Setenv(envKubectlBin, defaultAssetPath("kubectl")); err != nil {
-			return nil, err
-		}
+		te.ControlPlane.Etcd = &integration.Etcd{Path: defaultEtcdBin}
 	}
 
 	// Start the control plane - retry if it fails
