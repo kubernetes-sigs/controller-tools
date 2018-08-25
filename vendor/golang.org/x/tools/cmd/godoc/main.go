@@ -183,6 +183,9 @@ func main() {
 		usage()
 	}
 
+	// Setting the resolved goroot.
+	vfs.GOROOT = *goroot
+
 	var fsGate chan bool
 	fsGate = make(chan bool, 20)
 
@@ -249,6 +252,10 @@ func main() {
 			initCorpus(corpus)
 		}
 	}
+
+	// Initialize the version info before readTemplates, which saves
+	// the map value in a method value.
+	corpus.InitVersionInfo()
 
 	pres = godoc.NewPresentation(corpus)
 	pres.TabWidth = *tabWidth
