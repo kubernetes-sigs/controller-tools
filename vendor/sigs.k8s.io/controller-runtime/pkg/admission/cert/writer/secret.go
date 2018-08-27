@@ -23,11 +23,11 @@ import (
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	apitypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/admission/cert/generator"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -128,7 +128,7 @@ type secretReadWriter struct {
 
 type webhookAndSecret struct {
 	webhook *admissionregistrationv1beta1.Webhook
-	secret  types.NamespacedName
+	secret  apitypes.NamespacedName
 }
 
 var _ certReadWriter = &secretReadWriter{}
@@ -156,9 +156,6 @@ func (s *secretReadWriter) write(webhookName string) (*generator.Artifacts, erro
 		return nil, err
 	}
 	err = s.client.Create(nil, secret)
-	if apierrors.IsAlreadyExists(err) {
-		return nil, alreadyExistError{err}
-	}
 	return certs, err
 }
 
@@ -176,9 +173,6 @@ func (s *secretReadWriter) read(webhookName string) (*generator.Artifacts, error
 	v := s.webhookMap[webhookName]
 	secret := &corev1.Secret{}
 	err := s.client.Get(nil, v.secret, secret)
-	if apierrors.IsNotFound(err) {
-		return nil, notFoundError{err}
-	}
 	return secretToCerts(secret), err
 }
 
@@ -193,7 +187,7 @@ func secretToCerts(secret *corev1.Secret) *generator.Artifacts {
 	}
 }
 
-func certsToSecret(certs *generator.Artifacts, sec types.NamespacedName) *corev1.Secret {
+func certsToSecret(certs *generator.Artifacts, sec apitypes.NamespacedName) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: sec.Namespace,

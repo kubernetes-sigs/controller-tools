@@ -22,7 +22,6 @@ protoc \
 OpenAPIv2/OpenAPIv2.proto 
 
 protoc \
--I.:$GOPATH/src \
 --go_out=:. \
 plugins/plugin.proto 
 

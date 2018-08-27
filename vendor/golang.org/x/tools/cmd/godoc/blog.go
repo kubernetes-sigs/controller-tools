@@ -21,7 +21,7 @@ import (
 
 const (
 	blogRepo = "golang.org/x/blog"
-	blogURL  = "https://blog.golang.org/"
+	blogURL  = "http://blog.golang.org/"
 	blogPath = "/blog/"
 )
 
@@ -42,11 +42,10 @@ func init() {
 }
 
 func blogInit(host string) {
-	// Binary distributions included the blog content in "/blog".
-	// We stopped including this in Go 1.11.
+	// Binary distributions will include the blog content in "/blog".
 	root := filepath.Join(runtime.GOROOT(), "blog")
 
-	// Prefer content from the golang.org/x/blog repository if present.
+	// Prefer content from go.blog repository if present.
 	if pkg, err := build.Import(blogRepo, "", build.FindOnly); err == nil {
 		root = pkg.Dir
 	}

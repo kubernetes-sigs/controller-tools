@@ -33,10 +33,9 @@ type Generator struct {
 
 	varCounter int
 
-	noStdMarshalers       bool
-	omitEmpty             bool
-	disallowUnknownFields bool
-	fieldNamer            FieldNamer
+	noStdMarshalers bool
+	omitEmpty       bool
+	fieldNamer      FieldNamer
 
 	// package path to local alias map for tracking imports
 	imports map[string]string
@@ -109,11 +108,6 @@ func (g *Generator) UseLowerCamelCase() {
 // methods (only the custom interface).
 func (g *Generator) NoStdMarshalers() {
 	g.noStdMarshalers = true
-}
-
-// DisallowUnknownFields instructs not to skip unknown fields in json and return error.
-func (g *Generator) DisallowUnknownFields() {
-	g.disallowUnknownFields = true
 }
 
 // OmitEmpty triggers `json=",omitempty"` behaviour by default.

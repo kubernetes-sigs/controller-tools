@@ -29,7 +29,6 @@ import (
 	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/reporters/stenographer"
-	colorable "github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -229,14 +228,10 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 func buildDefaultReporter() Reporter {
 	remoteReportingServer := config.GinkgoConfig.StreamHost
 	if remoteReportingServer == "" {
-		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1, colorable.NewColorableStdout())
+		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
 	} else {
-		debugFile := ""
-		if config.GinkgoConfig.DebugParallel {
-			debugFile = fmt.Sprintf("ginkgo-node-%d.log", config.GinkgoConfig.ParallelNode)
-		}
-		return remote.NewForwardingReporter(config.DefaultReporterConfig, remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor(), GinkgoWriter.(*writer.Writer), debugFile)
+		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor())
 	}
 }
 

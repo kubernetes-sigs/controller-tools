@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/mailru/easyjson/jlexer"
 	"github.com/mailru/easyjson/jwriter"
@@ -35,14 +34,9 @@ var DefaultJSONNameProvider = NewNameProvider()
 
 const comma = byte(',')
 
-var atomicClosers atomic.Value
-
-func init() {
-	atomicClosers.Store(
-		map[byte]byte{
-			'{': '}',
-			'[': ']',
-		})
+var closers = map[byte]byte{
+	'{': '}',
+	'[': ']',
 }
 
 type ejMarshaler interface {
@@ -88,7 +82,10 @@ func DynamicJSONToStruct(data interface{}, target interface{}) error {
 	if err != nil {
 		return err
 	}
-	return ReadJSON(b, target)
+	if err := ReadJSON(b, target); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ConcatJSON concatenates multiple json objects efficiently
@@ -113,7 +110,6 @@ func ConcatJSON(blobs ...[]byte) []byte {
 	var opening, closing byte
 	var idx, a int
 	buf := bytes.NewBuffer(nil)
-	closers := atomicClosers.Load().(map[byte]byte)
 
 	for i, b := range blobs[:last+1] {
 		if b == nil || bytes.Equal(b, nullJSON) {

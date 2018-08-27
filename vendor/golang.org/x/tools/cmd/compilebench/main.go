@@ -67,9 +67,9 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"log"
 	"os"
@@ -144,7 +144,6 @@ func main() {
 		log.Fatalf("%s env GOROOT: %v", *flagGoCmd, err)
 	}
 	goroot = strings.TrimSpace(string(s))
-	os.Setenv("GOROOT", goroot) // for any subcommands
 
 	compiler = *flagCompiler
 	if compiler == "" {
@@ -251,28 +250,11 @@ func runBuild(name, dir string, count int) {
 		return
 	}
 
-	// Make sure dependencies needed by go tool compile are installed to GOROOT/pkg.
-	out, err := exec.Command(*flagGoCmd, "build", "-i", dir).CombinedOutput()
+	pkg, err := build.Import(dir, ".", 0)
 	if err != nil {
-		log.Printf("go build -i %s: %v\n%s", dir, err, out)
+		log.Print(err)
 		return
 	}
-
-	// Find dir and source file list.
-	var pkg struct {
-		Dir     string
-		GoFiles []string
-	}
-	out, err = exec.Command(*flagGoCmd, "list", "-json", dir).Output()
-	if err != nil {
-		log.Printf("go list -json %s: %v\n", dir, err)
-		return
-	}
-	if err := json.Unmarshal(out, &pkg); err != nil {
-		log.Printf("go list -json %s: unmarshal: %v", dir, err)
-		return
-	}
-
 	args := []string{"-o", "_compilebench_.o"}
 	if is6g {
 		*flagMemprofilerate = -1

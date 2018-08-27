@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/ast/astutil"
-	"golang.org/x/tools/go/internal/cgo"
 )
 
 var ignoreVendor build.ImportMode
@@ -755,7 +754,7 @@ func (conf *Config) parsePackageFiles(bp *build.Package, which rune) ([]*ast.Fil
 
 	// Preprocess CgoFiles and parse the outputs (sequentially).
 	if which == 'g' && bp.CgoFiles != nil {
-		cgofiles, err := cgo.ProcessFiles(bp, conf.fset(), conf.DisplayPath, conf.ParserMode)
+		cgofiles, err := processCgoFiles(bp, conf.fset(), conf.DisplayPath, conf.ParserMode)
 		if err != nil {
 			errs = append(errs, err)
 		} else {

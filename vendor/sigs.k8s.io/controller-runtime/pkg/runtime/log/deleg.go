@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/go-logr/logr"
+	"github.com/thockin/logr"
 )
 
 // loggerPromise knows how to populate a concrete logr.Logger
@@ -24,8 +24,8 @@ func (p *loggerPromise) WithName(l *DelegatingLogger, name string) *loggerPromis
 	return res
 }
 
-// WithValues provides a new Logger with the tags appended
-func (p *loggerPromise) WithValues(l *DelegatingLogger, tags ...interface{}) *loggerPromise {
+// WithTags provides a new Logger with the tags appended
+func (p *loggerPromise) WithTags(l *DelegatingLogger, tags ...interface{}) *loggerPromise {
 	res := &loggerPromise{
 		logger: l,
 		tags:   tags,
@@ -42,7 +42,7 @@ func (p *loggerPromise) Fulfill(parentLogger logr.Logger) {
 	}
 
 	if p.tags != nil {
-		logger = logger.WithValues(p.tags...)
+		logger = logger.WithTags(p.tags...)
 	}
 
 	p.logger.Logger = logger
@@ -76,35 +76,15 @@ func (l *DelegatingLogger) WithName(name string) logr.Logger {
 	return res
 }
 
-// WithValues provides a new Logger with the tags appended
-func (l *DelegatingLogger) WithValues(tags ...interface{}) logr.Logger {
+// WithTags provides a new Logger with the tags appended
+func (l *DelegatingLogger) WithTags(tags ...interface{}) logr.Logger {
 	if l.promise == nil {
-		return l.Logger.WithValues(tags...)
+		return l.Logger.WithTags(tags)
 	}
 
 	res := &DelegatingLogger{Logger: l.Logger}
-	promise := l.promise.WithValues(res, tags...)
+	promise := l.promise.WithTags(res, tags)
 	res.promise = promise
 
 	return res
-}
-
-// Fulfill switches the logger over to use the actual logger
-// provided, instead of the temporary initial one, if this method
-// has not been previously called.
-func (l *DelegatingLogger) Fulfill(actual logr.Logger) {
-	if l.promise != nil {
-		l.promise.Fulfill(actual)
-	}
-}
-
-// NewDelegatingLogger constructs a new DelegatingLogger which uses
-// the given logger before it's promise is fulfilled.
-func NewDelegatingLogger(initial logr.Logger) *DelegatingLogger {
-	l := &DelegatingLogger{
-		Logger:  initial,
-		promise: &loggerPromise{},
-	}
-	l.promise.logger = l
-	return l
 }

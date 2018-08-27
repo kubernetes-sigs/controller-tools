@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ The commands are:
 
 	count                     Count rows in a table
 	createinstance            Create an instance with an initial cluster
-	createcluster             Create a cluster in the configured instance
+	createcluster             Create a cluster in the configured instance (replication alpha)
 	createfamily              Create a column family
 	createtable               Create a table
 	updatecluster             Update a cluster in the configured instance
-	deleteinstance            Delete an instance
-	deletecluster             Delete a cluster from the configured instance
+	deleteinstance            Deletes an instance
+	deletecluster             Deletes a cluster from the configured instance (replication alpha)
 	deletecolumn              Delete all cells in a column
 	deletefamily              Delete a column family
 	deleterow                 Delete a row
@@ -42,25 +42,15 @@ The commands are:
 	doc                       Print godoc-suitable documentation for cbt
 	help                      Print help text
 	listinstances             List instances in a project
-	listclusters              List clusters in an instance
+	listclusters              List instances in an instance
 	lookup                    Read from a single row
 	ls                        List tables and column families
 	mddoc                     Print documentation for cbt in Markdown format
 	read                      Read rows
 	set                       Set value of a cell
 	setgcpolicy               Set the GC policy for a column family
-	waitforreplication        Block until all the completed writes have been replicated to all the clusters
-	createtablefromsnapshot   Create a table from a snapshot (snapshots alpha)
-	createsnapshot            Create a snapshot from a source table (snapshots alpha)
-	listsnapshots             List snapshots in a cluster (snapshots alpha)
-	getsnapshot               Get snapshot info (snapshots alpha)
-	deletesnapshot            Delete snapshot in a cluster (snapshots alpha)
+	waitforreplication        Blocks until all the completed writes have been replicated to all the clusters (replication alpha)
 	version                   Print the current cbt version
-	createappprofile          Creates app profile for an instance
-	getappprofile             Reads app profile for an instance
-	listappprofile            Lists app profile for an instance
-	updateappprofile          Updates app profile for an instance
-	deleteappprofile          Deletes app profile for an instance
 
 Use "cbt help <command>" for more information about a command.
 
@@ -80,7 +70,7 @@ for production use. They are not subject to any SLA or deprecation policy.
 
 For convenience, values of the -project, -instance, -creds,
 -admin-endpoint and -data-endpoint flags may be specified in
-~/.cbtrc in this format:
+/usr/local/google/home/igorbernstein/.cbtrc in this format:
 	project = my-project-123
 	instance = my-instance
 	creds = path-to-account-key.json
@@ -113,7 +103,7 @@ Usage:
 
 
 
-Create a cluster in the configured instance
+Create a cluster in the configured instance (replication alpha)
 
 Usage:
 	cbt createcluster <cluster-id> <zone> <num-nodes> <storage type>
@@ -155,7 +145,7 @@ Usage:
 
 
 
-Delete an instance
+Deletes an instance
 
 Usage:
 	cbt deleteinstance <instance>
@@ -163,7 +153,7 @@ Usage:
 
 
 
-Delete a cluster from the configured instance
+Deletes a cluster from the configured instance (replication alpha)
 
 Usage:
 	cbt deletecluster <cluster>
@@ -175,7 +165,7 @@ Delete all cells in a column
 
 Usage:
 	cbt deletecolumn <table> <row> <family> <column> [app-profile=<app profile id>]
-	  app-profile=<app profile id>		The app profile id to use for the request
+	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
 
 
 
@@ -193,7 +183,7 @@ Delete a row
 
 Usage:
 	cbt deleterow <table> <row> [app-profile=<app profile id>]
-	  app-profile=<app profile id>		The app profile id to use for the request
+	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
 
 
 
@@ -231,7 +221,7 @@ Usage:
 
 
 
-List clusters in an instance
+List instances in an instance
 
 Usage:
 	cbt listclusters
@@ -242,10 +232,8 @@ Usage:
 Read from a single row
 
 Usage:
-	cbt lookup <table> <row> [columns=[family]:[qualifier],...] [cells-per-column=<n>] [app-profile=<app profile id>]
-	  columns=[family]:[qualifier],...	Read only these columns, comma-separated
-	  cells-per-column=<n> 			Read only this many cells per column
-	  app-profile=<app profile id>		The app profile id to use for the request
+	cbt lookup <table> <row> [app-profile=<app profile id>]
+	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
 
 
 
@@ -271,15 +259,13 @@ Usage:
 Read rows
 
 Usage:
-	cbt read <table> [start=<row>] [end=<row>] [prefix=<prefix>] [regex=<regex>] [columns=[family]:[qualifier],...] [count=<n>] [cells-per-column=<n>] [app-profile=<app profile id>]
-	  start=<row>				Start reading at this row
-	  end=<row>				Stop reading before this row
-	  prefix=<prefix>			Read rows with this prefix
-	  regex=<regex> 			Read rows with keys matching this regex
-	  columns=[family]:[qualifier],...	Read only these columns, comma-separated
-	  count=<n>				Read only this many rows
-	  cells-per-column=<n>			Read only this many cells per column
-	  app-profile=<app profile id>		The app profile id to use for the request
+	cbt read <table> [start=<row>] [end=<row>] [prefix=<prefix>] [regex=<regex>] [count=<n>] [app-profile=<app profile id>]
+	  start=<row>		Start reading at this row
+	  end=<row>		Stop reading before this row
+	  prefix=<prefix>	Read rows with this prefix
+	  regex=<regex> 	Read rows with keys matching this regex
+	  count=<n>		Read only this many rows
+	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
 
 
 
@@ -289,7 +275,7 @@ Set value of a cell
 
 Usage:
 	cbt set <table> <row> [app-profile=<app profile id>] family:column=val[@ts] ...
-	  app-profile=<app profile id>		The app profile id to use for the request
+	  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)
 	  family:column=val[@ts] may be repeated to set multiple cells.
 
 	  ts is an optional integer timestamp.
@@ -302,7 +288,7 @@ Usage:
 Set the GC policy for a column family
 
 Usage:
-	cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> | never)
+	cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> )
 
 	  maxage=<d>		Maximum timestamp age to preserve (e.g. "1h", "4d")
 	  maxversions=<n>	Maximum number of versions to preserve
@@ -310,56 +296,10 @@ Usage:
 
 
 
-Block until all the completed writes have been replicated to all the clusters
+Blocks until all the completed writes have been replicated to all the clusters (replication alpha)
 
 Usage:
 	cbt waitforreplication <table>
-
-
-
-
-Create a table from a snapshot (snapshots alpha)
-
-Usage:
-	cbt createtablefromsnapshot <table> <cluster> <snapshot>
-	  table	The name of the table to create
-	  cluster	The cluster where the snapshot is located
-	  snapshot	The snapshot to restore
-
-
-
-
-Create a snapshot from a source table (snapshots alpha)
-
-Usage:
-	cbt createsnapshot <cluster> <snapshot> <table> [ttl=<d>]
-
-	  [ttl=<d>]		Lifespan of the snapshot (e.g. "1h", "4d")
-
-
-
-
-
-List snapshots in a cluster (snapshots alpha)
-
-Usage:
-	cbt listsnapshots [<cluster>]
-
-
-
-
-Get snapshot info (snapshots alpha)
-
-Usage:
-	cbt getsnapshot <cluster> <snapshot>
-
-
-
-
-Delete snapshot in a cluster (snapshots alpha)
-
-Usage:
-	cbt deletesnapshot <cluster> <snapshot>
 
 
 
@@ -368,51 +308,6 @@ Print the current cbt version
 
 Usage:
 	cbt version
-
-
-
-
-Creates app profile for an instance
-
-Usage:
-	cbt createappprofile <instance-id> <profile-id> <description> <etag> <routing-policy>
-	[cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>]
-	set multi_cluster_routing_use_any or single_cluster_routing as possible values for routing policy
-	provide cluster-id=clusterID and allow-transactional-writes=true or false in case of single_cluster_routing
-
-
-
-
-Reads app profile for an instance
-
-Usage:
-	cbt getappprofile <instance-id> <profile-id>
-
-
-
-
-Lists app profile for an instance
-
-Usage:
-	cbt listappprofile <instance-id>
-
-
-
-
-Updates app profile for an instance
-
-Usage:
-	cbt updateappprofile  <instance-id> <profile-id> <description> <routing-policy>[cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>]
-	set multi_cluster_routing_use_any or single_cluster_routing as possible values for routing policy
-	provide cluster-id=clusterID and allow-transactional-writes=true or false in case of single_cluster_routing
-
-
-
-
-Deletes app profile for an instance
-
-Usage:
-	cbt deleteappprofile <instance-id> <profile-id>
 
 
 

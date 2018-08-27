@@ -1,13 +1,5 @@
 Change history of go-restful
 =
-v2.8.0
-- add Request.QueryParameters()
-- add json-iterator (via build tag)
-- disable vgo module (until log is moved)
-
-v2.7.1
-- add vgo module
-
 v2.6.1
 - add JSONNewDecoderFunc to allow custom JSON Decoder usage (go 1.10+)
 

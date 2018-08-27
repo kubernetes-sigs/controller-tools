@@ -11,7 +11,6 @@ package reporters
 import (
 	"encoding/xml"
 	"fmt"
-	"math"
 	"os"
 	"strings"
 
@@ -25,7 +24,6 @@ type JUnitTestSuite struct {
 	Name      string          `xml:"name,attr"`
 	Tests     int             `xml:"tests,attr"`
 	Failures  int             `xml:"failures,attr"`
-	Errors    int             `xml:"errors,attr"`
 	Time      float64         `xml:"time,attr"`
 }
 
@@ -121,9 +119,8 @@ func (reporter *JUnitReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 
 func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.suite.Tests = summary.NumberOfSpecsThatWillBeRun
-	reporter.suite.Time = math.Trunc(summary.RunTime.Seconds() * 1000 / 1000)
+	reporter.suite.Time = summary.RunTime.Seconds()
 	reporter.suite.Failures = summary.NumberOfFailedSpecs
-	reporter.suite.Errors = 0
 	file, err := os.Create(reporter.filename)
 	if err != nil {
 		fmt.Printf("Failed to create JUnit report file: %s\n\t%s", reporter.filename, err.Error())

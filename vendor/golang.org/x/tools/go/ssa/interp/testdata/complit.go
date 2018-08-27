@@ -5,9 +5,7 @@ package main
 import "fmt"
 
 // Map literals.
-// TODO(adonovan): we can no longer print maps
-// until the interpreter supports (reflect.Value).MapRange.
-func _() {
+func init() {
 	type M map[int]int
 	m1 := []*M{{1: 1}, &M{2: 2}}
 	want := "map[1:1] map[2:2]"

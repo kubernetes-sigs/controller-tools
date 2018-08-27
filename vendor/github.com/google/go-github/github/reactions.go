@@ -19,9 +19,8 @@ type ReactionsService service
 // Reaction represents a GitHub reaction.
 type Reaction struct {
 	// ID is the Reaction ID.
-	ID     *int64  `json:"id,omitempty"`
-	User   *User   `json:"user,omitempty"`
-	NodeID *string `json:"node_id,omitempty"`
+	ID   *int64 `json:"id,omitempty"`
+	User *User  `json:"user,omitempty"`
 	// Content is the type of reaction.
 	// Possible values are:
 	//     "+1", "-1", "laugh", "confused", "heart", "hooray".
@@ -59,7 +58,7 @@ func (s *ReactionsService) ListCommentReactions(ctx context.Context, owner, repo
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	var m []*Reaction
@@ -85,7 +84,7 @@ func (s ReactionsService) CreateCommentReaction(ctx context.Context, owner, repo
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	m := &Reaction{}
@@ -112,7 +111,7 @@ func (s *ReactionsService) ListIssueReactions(ctx context.Context, owner, repo s
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	var m []*Reaction
@@ -138,7 +137,7 @@ func (s ReactionsService) CreateIssueReaction(ctx context.Context, owner, repo s
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	m := &Reaction{}
@@ -165,7 +164,7 @@ func (s *ReactionsService) ListIssueCommentReactions(ctx context.Context, owner,
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	var m []*Reaction
@@ -191,7 +190,7 @@ func (s ReactionsService) CreateIssueCommentReaction(ctx context.Context, owner,
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	m := &Reaction{}
@@ -218,7 +217,7 @@ func (s *ReactionsService) ListPullRequestCommentReactions(ctx context.Context, 
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	var m []*Reaction
@@ -244,7 +243,7 @@ func (s ReactionsService) CreatePullRequestCommentReaction(ctx context.Context, 
 		return nil, nil, err
 	}
 
-	// TODO: remove custom Accept headers when APIs fully launch.
+	// TODO: remove custom Accept header when this API fully launches.
 	req.Header.Set("Accept", mediaTypeReactionsPreview)
 
 	m := &Reaction{}

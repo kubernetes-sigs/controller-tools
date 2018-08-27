@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import (
 	"runtime"
 	"time"
 
-	vkit "cloud.google.com/go/errorreporting/apiv1beta1"
+	api "cloud.google.com/go/errorreporting/apiv1beta1"
 	"cloud.google.com/go/internal/version"
 	"github.com/golang/protobuf/ptypes"
 	gax "github.com/googleapis/gax-go"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
 	"google.golang.org/api/support/bundler"
-	pb "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1"
+	erpb "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1"
 )
 
 const (
@@ -61,22 +61,21 @@ type Config struct {
 type Entry struct {
 	Error error
 	Req   *http.Request // if error is associated with a request.
-	User  string        // an identifier for the user affected by the error
 	Stack []byte        // if user does not provide a stack trace, runtime.Stack will be called
 }
 
 // Client represents a Google Cloud Error Reporting client.
 type Client struct {
-	projectName    string
+	projectID      string
 	apiClient      client
-	serviceContext *pb.ServiceContext
+	serviceContext erpb.ServiceContext
 	bundler        *bundler.Bundler
 
 	onErrorFn func(err error)
 }
 
 var newClient = func(ctx context.Context, opts ...option.ClientOption) (client, error) {
-	client, err := vkit.NewReportErrorsClient(ctx, opts...)
+	client, err := api.NewReportErrorsClient(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,20 +96,19 @@ func NewClient(ctx context.Context, projectID string, cfg Config, opts ...option
 	}
 
 	client := &Client{
-		apiClient:   c,
-		projectName: "projects/" + projectID,
-		serviceContext: &pb.ServiceContext{
+		apiClient: c,
+		projectID: "projects/" + projectID,
+		serviceContext: erpb.ServiceContext{
 			Service: cfg.ServiceName,
 			Version: cfg.ServiceVersion,
 		},
-		onErrorFn: cfg.OnError,
 	}
-	bundler := bundler.NewBundler((*pb.ReportErrorEventRequest)(nil), func(bundle interface{}) {
-		reqs := bundle.([]*pb.ReportErrorEventRequest)
+	bundler := bundler.NewBundler((*erpb.ReportErrorEventRequest)(nil), func(bundle interface{}) {
+		reqs := bundle.([]*erpb.ReportErrorEventRequest)
 		for _, req := range reqs {
 			_, err = client.apiClient.ReportErrorEvent(ctx, req)
 			if err != nil {
-				client.onError(err)
+				client.onError(fmt.Errorf("failed to upload: %v", err))
 			}
 		}
 	})
@@ -132,49 +130,56 @@ func (c *Client) onError(err error) {
 	log.Println(err)
 }
 
-// Close calls Flush, then closes any resources held by the client.
+// Close closes any resources held by the client.
 // Close should be called when the client is no longer needed.
+// It need not be called at program exit.
 func (c *Client) Close() error {
-	c.Flush()
 	return c.apiClient.Close()
 }
 
 // Report writes an error report. It doesn't block. Errors in
-// writing the error report can be handled via Config.OnError.
+// writing the error report can be handled via Client.OnError.
 func (c *Client) Report(e Entry) {
-	c.bundler.Add(c.newRequest(e), 1)
+	var stack string
+	if e.Stack != nil {
+		stack = string(e.Stack)
+	}
+	req := c.makeReportErrorEventRequest(e.Req, e.Error.Error(), stack)
+	c.bundler.Add(req, 1)
 }
 
 // ReportSync writes an error report. It blocks until the entry is written.
 func (c *Client) ReportSync(ctx context.Context, e Entry) error {
-	_, err := c.apiClient.ReportErrorEvent(ctx, c.newRequest(e))
+	var stack string
+	if e.Stack != nil {
+		stack = string(e.Stack)
+	}
+	req := c.makeReportErrorEventRequest(e.Req, e.Error.Error(), stack)
+	_, err := c.apiClient.ReportErrorEvent(ctx, req)
 	return err
 }
 
 // Flush blocks until all currently buffered error reports are sent.
 //
 // If any errors occurred since the last call to Flush, or the
-// creation of the client if this is the first call, then Flush reports the
-// error via the Config.OnError handler.
+// creation of the client if this is the first call, then Flush report the
+// error via the (*Client).OnError handler.
 func (c *Client) Flush() {
 	c.bundler.Flush()
 }
 
-func (c *Client) newRequest(e Entry) *pb.ReportErrorEventRequest {
-	var stack string
-	if e.Stack != nil {
-		stack = string(e.Stack)
-	} else {
+func (c *Client) makeReportErrorEventRequest(r *http.Request, msg string, stack string) *erpb.ReportErrorEventRequest {
+	if stack == "" {
 		// limit the stack trace to 16k.
 		var buf [16 * 1024]byte
 		stack = chopStack(buf[0:runtime.Stack(buf[:], false)])
 	}
-	message := e.Error.Error() + "\n" + stack
+	message := msg + "\n" + stack
 
-	var errorContext *pb.ErrorContext
-	if r := e.Req; r != nil {
-		errorContext = &pb.ErrorContext{
-			HttpRequest: &pb.HttpRequestContext{
+	var errorContext *erpb.ErrorContext
+	if r != nil {
+		errorContext = &erpb.ErrorContext{
+			HttpRequest: &erpb.HttpRequestContext{
 				Method:    r.Method,
 				Url:       r.Host + r.RequestURI,
 				UserAgent: r.UserAgent(),
@@ -183,17 +188,11 @@ func (c *Client) newRequest(e Entry) *pb.ReportErrorEventRequest {
 			},
 		}
 	}
-	if e.User != "" {
-		if errorContext == nil {
-			errorContext = &pb.ErrorContext{}
-		}
-		errorContext.User = e.User
-	}
-	return &pb.ReportErrorEventRequest{
-		ProjectName: c.projectName,
-		Event: &pb.ReportedErrorEvent{
+	return &erpb.ReportErrorEventRequest{
+		ProjectName: c.projectID,
+		Event: &erpb.ReportedErrorEvent{
 			EventTime:      ptypes.TimestampNow(),
-			ServiceContext: c.serviceContext,
+			ServiceContext: &c.serviceContext,
 			Message:        message,
 			Context:        errorContext,
 		},
@@ -226,6 +225,6 @@ func chopStack(s []byte) string {
 }
 
 type client interface {
-	ReportErrorEvent(ctx context.Context, req *pb.ReportErrorEventRequest, opts ...gax.CallOption) (*pb.ReportErrorEventResponse, error)
+	ReportErrorEvent(ctx context.Context, req *erpb.ReportErrorEventRequest, opts ...gax.CallOption) (*erpb.ReportErrorEventResponse, error)
 	Close() error
 }

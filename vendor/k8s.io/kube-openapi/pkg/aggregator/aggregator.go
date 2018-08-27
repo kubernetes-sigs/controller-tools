@@ -61,10 +61,6 @@ func (s *referenceWalker) walkRef(ref spec.Ref) spec.Ref {
 		k := refStr[len(definitionPrefix):]
 		def := s.root.Definitions[k]
 		s.walkSchema(&def)
-		// Make sure we don't assign to nil map
-		if s.root.Definitions == nil {
-			s.root.Definitions = spec.Definitions{}
-		}
 		s.root.Definitions[k] = def
 	}
 	return s.walkRefCallback(ref)
@@ -151,9 +147,6 @@ func (s *referenceWalker) walkOperation(op *spec.Operation) {
 }
 
 func (s *referenceWalker) Start() {
-	if s.root.Paths == nil {
-		return
-	}
 	for _, pathItem := range s.root.Paths.Paths {
 		s.walkParams(pathItem.Parameters)
 		s.walkOperation(pathItem.Delete)
@@ -227,10 +220,6 @@ func renameDefinition(s *spec.Swagger, old, new string) {
 		}
 		return ref
 	}, s)
-	// Make sure we don't assign to nil map
-	if s.Definitions == nil {
-		s.Definitions = spec.Definitions{}
-	}
 	s.Definitions[new] = s.Definitions[old]
 	delete(s.Definitions, old)
 }
@@ -255,13 +244,6 @@ func MergeSpecs(dest, source *spec.Swagger) error {
 
 func mergeSpecs(dest, source *spec.Swagger, renameModelConflicts, ignorePathConflicts bool) (err error) {
 	specCloned := false
-	// Paths may be empty, due to [ACL constraints](http://goo.gl/8us55a#securityFiltering).
-	if source.Paths == nil {
-		source.Paths = &spec.Paths{}
-	}
-	if dest.Paths == nil {
-		dest.Paths = &spec.Paths{}
-	}
 	if ignorePathConflicts {
 		keepPaths := []string{}
 		hasConflictingPath := false
@@ -363,10 +345,6 @@ func mergeSpecs(dest, source *spec.Swagger, renameModelConflicts, ignorePathConf
 	for k, v := range source.Paths.Paths {
 		if _, found := dest.Paths.Paths[k]; found {
 			return fmt.Errorf("unable to merge: duplicated path %s", k)
-		}
-		// PathItem may be empty, due to [ACL constraints](http://goo.gl/8us55a#securityFiltering).
-		if dest.Paths.Paths == nil {
-			dest.Paths.Paths = map[string]spec.PathItem{}
 		}
 		dest.Paths.Paths[k] = v
 	}

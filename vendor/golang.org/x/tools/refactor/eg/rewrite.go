@@ -202,7 +202,7 @@ func (tr *Transformer) apply(f func(reflect.Value) (reflect.Value, bool, map[str
 				if localchanged {
 					changed = true
 					// we clobber envp here,
-					// which means if we have two successive
+					// which means if we have two sucessive
 					// replacements inside the same statement
 					// we will only generate the setup for one of them.
 					envp = env

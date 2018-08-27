@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/internal/version"
-	"github.com/golang/protobuf/proto"
 	gax "github.com/googleapis/gax-go"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
@@ -64,8 +63,8 @@ func defaultConfigCallOptions() *ConfigCallOptions {
 					codes.Unavailable,
 				}, gax.Backoff{
 					Initial:    100 * time.Millisecond,
-					Max:        60000 * time.Millisecond,
-					Multiplier: 1.3,
+					Max:        1000 * time.Millisecond,
+					Multiplier: 1.2,
 				})
 			}),
 		},
@@ -74,7 +73,7 @@ func defaultConfigCallOptions() *ConfigCallOptions {
 		ListSinks:       retry[[2]string{"default", "idempotent"}],
 		GetSink:         retry[[2]string{"default", "idempotent"}],
 		CreateSink:      retry[[2]string{"default", "non_idempotent"}],
-		UpdateSink:      retry[[2]string{"default", "idempotent"}],
+		UpdateSink:      retry[[2]string{"default", "non_idempotent"}],
 		DeleteSink:      retry[[2]string{"default", "idempotent"}],
 		ListExclusions:  retry[[2]string{"default", "idempotent"}],
 		GetExclusion:    retry[[2]string{"default", "idempotent"}],
@@ -85,8 +84,6 @@ func defaultConfigCallOptions() *ConfigCallOptions {
 }
 
 // ConfigClient is a client for interacting with Stackdriver Logging API.
-//
-// Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
 type ConfigClient struct {
 	// The connection to the service.
 	conn *grpc.ClientConn
@@ -145,7 +142,6 @@ func (c *ConfigClient) ListSinks(ctx context.Context, req *loggingpb.ListSinksRe
 	ctx = insertMetadata(ctx, c.xGoogMetadata)
 	opts = append(c.CallOptions.ListSinks[0:len(c.CallOptions.ListSinks):len(c.CallOptions.ListSinks)], opts...)
 	it := &LogSinkIterator{}
-	req = proto.Clone(req).(*loggingpb.ListSinksRequest)
 	it.InternalFetch = func(pageSize int, pageToken string) ([]*loggingpb.LogSink, string, error) {
 		var resp *loggingpb.ListSinksResponse
 		req.PageToken = pageToken
@@ -173,7 +169,6 @@ func (c *ConfigClient) ListSinks(ctx context.Context, req *loggingpb.ListSinksRe
 		return nextPageToken, nil
 	}
 	it.pageInfo, it.nextFunc = iterator.NewPageInfo(fetch, it.bufLen, it.takeBuf)
-	it.pageInfo.MaxSize = int(req.PageSize)
 	return it
 }
 
@@ -249,7 +244,6 @@ func (c *ConfigClient) ListExclusions(ctx context.Context, req *loggingpb.ListEx
 	ctx = insertMetadata(ctx, c.xGoogMetadata)
 	opts = append(c.CallOptions.ListExclusions[0:len(c.CallOptions.ListExclusions):len(c.CallOptions.ListExclusions)], opts...)
 	it := &LogExclusionIterator{}
-	req = proto.Clone(req).(*loggingpb.ListExclusionsRequest)
 	it.InternalFetch = func(pageSize int, pageToken string) ([]*loggingpb.LogExclusion, string, error) {
 		var resp *loggingpb.ListExclusionsResponse
 		req.PageToken = pageToken
@@ -277,7 +271,6 @@ func (c *ConfigClient) ListExclusions(ctx context.Context, req *loggingpb.ListEx
 		return nextPageToken, nil
 	}
 	it.pageInfo, it.nextFunc = iterator.NewPageInfo(fetch, it.bufLen, it.takeBuf)
-	it.pageInfo.MaxSize = int(req.PageSize)
 	return it
 }
 

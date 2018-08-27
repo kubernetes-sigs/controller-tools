@@ -19,7 +19,7 @@ package recorder
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
+	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -34,24 +34,19 @@ type provider struct {
 	scheme *runtime.Scheme
 	// eventBroadcaster to create new recorder instance
 	eventBroadcaster record.EventBroadcaster
-	// logger is the logger to use when logging diagnostic event info
-	logger logr.Logger
 }
 
 // NewProvider create a new Provider instance.
-func NewProvider(config *rest.Config, scheme *runtime.Scheme, logger logr.Logger) (recorder.Provider, error) {
+func NewProvider(config *rest.Config, scheme *runtime.Scheme) (recorder.Provider, error) {
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init clientSet: %v", err)
 	}
 
-	p := &provider{scheme: scheme, logger: logger}
+	p := &provider{scheme: scheme}
 	p.eventBroadcaster = record.NewBroadcaster()
+	p.eventBroadcaster.StartLogging(glog.Infof)
 	p.eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: clientSet.CoreV1().Events("")})
-	p.eventBroadcaster.StartEventWatcher(
-		func(e *corev1.Event) {
-			p.logger.V(1).Info(e.Type, "object", e.InvolvedObject, "reason", e.Reason, "message", e.Message)
-		})
 
 	return p, nil
 }

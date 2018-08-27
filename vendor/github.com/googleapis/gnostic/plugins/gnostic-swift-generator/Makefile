@@ -1,13 +1,11 @@
 
-BINDIR=.build/debug
-
 all:
 	swift build
-
-install: all
-	cp $(BINDIR)/gnostic-swift-generator $(GOPATH)/bin/gnostic-swift-generator
-	cp $(BINDIR)/gnostic-swift-generator $(GOPATH)/bin/gnostic-swift-client
-	cp $(BINDIR)/gnostic-swift-generator $(GOPATH)/bin/gnostic-swift-server
+	cp .build/debug/gnostic-swift-generator gnostic-swift-generator
+	rm -f gnostic-swift-client gnostic-swift-server
+	ln -s gnostic-swift-generator gnostic-swift-client
+	ln -s gnostic-swift-generator gnostic-swift-server
 
 clean:
 	rm -rf .build Packages
+	rm -rf gnostic-swift-client gnostic-swift-server gnostic-swift-generator

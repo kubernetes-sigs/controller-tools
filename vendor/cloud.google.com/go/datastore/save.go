@@ -1,4 +1,4 @@
-// Copyright 4 Google LLC
+// Copyright 4 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -95,10 +95,6 @@ func saveStructProperty(props *[]Property, name string, opts saveOpts, v reflect
 					*props = append(*props, p)
 					return nil
 				}
-				// When we recurse on the derefenced pointer, omitempty no longer applies:
-				// we already know the pointer is not empty, it doesn't matter if its referent
-				// is empty or not.
-				opts.omitEmpty = false
 				return saveStructProperty(props, name, opts, v.Elem())
 			}
 			if v.Type().Elem().Kind() != reflect.Struct {
@@ -442,10 +438,6 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
-	case reflect.Struct:
-		if t, ok := v.Interface().(time.Time); ok {
-			return t.IsZero()
-		}
 	}
 	return false
 }

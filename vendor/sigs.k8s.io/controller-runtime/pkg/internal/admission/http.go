@@ -21,14 +21,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/golang/glog"
 	"k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-)
-
-var (
-	// TODO(directxman12): this shouldn't be a global log
-	log = logf.KBLog.WithName("admission").WithName("http-handler")
 )
 
 func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +37,7 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
-		log.Error(nil, "invalid content type, expected application/json", "context type", contentType)
+		glog.Errorf("contentType=%s, expect application/json", contentType)
 		return
 	}
 
@@ -50,7 +45,7 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ar := v1beta1.AdmissionReview{}
 	deserializer := codecs.UniversalDeserializer()
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
-		log.Error(err, "unable to decode request body")
+		glog.Error(err)
 		reviewResponse = ErrorResponse(err)
 	} else {
 		reviewResponse = h.admit(ar)
@@ -67,11 +62,10 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(response)
 	if err != nil {
-		log.Error(err, "unable to marshal response")
-		return
+		glog.Error(err)
 	}
 	if _, err := w.Write(resp); err != nil {
-		log.Error(err, "unable to write response")
+		glog.Error(err)
 	}
 }
 
