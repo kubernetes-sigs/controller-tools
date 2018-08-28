@@ -48,18 +48,6 @@ func IsAPIResource(t *types.Type) bool {
 		}
 	}
 
-	typeMetaFound, objMetaFound := false, false
-	for _, m := range t.Members {
-		if m.Name == "TypeMeta" && m.Type.String() == "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta" {
-			typeMetaFound = true
-		}
-		if m.Name == "ObjectMeta" && m.Type.String() == "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta" {
-			objMetaFound = true
-		}
-		if typeMetaFound && objMetaFound {
-			return true
-		}
-	}
 	return false
 }
 
