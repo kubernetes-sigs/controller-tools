@@ -26,7 +26,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -76,19 +75,36 @@ func (b *APIs) parseCRDs() {
 						resource.CRD.Spec.Scope = "Namespaced"
 					}
 
-					if HasCategories(resource.Type) {
+					if hasCategories(resource.Type) {
 						categoriesTag := getCategoriesTag(resource.Type)
 						categories := strings.Split(categoriesTag, ",")
 						resource.CRD.Spec.Names.Categories = categories
 						resource.Categories = categories
 					}
 
-					if HasStatusSubresource(resource.Type) {
-						subresources := &v1beta1.CustomResourceSubresources{
-							Status: &v1beta1.CustomResourceSubresourceStatus{},
+					if hasStatusSubresource(resource.Type) {
+						if resource.CRD.Spec.Subresources == nil {
+							resource.CRD.Spec.Subresources = &v1beta1.CustomResourceSubresources{}
 						}
-						resource.CRD.Spec.Subresources = subresources
-						resource.HasStatusSubresource = true
+						resource.CRD.Spec.Subresources.Status = &v1beta1.CustomResourceSubresourceStatus{}
+					}
+
+					if hasScaleSubresource(resource.Type) {
+						if resource.CRD.Spec.Subresources == nil {
+							resource.CRD.Spec.Subresources = &v1beta1.CustomResourceSubresources{}
+						}
+						jsonPath, err := parseScaleParams(resource.Type)
+						if err != nil {
+							log.Fatalf("failed in parsing CRD, error: %v", err.Error())
+						}
+						resource.CRD.Spec.Subresources.Scale = &v1beta1.CustomResourceSubresourceScale{
+							SpecReplicasPath:   jsonPath[specReplicasPath],
+							StatusReplicasPath: jsonPath[statusReplicasPath],
+						}
+						labelSelctor, ok := jsonPath[labelSelectorPath]
+						if ok && labelSelctor != "" {
+							resource.CRD.Spec.Subresources.Scale.LabelSelectorPath = &labelSelctor
+						}
 					}
 
 					if len(resource.ShortName) > 0 {
@@ -543,14 +559,4 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 
 	defer found.Delete(t.Name.String())
 	return members, result, required
-}
-
-// getCategoriesTag returns the value of the +kubebuilder:categories tags
-func getCategoriesTag(c *types.Type) string {
-	comments := Comments(c.CommentLines)
-	resource := comments.getTag("kubebuilder:categories", "=")
-	if len(resource) == 0 {
-		panic(errors.Errorf("Must specify +kubebuilder:categories comment for type %v", c.Name))
-	}
-	return resource
 }

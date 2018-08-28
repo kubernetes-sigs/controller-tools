@@ -11,6 +11,11 @@ spec:
     kind: Toy
     plural: toys
   scope: Namespaced
+  subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -59,6 +64,9 @@ spec:
               - 3
               format: int64
               type: integer
+            replicas:
+              format: int32
+              type: integer
             template:
               type: object
             winner:
@@ -66,8 +74,15 @@ spec:
           required:
           - rank
           - template
+          - replicas
           type: object
         status:
+          properties:
+            replicas:
+              format: int32
+              type: integer
+          required:
+          - replicas
           type: object
       type: object
   version: v1alpha1
