@@ -26,8 +26,13 @@ import (
 )
 
 func TestStorageKraken(t *testing.T) {
-	key := types.NamespacedName{Name: "foo", Namespace: "default"}
-	created := &Kraken{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	key := types.NamespacedName{
+		Name: "foo",
+	}
+	created := &Kraken{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		}}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create

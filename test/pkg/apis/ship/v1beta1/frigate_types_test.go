@@ -26,8 +26,15 @@ import (
 )
 
 func TestStorageFrigate(t *testing.T) {
-	key := types.NamespacedName{Name: "foo", Namespace: "default"}
-	created := &Frigate{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+	key := types.NamespacedName{
+		Name:      "foo",
+		Namespace: "default",
+	}
+	created := &Frigate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "default",
+		}}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
