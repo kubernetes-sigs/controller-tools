@@ -59,7 +59,7 @@ func TestGenerator(t *testing.T) {
 			t.Fatalf("reading file failed %v", err)
 		}
 		if !reflect.DeepEqual(crdContent, expectedContent) {
-			t.Fatalf("CRD output does not match exp:%v got:%v \n", expectedContent, crdContent)
+			t.Fatalf("CRD output does not match exp:%v got:%v \n", string(expectedContent), string(crdContent))
 		}
 	}
 	// examine content of the in-memory filesystem
