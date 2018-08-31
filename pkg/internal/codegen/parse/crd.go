@@ -40,8 +40,12 @@ func (b *APIs) parseCRDs() {
 			for _, resource := range version.Resources {
 				if IsAPIResource(resource.Type) {
 					resource.JSONSchemaProps, resource.Validation =
-						b.typeToJSONSchemaProps(resource.Type, sets.NewString(), []string{})
+						b.typeToJSONSchemaProps(resource.Type, sets.NewString(), []string{}, true)
 
+					// Note: Drop the Type field at the root level of validation
+					// schema. Refer to following issue for details.
+					// https://github.com/kubernetes/kubernetes/issues/65293
+					resource.JSONSchemaProps.Type = ""
 					j, err := json.MarshalIndent(resource.JSONSchemaProps, "", "    ")
 					if err != nil {
 						log.Fatalf("Could not Marshall validation %v\n", err)
@@ -131,7 +135,7 @@ func (b *APIs) getMeta() string {
 
 // typeToJSONSchemaProps returns a JSONSchemaProps object and its serialization
 // in Go that describe the JSONSchema validations for the given type.
-func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
+func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments []string, isRoot bool) (v1beta1.JSONSchemaProps, string) {
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	meta := types.Name{Name: "ObjectMeta", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
@@ -153,7 +157,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case types.Builtin:
 		v, s = b.parsePrimitiveValidation(t, found, comments)
 	case types.Struct:
-		v, s = b.parseObjectValidation(t, found, comments)
+		v, s = b.parseObjectValidation(t, found, comments, isRoot)
 	case types.Map:
 		v, s = b.parseMapValidation(t, found, comments)
 	case types.Slice:
@@ -161,9 +165,9 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case types.Array:
 		v, s = b.parseArrayValidation(t, found, comments)
 	case types.Pointer:
-		v, s = b.typeToJSONSchemaProps(t.Elem, found, comments)
+		v, s = b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	case types.Alias:
-		v, s = b.typeToJSONSchemaProps(t.Underlying, found, comments)
+		v, s = b.typeToJSONSchemaProps(t.Underlying, found, comments, false)
 	default:
 		log.Fatalf("Unknown supported Kind %v\n", t.Kind)
 	}
@@ -273,7 +277,7 @@ var mapTemplate = template.Must(template.New("map-template").Parse(
 // parseMapValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given map type.
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments)
+	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	props := v1beta1.JSONSchemaProps{
 		Type: "object",
 	}
@@ -321,7 +325,7 @@ type arrayTemplateArgs struct {
 // parseArrayValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given array type.
 func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments)
+	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	props := v1beta1.JSONSchemaProps{
 		Type:  "array",
 		Items: &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
@@ -347,11 +351,14 @@ type objectTemplateArgs struct {
 	v1beta1.JSONSchemaProps
 	Fields   map[string]string
 	Required []string
+	IsRoot   bool
 }
 
 var objectTemplate = template.Must(template.New("object-template").Parse(
 	`v1beta1.JSONSchemaProps{
+	{{ if not .IsRoot -}}
     Type:                 "object",
+	{{ end -}}
     Properties: map[string]v1beta1.JSONSchemaProps{
         {{ range $k, $v := .Fields -}}
         "{{ $k }}": {{ $v }},
@@ -366,14 +373,14 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
 
 // parseObjectValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given object type.
-func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
+func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments []string, isRoot bool) (v1beta1.JSONSchemaProps, string) {
 	buff := &bytes.Buffer{}
 	props := v1beta1.JSONSchemaProps{
 		Type: "object",
 	}
 
 	if strings.HasPrefix(t.Name.String(), "k8s.io/api") {
-		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil, nil}); err != nil {
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil, nil, false}); err != nil {
 			log.Fatalf("%v", err)
 		}
 	} else {
@@ -386,7 +393,7 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 			getValidation(l, &props)
 		}
 
-		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result, required}); err != nil {
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result, required, isRoot}); err != nil {
 			log.Fatalf("%v", err)
 		}
 	}
@@ -548,7 +555,7 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 			}
 			required = append(required, re...)
 		} else {
-			m, r := b.typeToJSONSchemaProps(member.Type, found, member.CommentLines)
+			m, r := b.typeToJSONSchemaProps(member.Type, found, member.CommentLines, false)
 			members[name] = m
 			result[name] = r
 			if !strings.HasSuffix(strat, "omitempty") {
