@@ -39,6 +39,11 @@ func (a *AddToScheme) GetInput() (input.Input, error) {
 		a.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
 			"addtoscheme_%s_%s.go", a.Resource.Group, a.Resource.Version))
 	}
+
+	if a.Resource.ImportPath == "" {
+		a.Resource.ImportPath = a.Repo + "/pkg/apis/" + a.Resource.Group + "/" + a.Resource.Version
+	}
+
 	a.TemplateBody = addResourceTemplate
 	return a.Input, nil
 }
@@ -48,11 +53,11 @@ var addResourceTemplate = `{{ .Boilerplate }}
 package apis
 
 import (
-	"{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
+	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .Resource.ImportPath }}"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, {{ .Resource.Version }}.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, {{ .Resource.Group }}{{ .Resource.Version }}.SchemeBuilder.AddToScheme)
 }
 `

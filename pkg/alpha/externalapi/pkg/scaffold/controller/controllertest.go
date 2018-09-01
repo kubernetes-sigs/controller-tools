@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/controller-tools/pkg/alpha/externalapi/pkg/scaffold/resource"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
 // Test scaffolds a Controller Test
@@ -85,7 +85,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	// {{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .Resource.ImportPath }}"
+
 )
 
 var c client.Client

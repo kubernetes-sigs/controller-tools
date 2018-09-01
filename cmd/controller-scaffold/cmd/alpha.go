@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cmd
 
 import (
@@ -38,7 +39,7 @@ var AlphaCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(AlphaCmd)
 	AlphaCmd.AddCommand(alpha.ListCmd)
-	AlphaCmd.AddCommand(alpah.ExtAPICmd)
+	AlphaCmd.AddCommand(alpha.ExtAPICmd)
 
 	// Here you will define your flags and configuration settings.
 

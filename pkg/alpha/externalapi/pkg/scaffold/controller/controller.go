@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/markbates/inflect"
+	"sigs.k8s.io/controller-tools/pkg/alpha/externalapi/pkg/scaffold/resource"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
 // Controller scaffolds a Controller for a Resource
@@ -76,6 +76,9 @@ func (a *Controller) GetInput() (input.Input, error) {
 			strings.ToLower(a.Resource.Kind),
 			strings.ToLower(a.Resource.Kind)+"_controller.go")
 	}
+	if a.Resource.ImportPath == "" {
+		a.Resource.ImportPath = a.ResourcePackage + "/" + a.Resource.Group + "/" + a.Resource.Version
+	}
 	a.TemplateBody = controllerTemplate
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
@@ -121,7 +124,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	// {{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .Resource.ImportPath }}"
 {{ else }}	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -132,7 +136,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	// {{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .Resource.ImportPath }}"
 {{ end -}}
 )
 

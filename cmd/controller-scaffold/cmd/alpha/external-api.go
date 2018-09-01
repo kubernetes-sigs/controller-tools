@@ -24,20 +24,20 @@ import (
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
+	"sigs.k8s.io/controller-tools/pkg/alpha/externalapi/pkg/scaffold/controller"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
 	// "sigs.k8s.io/controller-tools/pkg/scaffold/externalapi"
+	"sigs.k8s.io/controller-tools/pkg/alpha/externalapi/pkg/scaffold/resource"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
-var extR *resource.Resource
-var extResourceFlag, extControllerFlag *flag.Flag
-var extDoResource, extDoController, extDoMake bool
+var r *resource.Resource
+var resourceFlag, controllerFlag *flag.Flag
+var doResource, doController, doMake bool
 
 // ExtAPICmd represents the resource command
 var ExtAPICmd = &cobra.Command{
-	Use:   "api",
+	Use:   "external-api",
 	Short: "Scaffold a Kubernetes API",
 	Long: `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
@@ -68,49 +68,49 @@ After the scaffold is written, api will run make on the project.
 	Run: func(cmd *cobra.Command, args []string) {
 		DieIfNoProject()
 
-		if !extResourceFlag.Changed {
+		if !resourceFlag.Changed {
 			fmt.Println("Create Resource under pkg/apis [y/n]?")
-			extDoResource = yesno()
+			doResource = yesno()
 		}
-		if !extControllerFlag.Changed {
+		if !controllerFlag.Changed {
 			fmt.Println("Create Controller under pkg/controller [y/n]?")
-			extDoController = yesno()
+			doController = yesno()
 		}
 
 		fmt.Println("Writing scaffold for you to edit...")
 
-		if extDoResource {
-			fmt.Println(filepath.Join("pkg", "apis", extR.Group, extR.Version,
+		if doResource {
+			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
 				fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
-			fmt.Println(filepath.Join("pkg", "apis", extR.Group, extR.Version,
+			fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
 				fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
-				&externalapi.AddToScheme{Resource: extR},
+				&resource.AddToScheme{Resource: r},
 			)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		if extDoController {
+		if doController {
 			fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 				fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 			fmt.Println(filepath.Join("pkg", "apis", strings.ToLower(r.Kind),
 				fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
 
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
-				&controller.Controller{Resource: extR},
-				&controller.AddController{Resource: extR},
-				&controller.Test{Resource: extR},
-				&controller.SuiteTest{Resource: extR},
+				&controller.Controller{Resource: r},
+				&controller.AddController{Resource: r},
+				&controller.Test{Resource: r},
+				&controller.SuiteTest{Resource: r},
 			)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		if extDoMake {
+		if doMake {
 			fmt.Println("Running make...")
 			cm := exec.Command("make") // #nosec
 			cm.Stderr = os.Stderr
@@ -123,30 +123,31 @@ After the scaffold is written, api will run make on the project.
 }
 
 func init() {
-	ExtAPICmd.Flags().BoolVar(&extDoMake, "make", true,
+	ExtAPICmd.Flags().BoolVar(&doMake, "make", true,
 		"if true, run make after generating files")
-	ExtAPICmd.Flags().BoolVar(&extDoResource, "resource", true,
+	ExtAPICmd.Flags().BoolVar(&doResource, "resource", true,
 		"if set, generate the resource without prompting the user")
-	extResourceFlag = ExtAPICmd.Flag("resource")
-	ExtAPICmd.Flags().BoolVar(&extDoController, "controller", true,
+	resourceFlag = ExtAPICmd.Flag("resource")
+	ExtAPICmd.Flags().BoolVar(&doController, "controller", true,
 		"if set, generate the controller without prompting the user")
-	extControllerFlag = ExtAPICmd.Flag("controller")
-	r = ExtResourceForFlags(ExtAPICmd.Flags())
+	controllerFlag = ExtAPICmd.Flag("controller")
+	r = resourceForFlags(ExtAPICmd.Flags())
 }
 
-// ExtDieIfNoProject checks to make sure the command is run from a directory containing a project file.
-func ExtDieIfNoProject() {
+// DieIfNoProject checks to make sure the command is run from a directory containing a project file.
+func DieIfNoProject() {
 	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
 		log.Fatalf("Command must be run from a diretory containing %s", "PROJECT")
 	}
 }
 
-// ExtResourceForFlags registers flags for Resource fields and returns the Resource
-func ExtResourceForFlags(f *flag.FlagSet) *resource.Resource {
+// resourceForFlags registers flags for Resource fields and returns the Resource
+func resourceForFlags(f *flag.FlagSet) *resource.Resource {
 	r := &resource.Resource{}
 	f.StringVar(&r.Kind, "kind", "", "resource Kind")
 	f.StringVar(&r.Group, "group", "", "resource Group")
 	f.StringVar(&r.Version, "version", "", "resource Version")
+	f.StringVar(&r.ImportPath, "importPath", "", "import path of external type")
 	f.BoolVar(&r.Namespaced, "namespaced", true, "true if the resource is namespaced")
 	f.BoolVar(&r.CreateExampleReconcileBody, "example", true,
 		"true if an example reconcile body should be written")

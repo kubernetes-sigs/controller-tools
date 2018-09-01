@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/controller-tools/pkg/alpha/externalapi/pkg/scaffold/resource"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
 
 // SuiteTest scaffolds a SuiteTest

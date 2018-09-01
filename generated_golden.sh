@@ -26,6 +26,14 @@ ln -s ../vendor vendor
 ../bin/controller-scaffold api --group creatures --version v2alpha1 --kind Kraken --namespaced=false --example=false --controller=true --resource=true --make=false
 ../bin/controller-scaffold api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false
 ../bin/controller-scaffold api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false
+
+# Test Alpha commands
+# ../bin/controller-scaffold api --group subs --version v2 --kind Nautilus --namespaced=false --example=false --controller=false --resource=true --make=false
+# make
+# mv pkg/apis/subs hack
+# rm pkg/apis/addtoscheme_subs_v2.go
+# ../bin/controller-scaffold alpha external-api --group subs --version v2 --kind Nautilus --namespaced=false --example=false --controller=true --resource=true --make=false --importPath="sigs.k8s.io/controller-tools/test/hack/subs/v2"
+
 make
 rm -rf ./bin/
 cd -
