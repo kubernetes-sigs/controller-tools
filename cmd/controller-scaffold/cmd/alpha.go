@@ -39,6 +39,7 @@ var AlphaCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(AlphaCmd)
 	AlphaCmd.AddCommand(alpha.ListCmd)
+<<<<<<< HEAD
 	AlphaCmd.AddCommand(alpha.ExtAPICmd)
 
 	// Here you will define your flags and configuration settings.
@@ -50,4 +51,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// AlphaCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+=======
+>>>>>>> alpha_root_cmd
 }
