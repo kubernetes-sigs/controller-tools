@@ -321,7 +321,7 @@ func parseByteValue(b []byte) string {
 // parseEnumToString returns a representive validated go format string from JSONSchemaProps schema
 func parseEnumToString(value []v1beta1.JSON) string {
 	res := "[]v1beta1.JSON{"
-	prefix := "v1beta1.JSON{[]byte{"
+	prefix := "v1beta1.JSON{Raw:[]byte{"
 	for _, v := range value {
 		res = res + prefix + parseByteValue(v.Raw) + "}},"
 	}
@@ -369,9 +369,6 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 			path := strings.Split(paths, ",")
 			if len(path) < 2 {
 				return nil, fmt.Errorf(jsonPathError)
-			}
-			for _, s := range path {
-				fmt.Printf("\n[debug] %s", s)
 			}
 			for _, s := range path {
 				kv := strings.Split(s, "=")

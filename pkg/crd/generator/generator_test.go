@@ -28,6 +28,18 @@ import (
 )
 
 func TestGenerator(t *testing.T) {
+	testCases := []struct {
+		name     string
+		fileName string
+		path     string
+	}{
+		{
+			name:     "test crd yaml",
+			fileName: "fun_v1alpha1_toy.yaml",
+			path:     "testData/config/crds",
+		},
+	}
+
 	currDir, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("unable to get current directory: %v", err)
@@ -46,15 +58,16 @@ func TestGenerator(t *testing.T) {
 
 	err = g.Do()
 	if err != nil {
-		t.Fatalf("generator validate should have succeeded %v", err)
+		t.Fatalf("generator execution should have succeeded %v", err)
 	}
-	for _, f := range []string{"fun_v1alpha1_toy.yaml"} {
-		crdOuputFile := filepath.Join("/tmp", f)
+
+	for _, tc := range testCases {
+		crdOuputFile := filepath.Join("/tmp", tc.fileName)
 		crdContent, err := afero.ReadFile(outFs, crdOuputFile)
 		if err != nil {
 			t.Fatalf("reading file failed %v", err)
 		}
-		expectedContent, err := ioutil.ReadFile(filepath.Join(currDir, "testData", "config", "crds", f))
+		expectedContent, err := ioutil.ReadFile(filepath.Join(currDir, tc.path, tc.fileName))
 		if err != nil {
 			t.Fatalf("reading file failed %v", err)
 		}
@@ -62,6 +75,43 @@ func TestGenerator(t *testing.T) {
 			t.Fatalf("CRD output does not match exp:%v got:%v \n", string(expectedContent), string(crdContent))
 		}
 	}
+
 	// examine content of the in-memory filesystem
 	// outFs.(*afero.MemMapFs).List()
+}
+
+func TestCRDGenerator(t *testing.T) {
+	currDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("unable to get current directory: %v", err)
+	}
+
+	outFs := afero.NewMemMapFs()
+	g := &crdgenerator.Generator{
+		OutFs:     outFs,
+		OutputDir: "/tmp",
+		RootPath:  filepath.Join(currDir),
+	}
+	err = g.ValidateAndInitFields()
+	if err != nil {
+		t.Fatalf("generator validate should have succeeded %v", err)
+	}
+
+	err = g.Do()
+	if err != nil {
+		t.Fatalf("generator execution should have succeeded %v", err)
+	}
+
+	crdContent, err := ioutil.ReadFile("./pkg/apis/fun/v1alpha1/zz_generated_crd.go")
+	if err != nil {
+		t.Fatalf("zz_generated_crd.go file doesn't exist. %v", err)
+	}
+	expectedContent, err := ioutil.ReadFile("./test/zz_generated_crd.go")
+	if err != nil {
+		t.Fatalf("reading expected test file failed %v", err)
+	}
+	if !reflect.DeepEqual(crdContent, expectedContent) {
+		t.Fatalf("CRD output does not match exp:%v got:%v \n", string(expectedContent), string(crdContent))
+	}
+
 }

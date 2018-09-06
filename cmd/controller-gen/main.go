@@ -98,7 +98,7 @@ Usage:
 			if err := g.Do(); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("CRD files generated, files can be found under path %s.\n", g.OutputDir)
+			fmt.Printf("CRD files generated, files can be found under path %s\n", g.OutputDir)
 		},
 	}
 

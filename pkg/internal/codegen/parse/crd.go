@@ -91,6 +91,7 @@ func (b *APIs) parseCRDs() {
 							resource.CRD.Spec.Subresources = &v1beta1.CustomResourceSubresources{}
 						}
 						resource.CRD.Spec.Subresources.Status = &v1beta1.CustomResourceSubresourceStatus{}
+						resource.HasStatusSubresource = true
 					}
 
 					resource.CRD.Status.Conditions = []v1beta1.CustomResourceDefinitionCondition{}
@@ -112,6 +113,7 @@ func (b *APIs) parseCRDs() {
 						if ok && labelSelctor != "" {
 							resource.CRD.Spec.Subresources.Scale.LabelSelectorPath = &labelSelctor
 						}
+						resource.HasScaleSubresource = true
 					}
 
 					if len(resource.ShortName) > 0 {

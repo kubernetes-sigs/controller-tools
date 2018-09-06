@@ -161,9 +161,10 @@ type APIResource struct {
 	// Strategy is name of the struct to use for the strategy
 	StatusStrategy string
 	// NonNamespaced indicates that the resource kind is non namespaced
-	NonNamespaced bool
-
-	ShortName string
+	NonNamespaced        bool
+	HasStatusSubresource bool
+	HasScaleSubresource  bool
+	ShortName            string
 
 	JSONSchemaProps    v1beta1.JSONSchemaProps
 	CRD                v1beta1.CustomResourceDefinition

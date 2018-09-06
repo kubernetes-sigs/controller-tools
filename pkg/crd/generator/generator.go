@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/afero"
 	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/args"
+	"k8s.io/gengo/generator"
 	"k8s.io/gengo/types"
 	crdutil "sigs.k8s.io/controller-tools/pkg/crd/util"
 	"sigs.k8s.io/controller-tools/pkg/internal/codegen"
@@ -153,6 +154,9 @@ func (c *Generator) getCrds(p *parse.APIs) map[string][]byte {
 	crds := map[string]extensionsv1beta1.CustomResourceDefinition{}
 	for _, g := range p.APIs.Groups {
 		for _, v := range g.Versions {
+			if err := generateCRD(v, g); err != nil {
+				log.Fatalf("Generate crd object fail. Error: %v", err)
+			}
 			for _, r := range v.Resources {
 				crd := r.CRD
 				// ignore types which do not belong to this project
@@ -172,7 +176,7 @@ func (c *Generator) getCrds(p *parse.APIs) map[string][]byte {
 	for file, crd := range crds {
 		b, err := yaml.Marshal(crd)
 		if err != nil {
-			log.Fatalf("Error: %v", err)
+			log.Fatalf("Generate crd yaml fail. Error: %v", err)
 		}
 		result[file] = b
 	}
@@ -184,4 +188,16 @@ func (c *Generator) getCrds(p *parse.APIs) map[string][]byte {
 // current project.
 func (c *Generator) belongsToAPIsPkg(t *types.Type) bool {
 	return strings.HasPrefix(t.Name.Package, c.apisPkg)
+}
+
+func generateCRD(v *codegen.APIVersion, g *codegen.APIGroup) error {
+	arg := args.Default()
+	arg.CustomArgs = &parse.Options{SkipMapValidation: true}
+	arg.OutputFileBaseName = "zz_generated_crd"
+	return arg.WithoutDefaultFlagParsing().Execute(parse.NameSystems(), parse.DefaultNameSystem(), func(context *generator.Context, arguments *args.GeneratorArgs) generator.Packages {
+		generator := &crdGenerator{generator.DefaultGen{OptionalName: arg.OutputFileBaseName}, v, g}
+		pkgs := packages{}
+		pkgs.add(v.Pkg.Path, generator)
+		return pkgs.value
+	})
 }
