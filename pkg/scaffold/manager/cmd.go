@@ -56,7 +56,7 @@ import (
 
 func main() {
 	// Set logger
-	logf.SetLogger(logf.ZapLoggerTo(ginkgo.GinkgoWriter, true))
+	logf.SetLogger(logf.ZapLogger(true))
 	var log = logf.Log.WithName("main")
 
 	// Get a config to talk to the apiserver
@@ -73,7 +73,7 @@ func main() {
 		return
 	}
 
-	log.V(1).Info("Registering Components.")
+	log.V(0).Info("Registering Components.")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
@@ -87,7 +87,7 @@ func main() {
 		return
 	}
 
-	log.V(1).Info("Starting the cmd.")
+	log.V(0).Info("Starting the cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
