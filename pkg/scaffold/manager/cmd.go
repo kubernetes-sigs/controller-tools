@@ -43,55 +43,53 @@ var cmdTemplate = `{{ .Boilerplate }}
 package main
 
 import (
-	"github.com/onsi/ginkgo"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"{{ .Repo }}/pkg/apis"
 	"{{ .Repo }}/pkg/controller"
 )
 
 func main() {
 	// Set logger
-	logf.SetLogger(logf.ZapLogger(true))
-	var log = logf.Log.WithName("main")
+	log.SetLogger(log.ZapLogger(true))
+	var logf = log.Log.WithName("main")
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Error(err, "Get config failed")
+		logf.Error(err, "Get config failed")
 		return
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
-		log.Error(err, "Create manager failed")
+		logf.Error(err, "Create manager failed")
 		return
 	}
 
-	log.V(0).Info("Registering Components.")
+	logf.Info("Registering Components.")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "Add to scheme failed")
+		logf.Error(err, "Add to scheme failed")
 		return
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "Add to manager failed")
+		logf.Error(err, "Add to manager failed")
 		return
 	}
 
-	log.V(0).Info("Starting the cmd.")
+	logf.Info("Starting the cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Error(err, "Start cmd failed")
+		logf.Error(err, "Start cmd failed")
 		return
 	}
 }
