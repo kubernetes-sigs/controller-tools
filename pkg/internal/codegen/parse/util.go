@@ -203,13 +203,12 @@ func HasDocAnnotation(t *types.Type) bool {
 
 // IsUnversioned returns true if t is in given group, and not in versioned path.
 func IsUnversioned(t *types.Type, group string) bool {
-	return IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) && GetGroup(t) == group
+	return IsUnderApisDir(filepath.Dir(t.Name.Package)) && GetGroup(t) == group
 }
 
 // IsVersioned returns true if t is in given group, and in versioned path.
 func IsVersioned(t *types.Type, group string) bool {
-	dir := filepath.Base(filepath.Dir(filepath.Dir(t.Name.Package)))
-	return IsApisDir(dir) && GetGroup(t) == group
+	return IsUnderApisDir(filepath.Dir(t.Name.Package)) && GetGroup(t) == group
 }
 
 // GetVersion returns version of t.
@@ -222,12 +221,24 @@ func GetVersion(t *types.Type, group string) string {
 
 // GetGroup returns group of t.
 func GetGroup(t *types.Type) string {
-	return filepath.Base(GetGroupPackage(t))
+	// try to retrieve group name from the comment annotation
+	groupName := ""
+	for _, cl := range t.CommentLines {
+		if strings.Contains(cl, "+groupName=") {
+			groupName = strings.Replace(cl, "+groupName=", "", 1)
+			groupName = strings.TrimSpace(groupName)
+		}
+	}
+	// fallback: use versioned package parent directory
+	if groupName == "" {
+		return filepath.Base(GetGroupPackage(t))
+	}
+	return groupName
 }
 
 // GetGroupPackage returns group package of t.
 func GetGroupPackage(t *types.Type) string {
-	if IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) {
+	if IsUnderApisDir(filepath.Base(filepath.Dir(t.Name.Package))) {
 		return t.Name.Package
 	}
 	return filepath.Dir(t.Name.Package)
@@ -239,6 +250,18 @@ func GetKind(t *types.Type, group string) string {
 		panic(errors.Errorf("Cannot get kind for type not in group %v", t.Name))
 	}
 	return t.Name.Name
+}
+
+// IsUnderApisDir returns true id a directory path is or under the a Kubernetes api directory
+// Example:
+// - pkg/apis/foo/bar	- true
+// - pkg/api/foo	- true
+// - pkg/foo/bar	- false
+func IsUnderApisDir(dir string) bool {
+	if dir == "." {
+		return false
+	}
+	return IsApisDir(filepath.Base(dir)) || IsUnderApisDir(filepath.Dir(dir))
 }
 
 // IsApisDir returns true if a directory path is a Kubernetes api directory

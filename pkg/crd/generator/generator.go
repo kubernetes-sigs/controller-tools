@@ -38,6 +38,7 @@ import (
 type Generator struct {
 	RootPath          string
 	OutputDir         string
+	NestedOutput      bool
 	Domain            string
 	Namespace         string
 	SkipMapValidation bool
@@ -137,6 +138,10 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 
 	for file, crd := range crds {
 		outFile := path.Join(c.OutputDir, file)
+		// If nested output selected: construct nested path 'group/version/kind'
+		if c.NestedOutput {
+			outFile = path.Join(append([]string{c.OutputDir}, strings.Split(file, "_")...)...)
+		}
 		if err := (&util.FileWriter{Fs: c.OutFs}).WriteFile(outFile, crd); err != nil {
 			return err
 		}
@@ -144,8 +149,20 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 	return nil
 }
 
+func getGroupElements(group string) []string {
+	ss := strings.Split(group, ".")
+	if len(ss) > 1 {
+		// reverse slice
+		for i := len(ss)/2 - 1; i >= 0; i-- {
+			opp := len(ss) - 1 - i
+			ss[i], ss[opp] = ss[opp], ss[i]
+		}
+	}
+	return ss
+}
+
 func getCRDFileName(resource *codegen.APIResource) string {
-	elems := []string{resource.Group, resource.Version, strings.ToLower(resource.Kind)}
+	elems := append(getGroupElements(resource.Group), resource.Version, strings.ToLower(resource.Kind))
 	return strings.Join(elems, "_") + ".yaml"
 }
 
