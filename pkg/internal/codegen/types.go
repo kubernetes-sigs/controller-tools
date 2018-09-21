@@ -173,6 +173,10 @@ type APIResource struct {
 	DocAnnotation map[string]string
 	// Categories is a list of categories the resource is part of.
 	Categories []string
+
+	// Finalizers is a list of finalizers (pre-delete hooks) to be added to the
+	// resource
+	Finalizers []string
 }
 
 // APISubresource contains information of an API subresource.
