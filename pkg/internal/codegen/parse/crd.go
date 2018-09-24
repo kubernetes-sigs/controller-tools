@@ -80,15 +80,10 @@ func (b *APIs) parseCRDs() {
 					}
 
 					if hasCategories(resource.Type) {
-						categories := splitNTrim(getCategoriesTag(resource.Type), ",")
+						categoriesTag := getCategoriesTag(resource.Type)
+						categories := strings.Split(categoriesTag, ",")
 						resource.CRD.Spec.Names.Categories = categories
 						resource.Categories = categories
-					}
-
-					finalizers := splitNTrim(getFinalizersTag(resource.Type), ",")
-					if len(finalizers) > 0 {
-						resource.CRD.ObjectMeta.Finalizers = finalizers
-						resource.Finalizers = finalizers
 					}
 
 					if hasStatusSubresource(resource.Type) {
@@ -574,17 +569,4 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 
 	defer found.Delete(t.Name.String())
 	return members, result, required
-}
-
-// splitNTrim slices given string s in to all substrings separated by sep and
-// returns a slice of substrings by trimming space and removing empty substrings.
-func splitNTrim(s, sep string) (result []string) {
-	l := strings.Split(s, sep)
-	for _, elem := range l {
-		elem = strings.TrimSpace(elem)
-		if len(elem) > 0 {
-			result = append(result, elem)
-		}
-	}
-	return
 }

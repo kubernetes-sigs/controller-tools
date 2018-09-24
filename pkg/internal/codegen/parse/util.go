@@ -295,12 +295,6 @@ func getCategoriesTag(c *types.Type) string {
 	return resource
 }
 
-// getFinalizersTag returns the value of the +kubebuilder:finalizers tags
-func getFinalizersTag(c *types.Type) string {
-	comments := Comments(c.CommentLines)
-	return comments.getTag("kubebuilder:finalizers", "=")
-}
-
 // getDocAnnotation parse annotations of "+kubebuilder:doc:" with tags of "warning" or "doc" for control generating doc config.
 // E.g. +kubebuilder:doc:warning=foo  +kubebuilder:doc:note=bar
 func getDocAnnotation(t *types.Type, tags ...string) map[string]string {
@@ -375,6 +369,9 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 			path := strings.Split(paths, ",")
 			if len(path) < 2 {
 				return nil, fmt.Errorf(jsonPathError)
+			}
+			for _, s := range path {
+				fmt.Printf("\n[debug] %s", s)
 			}
 			for _, s := range path {
 				kv := strings.Split(s, "=")
