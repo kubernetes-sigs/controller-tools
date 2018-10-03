@@ -14,13 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package client
+/*
+Package generator provides an interface and implementation to provision certificates.
 
-// DelegatingClient forms an interface Client by composing separate
-// reader, writer and statusclient interfaces.  This way, you can have an Client that
-// reads from a cache and writes to the API server.
-type DelegatingClient struct {
-	Reader
-	Writer
-	StatusClient
-}
+Create an instance of CertGenerator.
+
+	cg := SelfSignedCertGenerator{}
+
+Generate the certificates.
+	certs, err := cg.Generate("foo.bar.com")
+	if err != nil {
+		// handle error
+	}
+*/
+package generator
