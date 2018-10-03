@@ -39,6 +39,7 @@ gometalinter.v2 --disable-all \
     --enable=errcheck \
     --enable=varcheck \
     --enable=goconst \
+    --enable=gosec \
     --enable=unparam \
     --enable=ineffassign \
     --enable=nakedret \
@@ -52,6 +53,5 @@ gometalinter.v2 --disable-all \
     --skip=atomic \
     ./pkg/...
 # TODO: Enable these as we fix them to make them pass
-#    --enable=gosec \
 #    --enable=maligned \
 #    --enable=safesql \

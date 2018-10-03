@@ -105,7 +105,7 @@ func (c *fakeClient) Create(ctx context.Context, obj runtime.Object) error {
 	return c.tracker.Create(gvr, obj, accessor.GetNamespace())
 }
 
-func (c *fakeClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOptionFunc) error {
+func (c *fakeClient) Delete(ctx context.Context, obj runtime.Object) error {
 	gvr, err := getGVRFromObject(obj)
 	if err != nil {
 		return err
@@ -114,7 +114,6 @@ func (c *fakeClient) Delete(ctx context.Context, obj runtime.Object, opts ...cli
 	if err != nil {
 		return err
 	}
-	//TODO: implement propagation
 	return c.tracker.Delete(gvr, accessor.GetNamespace(), accessor.GetName())
 }
 

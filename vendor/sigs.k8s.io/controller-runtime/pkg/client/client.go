@@ -22,10 +22,8 @@ import (
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -60,26 +58,15 @@ func New(config *rest.Config, options Options) (Client, error) {
 		}
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
 	c := &client{
-		typedClient: typedClient{
-			cache: clientCache{
-				config:         config,
-				scheme:         options.Scheme,
-				mapper:         options.Mapper,
-				codecs:         serializer.NewCodecFactory(options.Scheme),
-				resourceByType: make(map[reflect.Type]*resourceMeta),
-			},
-			paramCodec: runtime.NewParameterCodec(options.Scheme),
+		cache: clientCache{
+			config:         config,
+			scheme:         options.Scheme,
+			mapper:         options.Mapper,
+			codecs:         serializer.NewCodecFactory(options.Scheme),
+			resourceByType: make(map[reflect.Type]*resourceMeta),
 		},
-		unstructuredClient: unstructuredClient{
-			client:     dynamicClient,
-			restMapper: options.Mapper,
-		},
+		paramCodec: runtime.NewParameterCodec(options.Scheme),
 	}
 
 	return c, nil
@@ -90,53 +77,82 @@ var _ Client = &client{}
 // client is a client.Client that reads and writes directly from/to an API server.  It lazily initializes
 // new clients at the time they are used, and caches the client.
 type client struct {
-	typedClient        typedClient
-	unstructuredClient unstructuredClient
+	cache      clientCache
+	paramCodec runtime.ParameterCodec
 }
 
 // Create implements client.Client
 func (c *client) Create(ctx context.Context, obj runtime.Object) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		return c.unstructuredClient.Create(ctx, obj)
+	o, err := c.cache.getObjMeta(obj)
+	if err != nil {
+		return err
 	}
-	return c.typedClient.Create(ctx, obj)
+	return o.Post().
+		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
+		Resource(o.resource()).
+		Body(obj).
+		Do().
+		Into(obj)
 }
 
 // Update implements client.Client
 func (c *client) Update(ctx context.Context, obj runtime.Object) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		return c.unstructuredClient.Update(ctx, obj)
+	o, err := c.cache.getObjMeta(obj)
+	if err != nil {
+		return err
 	}
-	return c.typedClient.Update(ctx, obj)
+	return o.Put().
+		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
+		Resource(o.resource()).
+		Name(o.GetName()).
+		Body(obj).
+		Do().
+		Into(obj)
 }
 
 // Delete implements client.Client
-func (c *client) Delete(ctx context.Context, obj runtime.Object, opts ...DeleteOptionFunc) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		return c.unstructuredClient.Delete(ctx, obj, opts...)
+func (c *client) Delete(ctx context.Context, obj runtime.Object) error {
+	o, err := c.cache.getObjMeta(obj)
+	if err != nil {
+		return err
 	}
-	return c.typedClient.Delete(ctx, obj, opts...)
+	return o.Delete().
+		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
+		Resource(o.resource()).
+		Name(o.GetName()).
+		Do().
+		Error()
 }
 
 // Get implements client.Client
 func (c *client) Get(ctx context.Context, key ObjectKey, obj runtime.Object) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		return c.unstructuredClient.Get(ctx, key, obj)
+	r, err := c.cache.getResource(obj)
+	if err != nil {
+		return err
 	}
-	return c.typedClient.Get(ctx, key, obj)
+	return r.Get().
+		NamespaceIfScoped(key.Namespace, r.isNamespaced()).
+		Resource(r.resource()).
+		Name(key.Name).Do().Into(obj)
 }
 
 // List implements client.Client
 func (c *client) List(ctx context.Context, opts *ListOptions, obj runtime.Object) error {
-	_, ok := obj.(*unstructured.UnstructuredList)
-	if ok {
-		return c.unstructuredClient.List(ctx, opts, obj)
+	r, err := c.cache.getResource(obj)
+	if err != nil {
+		return err
 	}
-	return c.typedClient.List(ctx, opts, obj)
+	namespace := ""
+	if opts != nil {
+		namespace = opts.Namespace
+	}
+	return r.Get().
+		NamespaceIfScoped(namespace, r.isNamespaced()).
+		Resource(r.resource()).
+		Body(obj).
+		VersionedParams(opts.AsListOptions(), c.paramCodec).
+		Do().
+		Into(obj)
 }
 
 // Status implements client.StatusClient
@@ -153,10 +169,21 @@ type statusWriter struct {
 var _ StatusWriter = &statusWriter{}
 
 // Update implements client.StatusWriter
-func (sw *statusWriter) Update(ctx context.Context, obj runtime.Object) error {
-	_, ok := obj.(*unstructured.Unstructured)
-	if ok {
-		return sw.client.unstructuredClient.UpdateStatus(ctx, obj)
+func (sw *statusWriter) Update(_ context.Context, obj runtime.Object) error {
+	o, err := sw.client.cache.getObjMeta(obj)
+	if err != nil {
+		return err
 	}
-	return sw.client.typedClient.UpdateStatus(ctx, obj)
+	// TODO(droot): examine the returned error and check if it error needs to be
+	// wrapped to improve the UX ?
+	// It will be nice to receive an error saying the object doesn't implement
+	// status subresource and check CRD definition
+	return o.Put().
+		NamespaceIfScoped(o.GetNamespace(), o.isNamespaced()).
+		Resource(o.resource()).
+		Name(o.GetName()).
+		SubResource("status").
+		Body(obj).
+		Do().
+		Into(obj)
 }
