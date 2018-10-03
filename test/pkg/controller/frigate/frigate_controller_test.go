@@ -49,7 +49,13 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-	defer close(StartTestManager(mgr, g))
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
 
 	// Create the Frigate object and expect the Reconcile
 	err = c.Create(context.TODO(), instance)

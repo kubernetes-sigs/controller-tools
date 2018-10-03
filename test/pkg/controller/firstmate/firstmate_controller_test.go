@@ -51,7 +51,13 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-	defer close(StartTestManager(mgr, g))
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
 
 	// Create the FirstMate object and expect the Reconcile and Deployment to be created
 	err = c.Create(context.TODO(), instance)
