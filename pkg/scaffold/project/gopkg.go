@@ -43,6 +43,9 @@ type GopkgToml struct {
 
 	// Stanzas are additional managed stanzas to add after the ManagedHeader
 	Stanzas []Stanza
+
+	// KubebuilderVersion is the kubebuilder version
+	KubebuilderVersion string
 }
 
 // Stanza is a single Gopkg.toml entry
@@ -146,11 +149,11 @@ name="{{ .Name }}"
 
 [[constraint]]
   name="sigs.k8s.io/controller-runtime"
-  version="v0.1.1"
+  version="{{ .KubebuilderVersion }}"
 
 [[constraint]]
   name="sigs.k8s.io/controller-tools"
-  version="v0.1.1"
+  version="{{ .KubebuilderVersion }}"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]
