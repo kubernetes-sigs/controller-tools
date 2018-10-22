@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	crdgenerator "sigs.k8s.io/controller-tools/pkg/crd/generator"
+	"sigs.k8s.io/controller-tools/pkg/generate/crd"
 	"sigs.k8s.io/controller-tools/pkg/generate/rbac"
 )
 
@@ -82,7 +82,7 @@ Usage:
 }
 
 func newCRDCmd() *cobra.Command {
-	g := &crdgenerator.Generator{}
+	o := &crd.Options{}
 
 	cmd := &cobra.Command{
 		Use:   "crd",
@@ -92,22 +92,22 @@ Usage:
 # controller-gen crd [--domain k8s.io] [--root-path input_dir] [--output-dir output_dir]
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := g.ValidateAndInitFields(); err != nil {
+			if err := o.ValidateAndInitFields(); err != nil {
 				log.Fatal(err)
 			}
-			if err := g.Do(); err != nil {
+			if err := o.Run(); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("CRD files generated, files can be found under path %s.\n", g.OutputDir)
+			fmt.Printf("CRD files generated, files can be found under path %s.\n", o.OutputDir)
 		},
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&g.RootPath, "root-path", "", "working dir, must have PROJECT file under the path or parent path if domain not set")
-	f.StringVar(&g.OutputDir, "output-dir", "", "output directory, default to 'config/crds' under root path")
-	f.StringVar(&g.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
-	f.StringVar(&g.Namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
-	f.BoolVar(&g.SkipMapValidation, "skip-map-validation", true, "if set to true, skip generating OpenAPI validation schema for map type in CRD.")
+	f.StringVar(&o.RootPath, "root-path", "", "working dir, must have PROJECT file under the path or parent path if domain not set")
+	f.StringVar(&o.OutputDir, "output-dir", "", "output directory, default to 'config/crds' under root path")
+	f.StringVar(&o.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
+	f.StringVar(&o.Namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
+	f.BoolVar(&o.SkipMapValidation, "skip-map-validation", true, "if set to true, skip generating OpenAPI validation schema for map type in CRD.")
 
 	return cmd
 }
@@ -132,19 +132,19 @@ Usage:
 				}
 				projectDir = currDir
 			}
-			crdGen := &crdgenerator.Generator{
+			o := &crd.Options{
 				RootPath:          projectDir,
 				OutputDir:         filepath.Join(projectDir, "config", "crds"),
 				Namespace:         namespace,
 				SkipMapValidation: true,
 			}
-			if err := crdGen.ValidateAndInitFields(); err != nil {
+			if err := o.ValidateAndInitFields(); err != nil {
 				log.Fatal(err)
 			}
-			if err := crdGen.Do(); err != nil {
+			if err := o.Run(); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("CRD manifests generated under '%s' \n", crdGen.OutputDir)
+			fmt.Printf("CRD manifests generated under '%s' \n", o.OutputDir)
 
 			// RBAC generation
 			rbacOptions := &rbac.ManifestOptions{

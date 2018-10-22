@@ -371,9 +371,6 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 				return nil, fmt.Errorf(jsonPathError)
 			}
 			for _, s := range path {
-				fmt.Printf("\n[debug] %s", s)
-			}
-			for _, s := range path {
 				kv := strings.Split(s, "=")
 				if kv[0] == specReplicasPath || kv[0] == statusReplicasPath || kv[0] == labelSelectorPath {
 					jsonPath[kv[0]] = kv[1]
