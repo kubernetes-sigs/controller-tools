@@ -130,7 +130,7 @@ func (b *APIs) getTime() string {
 }`
 }
 
-func (b *APIs) getMeta() string {
+func (b *APIs) objSchema() string {
 	return `v1beta1.JSONSchemaProps{
     Type:   "object",
 }`
@@ -142,6 +142,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	meta := types.Name{Name: "ObjectMeta", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
+	unstructured := types.Name{Name: "Unstructured", Package: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"}
 	switch t.Name {
 	case time:
 		return v1beta1.JSONSchemaProps{
@@ -151,7 +152,11 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case meta:
 		return v1beta1.JSONSchemaProps{
 			Type: "object",
-		}, b.getMeta()
+		}, b.objSchema()
+	case unstructured:
+		return v1beta1.JSONSchemaProps{
+			Type: "object",
+		}, b.objSchema()
 	}
 
 	var v v1beta1.JSONSchemaProps
