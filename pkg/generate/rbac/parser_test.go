@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"sigs.k8s.io/controller-tools/pkg/generate/internal"
 )
 
 func TestParseFile(t *testing.T) {
@@ -109,12 +110,15 @@ func TestParseFile(t *testing.T) {
 
 	for _, test := range tests {
 		fset := token.NewFileSet()
-		got, err := parseFile(fset, "test.go", test.content)
+		ops := parserOptions{
+			rules: []rbacv1.PolicyRule{},
+		}
+		err := internal.ParseFile(fset, "test.go", test.content, ops.parseAnnotation)
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
-		if !reflect.DeepEqual(got, test.exp) {
-			t.Errorf("RBAC rules should have matched, expected %v and got %v", test.exp, got)
+		if !reflect.DeepEqual(ops.rules, test.exp) {
+			t.Errorf("RBAC rules should have matched, expected %v and got %v", test.exp, ops.rules)
 		}
 	}
 }
