@@ -441,9 +441,10 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 	for _, elem := range strings.Split(parts, ",") {
 		key, value, err := PrintColumnKV(elem)
 		if err != nil {
-			log.Fatalf("//+kubebuilder:printcolumn: tags must be key value pairs.  Expected "+
-				"keys [name=<name>,type=<type>,description=<descr>,format=<format>] "+
-				"Got string: [%s]", parts)
+			return v1beta1.CustomResourceColumnDefinition{},
+				fmt.Errorf("//+kubebuilder:printcolumn: tags must be key value pairs.Expected "+
+					"keys [name=<name>,type=<type>,description=<descr>,format=<format>] "+
+					"Got string: [%s]", parts)
 		}
 		if key == printColumnName || key == printColumnType || key == printColumnPath {
 			count++
