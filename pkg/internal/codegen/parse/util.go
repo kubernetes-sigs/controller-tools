@@ -412,8 +412,8 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 	return nil, fmt.Errorf(jsonPathError)
 }
 
-// PrintColumnKV parses key-value string formatted as "foo=bar" and returns key and value.
-func PrintColumnKV(s string) (key, value string, err error) {
+// printColumnKV parses key-value string formatted as "foo=bar" and returns key and value.
+func printColumnKV(s string) (key, value string, err error) {
 	kv := strings.SplitN(s, "=", 2)
 	if len(kv) != 2 {
 		err = fmt.Errorf("invalid key value pair")
@@ -439,7 +439,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 		fmt.Printf("\n[debug] %s", s)
 	}
 	for _, elem := range strings.Split(parts, ",") {
-		key, value, err := PrintColumnKV(elem)
+		key, value, err := printColumnKV(elem)
 		if err != nil {
 			return v1beta1.CustomResourceColumnDefinition{},
 				fmt.Errorf("//+kubebuilder:printcolumn: tags must be key value pairs.Expected "+

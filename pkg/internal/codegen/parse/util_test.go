@@ -184,7 +184,7 @@ func TestParsePrintColumnParams(t *testing.T) {
 		},
 		{
 			name:     "Invalid value for type",
-			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status,format=float",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=int32,description=.status.conditions[?(@.type==\"Ready\")].status",
 			expected: []v1beta1.CustomResourceColumnDefinition{},
 			parseErr: fmt.Errorf("invalid value for %s printcolumn", printColumnType),
 		},
