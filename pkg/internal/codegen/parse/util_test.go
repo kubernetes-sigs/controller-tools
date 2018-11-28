@@ -124,7 +124,7 @@ func TestParseScaleParams(t *testing.T) {
 		}
 	}
 }
-func Test_parsePrintColumnParams(t *testing.T) {
+func TestParsePrintColumnParams(t *testing.T) {
 	tests := []struct {
 		name     string
 		tag      string
@@ -169,6 +169,24 @@ func Test_parsePrintColumnParams(t *testing.T) {
 			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status",
 			expected: []v1beta1.CustomResourceColumnDefinition{},
 			parseErr: fmt.Errorf(printColumnError),
+		},
+		{
+			name:     "Invalid value for priority",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status,priority=1.23",
+			expected: []v1beta1.CustomResourceColumnDefinition{},
+			parseErr: fmt.Errorf("invalid value for %s printcolumn", printColumnPri),
+		},
+		{
+			name:     "Invalid value for format",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status,format=float",
+			expected: []v1beta1.CustomResourceColumnDefinition{},
+			parseErr: fmt.Errorf("invalid value for %s printcolumn", printColumnFormat),
+		},
+		{
+			name:     "Invalid value for type",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status,format=float",
+			expected: []v1beta1.CustomResourceColumnDefinition{},
+			parseErr: fmt.Errorf("invalid value for %s printcolumn", printColumnType),
 		},
 	}
 	for _, tc := range tests {

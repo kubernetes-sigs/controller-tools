@@ -113,10 +113,10 @@ func (b *APIs) parseCRDs() {
 							resource.CRD.Spec.Subresources.Scale.LabelSelectorPath = &labelSelctor
 						}
 					}
-					if IsPrintColumn(resource.Type) {
+					if hasPrintColumn(resource.Type) {
 						result, err := parsePrintColumnParams(resource.Type)
 						if err != nil {
-							log.Fatalf("failed in parsing CRD, error: %v", err.Error())
+							log.Fatalf("failed to parse printcolumn annotations, error: %v", err.Error())
 						}
 						resource.CRD.Spec.AdditionalPrinterColumns = result
 					}

@@ -117,8 +117,8 @@ func IsRBAC(t *types.Type) bool {
 	return false
 }
 
-// IsPrintColumn returns true if t has a +printcolumn or +kubebuilder:printcolumn tag
-func IsPrintColumn(t *types.Type) bool {
+// hasPrintColumn returns true if t has a +printcolumn or +kubebuilder:printcolumn annotation.
+func hasPrintColumn(t *types.Type) bool {
 	for _, c := range t.CommentLines {
 		if strings.Contains(c, "+printcolumn") || strings.Contains(c, "+kubebuilder:printcolumn") {
 			return true
@@ -445,7 +445,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 				"keys [name=<name>,type=<type>,description=<descr>,format=<format>] "+
 				"Got string: [%s]", parts)
 		}
-		if key == "name" || key == "type" || key == "JSONPath" {
+		if key == printColumnName || key == printColumnType || key == printColumnPath {
 			count++
 		}
 		switch key {
@@ -455,7 +455,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 			if value == "integer" || value == "number" || value == "string" || value == "boolean" {
 				config.Type = value
 			} else {
-				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("Please enter the right value for type")
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnType)
 			}
 		case printColumnFormat:
 			if config.Type == "integer" && (value == "int32" || value == "int64") {
@@ -465,7 +465,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 			} else if config.Type == "string" && (value == "byte" || value == "date" || value == "date-time" || value == "password") {
 				config.Format = value
 			} else {
-				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("Please enter the right value for format")
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnFormat)
 			}
 		case printColumnPath:
 			config.JSONPath = value
@@ -473,7 +473,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 			i, err := strconv.Atoi(value)
 			v := int32(i)
 			if err != nil {
-				return v1beta1.CustomResourceColumnDefinition{}, err
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnPri)
 			}
 			config.Priority = v
 		case printColumnDescr:
