@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/types"
 )
 
@@ -115,6 +116,66 @@ func TestParseScaleParams(t *testing.T) {
 		r := &types.Type{}
 		r.CommentLines = []string{tc.tag}
 		res, err := parseScaleParams(r)
+		if !reflect.DeepEqual(err, tc.parseErr) {
+			t.Errorf("test [%s] failed. error is (%v),\n but expected (%v)", tc.name, err, tc.parseErr)
+		}
+		if !reflect.DeepEqual(res, tc.expected) {
+			t.Errorf("test [%s] failed. result is (%v),\n but expected (%v)", tc.name, res, tc.expected)
+		}
+	}
+}
+func Test_parsePrintColumnParams(t *testing.T) {
+	tests := []struct {
+		name     string
+		tag      string
+		expected []v1beta1.CustomResourceColumnDefinition
+		parseErr error
+	}{
+		{
+			name: "test ok",
+			tag:  "+kubebuilder:printcolumn:name=toy,type=string,JSONPath=.status.conditions[?(@.type==\"Ready\")].status,description=descr1,priority=3,format=date",
+			expected: []v1beta1.CustomResourceColumnDefinition{
+				{
+					Name:        "toy",
+					Type:        "string",
+					Format:      "date",
+					Description: "descr1",
+					Priority:    3,
+					JSONPath:    ".status.conditions[?(@.type==\"Ready\")].status",
+				},
+			},
+			parseErr: nil,
+		},
+		{
+			name: "Minimum Three parameters",
+			tag:  "+kubebuilder:printcolumn:name=toy,type=string,JSONPath=.status.conditions[?(@.type==\"Ready\")].status",
+			expected: []v1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "toy",
+					Type:     "string",
+					JSONPath: ".status.conditions[?(@.type==\"Ready\")].status",
+				},
+			},
+			parseErr: nil,
+		},
+		{
+			name:     "two parameters",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=string",
+			expected: []v1beta1.CustomResourceColumnDefinition{},
+			parseErr: fmt.Errorf(printColumnError),
+		},
+		{
+			name:     "one requied parameter is missing",
+			tag:      "+kubebuilder:printcolumn:name=toy,type=string,description=.status.conditions[?(@.type==\"Ready\")].status",
+			expected: []v1beta1.CustomResourceColumnDefinition{},
+			parseErr: fmt.Errorf(printColumnError),
+		},
+	}
+	for _, tc := range tests {
+		t.Logf("test case: %s", tc.name)
+		r := &types.Type{}
+		r.CommentLines = []string{tc.tag}
+		res, err := parsePrintColumnParams(r)
 		if !reflect.DeepEqual(err, tc.parseErr) {
 			t.Errorf("test [%s] failed. error is (%v),\n but expected (%v)", tc.name, err, tc.parseErr)
 		}

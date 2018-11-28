@@ -113,7 +113,13 @@ func (b *APIs) parseCRDs() {
 							resource.CRD.Spec.Subresources.Scale.LabelSelectorPath = &labelSelctor
 						}
 					}
-
+					if IsPrintColumn(resource.Type) {
+						result, err := parsePrintColumnParams(resource.Type)
+						if err != nil {
+							log.Fatalf("failed in parsing CRD, error: %v", err.Error())
+						}
+						resource.CRD.Spec.AdditionalPrinterColumns = result
+					}
 					if len(resource.ShortName) > 0 {
 						resource.CRD.Spec.Names.ShortNames = []string{resource.ShortName}
 					}
