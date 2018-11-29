@@ -6,6 +6,25 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: toys.fun.myk8s.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.conditions[?(@.type==\"Ready\")].status
+    description: descr1
+    format: date
+    name: toy
+    priority: 3
+    type: string
+  - JSONPath: status
+    description: descr2
+    format: int32
+    name: abc
+    priority: 1
+    type: integer
+  - JSONPath: .status.conditions.ready
+    description: descr3
+    format: byte
+    name: service
+    priority: 2
+    type: string
   group: fun.myk8s.io
   names:
     kind: Toy
