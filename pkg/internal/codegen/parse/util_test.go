@@ -147,6 +147,18 @@ func TestParsePrintColumnParams(t *testing.T) {
 			parseErr: nil,
 		},
 		{
+			name: "age as date",
+			tag:  "+kubebuilder:printcolumn:name=age,type=date,JSONPath=.metadata.creationTimestamp",
+			expected: []v1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "age",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+				},
+			},
+			parseErr: nil,
+		},
+		{
 			name: "Minimum Three parameters",
 			tag:  "+kubebuilder:printcolumn:name=toy,type=string,JSONPath=.status.conditions[?(@.type==\"Ready\")].status",
 			expected: []v1beta1.CustomResourceColumnDefinition{
