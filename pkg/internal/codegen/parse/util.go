@@ -453,7 +453,7 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 		case printColumnName:
 			config.Name = value
 		case printColumnType:
-			if value == "integer" || value == "number" || value == "string" || value == "boolean" {
+			if value == "integer" || value == "number" || value == "string" || value == "boolean" || value == "date" {
 				config.Type = value
 			} else {
 				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnType)
