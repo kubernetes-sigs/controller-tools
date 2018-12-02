@@ -139,6 +139,12 @@ gometalinter.v2 --disable-all \
 # enable this after fixing linting error
 #    --enable=gosec \
 
+header_text "running dep check"
+
+which dep
+
+dep check
+
 header_text "running go test"
 
 go test ./pkg/... ./cmd/... -parallel 4
