@@ -31,8 +31,8 @@ type ToySpec struct {
 	// +kubebuilder:validation:Maximum=100
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:ExclusiveMinimum=true
-	Power  float32 `json:"power,omitempty"`
-	Bricks int32   `json:"bricks,omitempty"`
+	Power  float32 `json:"power_test,omitempty"`
+	Bricks int32   `json:"bricks-test,omitempty"`
 	// +kubebuilder:validation:MaxLength=15
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name,omitempty"`

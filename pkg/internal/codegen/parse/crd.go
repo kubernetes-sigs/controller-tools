@@ -189,7 +189,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	return v, s
 }
 
-var jsonRegex = regexp.MustCompile("json:\"([a-zA-Z,]+)\"")
+var jsonRegex = regexp.MustCompile("json:\"([a-zA-Z,_-]+)\"")
 
 type primitiveTemplateArgs struct {
 	v1beta1.JSONSchemaProps

@@ -52,7 +52,7 @@ spec:
               - Wolf
               - Dragon
               type: string
-            bricks:
+            bricks-test:
               format: int32
               type: integer
             claim:
@@ -70,7 +70,7 @@ spec:
               maxLength: 15
               minLength: 1
               type: string
-            power:
+            power_test:
               exclusiveMinimum: true
               format: float
               maximum: 100
