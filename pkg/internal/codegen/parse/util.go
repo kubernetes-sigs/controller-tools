@@ -51,7 +51,7 @@ type Options struct {
 	SkipRBACValidation bool
 }
 
-// IsAPIResource returns true if:
+// IsAPIResource returns true if either of the two conditions become true:
 // 1. t has a +resource/+kubebuilder:resource comment tag
 // 2. t has TypeMeta and ObjectMeta in its member list.
 func IsAPIResource(t *types.Type) bool {
