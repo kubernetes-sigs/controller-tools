@@ -103,80 +103,9 @@ func (b *APIs) parseIndex() {
 		// Add the resource to the map
 		b.ByGroupKindVersion[r.Group][r.Kind][r.Version] = r
 		b.ByGroupVersionKind[r.Group][r.Version][r.Kind] = r
-
-		//if !HasSubresource(c) {
-		//	continue
-		//}
 		r.Type = c
-		//r.Subresources = b.getSubresources(r)
 	}
 }
-
-//func (b *APIs) getSubresources(c *codegen.APIResource) map[string]*codegen.APISubresource {
-//	r := map[string]*codegen.APISubresource{}
-//	subresources := b.getSubresourceTags(c.Type)
-//
-//	if len(subresources) == 0 {
-//		// Not a subresource
-//		return r
-//	}
-//for _, subresource := range subresources {
-//	// Parse the values for each subresource
-//	tags := parseSubresourceTag(c, subresource)
-//	sr := &codegen.APISubresource{
-//		Kind:     tags.Kind,
-//		Request:  tags.RequestKind,
-//		Path:     tags.Path,
-//		REST:     tags.REST,
-//		Domain:   b.Domain,
-//		Version:  c.Version,
-//		Resource: c.Resource,
-//		Group:    c.Group,
-//	}
-//	if !b.isInPackage(tags) {
-//		// Out of package Request types require an import and are prefixed with the
-//		// package name - e.g. v1.Scale
-//		sr.Request, sr.ImportPackage = b.getNameAndImport(tags)
-//	}
-//	if v, found := r[sr.Path]; found {
-//		log.Fatalf("Multiple subresources registered for path %s: %v %v",
-//			sr.Path, v, subresource)
-//	}
-//	r[sr.Path] = sr
-//}
-//	return r
-//}
-
-// subresourceTags contains the tags present in a "+subresource=" comment
-//type subresourceTags struct {
-//	Path        string
-//	Kind        string
-//	RequestKind string
-//	REST        string
-//}
-//
-//func (b *APIs) getSubresourceTags(c *types.Type) []string {
-//	comments := Comments(c.CommentLines)
-//	return comments.getTags("subresource", ":")
-//}
-
-// Returns true if the subresource Request type is in the same package as the resource type
-//func (b *APIs) isInPackage(tags subresourceTags) bool {
-//	return !strings.Contains(tags.RequestKind, ".")
-//}
-//
-//// GetNameAndImport converts
-//func (b *APIs) getNameAndImport(tags subresourceTags) (string, string) {
-//	last := strings.LastIndex(tags.RequestKind, ".")
-//	importPackage := tags.RequestKind[:last]
-//
-//	// Set the request kind to the struct name
-//	tags.RequestKind = tags.RequestKind[last+1:]
-//	// Find the package
-//	pkg := filepath.Base(importPackage)
-//	// Prefix the struct name with the package it is in
-//	return strings.Join([]string{pkg, tags.RequestKind}, "."), importPackage
-//}
 
 // resourceTags contains the tags present in a "+resource=" comment
 type resourceTags struct {
@@ -186,13 +115,13 @@ type resourceTags struct {
 	ShortName string
 }
 
-//parseResourceAnnotationValue is a helper function to extract resource annotation.
-func parseResourceAnnotationValue(tag string, count int) (resourceTags, int, error) {
+// resourceAnnotationValue is a helper function to extract resource annotation.
+func resourceAnnotationValue(tag string) (resourceTags, error) {
 	res := resourceTags{}
 	for _, elem := range strings.Split(tag, ",") {
 		key, value, err := general.ParseKV(elem)
 		if err != nil {
-			return resourceTags{}, count, fmt.Errorf("// +kubebuilder:resource: tags must be key value pairs.  Expected "+
+			return resourceTags{}, fmt.Errorf("// +kubebuilder:resource: tags must be key value pairs.  Expected "+
 				"keys [path=<resourcepath>] "+
 				"Got string: [%s]", tag)
 		}
@@ -202,55 +131,30 @@ func parseResourceAnnotationValue(tag string, count int) (resourceTags, int, err
 		case "shortName":
 			res.ShortName = value
 		default:
-			return resourceTags{}, count, fmt.Errorf("The given input %s is invalid", value)
+			return resourceTags{}, fmt.Errorf("The given input %s is invalid", value)
 		}
 	}
-	count++
-	return res, count, nil
+	return res, nil
 }
 
 // parseResourceAnnotation parses the tags in a "+resource=" comment into a resourceTags struct.
 func parseResourceAnnotation(t *types.Type) (resourceTags, error) {
 	finalResult := resourceTags{}
-	var count, res int
+	var resourceAnnotationFound bool
 	for _, comment := range t.CommentLines {
 		anno := general.GetAnnotation(comment, "kubebuilder:resource")
 		if len(anno) == 0 {
 			continue
 		}
-		result, temp, err := parseResourceAnnotationValue(anno, count)
+		result, err := resourceAnnotationValue(anno)
 		if err != nil {
 			return resourceTags{}, err
 		}
-		res++
-		if res != temp {
+		if resourceAnnotationFound {
 			return resourceTags{}, fmt.Errorf("resource annotation should only exists once per type")
 		}
+		resourceAnnotationFound = true
 		finalResult = result
 	}
 	return finalResult, nil
 }
-
-// ParseSubresourceTag parses the tags in a "+subresource=" comment into a subresourceTags struct
-//func parseSubresourceTag(c *codegen.APIResource, tag string) subresourceTags {
-//	result := subresourceTags{}
-//	for _, elem := range strings.Split(tag, ",") {
-//		kv := strings.Split(elem, "=")
-//		if len(kv) != 2 {
-//			log.Fatalf("// +subresource: tags must be key value pairs.  Expected "+
-//				"keys [request=<requestType>,rest=<restImplType>,path=<subresourcepath>] "+
-//				"Got string: [%s]", tag)
-//		}
-//		value := kv[1]
-//		switch kv[0] {
-//		case "request":
-//			result.RequestKind = value
-//		case "rest":
-//			result.REST = value
-//		case "path":
-//			// Strip the parent resource
-//			result.Path = strings.Replace(value, c.Resource+"/", "", -1)
-//		}
-//	}
-//	return result
-//}
