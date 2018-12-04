@@ -73,7 +73,6 @@ func (b *APIs) parseIndex() {
 		if r.Resource == "" {
 			r.Resource = strings.ToLower(inflect.Pluralize(r.Kind))
 		}
-		// rt := parseResourceTag(b.getResourceTag(c))
 		rt, err := parseResourceAnnotation(c)
 		if err != nil {
 			log.Fatalf("failed to parse resource annotations, error: %v", err.Error())
@@ -81,11 +80,7 @@ func (b *APIs) parseIndex() {
 		if rt.Resource != "" {
 			r.Resource = rt.Resource
 		}
-		if rt.ShortName != "" {
-			r.ShortName = rt.ShortName
-		}
-		//r.REST = rt.REST
-		//r.Strategy = rt.Strategy
+		r.ShortName = rt.ShortName
 
 		// Copy the Status strategy to mirror the non-status strategy
 		r.StatusStrategy = strings.TrimSuffix(r.Strategy, "Strategy")
@@ -191,8 +186,8 @@ type resourceTags struct {
 	ShortName string
 }
 
-//helperResourceAnnotation is a helper function to extract resource annotation.
-func helperResourceAnnotation(tag string, count int) (resourceTags, int, error) {
+//parseResourceAnnotationValue is a helper function to extract resource annotation.
+func parseResourceAnnotationValue(tag string, count int) (resourceTags, int, error) {
 	res := resourceTags{}
 	for _, elem := range strings.Split(tag, ",") {
 		key, value, err := general.ParseKV(elem)
@@ -202,12 +197,8 @@ func helperResourceAnnotation(tag string, count int) (resourceTags, int, error) 
 				"Got string: [%s]", tag)
 		}
 		switch key {
-		// case "rest":
-		// 	result.REST = value
 		case "path":
 			res.Resource = value
-		// case "strategy":
-		// 	result.Strategy = value
 		case "shortName":
 			res.ShortName = value
 		default:
@@ -221,48 +212,24 @@ func helperResourceAnnotation(tag string, count int) (resourceTags, int, error) 
 // parseResourceAnnotation parses the tags in a "+resource=" comment into a resourceTags struct.
 func parseResourceAnnotation(t *types.Type) (resourceTags, error) {
 	finalResult := resourceTags{}
-	var count int
+	var count, res int
 	for _, comment := range t.CommentLines {
 		anno := general.GetAnnotation(comment, "kubebuilder:resource")
 		if len(anno) == 0 {
 			continue
 		}
-		result, count, err := helperResourceAnnotation(anno, count)
+		result, temp, err := parseResourceAnnotationValue(anno, count)
 		if err != nil {
 			return resourceTags{}, err
 		}
-		if count > 1 {
+		res++
+		if res != temp {
 			return resourceTags{}, fmt.Errorf("resource annotation should only exists once per type")
 		}
 		finalResult = result
 	}
 	return finalResult, nil
 }
-
-// ParseResourceTag parses the tags in a "+resource=" comment into a resourceTags struct
-// func parseResourceTag(tag string) resourceTags {
-// 	result := resourceTags{}
-// 	for _, elem := range strings.Split(tag, ",") {
-// 		kv := strings.Split(elem, "=")
-// 		if len(kv) != 2 {
-// 			log.Fatalf("// +kubebuilder:resource: tags must be key value pairs.  Expected "+
-// 				"keys [path=<subresourcepath>] "+
-// 				"Got string: [%s]", tag)
-// 		}
-// 		value := kv[1]
-// 		switch kv[0] {
-// 		//case "rest":
-// 		//	result.REST = value
-// 		case "path":
-// 			result.Resource = value
-// 		//case "strategy":
-// 		//	result.Strategy = value
-// 		case "shortName":
-// 			result.ShortName = value
-// 		}
-// 	}
-// 	return result
-// }
 
 // ParseSubresourceTag parses the tags in a "+subresource=" comment into a subresourceTags struct
 //func parseSubresourceTag(c *codegen.APIResource, tag string) subresourceTags {
@@ -287,13 +254,3 @@ func parseResourceAnnotation(t *types.Type) (resourceTags, error) {
 //	}
 //	return result
 //}
-
-// getResourceTag returns the value of the "+resource=" comment tag
-// func (b *APIs) getResourceTag(c *types.Type) string {
-// 	comments := Comments(c.CommentLines)
-// 	resource := comments.getTag("resource", ":") + comments.getTag("kubebuilder:resource", ":")
-// 	if len(resource) == 0 {
-// 		panic(errors.Errorf("Must specify +kubebuilder:resource comment for type %v", c.Name))
-// 	}
-// 	return resource
-// }
