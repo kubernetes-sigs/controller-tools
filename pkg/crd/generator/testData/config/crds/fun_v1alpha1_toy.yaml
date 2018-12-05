@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     controller-tools.k8s.io: "1.0"
-  name: toys.fun.myk8s.io
+  name: services.fun.myk8s.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.conditions[?(@.type==\"Ready\")].status
@@ -28,7 +28,9 @@ spec:
   group: fun.myk8s.io
   names:
     kind: Toy
-    plural: toys
+    plural: services
+    shortNames:
+    - ty
   scope: Namespaced
   subresources:
     scale:

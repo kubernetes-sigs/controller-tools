@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	webhooktypes "sigs.k8s.io/controller-runtime/pkg/webhook/types"
-	"sigs.k8s.io/controller-tools/pkg/generate/internal"
+	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
 const webhookAnnotationPrefix = "kubebuilder:webhook"
@@ -44,12 +44,12 @@ func (o *ManifestOptions) parseAnnotation(commentText string) error {
 	webhookKVMap, serverKVMap := map[string]string{}, map[string]string{}
 	for _, comment := range strings.Split(commentText, "\n") {
 		comment := strings.TrimSpace(comment)
-		anno := internal.GetAnnotation(comment, webhookAnnotationPrefix)
+		anno := general.GetAnnotation(comment, webhookAnnotationPrefix)
 		if len(anno) == 0 {
 			continue
 		}
 		for _, elem := range strings.Split(anno, ",") {
-			key, value, err := internal.ParseKV(elem)
+			key, value, err := general.ParseKV(elem)
 			if err != nil {
 				log.Fatalf("// +kubebuilder:webhook: tags must be key value pairs. Example "+
 					"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+

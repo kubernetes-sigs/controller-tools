@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	webhooktypes "sigs.k8s.io/controller-runtime/pkg/webhook/types"
-	"sigs.k8s.io/controller-tools/pkg/generate/internal"
+	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
 func TestParseWebhook(t *testing.T) {
@@ -107,7 +107,7 @@ func TestParseWebhook(t *testing.T) {
 			webhooks: []webhook.Webhook{},
 		}
 		fset := token.NewFileSet()
-		err := internal.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
+		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
@@ -164,7 +164,7 @@ func TestParseWebhookServer(t *testing.T) {
 			svrOps:   &webhook.ServerOptions{},
 		}
 		fset := token.NewFileSet()
-		err := internal.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
+		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}

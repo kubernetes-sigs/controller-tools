@@ -29,8 +29,8 @@ import (
 	"github.com/ghodss/yaml"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	generateinteral "sigs.k8s.io/controller-tools/pkg/generate/internal"
 	"sigs.k8s.io/controller-tools/pkg/generate/webhook/internal"
+	generateinteral "sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
 // ManifestOptions represent options for generating the webhook manifests.

@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-tools/pkg/generate/internal"
+	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
 type parserOptions struct {
@@ -35,12 +35,12 @@ func (o *parserOptions) parseAnnotation(commentText string) error {
 	for _, comment := range strings.Split(commentText, "\n") {
 		comment := strings.TrimSpace(comment)
 		if strings.HasPrefix(comment, "+rbac") {
-			if ann := internal.GetAnnotation(comment, "rbac"); ann != "" {
+			if ann := general.GetAnnotation(comment, "rbac"); ann != "" {
 				o.rules = append(o.rules, parseRBACTag(ann))
 			}
 		}
 		if strings.HasPrefix(comment, "+kubebuilder:rbac") {
-			if ann := internal.GetAnnotation(comment, "kubebuilder:rbac"); ann != "" {
+			if ann := general.GetAnnotation(comment, "kubebuilder:rbac"); ann != "" {
 				o.rules = append(o.rules, parseRBACTag(ann))
 			}
 		}
@@ -53,7 +53,7 @@ func (o *parserOptions) parseAnnotation(commentText string) error {
 func parseRBACTag(tag string) rbacv1.PolicyRule {
 	result := rbacv1.PolicyRule{}
 	for _, elem := range strings.Split(tag, ",") {
-		key, value, err := internal.ParseKV(elem)
+		key, value, err := general.ParseKV(elem)
 		if err != nil {
 			log.Fatalf("// +kubebuilder:rbac: tags must be key value pairs.  Expected "+
 				"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
