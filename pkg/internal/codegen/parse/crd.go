@@ -153,16 +153,19 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	switch t.Name {
 	case time:
 		return v1beta1.JSONSchemaProps{
-			Type:   "string",
-			Format: "date-time",
+			Type:        "string",
+			Format:      "date-time",
+			Description: parseDescription(comments),
 		}, b.getTime()
 	case meta:
 		return v1beta1.JSONSchemaProps{
-			Type: "object",
+			Type:        "object",
+			Description: parseDescription(comments),
 		}, b.objSchema()
 	case unstructured:
 		return v1beta1.JSONSchemaProps{
-			Type: "object",
+			Type:        "object",
+			Description: parseDescription(comments),
 		}, b.objSchema()
 	case intOrString:
 		return v1beta1.JSONSchemaProps{
@@ -174,6 +177,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 					Type: "integer",
 				},
 			},
+			Description: parseDescription(comments),
 		}, b.objSchema()
 	}
 
@@ -205,9 +209,10 @@ var jsonRegex = regexp.MustCompile("json:\"([a-zA-Z,]+)\"")
 
 type primitiveTemplateArgs struct {
 	v1beta1.JSONSchemaProps
-	Value     string
-	Format    string
-	EnumValue string // TODO check type of enum value to match the type of field
+	Value       string
+	Format      string
+	EnumValue   string // TODO check type of enum value to match the type of field
+	Description string
 }
 
 var primitiveTemplate = template.Must(template.New("map-template").Parse(
@@ -254,7 +259,7 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 
 	buff := &bytes.Buffer{}
 
-	var n, f, s string
+	var n, f, s, d string
 	switch t.Name.Name {
 	case "int", "int64", "uint64":
 		n = "integer"
@@ -278,11 +283,13 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 	if props.Enum != nil {
 		s = parseEnumToString(props.Enum)
 	}
-	if err := primitiveTemplate.Execute(buff, primitiveTemplateArgs{props, n, f, s}); err != nil {
+	d = parseDescription(comments)
+	if err := primitiveTemplate.Execute(buff, primitiveTemplateArgs{props, n, f, s, d}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	props.Type = n
 	props.Format = f
+	props.Description = d
 	return props, buff.String()
 }
 
