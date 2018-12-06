@@ -18,6 +18,7 @@ package v1alpha1
 import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -51,6 +52,8 @@ type ToySpec struct {
 	Claim    v1.PersistentVolumeClaim `json:"claim,omitempty"`
 
 	Replicas *int32 `json:"replicas"`
+
+	Rook *intstr.IntOrString `json:"rook"`
 }
 
 // ToyStatus defines the observed state of Toy
