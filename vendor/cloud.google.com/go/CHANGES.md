@@ -1,5 +1,156 @@
 # Changes
 
+## v0.34.0
+
+- functions/metadata:
+  - Switch to using JSON in context.
+  - Make Resource a value.
+- vision: Fix ProductSearch return type.
+- datastore: Add an example for how to handle MultiError.
+
+## v0.33.1
+
+- compute: Removes an erroneously added go.mod.
+- logging: Populate source location in fromLogEntry.
+
+## v0.33.0
+
+- bttest:
+  - Add support for apply_label_transformer.
+- expr:
+  - Add expr library.
+- firestore:
+  - Support retrieval of missing documents.
+- kms:
+  - Add IAM methods.
+- pubsub:
+  - Clarify extension documentation.
+- scheduler:
+  - Add v1beta1 client.
+- vision:
+  - Add product search helper.
+  - Add new product search client.
+
+## v0.32.0
+
+Note: This release is the last to support Go 1.6 and 1.8.
+
+- bigquery:
+    - Add support for removing an expiration.
+    - Ignore NeverExpire in Table.Create.
+    - Validate table expiration time.
+- cbt:
+    - Add note about not supporting arbitrary bytes.
+- datastore:
+    - Align key checks.
+- firestore:
+    - Return an error when using Start/End without providing values.
+- pubsub:
+    - Add pstest Close method.
+    - Clarify MaxExtension documentation.
+- securitycenter:
+    - Add v1beta1 client.
+- spanner:
+    - Allow nil in mutations.
+    - Improve doc of SessionPoolConfig.MaxOpened.
+    - Increase session deletion timeout from 5s to 15s.
+
+## v0.31.0
+
+- bigtable:
+    - Group mutations across multiple requests.
+- bigquery:
+    - Link to bigquery troubleshooting errors page in bigquery.Error comment.
+- cbt:
+    - Fix go generate command.
+    - Document usage of both maxage + maxversions.
+- datastore:
+    - Passing nil keys results in ErrInvalidKey.
+- firestore:
+    - Clarify what Document.DataTo does with untouched struct fields.
+- profile:
+    - Validate service name in agent.
+- pubsub:
+    - Fix deadlock with pstest and ctx.Cancel.
+    - Fix a possible deadlock in pstest.
+- trace:
+    - Update doc URL with new fragment.
+
+Special thanks to @fastest963 for going above and beyond helping us to debug
+hard-to-reproduce Pub/Sub issues.
+
+## v0.30.0
+
+- spanner: DML support added. See https://godoc.org/cloud.google.com/go/spanner#hdr-DML_and_Partitioned_DML for more information.
+- bigtable: bttest supports row sample filter.
+- functions: metadata package added for accessing Cloud Functions resource metadata.
+
+## v0.29.0
+
+- bigtable:
+  - Add retry to all idempotent RPCs.
+  - cbt supports complex GC policies.
+  - Emulator supports arbitrary bytes in regex filters.
+- firestore: Add ArrayUnion and ArrayRemove.
+- logging: Add the ContextFunc option to supply the context used for
+  asynchronous RPCs.
+- profiler: Ignore NotDefinedError when fetching the instance name
+- pubsub:
+  - BEHAVIOR CHANGE: Receive doesn't retry if an RPC returns codes.Cancelled.
+  - BEHAVIOR CHANGE: Receive retries on Unavailable intead of returning.
+  - Fix deadlock.
+  - Restore Ack/Nack/Modacks metrics.
+  - Improve context handling in iterator.
+  - Implement synchronous mode for Receive.
+  - pstest: add Pull.
+- spanner: Add a metric for the number of sessions currently opened.
+- storage:
+  - Canceling the context releases all resources.
+  - Add additional RetentionPolicy attributes.
+- vision/apiv1: Add LocalizeObjects method.
+
+## v0.28.0
+
+- bigtable:
+  - Emulator returns Unimplemented for snapshot RPCs.
+- bigquery:
+  - Support zero-length repeated, nested fields.
+- cloud assets:
+  - Add v1beta client.
+- datastore:
+  - Don't nil out transaction ID on retry.
+- firestore:
+  - BREAKING CHANGE: When watching a query with Query.Snapshots, QuerySnapshotIterator.Next
+  returns a QuerySnapshot which contains read time, result size, change list and the DocumentIterator
+  (previously, QuerySnapshotIterator.Next returned just the DocumentIterator). See: https://godoc.org/cloud.google.com/go/firestore#Query.Snapshots.
+  - Add array-contains operator.
+- IAM:
+  - Add iam/credentials/apiv1 client.
+- pubsub:
+  - Canceling the context passed to Subscription.Receive causes Receive to return when
+  processing finishes on all messages currently in progress, even if new messages are arriving.
+- redis:
+  - Add redis/apiv1 client.
+- storage:
+  - Add Reader.Attrs.
+  - Deprecate several Reader getter methods: please use Reader.Attrs for these instead.
+  - Add ObjectHandle.Bucket and ObjectHandle.Object methods.
+
+## v0.27.0
+
+- bigquery:
+  - Allow modification of encryption configuration and partitioning options to a table via the Update call.
+  - Add a SchemaFromJSON function that converts a JSON table schema.
+- bigtable:
+  - Restore cbt count functionality.
+- containeranalysis:
+  - Add v1beta client.
+- spanner:
+  - Fix a case where an iterator might not be closed correctly.
+- storage:
+  - Add ServiceAccount method https://godoc.org/cloud.google.com/go/storage#Client.ServiceAccount.
+  - Add a method to Reader that returns the parsed value of the Last-Modified header.
+
 ## v0.26.0
 
 - bigquery:

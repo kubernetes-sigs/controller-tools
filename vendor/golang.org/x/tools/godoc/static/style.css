@@ -37,6 +37,26 @@ pre .ln {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+
+	/* Ensure 8 characters in the document - which due to floating
+   * point rendering issues, might have a width of less than 1 each - are 8
+   * characters wide, so a tab in the 9th position indents properly. See
+   * https://github.com/webcompat/web-bugs/issues/17530#issuecomment-402675091
+   * for more information. */
+	display: inline-block;
+	width: 8ch;
+}
+
+.search-nav{
+	margin-left: 1.25rem;
+	font-size: 0.875rem;
+	column-gap: 1.25rem;
+	column-fill: auto;
+	column-width: 14rem;
+}
+
+.search-nav .indent {
+	margin-left: 1.25rem;
 }
 
 a,
@@ -309,6 +329,9 @@ input#search {
 	flex-grow: 1;
 	max-width: 100%;
 	min-width: 5.625rem;
+}
+input#search:-webkit-search-decoration {
+	-webkit-appearance: none;
 }
 input#search:-moz-ui-invalid {
 	box-shadow: unset;
@@ -616,7 +639,6 @@ div.play .buttons a {
 }
 
 /* drop-down playground */
-#playgroundButton,
 div#playground {
 	/* start hidden; revealed by javascript */
 	display: none;
@@ -751,6 +773,11 @@ a.error {
 @media (max-width: 43.75em) {
 	body {
 		font-size: 0.9375rem;
+	}
+
+	div#playground {
+		left: 0;
+		right: 0;
 	}
 
 	pre,

@@ -208,6 +208,7 @@ func (h *handlerServer) GetPageInfo(abspath, relpath string, mode PageInfoMode, 
 		timestamp = ts
 	}
 	if dir == nil {
+		// TODO(agnivade): handle this case better, now since there is no CLI mode.
 		// no directory tree present (happens in command-line mode);
 		// compute 2 levels for this page. The second level is to
 		// get the synopses of sub-directories.
@@ -276,11 +277,6 @@ func (h *handlerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if mode&NoHTML != 0 {
-		h.p.ServeText(w, applyTemplate(h.p.PackageText, "packageText", info))
-		return
-	}
-
 	var tabtitle, title, subtitle string
 	switch {
 	case info.PAst != nil:
@@ -320,6 +316,7 @@ func (h *handlerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Emit JSON array for type information.
 	pi := h.c.Analysis.PackageInfo(relpath)
+	hasTreeView := len(pi.CallGraph) != 0
 	info.CallGraphIndex = pi.CallGraphIndex
 	info.CallGraph = htmltemplate.JS(marshalJSON(pi.CallGraph))
 	info.AnalysisData = htmltemplate.JS(marshalJSON(pi.Types))
@@ -341,6 +338,7 @@ func (h *handlerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Subtitle: subtitle,
 		Body:     body,
 		GoogleCN: info.GoogleCN,
+		TreeView: hasTreeView,
 	})
 }
 
@@ -658,7 +656,15 @@ func formatGoSource(buf *bytes.Buffer, text []byte, links []analysis.Link, patte
 		//
 		// The first tab for the code snippet needs to start in column 9, so
 		// it indents a full 8 spaces, hence the two nbsp's. Otherwise the tab
-		// character only indents about two spaces.
+		// character only indents a short amount.
+		//
+		// Due to rounding and font width Firefox might not treat 8 rendered
+		// characters as 8 characters wide, and subsequently may treat the tab
+		// character in the 9th position as moving the width from (7.5 or so) up
+		// to 8. See
+		// https://github.com/webcompat/web-bugs/issues/17530#issuecomment-402675091
+		// for a fuller explanation. The solution is to add a CSS class to
+		// explicitly declare the width to be 8 characters.
 		fmt.Fprintf(saved, `<span id="L%d" class="ln">%6d&nbsp;&nbsp;</span>`, n, n)
 		n++
 		saved.Write(line)

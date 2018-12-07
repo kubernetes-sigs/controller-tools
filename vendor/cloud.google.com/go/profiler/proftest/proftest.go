@@ -15,16 +15,12 @@
 // Package proftest contains test helpers for profiler agent integration tests.
 // This package is experimental.
 
-// golang.org/x/build/kubernetes/dialer.go imports "context" package (rather
-// than "golang.org/x/net/context") and that does not exist in Go 1.6 or
-// earlier.
-// +build go1.7
-
 package proftest
 
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,7 +35,6 @@ import (
 	"golang.org/x/build/kubernetes"
 	k8sapi "golang.org/x/build/kubernetes/api"
 	"golang.org/x/build/kubernetes/gke"
-	"golang.org/x/net/context"
 	cloudbuild "google.golang.org/api/cloudbuild/v1"
 	compute "google.golang.org/api/compute/v1"
 	container "google.golang.org/api/container/v1"
@@ -234,7 +229,7 @@ func (tr *GCETestRunner) DeleteInstance(ctx context.Context, inst *InstanceConfi
 // PollForSerialOutput polls serial port 2 of the GCE instance specified by
 // inst and returns when the finishString appears in the serial output
 // of the instance, or when the context times out.
-func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *InstanceConfig, finishString string) error {
+func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *InstanceConfig, finishString, errorString string) error {
 	var output string
 	defer func() {
 		log.Printf("Serial port output for %s:\n%s", inst.Name, output)
@@ -258,6 +253,9 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *Instance
 			if output = resp.Contents; strings.Contains(output, finishString) {
 				return nil
 			}
+			if strings.Contains(output, errorString) {
+				return fmt.Errorf("failed to execute the prober benchmark script")
+			}
 		}
 	}
 }
@@ -279,6 +277,10 @@ func (tr *TestRunner) QueryProfiles(projectID, service, startTime, endTime, prof
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return ProfileResponse{}, fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return ProfileResponse{}, fmt.Errorf("failed to query API: status: %s, response body: %s", resp.Status, string(body))
 	}
 
 	var pr ProfileResponse

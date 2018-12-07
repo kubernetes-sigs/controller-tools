@@ -15,12 +15,11 @@
 package firestore
 
 import (
+	"context"
 	"errors"
 
-	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-
 	gax "github.com/googleapis/gax-go"
-	"golang.org/x/net/context"
+	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -234,6 +233,17 @@ func (t *Transaction) Documents(q Queryer) *DocumentIterator {
 	return &DocumentIterator{
 		iter: newQueryDocumentIterator(t.ctx, q.query(), t.id),
 	}
+}
+
+// DocumentRefs returns references to all the documents in the collection, including
+// missing documents. A missing document is a document that does not exist but has
+// sub-documents.
+func (t *Transaction) DocumentRefs(cr *CollectionRef) *DocumentRefIterator {
+	if len(t.writes) > 0 {
+		t.readAfterWrite = true
+		return &DocumentRefIterator{err: errReadAfterWrite}
+	}
+	return newDocumentRefIterator(t.ctx, cr, t.id)
 }
 
 // Create adds a Create operation to the Transaction.
