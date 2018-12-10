@@ -50,9 +50,12 @@ type ToySpec struct {
 
 	Template v1.PodTemplateSpec       `json:"template"`
 	Claim    v1.PersistentVolumeClaim `json:"claim,omitempty"`
-
+	//This is a dummy comment.
+	// Just checking if the multi-line comments are working or not.
 	Replicas *int32 `json:"replicas"`
 
+	// This is a newly added field.
+	// Using this for testing purpose.
 	Rook *intstr.IntOrString `json:"rook"`
 }
 
@@ -60,6 +63,8 @@ type ToySpec struct {
 type ToyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// It tracks the number of replicas.
 	Replicas int32 `json:"replicas"`
 }
 
