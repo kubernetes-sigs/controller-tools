@@ -311,8 +311,10 @@ var mapTemplate = template.Must(template.New("map-template").Parse(
 // Go that describe the validations for the given map type.
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
+	additionalProps.Description = ""
 	props := v1beta1.JSONSchemaProps{
-		Type: "object",
+		Type:        "object",
+		Description: parseDescription(comments),
 	}
 	parseOption := b.arguments.CustomArgs.(*Options)
 	if !parseOption.SkipMapValidation {
@@ -320,7 +322,6 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 			Allows: true,
 			Schema: &additionalProps}
 	}
-
 	buff := &bytes.Buffer{}
 	if err := mapTemplate.Execute(buff, mapTempateArgs{Result: result, SkipMapValidation: parseOption.SkipMapValidation}); err != nil {
 		log.Fatalf("%v", err)
@@ -359,9 +360,11 @@ type arrayTemplateArgs struct {
 // Go that describe the validations for the given array type.
 func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
+	items.Description = ""
 	props := v1beta1.JSONSchemaProps{
-		Type:  "array",
-		Items: &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
+		Type:        "array",
+		Items:       &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
+		Description: parseDescription(comments),
 	}
 	// To represent byte arrays in the generated code, the property of the OpenAPI definition
 	// should have string as its type and byte as its format.
@@ -369,6 +372,7 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 		props.Type = "string"
 		props.Format = "byte"
 		props.Items = nil
+		props.Description = parseDescription(comments)
 	}
 	for _, l := range comments {
 		getValidation(l, &props)
@@ -409,7 +413,8 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
 func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments []string, isRoot bool) (v1beta1.JSONSchemaProps, string) {
 	buff := &bytes.Buffer{}
 	props := v1beta1.JSONSchemaProps{
-		Type: "object",
+		Type:        "object",
+		Description: parseDescription(comments),
 	}
 
 	if strings.HasPrefix(t.Name.String(), "k8s.io/api") {

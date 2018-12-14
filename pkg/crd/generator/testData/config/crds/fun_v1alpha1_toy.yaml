@@ -69,11 +69,17 @@ spec:
               format: byte
               type: string
             knights:
+              description: This is a comment on an array field.
               items:
                 type: string
               maxItems: 500
               minItems: 1
               type: array
+            location:
+              additionalProperties:
+                type: string
+              description: This is a comment on a map field.
+              type: object
             name:
               maxLength: 15
               minLength: 1
@@ -102,14 +108,17 @@ spec:
               - type: string
               - type: integer
             template:
+              description: This is a comment on an object field.
               type: object
             winner:
+              description: This is a comment on a boolean field.
               type: boolean
           required:
           - rank
           - template
           - replicas
           - rook
+          - location
           type: object
         status:
           properties:
