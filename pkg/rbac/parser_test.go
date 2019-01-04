@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-tools/pkg/internal/general"
+	"sigs.k8s.io/controller-tools/pkg/internal/annotation"
 )
 
 func TestParseFile(t *testing.T) {
@@ -113,7 +113,7 @@ func TestParseFile(t *testing.T) {
 		ops := parserOptions{
 			rules: []rbacv1.PolicyRule{},
 		}
-		err := general.ParseFile(fset, "test.go", test.content, ops.parseAnnotation)
+		err := annotation.ParseAnnotationByFile(fset, "test.go", test.content, ops.AddToAnnotation(annotation.GetAnnotation()))
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}

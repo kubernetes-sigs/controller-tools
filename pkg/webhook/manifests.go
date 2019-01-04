@@ -29,7 +29,8 @@ import (
 	"github.com/ghodss/yaml"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	generateinteral "sigs.k8s.io/controller-tools/pkg/internal/general"
+	"sigs.k8s.io/controller-tools/pkg/internal/annotation"
+
 	"sigs.k8s.io/controller-tools/pkg/webhook/internal"
 )
 
@@ -42,13 +43,18 @@ type ManifestOptions struct {
 	webhooks []webhook.Webhook
 	svrOps   *webhook.ServerOptions
 	svr      *webhook.Server
+
+	webhookKVMap map[string]string
+	serverKVMap  map[string]string
 }
 
-// SetDefaults sets up the default options for RBAC Manifest generator.
+// SetDefaults sets up the default options for Webhook Manifest generator.
 func (o *ManifestOptions) SetDefaults() {
 	o.InputDir = filepath.Join(".", "pkg", "webhook")
 	o.OutputDir = filepath.Join(".", "config", "webhook")
 	o.PatchOutputDir = filepath.Join(".", "config", "default")
+	o.webhookKVMap = map[string]string{}
+	o.serverKVMap = map[string]string{}
 }
 
 // Validate validates the input options.
@@ -59,7 +65,7 @@ func (o *ManifestOptions) Validate() error {
 	return nil
 }
 
-// Generate generates RBAC manifests by parsing the RBAC annotations in Go source
+// Generate generates Webhook manifests by parsing the Webhook annotations in Go source
 // files specified in the input directory.
 func Generate(o *ManifestOptions) error {
 	if err := o.Validate(); err != nil {
@@ -80,7 +86,8 @@ func Generate(o *ManifestOptions) error {
 	o.svrOps = &webhook.ServerOptions{
 		Client: internal.NewManifestClient(path.Join(o.OutputDir, "webhook.yaml")),
 	}
-	err = generateinteral.ParseDir(o.InputDir, o.parseAnnotation)
+	// parse webhook annotation by generic annotation approach
+	err = annotation.ParseAnnotationByDir(o.InputDir, o.AddToAnnotation(annotation.GetAnnotation()))
 	if err != nil {
 		return fmt.Errorf("failed to parse the input dir: %v", err)
 	}

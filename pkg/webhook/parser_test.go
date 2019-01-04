@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	webhooktypes "sigs.k8s.io/controller-runtime/pkg/webhook/types"
-	"sigs.k8s.io/controller-tools/pkg/internal/general"
+	"sigs.k8s.io/controller-tools/pkg/internal/annotation"
 )
 
 func TestParseWebhook(t *testing.T) {
@@ -45,15 +45,13 @@ func TestParseWebhook(t *testing.T) {
 
 	// comment only
 
-	// +kubebuilder:webhook:groups=apps,resources=deployments,verbs=CREATE;UPDATE
-	// +kubebuilder:webhook:name=bar-webhook,path=/bar,type=mutating,failure-policy=Fail
+	// +kubebuilder:webhook:admission:groups=apps,resources=deployments,verbs=CREATE;UPDATE,name=bar-webhook,path=/bar,type=mutating,failure-policy=Fail
 	// bar function
 	func bar() {
 		fmt.Println(time.Now())
 	}
 
-	// +kubebuilder:webhook:groups=crew,versions=v1,resources=firstmates,verbs=delete
-	// +kubebuilder:webhook:name=baz-webhook,path=/baz,type=validating,failure-policy=ignore
+	// +kubebuilder:webhook:admission:groups=crew,versions=v1,resources=firstmates,verbs=delete,name=baz-webhook,path=/baz,type=validating,failure-policy=ignore
 	// baz function
 	func baz() {
 		fmt.Println(time.Now())
@@ -103,11 +101,13 @@ func TestParseWebhook(t *testing.T) {
 
 	for _, test := range tests {
 		o := &ManifestOptions{
-			InputDir: "test.go",
-			webhooks: []webhook.Webhook{},
+			InputDir:     "test.go",
+			webhooks:     []webhook.Webhook{},
+			webhookKVMap: map[string]string{},
+			serverKVMap:  map[string]string{},
 		}
 		fset := token.NewFileSet()
-		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
+		err := annotation.ParseAnnotationByFile(fset, "test.go", test.content, o.AddToAnnotation(annotation.GetAnnotation()))
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
@@ -129,9 +129,7 @@ func TestParseWebhookServer(t *testing.T) {
 		"time"
 	)
 
-	// +kubebuilder:webhook:port=7890,cert-dir=/tmp/test-cert,service=test-system:webhook-service,selector=app:webhook-server
-	// +kubebuilder:webhook:secret=test-system:webhook-secret
-	// +kubebuilder:webhook:mutating-webhook-config-name=test-mutating-webhook-cfg,validating-webhook-config-name=test-validating-webhook-cfg
+	// +kubebuilder:webhook:serveroption:port=7890,cert-dir=/tmp/test-cert,service=test-system|webhook-service,selector=app|webhook-server,secret=test-system|webhook-secret,mutating-webhook-config-name=test-mutating-webhook-cfg,validating-webhook-config-name=test-validating-webhook-cfg
 	// bar function
 	func bar() {
 		fmt.Println(time.Now())
@@ -160,16 +158,19 @@ func TestParseWebhookServer(t *testing.T) {
 
 	for _, test := range tests {
 		o := &ManifestOptions{
-			InputDir: "test.go",
-			svrOps:   &webhook.ServerOptions{},
+			InputDir:     "test.go",
+			svrOps:       &webhook.ServerOptions{},
+			webhookKVMap: map[string]string{},
+			serverKVMap:  map[string]string{},
 		}
 		fset := token.NewFileSet()
-		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
+		err := annotation.ParseAnnotationByFile(fset, "test.go", test.content, o.AddToAnnotation(annotation.GetAnnotation()))
+
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
 		if !reflect.DeepEqual(test.exp, o.svrOps) {
-			t.Errorf("webhook server should have matched, expected %#v and got %#v", test.exp, o.svr)
+			t.Errorf("webhook server should have matched, expected %#v and got %#v", test.exp, o.svrOps)
 		}
 	}
 }

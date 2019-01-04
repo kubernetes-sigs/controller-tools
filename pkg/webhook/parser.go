@@ -25,49 +25,68 @@ import (
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	webhooktypes "sigs.k8s.io/controller-runtime/pkg/webhook/types"
-	"sigs.k8s.io/controller-tools/pkg/internal/general"
+	"sigs.k8s.io/controller-tools/pkg/internal/annotation"
 )
 
-const webhookAnnotationPrefix = "kubebuilder:webhook"
+// AddToAnnotation registers webhook module into kubebuilder Annotation.
+// It does not guaranty forward compatibility.
+// - new annotation spec defines webhook annotations have two new submodules "webhook:admission" and "webhook:serveroption"
+// - all key-value paris for a single submmodule should reside in the same line comment of this module . Currently does not support multiple lines.
+// - Using `|` replace `:` for delimeter between label-value
+// e.g.  `+kubebuilder:webhook:admission:groups=apps,resources=deployments,verbs=CREATE;UPDATE,name=bar-webhook,path=/bar,type=mutating,failure-policy=Fail`
+//       `+kubebuilder:webhook:serveroption:port=7890,cert-dir=/tmp/test-cert,service=test-system|webhook-service,selector=app|webhook-server,secret=test-system|webhook-secret,mutating-webhook-config-name=test-mutating-webhook-cfg,validating-webhook-config-name=test-validating-webhook-cfg`
+func (o *ManifestOptions) AddToAnnotation(a annotation.Annotation) annotation.Annotation {
+	a.Module(&annotation.Module{
+		Name: "webhook",
+		Do:   nil,
+		SubModules: map[string]*annotation.Module{
+			"admission": &annotation.Module{
+				Name:       "admission",
+				SubModules: map[string]*annotation.Module{},
+				Do:         o.admissionFunc,
+			},
+			"serveroption": &annotation.Module{
+				Name:       "serveroption",
+				SubModules: map[string]*annotation.Module{},
+				Do:         o.serverOptionFunc,
+			},
+		},
+	})
+	return a
+}
 
-var (
-	webhookTags = sets.NewString([]string{"groups", "versions", "resources", "verbs", "type", "name", "path", "failure-policy"}...)
-	serverTags  = sets.NewString([]string{"port", "cert-dir", "service", "selector", "secret", "host", "mutating-webhook-config-name", "validating-webhook-config-name"}...)
-)
-
-// parseAnnotation parses webhook annotations
-func (o *ManifestOptions) parseAnnotation(commentText string) error {
-	webhookKVMap, serverKVMap := map[string]string{}, map[string]string{}
-	for _, comment := range strings.Split(commentText, "\n") {
-		comment := strings.TrimSpace(comment)
-		anno := general.GetAnnotation(comment, webhookAnnotationPrefix)
-		if len(anno) == 0 {
-			continue
+// admissionFunc is handler for webhook admission submodule
+func (o *ManifestOptions) admissionFunc(commentText string) error {
+	for _, elem := range strings.Split(commentText, ",") {
+		key, value, err := annotation.ParseKV(elem)
+		if err != nil {
+			log.Fatalf("// +kubebuilder:webhook: tags must be key value pairs. Example "+
+				"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
+				"Got string: [%s]", commentText)
 		}
-		for _, elem := range strings.Split(anno, ",") {
-			key, value, err := general.ParseKV(elem)
-			if err != nil {
-				log.Fatalf("// +kubebuilder:webhook: tags must be key value pairs. Example "+
-					"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
-					"Got string: [%s]", anno)
-			}
-			switch {
-			case webhookTags.Has(key):
-				webhookKVMap[key] = value
-			case serverTags.Has(key):
-				serverKVMap[key] = value
-			}
-		}
+		o.webhookKVMap[key] = value
 	}
 
-	if err := o.parseWebhookAnnotation(webhookKVMap); err != nil {
-		return err
+	return o.parseWebhookAnnotation(o.webhookKVMap)
+}
+
+// serverOptionFunc is handler for webhook server option
+func (o *ManifestOptions) serverOptionFunc(commentText string) error {
+	for _, elem := range strings.Split(commentText, ",") {
+		key, value, err := annotation.ParseKV(elem)
+		if err != nil {
+			log.Fatalf("// +kubebuilder:webhook: tags must be key value pairs. Example "+
+				"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
+				"Got string: [%s]", commentText)
+		}
+		o.serverKVMap[key] = value
 	}
-	return o.parseServerAnnotation(serverKVMap)
+
+	return o.parseServerAnnotation(o.serverKVMap)
+
 }
 
 // parseWebhookAnnotation parses webhook annotations in the same comment group
@@ -173,8 +192,8 @@ func (o *ManifestOptions) parseServerAnnotation(kvMap map[string]string) error {
 		case "cert-dir":
 			o.svrOps.CertDir = value
 		case "service":
-			// format: <service=namespace:name>
-			split := strings.Split(value, ":")
+			// format: <service=namespace|name>, "|" is delimiter for label
+			split := strings.Split(value, "|")
 			if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 				return fmt.Errorf("invalid service format: expect <namespace:name>, but got %q", value)
 			}
@@ -187,7 +206,7 @@ func (o *ManifestOptions) parseServerAnnotation(kvMap map[string]string) error {
 			o.svrOps.Service.Namespace = split[0]
 			o.svrOps.Service.Name = split[1]
 		case "selector":
-			// selector of the service. Format: <selector=label1:value1;label2:value2>
+			// selector of the service. Format: <selector=label1|value1;label2|value2>, "|" is delimiter for lable
 			split := strings.Split(value, ";")
 			if len(split) == 0 {
 				return fmt.Errorf("invalid selector format: expect <label1:value1;label2:value2>, but got %q", value)
@@ -199,7 +218,7 @@ func (o *ManifestOptions) parseServerAnnotation(kvMap map[string]string) error {
 				o.svrOps.Service = &webhook.Service{}
 			}
 			for _, v := range split {
-				l := strings.Split(v, ":")
+				l := strings.Split(v, "|")
 				if len(l) != 2 || len(l[0]) == 0 || len(l[1]) == 0 {
 					return fmt.Errorf("invalid selector format: expect <label1:value1;label2:value2>, but got %q", value)
 				}
@@ -236,8 +255,8 @@ func (o *ManifestOptions) parseServerAnnotation(kvMap map[string]string) error {
 			o.svrOps.ValidatingWebhookConfigName = value
 
 		case "secret":
-			// format: <secret=namespace:name>
-			split := strings.Split(value, ":")
+			// format: <secret=namespace|name>, "|" is delimiter for label
+			split := strings.Split(value, "|")
 			if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 				return fmt.Errorf("invalid secret format: expect <namespace:name>, but got %q", value)
 			}

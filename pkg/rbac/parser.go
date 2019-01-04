@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package rbac contain libraries for generating RBAC manifests from RBAC
-// annotations in Go source files.
 package rbac
 
 import (
@@ -23,37 +21,27 @@ import (
 	"strings"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-tools/pkg/internal/general"
+	"sigs.k8s.io/controller-tools/pkg/internal/annotation"
 )
 
 type parserOptions struct {
 	rules []rbacv1.PolicyRule
 }
 
-// parseAnnotation parses RBAC annotations
-func (o *parserOptions) parseAnnotation(commentText string) error {
-	for _, comment := range strings.Split(commentText, "\n") {
-		comment := strings.TrimSpace(comment)
-		if strings.HasPrefix(comment, "+rbac") {
-			if ann := general.GetAnnotation(comment, "rbac"); ann != "" {
-				o.rules = append(o.rules, parseRBACTag(ann))
-			}
-		}
-		if strings.HasPrefix(comment, "+kubebuilder:rbac") {
-			if ann := general.GetAnnotation(comment, "kubebuilder:rbac"); ann != "" {
-				o.rules = append(o.rules, parseRBACTag(ann))
-			}
-		}
-	}
-	return nil
+func (o *parserOptions) AddToAnnotation(a annotation.Annotation) annotation.Annotation {
+	a.Module(&annotation.Module{
+		Name: "rbac",
+		Do:   o.parseRBAC,
+	})
+	return a
 }
 
-// parseRBACTag parses the given RBAC annotation in to an RBAC PolicyRule.
-// This is copied from Kubebuilder code.
-func parseRBACTag(tag string) rbacv1.PolicyRule {
+// parseRBAC parses the given RBAC annotation in to an RBAC PolicyRule.
+// Functional implementation is copied from Kubebuilder code.
+func (o *parserOptions) parseRBAC(tag string) error {
 	result := rbacv1.PolicyRule{}
 	for _, elem := range strings.Split(tag, ",") {
-		key, value, err := general.ParseKV(elem)
+		key, value, err := annotation.ParseKV(elem)
 		if err != nil {
 			log.Fatalf("// +kubebuilder:rbac: tags must be key value pairs.  Expected "+
 				"keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
@@ -79,5 +67,6 @@ func parseRBACTag(tag string) rbacv1.PolicyRule {
 			result.NonResourceURLs = values
 		}
 	}
-	return result
+	o.rules = append(o.rules, result)
+	return nil
 }
