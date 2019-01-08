@@ -169,7 +169,7 @@ func TestParseWebhookServer(t *testing.T) {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
 		if !reflect.DeepEqual(test.exp, o.svrOps) {
-			t.Errorf("webhook server should have matched, expected %#v and got %#v", test.exp, o.svr)
+			t.Errorf("webhook server should have matched, expected %#v and got %#v", test.exp, o.svrOps)
 		}
 	}
 }
