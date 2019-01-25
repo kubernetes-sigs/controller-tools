@@ -45,7 +45,7 @@ Also applies the appropriate comments to generate the code required to conform t
 
 	# Generate types for a Kind called Bar with a resource of foobars
 	type-scaffold --kind Bar --resource foobars`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := opts.Validate(); err != nil {
 				return err
 			}
