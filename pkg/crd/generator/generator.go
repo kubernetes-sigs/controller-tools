@@ -38,6 +38,7 @@ import (
 type Generator struct {
 	RootPath          string
 	OutputDir         string
+	NestedOutput      bool
 	Domain            string
 	Namespace         string
 	SkipMapValidation bool
@@ -135,6 +136,10 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 
 	for file, crd := range crds {
 		outFile := path.Join(c.OutputDir, file)
+		// If nested output selected: construct nested path 'group/version/kind'
+		if c.NestedOutput {
+			outFile = path.Join(append([]string{c.OutputDir}, strings.Split(file, "_")...)...)
+		}
 		if err := (&util.FileWriter{Fs: c.OutFs}).WriteFile(outFile, crd); err != nil {
 			return err
 		}

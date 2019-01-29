@@ -107,6 +107,7 @@ Usage:
 	f := cmd.Flags()
 	f.StringVar(&g.RootPath, "root-path", "", "working dir, must have PROJECT file under the path or parent path if domain not set")
 	f.StringVar(&g.OutputDir, "output-dir", "", "output directory, default to 'config/crds' under root path")
+	f.BoolVar(&g.NestedOutput, "nested", false, "nested output layout: group/version/kind.yaml")
 	f.StringVar(&g.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
 	f.StringVar(&g.Namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
 	f.BoolVar(&g.SkipMapValidation, "skip-map-validation", true, "if set to true, skip generating OpenAPI validation schema for map type in CRD.")

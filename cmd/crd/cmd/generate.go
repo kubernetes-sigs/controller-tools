@@ -62,6 +62,7 @@ func GeneratorForFlags(f *flag.FlagSet) *crdgenerator.Generator {
 	g := &crdgenerator.Generator{}
 	f.StringVar(&g.RootPath, "root-path", "", "working dir, must have PROJECT file under the path or parent path if domain not set")
 	f.StringVar(&g.OutputDir, "output-dir", "", "output directory, default to 'config/crds' under root path")
+	f.BoolVar(&g.NestedOutput, "nested", false, "nested output layout: group/version/kind.yaml")
 	f.StringVar(&g.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
 	// TODO: Do we need this? Is there a possibility that a crd is namespace scoped?
 	f.StringVar(&g.Namespace, "namespace", "", "CRD namespace, treat it as root scoped if not set")

@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -43,13 +44,62 @@ func TestGenerator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generator validate should have succeeded %v", err)
 	}
+	err = g.Do()
+	if err != nil {
+		t.Fatalf("generator validate should have succeeded %v", err)
+	}
+	// return back into current directory, we need this call to avoid the drift after g.Do()
+	if err := os.Chdir(currDir); err != nil {
+		t.Fatalf("unable to change back into current directory: %v", err)
+	}
+
+	for _, f := range []string{"fun_v1alpha1_toy.yaml"} {
+		crdOuputFile := filepath.Join("/tmp", f)
+		crdContent, err := afero.ReadFile(outFs, crdOuputFile)
+		if err != nil {
+			t.Fatalf("reading file failed %v", err)
+		}
+		expectedContent, err := ioutil.ReadFile(filepath.Join(currDir, "testData", "config", "crds", f))
+		if err != nil {
+			t.Fatalf("reading file failed %v", err)
+		}
+		if !reflect.DeepEqual(crdContent, expectedContent) {
+			t.Fatalf("CRD output does not match exp:%v got:%v \n", string(expectedContent), string(crdContent))
+		}
+	}
+	// examine content of the in-memory filesystem
+	// outFs.(*afero.MemMapFs).List()
+}
+
+func TestGeneratorNestedOutput(t *testing.T) {
+	currDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("unable to get current directory: %v", err)
+	}
+	// in-memory file system for storing the generated CRDs
+	outFs := afero.NewMemMapFs()
+	g := &crdgenerator.Generator{
+		OutFs:        outFs,
+		OutputDir:    "/tmp",
+		RootPath:     filepath.Join(currDir, "testData"),
+		NestedOutput: true,
+	}
+	err = g.ValidateAndInitFields()
+	if err != nil {
+		t.Fatalf("generator validate should have succeeded %v", err)
+	}
 
 	err = g.Do()
 	if err != nil {
 		t.Fatalf("generator validate should have succeeded %v", err)
 	}
+	// return back into current directory, we need this call to avoid the drift after g.Do()
+	if err := os.Chdir(currDir); err != nil {
+		t.Fatalf("unable to change back into current directory: %v", err)
+	}
+
 	for _, f := range []string{"fun_v1alpha1_toy.yaml"} {
-		crdOuputFile := filepath.Join("/tmp", f)
+		crdOuputFile := filepath.Join("/tmp", filepath.Join(strings.Split(f, "_")...))
 		crdContent, err := afero.ReadFile(outFs, crdOuputFile)
 		if err != nil {
 			t.Fatalf("reading file failed %v", err)
