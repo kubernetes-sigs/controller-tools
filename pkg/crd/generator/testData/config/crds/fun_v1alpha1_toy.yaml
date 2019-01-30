@@ -30,6 +30,7 @@ spec:
     kind: Toy
     plural: services
     shortNames:
+    - to
     - ty
   scope: Namespaced
   subresources:
