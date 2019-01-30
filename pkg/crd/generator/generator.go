@@ -144,8 +144,20 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 	return nil
 }
 
+func getGroupElements(group string) []string {
+	ss := strings.Split(group, ".")
+	if len(ss) > 1 {
+		// reverse slice
+		for i := len(ss)/2 - 1; i >= 0; i-- {
+			opp := len(ss) - 1 - i
+			ss[i], ss[opp] = ss[opp], ss[i]
+		}
+	}
+	return ss
+}
+
 func getCRDFileName(resource *codegen.APIResource) string {
-	elems := []string{resource.Group, resource.Version, strings.ToLower(resource.Kind)}
+	elems := append(getGroupElements(resource.Group), resource.Version, strings.ToLower(resource.Kind))
 	return strings.Join(elems, "_") + ".yaml"
 }
 

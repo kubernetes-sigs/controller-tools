@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/types"
 )
@@ -213,4 +214,39 @@ func TestParsePrintColumnParams(t *testing.T) {
 			t.Errorf("test [%s] failed. result is (%v),\n but expected (%v)", tc.name, res, tc.expected)
 		}
 	}
+}
+
+func TestIsUnderApiDir(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	g.Expect(IsUnderApisDir("pkg/apis")).Should(BeTrue())
+	g.Expect(IsUnderApisDir("pkg/apis/foo")).Should(BeTrue())
+	g.Expect(IsUnderApisDir("pkg/apis/foo/bar")).Should(BeTrue())
+
+	g.Expect(IsUnderApisDir("pkg/api")).Should(BeTrue())
+	g.Expect(IsUnderApisDir("pkg/api/foo")).Should(BeTrue())
+	g.Expect(IsUnderApisDir("pkg/api/foo/bar")).Should(BeTrue())
+
+	g.Expect(IsUnderApisDir("pkg")).Should(BeFalse())
+	g.Expect(IsUnderApisDir("pkg/foo")).Should(BeFalse())
+	g.Expect(IsUnderApisDir("pkg/foo/bar")).Should(BeFalse())
+}
+
+func TestGetGroupNames(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	g.Expect(GetGroupNames("")).Should(BeEmpty())
+	g.Expect(GetGroupNames("pkg")).Should(BeEmpty())
+	g.Expect(GetGroupNames("foo")).Should(BeEmpty())
+
+	g.Expect(GetGroupNames("pkg/apis")).Should(BeEmpty())
+	g.Expect(GetGroupNames("pkg/apis/foo")).Should(Equal([]string{"foo"}))
+	g.Expect(GetGroupNames("pkg/apis/foo/bar")).Should(Equal([]string{"bar", "foo"}))
+	g.Expect(GetGroupNames("pkg/apis/foo/bar/baz")).Should(Equal([]string{"baz", "bar", "foo"}))
+
+	g.Expect(GetGroupNames("pkg/api")).Should(BeEmpty())
+	g.Expect(GetGroupNames("pkg/api/foo")).Should(Equal([]string{"foo"}))
+	g.Expect(GetGroupNames("pkg/api/foo/bar")).Should(Equal([]string{"bar", "foo"}))
+	g.Expect(GetGroupNames("pkg/api/foo/bar/baz")).Should(Equal([]string{"baz", "bar", "foo"}))
+
 }

@@ -219,13 +219,12 @@ func HasDocAnnotation(t *types.Type) bool {
 
 // IsUnversioned returns true if t is in given group, and not in versioned path.
 func IsUnversioned(t *types.Type, group string) bool {
-	return IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) && GetGroup(t) == group
+	return IsUnderApisDir(filepath.Dir(t.Name.Package)) && GetGroup(t) == group
 }
 
 // IsVersioned returns true if t is in given group, and in versioned path.
 func IsVersioned(t *types.Type, group string) bool {
-	dir := filepath.Base(filepath.Dir(filepath.Dir(t.Name.Package)))
-	return IsApisDir(dir) && GetGroup(t) == group
+	return IsUnderApisDir(filepath.Dir(t.Name.Package)) && GetGroup(t) == group
 }
 
 // GetVersion returns version of t.
@@ -237,13 +236,32 @@ func GetVersion(t *types.Type, group string) string {
 }
 
 // GetGroup returns group of t.
+// If group consists of multiple directory levels, construct a group name by joining group directories in reverse order
+// For example: `pkg/apis/foo/bar/v1alpha1`, group name: `bar.foo`
 func GetGroup(t *types.Type) string {
-	return filepath.Base(GetGroupPackage(t))
+	pkg := GetGroupPackage(t)
+	if IsUnderApisDir(pkg) {
+		return strings.Join(GetGroupNames(pkg), ".")
+	}
+	return filepath.Base(filepath.Dir(pkg))
+}
+
+// GetGroupNames returns a slice of all groups up to API/APIS in reverse order.
+// Example
+// - pkg/apis/foo/bar: returns []string{"bar", "foo"}
+// - pkg/apis/foo:     returns []string{"foo"}
+// - pkg/apis:         returns []string{}
+func GetGroupNames(path string) []string {
+	base := filepath.Base(path)
+	if IsApisDir(base) || !IsUnderApisDir(path) {
+		return []string{}
+	}
+	return append([]string{base}, GetGroupNames(filepath.Dir(path))...)
 }
 
 // GetGroupPackage returns group package of t.
 func GetGroupPackage(t *types.Type) string {
-	if IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) {
+	if IsUnderApisDir(filepath.Base(filepath.Dir(t.Name.Package))) {
 		return t.Name.Package
 	}
 	return filepath.Dir(t.Name.Package)
@@ -255,6 +273,18 @@ func GetKind(t *types.Type, group string) string {
 		panic(errors.Errorf("Cannot get kind for type not in group %v", t.Name))
 	}
 	return t.Name.Name
+}
+
+// IsUnderApisDir returns true id a directory path is or under the a Kubernetes api directory
+// Example:
+// - pkg/apis/foo/bar - true
+// - pkg/api/foo      - true
+// - pkg/foo/bar      - false
+func IsUnderApisDir(dir string) bool {
+	if dir == "." {
+		return false
+	}
+	return IsApisDir(filepath.Base(dir)) || IsUnderApisDir(filepath.Dir(dir))
 }
 
 // IsApisDir returns true if a directory path is a Kubernetes api directory
