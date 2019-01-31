@@ -22,11 +22,10 @@ import (
 	"testing"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
-func TestParseWebhook(t *testing.T) {
+func TestManifestGenerator(t *testing.T) {
 	failFP := admissionregistrationv1beta1.Fail
 	ignoreFP := admissionregistrationv1beta1.Ignore
 	tests := []struct {
@@ -109,63 +108,6 @@ func TestParseWebhook(t *testing.T) {
 		}
 		if !reflect.DeepEqual(test.exp, o.webhooks) {
 			t.Errorf("webhooks should have matched, expected %#v and got %#v", test.exp, o.webhooks)
-		}
-	}
-}
-
-func TestParseWebhookServer(t *testing.T) {
-	tests := []struct {
-		content string
-		exp     *generatorOptions
-	}{
-		{
-			content: `package foo
-	import (
-		"fmt"
-		"time"
-	)
-
-	// +kubebuilder:webhook:port=7890,cert-dir=/tmp/test-cert,service=test-system:webhook-service,selector=app:webhook-server
-	// +kubebuilder:webhook:secret=test-system:webhook-secret
-	// +kubebuilder:webhook:mutating-webhook-config-name=test-mutating-webhook-cfg,validating-webhook-config-name=test-validating-webhook-cfg
-	// bar function
-	func bar() {
-		fmt.Println(time.Now())
-	}`,
-			exp: &generatorOptions{
-				port:                        7890,
-				certDir:                     "/tmp/test-cert",
-				mutatingWebhookConfigName:   "test-mutating-webhook-cfg",
-				validatingWebhookConfigName: "test-validating-webhook-cfg",
-				service: &service{
-					namespace: "test-system",
-					name:      "webhook-service",
-					selectors: map[string]string{
-						"app": "webhook-server",
-					},
-				},
-				secret: &types.NamespacedName{
-					Namespace: "test-system",
-					Name:      "webhook-secret",
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		o := &Options{
-			WriterOptions: WriterOptions{
-				InputDir: "test.go",
-			},
-			generatorOptions: generatorOptions{},
-		}
-		fset := token.NewFileSet()
-		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
-		if err != nil {
-			t.Errorf("processFile should have succeeded, but got error: %v", err)
-		}
-		if !reflect.DeepEqual(test.exp, &o.generatorOptions) {
-			t.Errorf("webhook server should have matched, expected %#v but got %#v", test.exp, o.generatorOptions)
 		}
 	}
 }
