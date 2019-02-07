@@ -136,6 +136,12 @@ func (b *APIs) getTime() string {
 }`
 }
 
+func (b *APIs) getDuration() string {
+	return `v1beta1.JSONSchemaProps{
+    Type:   "string",
+}`
+}
+
 func (b *APIs) objSchema() string {
 	return `v1beta1.JSONSchemaProps{
     Type:   "object",
@@ -147,6 +153,7 @@ func (b *APIs) objSchema() string {
 func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments []string, isRoot bool) (v1beta1.JSONSchemaProps, string) {
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
+	duration := types.Name{Name: "Duration", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	meta := types.Name{Name: "ObjectMeta", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	unstructured := types.Name{Name: "Unstructured", Package: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"}
 	intOrString := types.Name{Name: "IntOrString", Package: "k8s.io/apimachinery/pkg/util/intstr"}
@@ -157,6 +164,11 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 			Format:      "date-time",
 			Description: parseDescription(comments),
 		}, b.getTime()
+	case duration:
+		return v1beta1.JSONSchemaProps{
+			Type: "string",
+			Description: parseDescription(comments),
+		}, b.getDuration()
 	case meta:
 		return v1beta1.JSONSchemaProps{
 			Type:        "object",
