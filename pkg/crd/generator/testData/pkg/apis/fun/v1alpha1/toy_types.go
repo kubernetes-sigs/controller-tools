@@ -79,6 +79,10 @@ type ToySpec struct {
 	// This is an IPv4 address.
 	// +kubebuilder:validation:Format=ipv4
 	Address string `json:"address"`
+
+	// This is a list of IPv4 addresses.
+	// +kubebuilder:validation:Format=ipv4
+	Addresses []string `json:"addresses"`
 }
 
 // ToyStatus defines the observed state of Toy

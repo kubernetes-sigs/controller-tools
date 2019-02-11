@@ -395,6 +395,11 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 	for _, l := range comments {
 		getValidation(l, &props)
 	}
+	if t.Name.Name != "[]byte" {
+		// Except for the byte array special case above, the "format" property
+		// should be applied to the array items and not the array itself.
+		props.Format = ""
+	}
 	buff := &bytes.Buffer{}
 	if err := arrayTemplate.Execute(buff, arrayTemplateArgs{props, result}); err != nil {
 		log.Fatalf("%v", err)

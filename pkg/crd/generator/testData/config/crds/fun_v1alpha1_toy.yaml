@@ -60,6 +60,12 @@ spec:
               description: This is an IPv4 address.
               format: ipv4
               type: string
+            addresses:
+              description: This is a list of IPv4 addresses.
+              items:
+                format: ipv4
+                type: string
+              type: array
             alias:
               enum:
               - Lion
@@ -130,6 +136,7 @@ spec:
           - rook
           - location
           - address
+          - addresses
           type: object
         status:
           properties:
