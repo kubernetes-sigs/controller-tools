@@ -32,6 +32,7 @@ spec:
     shortNames:
     - to
     - ty
+    singular: toy
   scope: Namespaced
   subresources:
     scale:

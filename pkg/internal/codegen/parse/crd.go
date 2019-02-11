@@ -86,6 +86,11 @@ func (b *APIs) parseCRDs() {
 						resource.Categories = categories
 					}
 
+					if hasSingular(resource.Type) {
+						singularName := getSingularName(resource.Type)
+						resource.CRD.Spec.Names.Singular = singularName
+					}
+
 					if hasStatusSubresource(resource.Type) {
 						if resource.CRD.Spec.Subresources == nil {
 							resource.CRD.Spec.Subresources = &v1beta1.CustomResourceSubresources{}
