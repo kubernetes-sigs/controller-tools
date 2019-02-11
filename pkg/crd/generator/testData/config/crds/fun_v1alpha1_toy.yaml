@@ -55,6 +55,10 @@ spec:
           type: object
         spec:
           properties:
+            address:
+              description: This is an IPv4 address.
+              format: ipv4
+              type: string
             alias:
               enum:
               - Lion
@@ -68,6 +72,9 @@ spec:
               type: object
             comment:
               format: byte
+              type: string
+            description:
+              description: This is a simple string without validation.
               type: string
             knights:
               description: This is a comment on an array field.
@@ -116,10 +123,12 @@ spec:
               type: boolean
           required:
           - rank
+          - description
           - template
           - replicas
           - rook
           - location
+          - address
           type: object
         status:
           properties:
