@@ -12,10 +12,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
+	"go/scanner"
 	"go/token"
 	"go/types"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"golang.org/x/tools/go/gcexportdata"
@@ -49,12 +53,12 @@ const (
 
 	// LoadAllSyntax adds typed syntax trees for the packages matching the patterns
 	// and all dependencies.
-	// Package fields added: Types, Fset, Illtyped, Syntax, and TypesInfo,
+	// Package fields added: Types, Fset, IllTyped, Syntax, and TypesInfo,
 	// for all packages in the import graph.
 	LoadAllSyntax
 )
 
-// An Config specifies details about how packages should be loaded.
+// A Config specifies details about how packages should be loaded.
 // The zero value is a valid configuration.
 // Calls to Load do not modify this struct.
 type Config struct {
@@ -86,14 +90,6 @@ type Config struct {
 	// the build system's query tool.
 	BuildFlags []string
 
-	// Error is called for each error encountered during parsing and type-checking.
-	// It must be safe to call Error simultaneously from multiple goroutines.
-	// In addition to calling Error, the loader records each error
-	// in the corresponding Package's Errors list.
-	// If Error is nil, the loader prints errors to os.Stderr.
-	// To disable printing of errors, set opt.Error = func(error) {}.
-	Error func(error)
-
 	// Fset provides source position information for syntax trees and types.
 	// If Fset is nil, the loader will create a new FileSet.
 	Fset *token.FileSet
@@ -103,12 +99,14 @@ type Config struct {
 	// It must be safe to call ParseFile simultaneously from multiple goroutines.
 	// If ParseFile is nil, the loader will uses parser.ParseFile.
 	//
-	// Setting ParseFile to a custom implementation can allow
-	// providing alternate file content in order to type-check
-	// unsaved text editor buffers, or to selectively eliminate
-	// unwanted function bodies to reduce the amount of work
-	// done by the type checker.
-	ParseFile func(fset *token.FileSet, filename string) (*ast.File, error)
+	// ParseFile should parse the source from src and use filename only for
+	// recording position information.
+	//
+	// An application may supply a custom implementation of ParseFile
+	// to change the effective file contents or the behavior of the parser,
+	// or to modify the syntax tree. For example, selectively eliminating
+	// unwanted function bodies can significantly accelerate type checking.
+	ParseFile func(fset *token.FileSet, filename string, src []byte) (*ast.File, error)
 
 	// If Tests is set, the loader includes not just the packages
 	// matching a particular pattern but also any related test packages,
@@ -123,6 +121,14 @@ type Config struct {
 	// In build systems with explicit names for tests,
 	// setting Tests may have no effect.
 	Tests bool
+
+	// Overlay provides a mapping of absolute file paths to file contents.
+	// If the file  with the given path already exists, the parser will use the
+	// alternative file contents provided by the map.
+	//
+	// Overlays provide incomplete support for when a given file doesn't
+	// already exist on disk. See the package doc above for more details.
+	Overlay map[string][]byte
 }
 
 // driver is the type for functions that query the build system for the
@@ -131,6 +137,9 @@ type driver func(cfg *Config, patterns ...string) (*driverResponse, error)
 
 // driverResponse contains the results for a driver query.
 type driverResponse struct {
+	// Sizes, if not nil, is the types.Sizes to use when type checking.
+	Sizes *types.StdSizes
+
 	// Roots is the set of package IDs that make up the root packages.
 	// We have to encode this separately because when we encode a single package
 	// we cannot know if it is one of the roots as that requires knowledge of the
@@ -154,12 +163,18 @@ type driverResponse struct {
 // as defined by the underlying build system.
 // It may return an empty list of packages without an error,
 // for instance for an empty expansion of a valid wildcard.
+// Errors associated with a particular package are recorded in the
+// corresponding Package's Errors list, and do not cause Load to
+// return an error. Clients may need to handle such errors before
+// proceeding with further analysis. The PrintErrors function is
+// provided for convenient display of all errors.
 func Load(cfg *Config, patterns ...string) ([]*Package, error) {
 	l := newLoader(cfg)
 	response, err := defaultDriver(&l.Config, patterns...)
 	if err != nil {
 		return nil, err
 	}
+	l.sizes = response.Sizes
 	return l.refine(response.Roots, response.Packages...)
 }
 
@@ -189,14 +204,9 @@ type Package struct {
 	// PkgPath is the package path as used by the go/types package.
 	PkgPath string
 
-	// Errors contains any errors encountered while parsing or type-checking the package.
-	// Possible error types include *scanner.ErrorList and types.Error,
-	// whose fields provide structured position information.
-	// Error strings are typically of the form "file:line: message" or
-	// "file:line:col: message".
-	// TODO(adonovan): export packageError as packages.Error
-	// and add that type to the list of structured errors.
-	Errors []error
+	// Errors contains any errors encountered querying the metadata
+	// of the package, or while parsing or type-checking its files.
+	Errors []Error
 
 	// GoFiles lists the absolute file paths of the package's Go source files.
 	GoFiles []string
@@ -221,47 +231,68 @@ type Package struct {
 	// Types provides type information for the package.
 	// Modes LoadTypes and above set this field for packages matching the
 	// patterns; type information for dependencies may be missing or incomplete.
-	// Mode LoadSyntaxAll sets this field for all packages, including dependencies.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Types *types.Package
 
 	// Fset provides position information for Types, TypesInfo, and Syntax.
 	// It is set only when Types is set.
 	Fset *token.FileSet
 
-	// IllTyped indicates whether the package has any type errors.
+	// IllTyped indicates whether the package or any dependency contains errors.
 	// It is set only when Types is set.
 	IllTyped bool
 
 	// Syntax is the package's syntax trees, for the files listed in CompiledGoFiles.
 	//
 	// Mode LoadSyntax sets this field for packages matching the patterns.
-	// Mode LoadSyntaxAll sets this field for all packages, including dependencies.
+	// Mode LoadAllSyntax sets this field for all packages, including dependencies.
 	Syntax []*ast.File
 
 	// TypesInfo provides type information about the package's syntax trees.
 	// It is set only when Syntax is set.
 	TypesInfo *types.Info
+
+	// TypesSizes provides the effective size function for types in TypesInfo.
+	TypesSizes types.Sizes
 }
 
-// packageError is used to serialize structured errors as much as possible.
-// This has members compatible with the golist error type, and possibly some
-// more if we need other error information to survive.
-type packageError struct {
-	Pos string // position of error
-	Err string // the error itself
+// An Error describes a problem with a package's metadata, syntax, or types.
+type Error struct {
+	Pos  string // "file:line:col" or "file:line" or "" or "-"
+	Msg  string
+	Kind ErrorKind
 }
 
-func (e *packageError) Error() string {
-	return e.Pos + ": " + e.Err
+// ErrorKind describes the source of the error, allowing the user to
+// differentiate between errors generated by the driver, the parser, or the
+// type-checker.
+type ErrorKind int
+
+const (
+	UnknownError ErrorKind = iota
+	ListError
+	ParseError
+	TypeError
+)
+
+func (err Error) Error() string {
+	pos := err.Pos
+	if pos == "" {
+		pos = "-" // like token.Position{}.String()
+	}
+	return pos + ": " + err.Msg
 }
 
 // flatPackage is the JSON form of Package
-// It drops all the type and syntax fields, and transforms the Imports and Errors
+// It drops all the type and syntax fields, and transforms the Imports
+//
+// TODO(adonovan): identify this struct with Package, effectively
+// publishing the JSON protocol.
 type flatPackage struct {
 	ID              string
 	Name            string            `json:",omitempty"`
 	PkgPath         string            `json:",omitempty"`
-	Errors          []*packageError   `json:",omitempty"`
+	Errors          []Error           `json:",omitempty"`
 	GoFiles         []string          `json:",omitempty"`
 	CompiledGoFiles []string          `json:",omitempty"`
 	OtherFiles      []string          `json:",omitempty"`
@@ -283,22 +314,11 @@ func (p *Package) MarshalJSON() ([]byte, error) {
 		ID:              p.ID,
 		Name:            p.Name,
 		PkgPath:         p.PkgPath,
+		Errors:          p.Errors,
 		GoFiles:         p.GoFiles,
 		CompiledGoFiles: p.CompiledGoFiles,
 		OtherFiles:      p.OtherFiles,
 		ExportFile:      p.ExportFile,
-	}
-	if len(p.Errors) > 0 {
-		flat.Errors = make([]*packageError, len(p.Errors))
-		for i, err := range p.Errors {
-			//TODO: best effort mapping of errors to the serialized form
-			switch err := err.(type) {
-			case *packageError:
-				flat.Errors[i] = err
-			default:
-				flat.Errors[i] = &packageError{Err: err.Error()}
-			}
-		}
 	}
 	if len(p.Imports) > 0 {
 		flat.Imports = make(map[string]string, len(p.Imports))
@@ -320,16 +340,11 @@ func (p *Package) UnmarshalJSON(b []byte) error {
 		ID:              flat.ID,
 		Name:            flat.Name,
 		PkgPath:         flat.PkgPath,
+		Errors:          flat.Errors,
 		GoFiles:         flat.GoFiles,
 		CompiledGoFiles: flat.CompiledGoFiles,
 		OtherFiles:      flat.OtherFiles,
 		ExportFile:      flat.ExportFile,
-	}
-	if len(flat.Errors) > 0 {
-		p.Errors = make([]error, len(flat.Errors))
-		for i, err := range flat.Errors {
-			p.Errors[i] = err
-		}
 	}
 	if len(flat.Imports) > 0 {
 		p.Imports = make(map[string]*Package, len(flat.Imports))
@@ -357,6 +372,7 @@ type loaderPackage struct {
 type loader struct {
 	pkgs map[string]*loaderPackage
 	Config
+	sizes    types.Sizes
 	exportMu sync.Mutex // enforces mutual exclusion of exportdata operations
 }
 
@@ -382,19 +398,16 @@ func newLoader(cfg *Config) *loader {
 			ld.Fset = token.NewFileSet()
 		}
 
-		// Error and ParseFile are required even in LoadTypes mode
+		// ParseFile is required even in LoadTypes mode
 		// because we load source if export data is missing.
-
-		if ld.Error == nil {
-			ld.Error = func(e error) {
-				fmt.Fprintln(os.Stderr, e)
-			}
-		}
-
 		if ld.ParseFile == nil {
-			ld.ParseFile = func(fset *token.FileSet, filename string) (*ast.File, error) {
+			ld.ParseFile = func(fset *token.FileSet, filename string, src []byte) (*ast.File, error) {
+				var isrc interface{}
+				if src != nil {
+					isrc = src
+				}
 				const mode = parser.AllErrors | parser.ParseComments
-				return parser.ParseFile(fset, filename, nil, mode)
+				return parser.ParseFile(fset, filename, isrc, mode)
 			}
 		}
 	}
@@ -404,29 +417,36 @@ func newLoader(cfg *Config) *loader {
 // refine connects the supplied packages into a graph and then adds type and
 // and syntax information as requested by the LoadMode.
 func (ld *loader) refine(roots []string, list ...*Package) ([]*Package, error) {
-	if len(list) == 0 {
-		return nil, fmt.Errorf("packages not found")
-	}
-	isRoot := make(map[string]bool, len(roots))
-	for _, root := range roots {
-		isRoot[root] = true
+	rootMap := make(map[string]int, len(roots))
+	for i, root := range roots {
+		rootMap[root] = i
 	}
 	ld.pkgs = make(map[string]*loaderPackage)
 	// first pass, fixup and build the map and roots
-	var initial []*loaderPackage
+	var initial = make([]*loaderPackage, len(roots))
 	for _, pkg := range list {
+		rootIndex := -1
+		if i, found := rootMap[pkg.ID]; found {
+			rootIndex = i
+		}
 		lpkg := &loaderPackage{
 			Package: pkg,
 			needtypes: ld.Mode >= LoadAllSyntax ||
-				ld.Mode >= LoadTypes && isRoot[pkg.ID],
+				ld.Mode >= LoadTypes && rootIndex >= 0,
 			needsrc: ld.Mode >= LoadAllSyntax ||
-				ld.Mode >= LoadSyntax && isRoot[pkg.ID] ||
+				ld.Mode >= LoadSyntax && rootIndex >= 0 ||
+				len(ld.Overlay) > 0 || // Overlays can invalidate export data. TODO(matloob): make this check fine-grained based on dependencies on overlaid files
 				pkg.ExportFile == "" && pkg.PkgPath != "unsafe",
 		}
 		ld.pkgs[lpkg.ID] = lpkg
-		if isRoot[lpkg.ID] {
-			initial = append(initial, lpkg)
+		if rootIndex >= 0 {
+			initial[rootIndex] = lpkg
 			lpkg.initial = true
+		}
+	}
+	for i, root := range roots {
+		if initial[i] == nil {
+			return nil, fmt.Errorf("root package %v is missing", root)
 		}
 	}
 
@@ -566,6 +586,7 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 		lpkg.Fset = ld.Fset
 		lpkg.Syntax = []*ast.File{}
 		lpkg.TypesInfo = new(types.Info)
+		lpkg.TypesSizes = ld.sizes
 		return
 	}
 
@@ -573,6 +594,7 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 	// This avoids skew between golist and go/types when the files'
 	// package declarations are inconsistent.
 	lpkg.Types = types.NewPackage(lpkg.PkgPath, lpkg.Name)
+	lpkg.Fset = ld.Fset
 
 	// Subtle: we populate all Types fields with an empty Package
 	// before loading export data so that export data processing
@@ -588,15 +610,53 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 		return // not a source package, don't get syntax trees
 	}
 
-	hardErrors := false
 	appendError := func(err error) {
-		if terr, ok := err.(types.Error); ok && terr.Soft {
-			// Don't mark the package as bad.
-		} else {
-			hardErrors = true
+		// Convert various error types into the one true Error.
+		var errs []Error
+		switch err := err.(type) {
+		case Error:
+			// from driver
+			errs = append(errs, err)
+
+		case *os.PathError:
+			// from parser
+			errs = append(errs, Error{
+				Pos:  err.Path + ":1",
+				Msg:  err.Err.Error(),
+				Kind: ParseError,
+			})
+
+		case scanner.ErrorList:
+			// from parser
+			for _, err := range err {
+				errs = append(errs, Error{
+					Pos:  err.Pos.String(),
+					Msg:  err.Msg,
+					Kind: ParseError,
+				})
+			}
+
+		case types.Error:
+			// from type checker
+			errs = append(errs, Error{
+				Pos:  err.Fset.Position(err.Pos).String(),
+				Msg:  err.Msg,
+				Kind: TypeError,
+			})
+
+		default:
+			// unexpected impoverished error from parser?
+			errs = append(errs, Error{
+				Pos:  "-",
+				Msg:  err.Error(),
+				Kind: UnknownError,
+			})
+
+			// If you see this error message, please file a bug.
+			log.Printf("internal error: error %q (%T) without position", err, err)
 		}
-		ld.Error(err)
-		lpkg.Errors = append(lpkg.Errors, err)
+
+		lpkg.Errors = append(lpkg.Errors, errs...)
 	}
 
 	files, errs := ld.parseFiles(lpkg.CompiledGoFiles)
@@ -604,7 +664,6 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 		appendError(err)
 	}
 
-	lpkg.Fset = ld.Fset
 	lpkg.Syntax = files
 
 	lpkg.TypesInfo = &types.Info{
@@ -615,6 +674,7 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 		Scopes:     make(map[ast.Node]*types.Scope),
 		Selections: make(map[*ast.SelectorExpr]*types.Selection),
 	}
+	lpkg.TypesSizes = ld.sizes
 
 	importer := importerFunc(func(path string) (*types.Package, error) {
 		if path == "unsafe" {
@@ -651,9 +711,7 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 		IgnoreFuncBodies: ld.Mode < LoadAllSyntax && !lpkg.initial,
 
 		Error: appendError,
-
-		// TODO(adonovan): derive Sizes from the underlying
-		// build system.
+		Sizes: ld.sizes,
 	}
 	types.NewChecker(tc, ld.Fset, lpkg.Types, lpkg.TypesInfo).Files(lpkg.Syntax)
 
@@ -681,14 +739,16 @@ func (ld *loader) loadPackage(lpkg *loaderPackage) {
 	}
 
 	// Record accumulated errors.
-	for _, imp := range lpkg.Imports {
-		if imp.IllTyped {
-			hardErrors = true
-			break
+	illTyped := len(lpkg.Errors) > 0
+	if !illTyped {
+		for _, imp := range lpkg.Imports {
+			if imp.IllTyped {
+				illTyped = true
+				break
+			}
 		}
 	}
-
-	lpkg.IllTyped = hardErrors
+	lpkg.IllTyped = illTyped
 }
 
 // An importFunc is an implementation of the single-method
@@ -714,11 +774,30 @@ func (ld *loader) parseFiles(filenames []string) ([]*ast.File, []error) {
 	parsed := make([]*ast.File, n)
 	errors := make([]error, n)
 	for i, file := range filenames {
+		if ld.Config.Context.Err() != nil {
+			parsed[i] = nil
+			errors[i] = ld.Config.Context.Err()
+			continue
+		}
 		wg.Add(1)
 		go func(i int, filename string) {
 			ioLimit <- true // wait
 			// ParseFile may return both an AST and an error.
-			parsed[i], errors[i] = ld.ParseFile(ld.Fset, filename)
+			var src []byte
+			for f, contents := range ld.Config.Overlay {
+				if sameFile(f, filename) {
+					src = contents
+				}
+			}
+			var err error
+			if src == nil {
+				src, err = ioutil.ReadFile(filename)
+			}
+			if err != nil {
+				parsed[i], errors[i] = nil, err
+			} else {
+				parsed[i], errors[i] = ld.ParseFile(ld.Fset, filename, src)
+			}
 			<-ioLimit // signal
 			wg.Done()
 		}(i, file)
@@ -745,6 +824,29 @@ func (ld *loader) parseFiles(filenames []string) ([]*ast.File, []error) {
 	errors = errors[:o]
 
 	return parsed, errors
+}
+
+// sameFile returns true if x and y have the same basename and denote
+// the same file.
+//
+func sameFile(x, y string) bool {
+	if x == y {
+		// It could be the case that y doesn't exist.
+		// For instance, it may be an overlay file that
+		// hasn't been written to disk. To handle that case
+		// let x == y through. (We added the exact absolute path
+		// string to the CompiledGoFiles list, so the unwritten
+		// overlay case implies x==y.)
+		return true
+	}
+	if strings.EqualFold(filepath.Base(x), filepath.Base(y)) { // (optimisation)
+		if xi, err := os.Stat(x); err == nil {
+			if yi, err := os.Stat(y); err == nil {
+				return os.SameFile(xi, yi)
+			}
+		}
+	}
+	return false
 }
 
 // loadFromExportData returns type information for the specified
