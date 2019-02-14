@@ -294,6 +294,7 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 		n = "boolean"
 	case "string":
 		n = "string"
+		f = props.Format
 	default:
 		n = t.Name.Name
 	}

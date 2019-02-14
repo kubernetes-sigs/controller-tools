@@ -57,6 +57,9 @@ type ToySpec struct {
 
 	Comment []byte `json:"comment,omitempty"`
 
+	// This is a simple string without validation.
+	Description string `json:"description"`
+
 	// This is a comment on an object field.
 	Template v1.PodTemplateSpec `json:"template"`
 
@@ -72,6 +75,10 @@ type ToySpec struct {
 
 	// This is a comment on a map field.
 	Location map[string]string `json:"location"`
+
+	// This is an IPv4 address.
+	// +kubebuilder:validation:Format=ipv4
+	Address string `json:"address"`
 }
 
 // ToyStatus defines the observed state of Toy
