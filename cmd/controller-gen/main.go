@@ -77,6 +77,7 @@ Usage:
 
 	f := cmd.Flags()
 	f.StringVar(&o.Name, "name", o.Name, "name to be used as prefix in identifier for manifests")
+	f.StringVar(&o.ServiceAccount, "service-account", o.ServiceAccount, "service account to bind the role to")
 	f.StringVar(&o.InputDir, "input-dir", o.InputDir, "input directory pointing to Go source files")
 	f.StringVar(&o.OutputDir, "output-dir", o.OutputDir, "output directory where generated manifests will be saved")
 	f.StringVar(&o.RoleFile, "role-file", o.RoleFile, "output file for the role manifest")

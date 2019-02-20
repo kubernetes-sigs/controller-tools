@@ -30,12 +30,13 @@ import (
 
 // ManifestOptions represent options for generating the RBAC manifests.
 type ManifestOptions struct {
-	InputDir    string
-	OutputDir   string
-	RoleFile    string
-	BindingFile string
-	Name        string
-	Labels      map[string]string
+	InputDir       string
+	OutputDir      string
+	RoleFile       string
+	BindingFile    string
+	Name           string
+	ServiceAccount string
+	Labels         map[string]string
 }
 
 // SetDefaults sets up the default options for RBAC Manifest generator.
@@ -43,6 +44,7 @@ func (o *ManifestOptions) SetDefaults() {
 	o.Name = "manager"
 	o.InputDir = filepath.Join(".", "pkg")
 	o.OutputDir = filepath.Join(".", "config", "rbac")
+	o.ServiceAccount = "default"
 }
 
 // RoleName returns the RBAC role name to be used in the manifests.
@@ -157,7 +159,7 @@ func getClusterRoleBindingManifest(o *ManifestOptions) ([]byte, error) {
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Name:      "default",
+				Name:      o.ServiceAccount,
 				Namespace: o.Namespace(),
 				Kind:      "ServiceAccount",
 			},
