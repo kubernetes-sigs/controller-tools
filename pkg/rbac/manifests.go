@@ -36,6 +36,7 @@ type ManifestOptions struct {
 	BindingFile    string
 	Name           string
 	ServiceAccount string
+	Namespace      string
 	Labels         map[string]string
 }
 
@@ -45,6 +46,8 @@ func (o *ManifestOptions) SetDefaults() {
 	o.InputDir = filepath.Join(".", "pkg")
 	o.OutputDir = filepath.Join(".", "config", "rbac")
 	o.ServiceAccount = "default"
+	// TODO(droot): define Namespace as a const and share it with scaffold pkg.
+	o.Namespace = "system"
 }
 
 // RoleName returns the RBAC role name to be used in the manifests.
@@ -73,12 +76,6 @@ func (o *ManifestOptions) RoleBindingFileName() string {
 	}
 	// TODO: validate file name
 	return o.BindingFile
-}
-
-// Namespace returns the namespace to be used in the RBAC manifests.
-func (o *ManifestOptions) Namespace() string {
-	// TODO(droot): define this as a constant and share it with scaffold pkg.
-	return "system"
 }
 
 // Validate validates the input options.
@@ -160,7 +157,7 @@ func getClusterRoleBindingManifest(o *ManifestOptions) ([]byte, error) {
 		Subjects: []rbacv1.Subject{
 			{
 				Name:      o.ServiceAccount,
-				Namespace: o.Namespace(),
+				Namespace: o.Namespace,
 				Kind:      "ServiceAccount",
 			},
 		},
