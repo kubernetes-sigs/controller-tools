@@ -30,10 +30,12 @@ import (
 
 // ManifestOptions represent options for generating the RBAC manifests.
 type ManifestOptions struct {
-	InputDir  string
-	OutputDir string
-	Name      string
-	Labels    map[string]string
+	InputDir    string
+	OutputDir   string
+	RoleFile    string
+	BindingFile string
+	Name        string
+	Labels      map[string]string
 }
 
 // SetDefaults sets up the default options for RBAC Manifest generator.
@@ -48,9 +50,27 @@ func (o *ManifestOptions) RoleName() string {
 	return o.Name + "-role"
 }
 
+// RoleFileName returns the name of the manifest file to use for the role.
+func (o *ManifestOptions) RoleFileName() string {
+	if len(o.RoleFile) == 0 {
+		return o.Name + "_role.yaml"
+	}
+	// TODO: validate file name
+	return o.RoleFile
+}
+
 // RoleBindingName returns the RBAC role binding name to be used in the manifests.
 func (o *ManifestOptions) RoleBindingName() string {
 	return o.Name + "-rolebinding"
+}
+
+// RoleBindingFileName returns the name of the manifest file to use for the role binding.
+func (o *ManifestOptions) RoleBindingFileName() string {
+	if len(o.BindingFile) == 0 {
+		return o.Name + "_role_binding.yaml"
+	}
+	// TODO: validate file name
+	return o.BindingFile
 }
 
 // Namespace returns the namespace to be used in the RBAC manifests.
@@ -98,12 +118,12 @@ func Generate(o *ManifestOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output dir %v", err)
 	}
-	roleManifestFile := filepath.Join(o.OutputDir, "rbac_role.yaml")
+	roleManifestFile := filepath.Join(o.OutputDir, o.RoleFileName())
 	if err := ioutil.WriteFile(roleManifestFile, roleManifest, 0666); err != nil {
 		return fmt.Errorf("failed to write role manifest YAML file %v", err)
 	}
 
-	roleBindingManifestFile := filepath.Join(o.OutputDir, "rbac_role_binding.yaml")
+	roleBindingManifestFile := filepath.Join(o.OutputDir, o.RoleBindingFileName())
 	if err := ioutil.WriteFile(roleBindingManifestFile, roleBindingManifest, 0666); err != nil {
 		return fmt.Errorf("failed to write role manifest YAML file %v", err)
 	}
