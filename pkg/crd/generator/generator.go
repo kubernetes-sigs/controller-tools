@@ -42,6 +42,10 @@ type Generator struct {
 	Namespace         string
 	SkipMapValidation bool
 
+	// APIsPath and APIsPkg allow customized generation for Go types existing under directories other than pkg/apis
+	APIsPath string
+	APIsPkg  string
+
 	// OutFs is filesystem to be used for writing out the result
 	OutFs afero.Fs
 
@@ -80,13 +84,7 @@ func (c *Generator) ValidateAndInitFields() error {
 		c.Domain = crdutil.GetDomainFromProject(c.RootPath)
 	}
 
-	// Validate apis directory exists under working path
-	apisPath := path.Join(c.RootPath, "pkg/apis")
-	if _, err := os.Stat(apisPath); err != nil {
-		return fmt.Errorf("error validating apis path %s: %v", apisPath, err)
-	}
-
-	c.apisPkg, err = crdutil.DirToGoPkg(apisPath)
+	err = c.setAPIsPkg()
 	if err != nil {
 		return err
 	}
@@ -112,7 +110,7 @@ func (c *Generator) Do() error {
 		return fmt.Errorf("failed switching working dir: %v", err)
 	}
 
-	if err := b.AddDirRecursive("./pkg/apis"); err != nil {
+	if err := b.AddDirRecursive("./" + c.APIsPath); err != nil {
 		return fmt.Errorf("failed making a parser: %v", err)
 	}
 	ctx, err := parse.NewContext(b)
@@ -184,4 +182,22 @@ func (c *Generator) getCrds(p *parse.APIs) map[string][]byte {
 // current project.
 func (c *Generator) belongsToAPIsPkg(t *types.Type) bool {
 	return strings.HasPrefix(t.Name.Package, c.apisPkg)
+}
+
+func (c *Generator) setAPIsPkg() error {
+	var err error
+	c.apisPkg = c.APIsPkg
+	if c.apisPkg == "" {
+		// Validate apis directory exists under working path
+		apisPath := path.Join(c.RootPath, c.APIsPath)
+		if _, err := os.Stat(apisPath); err != nil {
+			return fmt.Errorf("error validating apis path %s: %v", apisPath, err)
+		}
+
+		c.apisPkg, err = crdutil.DirToGoPkg(apisPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
