@@ -223,8 +223,22 @@ func hasSingular(t *types.Type) bool {
 	if !IsAPIResource(t) {
 		return false
 	}
-	for _, c := range t.CommentLines{
-		if strings.Contains(c, "+kubebuilder:singular"){
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:singular") {
+			return true
+		}
+	}
+	return false
+}
+
+// hasRequired returns true if t is annotated with
+// +required
+func hasRequired(member types.Member) bool {
+	for _, c := range member.CommentLines {
+
+		c = strings.TrimSpace(c)
+
+		if c == "+required" {
 			return true
 		}
 	}
@@ -363,7 +377,9 @@ func parseDescription(res []string) string {
 	var temp strings.Builder
 	var desc string
 	for _, comment := range res {
-		if !(strings.Contains(comment, "+kubebuilder") || strings.Contains(comment, "+optional")) {
+		if !(strings.Contains(comment, "+kubebuilder") ||
+			strings.Contains(comment, "+optional") ||
+			strings.Contains(comment, "+required")) {
 			temp.WriteString(comment)
 			temp.WriteString(" ")
 			desc = strings.TrimRight(temp.String(), " ")

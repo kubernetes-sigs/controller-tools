@@ -44,6 +44,7 @@ type ToySpec struct {
 
 	// +kubebuilder:validation:MaxLength=15
 	// +kubebuilder:validation:MinLength=1
+	// +required
 	Name string `json:"name,omitempty"`
 
 	// This is a comment on an array field.

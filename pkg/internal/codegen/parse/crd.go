@@ -628,7 +628,7 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 			m, r := b.typeToJSONSchemaProps(member.Type, found, member.CommentLines, false)
 			members[name] = m
 			result[name] = r
-			if !strings.HasSuffix(strat, "omitempty") {
+			if hasRequired(member) {
 				required = append(required, name)
 			}
 		}

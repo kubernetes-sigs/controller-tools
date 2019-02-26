@@ -136,15 +136,7 @@ spec:
               description: This is a comment on a boolean field.
               type: boolean
           required:
-          - rank
-          - description
-          - template
-          - replicas
-          - rook
-          - s3Log
-          - location
-          - address
-          - addresses
+          - name
           type: object
         status:
           properties:
@@ -152,8 +144,6 @@ spec:
               description: It tracks the number of replicas.
               format: int32
               type: integer
-          required:
-          - replicas
           type: object
   version: v1alpha1
 status:
