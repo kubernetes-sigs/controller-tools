@@ -32,12 +32,13 @@ func TestGenerator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to get current directory: %v", err)
 	}
+	testDataDir := filepath.Join(currDir, "..", "..", "..", "testData")
 	// in-memory file system for storing the generated CRDs
 	outFs := afero.NewMemMapFs()
 	g := &crdgenerator.Generator{
 		OutFs:     outFs,
 		OutputDir: "/tmp",
-		RootPath:  filepath.Join(currDir, "testData"),
+		RootPath:  testDataDir,
 	}
 	err = g.ValidateAndInitFields()
 	if err != nil {
@@ -54,7 +55,7 @@ func TestGenerator(t *testing.T) {
 		if err != nil {
 			t.Fatalf("reading file failed %v", err)
 		}
-		expectedContent, err := ioutil.ReadFile(filepath.Join(currDir, "testData", "config", "crds", f))
+		expectedContent, err := ioutil.ReadFile(filepath.Join(testDataDir, "config", "crds", f))
 		if err != nil {
 			t.Fatalf("reading file failed %v", err)
 		}

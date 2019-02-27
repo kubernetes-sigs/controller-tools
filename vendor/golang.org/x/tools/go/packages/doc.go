@@ -5,19 +5,28 @@
 /*
 Package packages loads Go packages for inspection and analysis.
 
-NOTE: THIS PACKAGE IS NOT YET READY FOR WIDESPREAD USE:
- - The interface is still being revised and minor changes are likely.
- - The implementation depends on the Go 1.11 go command;
-   support for earlier versions will be added soon.
- - We intend to finalize the API before Go 1.11 is released.
-
 The Load function takes as input a list of patterns and return a list of Package
 structs describing individual packages matched by those patterns.
 The LoadMode controls the amount of detail in the loaded packages.
 
-The patterns are used as arguments to the underlying build tool,
-such as the go command or Bazel, and are interpreted according to
-that tool's conventions.
+Load passes most patterns directly to the underlying build tool,
+but all patterns with the prefix "query=", where query is a
+non-empty string of letters from [a-z], are reserved and may be
+interpreted as query operators.
+
+Two query operators are currently supported: "file" and "pattern".
+
+The query "file=path/to/file.go" matches the package or packages enclosing
+the Go source file path/to/file.go.  For example "file=~/go/src/fmt/print.go"
+might return the packages "fmt" and "fmt [fmt.test]".
+
+The query "pattern=string" causes "string" to be passed directly to
+the underlying build tool. In most cases this is unnecessary,
+but an application can use Load("pattern=" + x) as an escaping mechanism
+to ensure that x is not interpreted as a query operator if it contains '='.
+
+All other query operators are reserved for future use and currently
+cause Load to report an error.
 
 The Package struct provides basic information about the package, including
 
@@ -58,29 +67,8 @@ for details.
 Most tools should pass their command-line arguments (after any flags)
 uninterpreted to the loader, so that the loader can interpret them
 according to the conventions of the underlying build system.
-For example, this program prints the names of the source files
-for each package listed on the command line:
+See the Example function for typical usage.
 
-	package main
-
-	import (
-		"flag"
-		"fmt"
-		"log"
-
-		"golang.org/x/tools/go/packages"
-	)
-
-	func main() {
-		flag.Parse()
-		pkgs, err := packages.Load(nil, flag.Args()...)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, pkg := range pkgs {
-			fmt.Print(pkg.ID, pkg.GoFiles)
-		}
-	}
 */
 package packages // import "golang.org/x/tools/go/packages"
 
@@ -182,22 +170,13 @@ Instead, ssadump no longer requests the runtime package,
 but seeks it among the dependencies of the user-specified packages,
 and emits an error if it is not found.
 
-Overlays: the ParseFile hook in the API permits clients to vary the way
-in which ASTs are obtained from filenames; the default implementation is
-based on parser.ParseFile. This features enables editor-integrated tools
-that analyze the contents of modified but unsaved buffers: rather than
-read from the file system, a tool can read from an archive of modified
-buffers provided by the editor.
-This approach has its limits. Because package metadata is obtained by
-fork/execing an external query command for each build system, we can
-fake only the file contents seen by the parser, type-checker, and
-application, but not by the metadata query, so, for example:
-- additional imports in the fake file will not be described by the
-  metadata, so the type checker will fail to load imports that create
-  new dependencies.
-- in TypeCheck mode, because export data is produced by the query
-  command, it will not reflect the fake file contents.
-- this mechanism cannot add files to a package without first saving them.
+Overlays: The Overlay field in the Config allows providing alternate contents
+for Go source files, by providing a mapping from file path to contents.
+go/packages will pull in new imports added in overlay files when go/packages
+is run in LoadImports mode or greater.
+Overlay support for the go list driver isn't complete yet: if the file doesn't
+exist on disk, it will only be recognized in an overlay if it is a non-test file
+and the package would be reported even without the overlay.
 
 Questions & Tasks
 

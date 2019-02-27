@@ -23,9 +23,6 @@ import (
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	webhooktypes "sigs.k8s.io/controller-runtime/pkg/webhook/types"
 	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
@@ -34,7 +31,7 @@ func TestParseWebhook(t *testing.T) {
 	ignoreFP := admissionregistrationv1beta1.Ignore
 	tests := []struct {
 		content string
-		exp     []webhook.Webhook
+		exp     map[string]webhook
 	}{
 		{
 			content: `package foo
@@ -58,12 +55,12 @@ func TestParseWebhook(t *testing.T) {
 	func baz() {
 		fmt.Println(time.Now())
 	}`,
-			exp: []webhook.Webhook{
-				&admission.Webhook{
-					Name: "bar-webhook",
-					Type: webhooktypes.WebhookTypeMutating,
-					Path: "/bar",
-					Rules: []admissionregistrationv1beta1.RuleWithOperations{
+			exp: map[string]webhook{
+				"/bar": &admissionWebhook{
+					name: "bar-webhook",
+					typ:  mutatingWebhook,
+					path: "/bar",
+					rules: []admissionregistrationv1beta1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1beta1.Rule{
 								APIGroups: []string{"apps"},
@@ -75,14 +72,13 @@ func TestParseWebhook(t *testing.T) {
 							},
 						},
 					},
-					FailurePolicy: &failFP,
-					Handlers:      []admission.Handler{admission.HandlerFunc(nil)},
+					failurePolicy: &failFP,
 				},
-				&admission.Webhook{
-					Name: "baz-webhook",
-					Type: webhooktypes.WebhookTypeValidating,
-					Path: "/baz",
-					Rules: []admissionregistrationv1beta1.RuleWithOperations{
+				"/baz": &admissionWebhook{
+					name: "baz-webhook",
+					typ:  validatingWebhook,
+					path: "/baz",
+					rules: []admissionregistrationv1beta1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1beta1.Rule{
 								APIGroups:   []string{"crew"},
@@ -94,17 +90,17 @@ func TestParseWebhook(t *testing.T) {
 							},
 						},
 					},
-					FailurePolicy: &ignoreFP,
-					Handlers:      []admission.Handler{admission.HandlerFunc(nil)},
+					failurePolicy: &ignoreFP,
 				},
 			},
 		},
 	}
 
 	for _, test := range tests {
-		o := &ManifestOptions{
-			InputDir: "test.go",
-			webhooks: []webhook.Webhook{},
+		o := &Options{
+			WriterOptions: WriterOptions{
+				InputDir: "test.go",
+			},
 		}
 		fset := token.NewFileSet()
 		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
@@ -120,7 +116,7 @@ func TestParseWebhook(t *testing.T) {
 func TestParseWebhookServer(t *testing.T) {
 	tests := []struct {
 		content string
-		exp     *webhook.ServerOptions
+		exp     *generatorOptions
 	}{
 		{
 			content: `package foo
@@ -136,40 +132,40 @@ func TestParseWebhookServer(t *testing.T) {
 	func bar() {
 		fmt.Println(time.Now())
 	}`,
-			exp: &webhook.ServerOptions{
-				Port:    7890,
-				CertDir: "/tmp/test-cert",
-				BootstrapOptions: &webhook.BootstrapOptions{
-					MutatingWebhookConfigName:   "test-mutating-webhook-cfg",
-					ValidatingWebhookConfigName: "test-validating-webhook-cfg",
-					Service: &webhook.Service{
-						Namespace: "test-system",
-						Name:      "webhook-service",
-						Selectors: map[string]string{
-							"app": "webhook-server",
-						},
+			exp: &generatorOptions{
+				port:                        7890,
+				certDir:                     "/tmp/test-cert",
+				mutatingWebhookConfigName:   "test-mutating-webhook-cfg",
+				validatingWebhookConfigName: "test-validating-webhook-cfg",
+				service: &service{
+					namespace: "test-system",
+					name:      "webhook-service",
+					selectors: map[string]string{
+						"app": "webhook-server",
 					},
-					Secret: &types.NamespacedName{
-						Namespace: "test-system",
-						Name:      "webhook-secret",
-					},
+				},
+				secret: &types.NamespacedName{
+					Namespace: "test-system",
+					Name:      "webhook-secret",
 				},
 			},
 		},
 	}
 
 	for _, test := range tests {
-		o := &ManifestOptions{
-			InputDir: "test.go",
-			svrOps:   &webhook.ServerOptions{},
+		o := &Options{
+			WriterOptions: WriterOptions{
+				InputDir: "test.go",
+			},
+			generatorOptions: generatorOptions{},
 		}
 		fset := token.NewFileSet()
 		err := general.ParseFile(fset, "test.go", test.content, o.parseAnnotation)
 		if err != nil {
 			t.Errorf("processFile should have succeeded, but got error: %v", err)
 		}
-		if !reflect.DeepEqual(test.exp, o.svrOps) {
-			t.Errorf("webhook server should have matched, expected %#v and got %#v", test.exp, o.svrOps)
+		if !reflect.DeepEqual(test.exp, &o.generatorOptions) {
+			t.Errorf("webhook server should have matched, expected %#v but got %#v", test.exp, o.generatorOptions)
 		}
 	}
 }
