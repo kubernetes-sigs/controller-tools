@@ -24,6 +24,12 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// ToyS3LogConfig defines logs configs using S3 backend
+type ToyS3LogConfig struct {
+	// +kubebuilder:validation:MinLength=1
+	Bucket string `json:"bucket,omitempty"`
+}
+
 // ToySpec defines the desired state of Toy
 type ToySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -72,6 +78,9 @@ type ToySpec struct {
 	// This is a newly added field.
 	// Using this for testing purpose.
 	Rook *intstr.IntOrString `json:"rook"`
+
+	// Used this for testing fieldNames with number.
+	S3Log ToyS3LogConfig `json:"s3Log"`
 
 	// This is a comment on a map field.
 	Location map[string]string `json:"location"`
