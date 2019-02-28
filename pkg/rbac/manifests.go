@@ -46,7 +46,6 @@ func (o *ManifestOptions) SetDefaults() {
 	o.InputDir = filepath.Join(".", "pkg")
 	o.OutputDir = filepath.Join(".", "config", "rbac")
 	o.ServiceAccount = "default"
-	// TODO(droot): define Namespace as a const and share it with scaffold pkg.
 	o.Namespace = "system"
 }
 
