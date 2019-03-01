@@ -115,6 +115,7 @@ type ToyStatus struct {
 // +kubebuilder:printcolumn:name="service",type="string",JSONPath=".status.conditions.ready",description="descr3",format="byte",priority=2
 // +kubebuilder:resource:path=services,shortName=to;ty
 // +kubebuilder:singular=toy
+// +kubebuilder:plural=toys
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

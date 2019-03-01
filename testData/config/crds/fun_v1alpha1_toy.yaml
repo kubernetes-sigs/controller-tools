@@ -28,7 +28,7 @@ spec:
   group: fun.myk8s.io
   names:
     kind: Toy
-    plural: services
+    plural: toys
     shortNames:
     - to
     - ty

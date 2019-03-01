@@ -91,6 +91,11 @@ func (b *APIs) parseCRDs() {
 						resource.CRD.Spec.Names.Singular = singularName
 					}
 
+					if hasPlural(resource.Type) {
+						pluralName := getPluralName(resource.Type)
+						resource.CRD.Spec.Names.Plural = pluralName
+					}
+
 					if hasStatusSubresource(resource.Type) {
 						if resource.CRD.Spec.Subresources == nil {
 							resource.CRD.Spec.Subresources = &v1beta1.CustomResourceSubresources{}
