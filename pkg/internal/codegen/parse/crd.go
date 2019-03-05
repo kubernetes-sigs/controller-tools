@@ -328,7 +328,7 @@ var mapTemplate = template.Must(template.New("map-template").Parse(
 // parseMapValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given map type.
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
+	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, nil, false)
 	additionalProps.Description = ""
 	props := v1beta1.JSONSchemaProps{
 		Type:        "object",
@@ -377,7 +377,7 @@ type arrayTemplateArgs struct {
 // parseArrayValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given array type.
 func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
+	items, result := b.typeToJSONSchemaProps(t.Elem, found, nil, false)
 	items.Description = ""
 	props := v1beta1.JSONSchemaProps{
 		Type:        "array",
