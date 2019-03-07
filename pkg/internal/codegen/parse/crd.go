@@ -187,7 +187,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 		}, b.objSchema()
 	case intOrString:
 		return v1beta1.JSONSchemaProps{
-			OneOf: []v1beta1.JSONSchemaProps{
+			AnyOf: []v1beta1.JSONSchemaProps{
 				{
 					Type: "string",
 				},
