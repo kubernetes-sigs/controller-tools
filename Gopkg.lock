@@ -181,7 +181,7 @@
   version = "v2.2.2"
 
 [[projects]]
-  digest = "1:58ea1e83236dcd9271e3043aca04a8d98911dc4c401d03af1b0239763367849e"
+  digest = "1:4304137d46b791f0d5280f65728be893c00dd2511f78a8a6505072271480ed75"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1beta1",
@@ -189,8 +189,8 @@
     "rbac/v1",
   ]
   pruneopts = "UT"
-  revision = "05914d821849570fba9eacfb29466f2d8d3cd229"
-  version = "kubernetes-1.13.1"
+  revision = "5cb15d34447165a97c76ed5a60e4e99c8a01ecfe"
+  version = "kubernetes-1.13.4"
 
 [[projects]]
   digest = "1:46e3296eec0a6e864c2ef813ccfdb0b83d144fcc23414d97dd4894e9464cf4d5"
@@ -200,11 +200,11 @@
     "pkg/apis/apiextensions/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "0fe22c71c47604641d9aa352c785b7912c200562"
-  version = "kubernetes-1.13.1"
+  revision = "d002e88f6236312f0289d9d1deab106751718ff0"
+  version = "kubernetes-1.13.4"
 
 [[projects]]
-  digest = "1:64cc55bfc7c794bc04562c22daf8486dc65c84251d820e41672d76893205ad45"
+  digest = "1:cdadd6ffbd40cc74095fc26f5cf8bb06631adf7a614307b6c6ddf19da29dec05"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/resource",
@@ -230,8 +230,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "2b1284ed4c93a43499e781493253e2ac5959c4fd"
-  version = "kubernetes-1.13.1"
+  revision = "86fb29eff6288413d76bd8506874fddd9fccdff0"
+  version = "kubernetes-1.13.4"
 
 [[projects]]
   branch = "master"
