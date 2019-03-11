@@ -220,6 +220,8 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 		v, s = b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	case types.Alias:
 		v, s = b.typeToJSONSchemaProps(t.Underlying, found, comments, false)
+	case types.Interface:
+		v, s = b.parseInterfaceValidation(t, found, comments)
 	default:
 		log.Fatalf("Unknown supported Kind %v\n", t.Kind)
 	}
@@ -417,6 +419,38 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 	return props, buff.String()
 }
 
+// parseInterfaceValidation returns a JSONSchemaProps object and its serialization in
+// Go that describe the validations for the given Interface.
+func (b *APIs) parseInterfaceValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
+	props := v1beta1.JSONSchemaProps{
+		AnyOf: []v1beta1.JSONSchemaProps{
+			{
+				Type: "string",
+			},
+			{
+				Type: "number",
+			},
+			{
+				Type: "object",
+			},
+			{
+				Type: "null",
+			},
+			{
+				Type: "array",
+			},
+			{
+				Type: "boolean",
+			},
+			{
+				Type: "integer",
+			},
+		},
+		Description: parseDescription(comments),
+	}
+	return props, b.objSchema()
+}
+
 type objectTemplateArgs struct {
 	v1beta1.JSONSchemaProps
 	Fields   map[string]string
@@ -577,6 +611,19 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		}
 	case "Format":
 		props.Format = parts[1]
+	case "AnyOf[]":
+		result := []v1beta1.JSONSchemaProps{}
+		intialValues := strings.Split(parts[1], ";")
+		for _, s := range intialValues {
+			value := strings.Split(s, ",")
+			res, err := extractAnyOfParameters(value)
+			if err != nil {
+				log.Fatalf("Use proper kubebuilder AnyOf annotation %s: %v", comment, err)
+				return
+			}
+			result = append(result, res...)
+		}
+		props.AnyOf = result
 	default:
 		log.Fatalf("Unsupport validation: %s", comment)
 	}

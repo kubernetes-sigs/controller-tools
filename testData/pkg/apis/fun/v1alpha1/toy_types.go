@@ -16,7 +16,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/api/core/v1"
+	"encoding/json"
+	"fmt"
+
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -79,6 +82,9 @@ type ToySpec struct {
 	// Using this for testing purpose.
 	Rook *intstr.IntOrString `json:"rook"`
 
+	// +kubebuilder:validation:AnyOf[]=type:boolean;type:integer
+	Server *BoolOrInt `json:"server,omitempty"`
+
 	// Used this for testing fieldNames with number.
 	S3Log ToyS3LogConfig `json:"s3Log"`
 
@@ -98,6 +104,9 @@ type ToySpec struct {
 type ToyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	//Adding this field for testing interface{} validation
+	Inter interface{} `json:"inter"`
 
 	// It tracks the number of replicas.
 	Replicas int32 `json:"replicas"`
@@ -134,4 +143,33 @@ type ToyList struct {
 
 func init() {
 	SchemeBuilder.Register(&Toy{}, &ToyList{})
+}
+
+// BoolOrInt is defined for testing kubebuilder anyof annotation
+type BoolOrInt struct {
+	Type    string
+	BoolVal bool
+	IntVal  string
+}
+
+// UnmarshalJSON implements the json.Unmarshaller interface.
+func (b *BoolOrInt) UnmarshalJSON(value []byte) error {
+	if value[0] == 't' || value[0] == 'f' {
+		b.Type = "bool"
+		return json.Unmarshal(value, &b.BoolVal)
+	}
+	b.Type = "int"
+	return json.Unmarshal(value, &b.IntVal)
+}
+
+// MarshalJSON implements the json.Marshaller interface.
+func (b *BoolOrInt) MarshalJSON() ([]byte, error) {
+	switch b.Type {
+	case "int":
+		return json.Marshal(b.IntVal)
+	case "bool":
+		return json.Marshal(b.BoolVal)
+	default:
+		return []byte{}, fmt.Errorf("impossible BoolOrInt.Type")
+	}
 }

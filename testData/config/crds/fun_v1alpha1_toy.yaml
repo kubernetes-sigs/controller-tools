@@ -129,6 +129,11 @@ spec:
                   minLength: 1
                   type: string
               type: object
+            server:
+              anyOf:
+              - type: boolean
+              - type: integer
+              type: object
             template:
               description: This is a comment on an object field.
               type: object
@@ -148,11 +153,22 @@ spec:
           type: object
         status:
           properties:
+            inter:
+              anyOf:
+              - type: string
+              - type: number
+              - type: object
+              - type: "null"
+              - type: array
+              - type: boolean
+              - type: integer
+              description: Adding this field for testing interface{} validation
             replicas:
               description: It tracks the number of replicas.
               format: int32
               type: integer
           required:
+          - inter
           - replicas
           type: object
   version: v1alpha1

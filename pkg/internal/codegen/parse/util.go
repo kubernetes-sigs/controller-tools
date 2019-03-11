@@ -29,17 +29,22 @@ import (
 )
 
 const (
-	specReplicasPath   = "specpath"
-	statusReplicasPath = "statuspath"
-	labelSelectorPath  = "selectorpath"
-	jsonPathError      = "invalid scale path. specpath, statuspath key-value pairs are required, only selectorpath key-value is optinal. For example: // +kubebuilder:subresource:scale:specpath=.spec.replica,statuspath=.status.replica,selectorpath=.spec.Label"
-	printColumnName    = "name"
-	printColumnType    = "type"
-	printColumnDescr   = "description"
-	printColumnPath    = "JSONPath"
-	printColumnFormat  = "format"
-	printColumnPri     = "priority"
-	printColumnError   = "invalid printcolumn path. name,type, and JSONPath are required kye-value pairs and rest of the fields are optinal. For example: // +kubebuilder:printcolumn:name=abc,type=string,JSONPath=status"
+	specReplicasPath            = "specpath"
+	statusReplicasPath          = "statuspath"
+	labelSelectorPath           = "selectorpath"
+	jsonPathError               = "invalid scale path. specpath, statuspath key-value pairs are required, only selectorpath key-value is optinal. For example: // +kubebuilder:subresource:scale:specpath=.spec.replica,statuspath=.status.replica,selectorpath=.spec.Label"
+	printColumnName             = "name"
+	printColumnType             = "type"
+	printColumnDescr            = "description"
+	printColumnPath             = "JSONPath"
+	printColumnFormat           = "format"
+	printColumnPri              = "priority"
+	printColumnError            = "invalid printcolumn path. name,type, and JSONPath are required kye-value pairs and rest of the fields are optinal. For example: // +kubebuilder:printcolumn:name=abc,type=string,JSONPath=status"
+	printAnyOfOtherError        = "AnyOf annotation for type other than string should be enter in the following format--> type:<value>"
+	printAnyOfStringError       = "AnyOf annotation for type=string should be enter in the following format--> type:<value>,format:<value>"
+	printPrimitiveError         = "The primitive type or format value is not appropriate in this case"
+	printPrimitiveTypeOnlyError = "The primitive type value is not appropriate in this case"
+	printGeneralAnyOfError      = "Ensure you entered the right kubebuilder AnyOf annotation"
 )
 
 // Options contains the parser options
@@ -223,8 +228,8 @@ func hasSingular(t *types.Type) bool {
 	if !IsAPIResource(t) {
 		return false
 	}
-	for _, c := range t.CommentLines{
-		if strings.Contains(c, "+kubebuilder:singular"){
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:singular") {
 			return true
 		}
 	}
@@ -536,4 +541,75 @@ func parsePrintColumnParams(t *types.Type) ([]v1beta1.CustomResourceColumnDefini
 		}
 	}
 	return result, nil
+}
+
+// extractAnyOfParameters extracts type and format values for kubebuilder AnyOf annotation
+func extractAnyOfParameters(value []string) ([]v1beta1.JSONSchemaProps, error) {
+	if len(value) < 2 && strings.TrimSpace(strings.Split(value[0], ":")[0]) == "type" && strings.TrimSpace(strings.Split(value[0], ":")[1]) == "string" {
+		return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printAnyOfStringError)
+	} else if len(value) < 2 && strings.TrimSpace(strings.Split(value[0], ":")[0]) == "format" {
+		return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printAnyOfOtherError)
+	} else if len(value) < 2 && strings.TrimSpace(strings.Split(value[0], ":")[0]) == "type" {
+		res, err := helperAnyOfParams(value[0], "", 1)
+		if err != nil {
+			return []v1beta1.JSONSchemaProps{}, err
+		}
+		return res, nil
+
+	} else if len(value) == 2 {
+		if strings.TrimSpace(strings.Split(value[0], ":")[0]) == "type" && strings.TrimSpace(strings.Split(value[0], ":")[1]) == "string" {
+			res, err := helperAnyOfParams(value[0], value[1], 2)
+			if err != nil {
+				return []v1beta1.JSONSchemaProps{}, err
+			}
+			return res, nil
+
+		} else if strings.TrimSpace(strings.Split(value[0], ":")[0]) == "format" && (strings.TrimSpace(strings.Split(value[0], ":")[0]) == "type" && strings.TrimSpace(strings.Split(value[0], ":")[1]) == "string") {
+
+			res, err := helperAnyOfParams(value[1], value[0], 2)
+			if err != nil {
+				return []v1beta1.JSONSchemaProps{}, err
+			}
+			return res, nil
+		}
+		return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printAnyOfStringError)
+	}
+	return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printGeneralAnyOfError)
+}
+
+// helperAnyOfParams is a helper function for extractAnyOfParameters to return extracted values for type and format
+func helperAnyOfParams(typeV string, formatV string, length int) ([]v1beta1.JSONSchemaProps, error) {
+	anyof := []v1beta1.JSONSchemaProps{}
+	formatContains := []string{"date-time", "date", "time", "email", "idn-email", "hostname", "idn-hostname", "ipv4", "ipv6", "uri", "uri-reference", "iri", "iri-reference", "json-pointer", "relative-json-pointer", "regex"}
+	var typeValue, formatValue string
+	if length < 2 {
+		typeValue = strings.TrimSpace(typeV)
+		typeValue = strings.TrimSpace(typeValue[5:len(typeValue)])
+		if typeValue == "integer" || typeValue == "number" || typeValue == "object" || typeValue == "null" || typeValue == "array" || typeValue == "boolean" {
+			anyof = append(anyof, v1beta1.JSONSchemaProps{
+				Type: typeValue,
+			})
+			return anyof, nil
+		}
+		return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printPrimitiveTypeOnlyError)
+	} else if length == 2 {
+		typeValue = strings.TrimSpace(typeV)
+		typeValue = strings.TrimSpace(typeValue[5:len(typeValue)])
+		for _, val := range formatContains {
+			if val == strings.TrimSpace(formatV[7:len(formatV)]) {
+				formatValue = strings.TrimSpace(formatV[7:len(formatV)])
+				break
+			}
+			formatValue = ""
+		}
+		if typeValue == "string" && formatValue != "" {
+			anyof = append(anyof, v1beta1.JSONSchemaProps{
+				Type:   typeValue,
+				Format: formatValue,
+			})
+			return anyof, nil
+		}
+		return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printPrimitiveError)
+	}
+	return []v1beta1.JSONSchemaProps{}, fmt.Errorf(printGeneralAnyOfError)
 }
