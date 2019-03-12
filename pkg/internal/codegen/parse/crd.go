@@ -163,40 +163,34 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	unstructured := types.Name{Name: "Unstructured", Package: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"}
 	rawExtension := types.Name{Name: "RawExtension", Package: "k8s.io/apimachinery/pkg/runtime"}
 	intOrString := types.Name{Name: "IntOrString", Package: "k8s.io/apimachinery/pkg/util/intstr"}
+	// special types first
+	specialTypeProps := v1beta1.JSONSchemaProps{
+		Description: parseDescription(comments),
+	}
+	for _, l := range comments {
+		getValidation(l, &specialTypeProps)
+	}
 	switch t.Name {
 	case time:
-		return v1beta1.JSONSchemaProps{
-			Type:        "string",
-			Format:      "date-time",
-			Description: parseDescription(comments),
-		}, b.getTime()
+		specialTypeProps.Type = "string"
+		specialTypeProps.Format = "date-time"
+		return specialTypeProps, b.getTime()
 	case duration:
-		return v1beta1.JSONSchemaProps{
-			Type: "string",
-			Description: parseDescription(comments),
-		}, b.getDuration()
-	case meta:
-		return v1beta1.JSONSchemaProps{
-			Type:        "object",
-			Description: parseDescription(comments),
-		}, b.objSchema()
-	case unstructured, rawExtension:
-		return v1beta1.JSONSchemaProps{
-			Type:        "object",
-			Description: parseDescription(comments),
-		}, b.objSchema()
+		specialTypeProps.Type = "string"
+		return specialTypeProps, b.getDuration()
+	case meta, unstructured, rawExtension:
+		specialTypeProps.Type = "object"
+		return specialTypeProps, b.objSchema()
 	case intOrString:
-		return v1beta1.JSONSchemaProps{
-			AnyOf: []v1beta1.JSONSchemaProps{
-				{
-					Type: "string",
-				},
-				{
-					Type: "integer",
-				},
+		specialTypeProps.AnyOf = []v1beta1.JSONSchemaProps{
+			{
+				Type: "string",
 			},
-			Description: parseDescription(comments),
-		}, b.objSchema()
+			{
+				Type: "integer",
+			},
+		}
+		return specialTypeProps, b.objSchema()
 	}
 
 	var v v1beta1.JSONSchemaProps
@@ -341,6 +335,11 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 			Allows: true,
 			Schema: &additionalProps}
 	}
+
+	for _, l := range comments {
+		getValidation(l, &props)
+	}
+
 	buff := &bytes.Buffer{}
 	if err := mapTemplate.Execute(buff, mapTempateArgs{Result: result, SkipMapValidation: parseOption.SkipMapValidation}); err != nil {
 		log.Fatalf("%v", err)
@@ -441,6 +440,10 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 		Description: parseDescription(comments),
 	}
 
+	for _, l := range comments {
+		getValidation(l, &props)
+	}
+
 	if strings.HasPrefix(t.Name.String(), "k8s.io/api") {
 		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil, nil, false}); err != nil {
 			log.Fatalf("%v", err)
@@ -449,11 +452,6 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 		m, result, required := b.getMembers(t, found)
 		props.Properties = m
 		props.Required = required
-
-		// Only add field validation for non-inlined fields
-		for _, l := range comments {
-			getValidation(l, &props)
-		}
 
 		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result, required, isRoot}); err != nil {
 			log.Fatalf("%v", err)
