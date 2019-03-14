@@ -114,6 +114,8 @@ Usage:
 	f.StringVar(&g.Domain, "domain", "", "domain of the resources, will try to fetch it from PROJECT file if not specified")
 	f.StringVar(&g.Namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
 	f.BoolVar(&g.SkipMapValidation, "skip-map-validation", true, "if set to true, skip generating OpenAPI validation schema for map type in CRD.")
+	f.StringVar(&g.APIsPath, "apis-path", "pkg/apis", "the path to search for apis relative to the current directory")
+	f.StringVar(&g.APIsPkg, "apis-pkg", "", "package to consider as the project api package")
 
 	return cmd
 }
