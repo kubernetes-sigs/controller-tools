@@ -49,6 +49,10 @@ func Generate(o *Options) error {
 		return fmt.Errorf("failed to parse the input dir: %v", err)
 	}
 
+	if len(o.webhooks) == 0 {
+		return nil
+	}
+
 	objs, err := o.Generate()
 	if err != nil {
 		return err
