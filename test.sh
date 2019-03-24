@@ -111,11 +111,6 @@ header_text "running go vet"
 
 go vet ./pkg/... ./cmd/...
 
-# go get is broken for golint.  re-enable this once it is fixed.
-header_text "running golint"
-
-golint -set_exit_status ./pkg/...
-
 header_text "running golangci-lint"
 
 golangci-lint run --disable-all \
