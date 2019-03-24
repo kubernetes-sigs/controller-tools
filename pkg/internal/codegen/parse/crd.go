@@ -147,6 +147,12 @@ func (b *APIs) getDuration() string {
 }`
 }
 
+func (b *APIs) getQuantity() string {
+	return `v1beta1.JSONSchemaProps{
+    Type:   "string",
+}`
+}
+
 func (b *APIs) objSchema() string {
 	return `v1beta1.JSONSchemaProps{
     Type:   "object",
@@ -159,6 +165,7 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	duration := types.Name{Name: "Duration", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
+	quantity := types.Name{Name: "Quantity", Package: "k8s.io/apimachinery/pkg/api/resource"}
 	meta := types.Name{Name: "ObjectMeta", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	unstructured := types.Name{Name: "Unstructured", Package: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"}
 	rawExtension := types.Name{Name: "RawExtension", Package: "k8s.io/apimachinery/pkg/runtime"}
@@ -178,6 +185,9 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case duration:
 		specialTypeProps.Type = "string"
 		return specialTypeProps, b.getDuration()
+	case quantity:
+		specialTypeProps.Type = "string"
+		return specialTypeProps, b.getQuantity()
 	case meta, unstructured, rawExtension:
 		specialTypeProps.Type = "object"
 		return specialTypeProps, b.objSchema()
