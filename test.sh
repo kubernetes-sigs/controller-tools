@@ -99,7 +99,7 @@ function setup_envs {
 
 header_text "using tools"
 
-which gometalinter.v2
+which golangci-lint
 
 # fetch the testing binaries - e.g. apiserver and etcd
 fetch_kb_tools
@@ -116,10 +116,9 @@ header_text "running golint"
 
 golint -set_exit_status ./pkg/...
 
-header_text "running gometalinter.v2"
+header_text "running golangci-lint"
 
-gometalinter.v2 --disable-all \
-    --deadline 5m \
+golangci-lint run --disable-all \
     --enable=misspell \
     --enable=structcheck \
     --enable=golint \
@@ -134,10 +133,9 @@ gometalinter.v2 --disable-all \
     --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
-    --skip=parse \
+    --enable=gosec \
+    --skip-dirs=parse \
     ./pkg/... ./cmd/...
-# enable this after fixing linting error
-#    --enable=gosec \
 
 header_text "running go test"
 
