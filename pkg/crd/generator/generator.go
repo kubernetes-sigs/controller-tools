@@ -106,9 +106,18 @@ func (c *Generator) Do() error {
 	}
 
 	// Switch working directory to root path.
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 	if err := os.Chdir(c.RootPath); err != nil {
 		return fmt.Errorf("failed switching working dir: %v", err)
 	}
+	defer func() {
+		if err := os.Chdir(wd); err != nil {
+			log.Fatalf("Failed to switch back to original working dir: %v", err)
+		}
+	}()
 
 	if err := b.AddDirRecursive(fmt.Sprintf("%s/%s", c.Repo, c.APIsPath)); err != nil {
 		return fmt.Errorf("failed making a parser: %v", err)
