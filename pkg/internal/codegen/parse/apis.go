@@ -18,7 +18,6 @@ package parse
 
 import (
 	"fmt"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -191,7 +190,7 @@ func parseType(t *types.Type) (*codegen.Struct, []*types.Type) {
 				if strings.HasPrefix(mSubType.Name.Package, "k8s.io/api/") {
 					// Import the package under an alias so it doesn't conflict with other groups
 					// having the same version
-					importAlias := path.Base(path.Dir(mSubType.Name.Package)) + path.Base(mSubType.Name.Package)
+					importAlias := filepath.Base(filepath.Dir(mSubType.Name.Package)) + filepath.Base(mSubType.Name.Package)
 					uImport = fmt.Sprintf("%s \"%s\"", importAlias, mSubType.Name.Package)
 					if hasElem {
 						// Replace the full package with the alias when referring to the type
@@ -222,8 +221,8 @@ func parseType(t *types.Type) (*codegen.Struct, []*types.Type) {
 							name := str[endPkg+1:]
 							prefix := str[:startPkg+1]
 
-							uImportBase := path.Base(pkg)
-							uImportName := path.Base(path.Dir(pkg)) + uImportBase
+							uImportBase := filepath.Base(pkg)
+							uImportName := filepath.Base(filepath.Dir(pkg)) + uImportBase
 							uImport = fmt.Sprintf("%s \"%s\"", uImportName, pkg)
 
 							uType = prefix + uImportName + "." + name
@@ -234,8 +233,8 @@ func parseType(t *types.Type) (*codegen.Struct, []*types.Type) {
 
 							// Come up with the alias the package is imported under
 							// Concatenate with directory package to reduce naming collisions
-							uImportBase := path.Base(pkg)
-							uImportName := path.Base(path.Dir(pkg)) + uImportBase
+							uImportBase := filepath.Base(pkg)
+							uImportName := filepath.Base(filepath.Dir(pkg)) + uImportBase
 
 							// Create the import statement
 							uImport = fmt.Sprintf("%s \"%s\"", uImportName, pkg)
