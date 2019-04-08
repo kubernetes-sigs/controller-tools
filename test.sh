@@ -135,3 +135,21 @@ golangci-lint run --disable-all \
 header_text "running go test"
 
 go test -mod=vendor ./pkg/... ./cmd/... -parallel 4
+
+# ensure that Gopkg.{toml,lock} are up-to-date
+header_text "ensuring that Gopkg.{toml,lock} are up to date..."
+dep ensure -v -no-vendor
+! git status --porcelain | grep -E 'Gopkg.(toml|lock)'
+# it'd be nice to test that the versions matched, but it's hard to test
+# branch dependencies (like kubernetes), which mostly makes it pointless.
+# The below block checks everything else, if later desired:
+# 
+# module_deps=$(GO111MODULE=on go list -m all | sort -u | grep -v 'v0.0.0-')
+# gopkg_deps=$(dep status -f '{{.ProjectRoot}} {{.Revision}} {{.Version}}
+# ' | awk '$3 ~ /^v/ { print $1 " " $3 }' | sort -u)
+# differences=$(diff <(echo "${module_deps}") <(echo "${gopkg_deps}") | awk '/^>/ { print $2 }')
+# if [[ -n "${differences}" ]]; then
+#     echo "different versions of"
+#     echo "${differences}"
+#     exit 1
+# fi

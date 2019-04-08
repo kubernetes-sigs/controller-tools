@@ -2,7 +2,7 @@
 github.com/ghodss/yaml
 # github.com/gobuffalo/envy v1.6.15
 github.com/gobuffalo/envy
-# github.com/gogo/protobuf v1.2.0
+# github.com/gogo/protobuf v1.2.1
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
 # github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
@@ -15,11 +15,11 @@ github.com/joho/godotenv
 github.com/markbates/inflect
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/rogpeppe/go-internal v1.2.1
+# github.com/rogpeppe/go-internal v1.2.2
 github.com/rogpeppe/go-internal/modfile
 github.com/rogpeppe/go-internal/module
 github.com/rogpeppe/go-internal/semver
-# github.com/spf13/afero v1.2.1
+# github.com/spf13/afero v1.2.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
 # github.com/spf13/cobra v0.0.3
