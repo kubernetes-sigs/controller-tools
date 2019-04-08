@@ -30,7 +30,7 @@ import (
 // IsGoSrcPath validate if given path is of path $GOPATH/src.
 func IsGoSrcPath(filePath string) bool {
 	for _, gopath := range getGoPaths() {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if filePath == goSrc {
 			return true
 		}
@@ -42,7 +42,7 @@ func IsGoSrcPath(filePath string) bool {
 // IsUnderGoSrcPath validate if given path is under path $GOPATH/src.
 func IsUnderGoSrcPath(filePath string) bool {
 	for _, gopath := range getGoPaths() {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if strings.HasPrefix(filepath.Dir(filePath), goSrc) {
 			return true
 		}
@@ -57,7 +57,7 @@ func IsUnderGoSrcPath(filePath string) bool {
 func DirToGoPkg(dir string) (pkg string, err error) {
 	goPaths := getGoPaths()
 	for _, gopath := range goPaths {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if !strings.HasPrefix(dir, goSrc) {
 			continue
 		}
