@@ -71,16 +71,21 @@ func (c *Generator) ValidateAndInitFields() error {
 		}
 	}
 
-	// Validate PROJECT file
-	if !crdutil.PathHasProjectFile(c.RootPath) {
-		return fmt.Errorf("PROJECT file missing in dir %s", c.RootPath)
+	// If Repo is not explicitly specified,
+	// try to search for PROJECT file as a basis.
+	if c.Repo == "" {
+		if !crdutil.PathHasProjectFile(c.RootPath) {
+			return fmt.Errorf("PROJECT file missing in dir %s", c.RootPath)
+		}
+		c.Repo = crdutil.GetRepoFromProject(c.RootPath)
 	}
-
-	c.Repo = crdutil.GetRepoFromProject(c.RootPath)
 
 	// If Domain is not explicitly specified,
 	// try to search for PROJECT file as a basis.
 	if len(c.Domain) == 0 {
+		if !crdutil.PathHasProjectFile(c.RootPath) {
+			return fmt.Errorf("PROJECT file missing in dir %s", c.RootPath)
+		}
 		c.Domain = crdutil.GetDomainFromProject(c.RootPath)
 	}
 
