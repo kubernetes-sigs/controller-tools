@@ -191,7 +191,7 @@ func (c *Generator) getCrds(p *parse.APIs) map[string][]byte {
 // belongsToAPIsPkg returns true if type t is defined under pkg/apis pkg of
 // current project.
 func (c *Generator) belongsToAPIsPkg(t *types.Type) bool {
-	return strings.HasPrefix(t.Name.Package, filepath.ToSlash(c.apisPkg))
+	return strings.HasPrefix(t.Name.Package, c.apisPkg)
 }
 
 func (c *Generator) setAPIsPkg() error {
