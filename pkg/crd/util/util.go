@@ -22,6 +22,7 @@ import (
 	gobuild "go/build"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -79,7 +80,7 @@ func getGoPaths() []string {
 
 // PathHasProjectFile validate if PROJECT file exists under the path.
 func PathHasProjectFile(filePath string) bool {
-	if _, err := os.Stat(filepath.Join(filePath, "PROJECT")); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(filePath, "PROJECT")); os.IsNotExist(err) {
 		return false
 	}
 
@@ -100,7 +101,7 @@ func GetRepoFromProject(rootPath string) string {
 func GetFieldFromProject(fieldKey string, rootPath string) string {
 	var fieldVal string
 
-	file, err := os.Open(filepath.Join(rootPath, "PROJECT"))
+	file, err := os.Open(path.Join(rootPath, "PROJECT"))
 	if err != nil {
 		log.Fatal(err)
 	}

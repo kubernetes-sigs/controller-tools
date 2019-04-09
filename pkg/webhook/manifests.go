@@ -19,7 +19,7 @@ package webhook
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 	"text/template"
 
@@ -121,7 +121,7 @@ spec:
 	if err := temp.Execute(buf, p); err != nil {
 		return err
 	}
-	return afero.WriteFile(o.outFs, filepath.Join(o.PatchOutputDir, "manager_patch.yaml"), buf.Bytes(), 0644)
+	return afero.WriteFile(o.outFs, path.Join(o.PatchOutputDir, "manager_patch.yaml"), buf.Bytes(), 0644)
 }
 
 func toYAML(m map[string]string) (string, error) {
