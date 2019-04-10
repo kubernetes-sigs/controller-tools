@@ -267,6 +267,9 @@ var primitiveTemplate = template.Must(template.New("map-template").Parse(
     {{ if .MinLength -}}
     MinLength: getInt({{ .MinLength }}),
     {{ end -}}
+    {{ if .Title -}}
+    Title: "{{ .Title }}",
+    {{ end -}}
 }`))
 
 // parsePrimitiveValidation returns a JSONSchemaProps object and its
@@ -316,7 +319,8 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 	return props, buff.String()
 }
 
-type mapTempateArgs struct {
+type mapTemplateArgs struct {
+	v1beta1.JSONSchemaProps
 	Result            string
 	SkipMapValidation bool
 }
@@ -324,6 +328,9 @@ type mapTempateArgs struct {
 var mapTemplate = template.Must(template.New("map-template").Parse(
 	`v1beta1.JSONSchemaProps{
     Type:                 "object",
+    {{ if .Title -}}
+    Title: "{{ .Title }}",
+    {{ end -}}
     {{if not .SkipMapValidation}}AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
         Allows: true,
         Schema: &{{.Result}},
@@ -335,6 +342,7 @@ var mapTemplate = template.Must(template.New("map-template").Parse(
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	additionalProps.Description = ""
+	additionalProps.Title = ""
 	props := v1beta1.JSONSchemaProps{
 		Type:        "object",
 		Description: parseDescription(comments),
@@ -351,7 +359,7 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 	}
 
 	buff := &bytes.Buffer{}
-	if err := mapTemplate.Execute(buff, mapTempateArgs{Result: result, SkipMapValidation: parseOption.SkipMapValidation}); err != nil {
+	if err := mapTemplate.Execute(buff, mapTemplateArgs{props, result, parseOption.SkipMapValidation}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	return props, buff.String()
@@ -360,6 +368,9 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 var arrayTemplate = template.Must(template.New("array-template").Parse(
 	`v1beta1.JSONSchemaProps{
     Type:                 "{{.Type}}",
+    {{ if .Title -}}
+    Title: "{{ .Title }}",
+    {{ end -}}
     {{ if .Format -}}
     Format: "{{.Format}}",
     {{ end -}}
@@ -389,6 +400,7 @@ type arrayTemplateArgs struct {
 func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments, false)
 	items.Description = ""
+	items.Title = ""
 	props := v1beta1.JSONSchemaProps{
 		Type:        "array",
 		Items:       &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
@@ -426,9 +438,12 @@ type objectTemplateArgs struct {
 
 var objectTemplate = template.Must(template.New("object-template").Parse(
 	`v1beta1.JSONSchemaProps{
-	{{ if not .IsRoot -}}
+    {{ if not .IsRoot -}}
     Type:                 "object",
-	{{ end -}}
+    {{ end -}}
+    {{ if .Title -}}
+    Title: "{{ .Title }}",
+    {{ end -}}
     Properties: map[string]v1beta1.JSONSchemaProps{
         {{ range $k, $v := .Fields -}}
         "{{ $k }}": {{ $v }},
@@ -436,7 +451,7 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
     },
     {{if .Required}}Required: []string{
         {{ range $k, $v := .Required -}}
-        "{{ $v }}", 
+        "{{ $v }}",
         {{ end -}}
     },{{ end -}}
 }`))
@@ -481,35 +496,30 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 	parts := strings.Split(c, "=")
 	if len(parts) != 2 {
 		log.Fatalf("Expected +kubebuilder:validation:<key>=<value> actual: %s", comment)
-		return
 	}
 	switch parts[0] {
 	case "Maximum":
 		f, err := strconv.ParseFloat(parts[1], 64)
 		if err != nil {
 			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
 		}
 		props.Maximum = &f
 	case "ExclusiveMaximum":
 		b, err := strconv.ParseBool(parts[1])
 		if err != nil {
 			log.Fatalf("Could not parse bool from %s: %v", comment, err)
-			return
 		}
 		props.ExclusiveMaximum = b
 	case "Minimum":
 		f, err := strconv.ParseFloat(parts[1], 64)
 		if err != nil {
 			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
 		}
 		props.Minimum = &f
 	case "ExclusiveMinimum":
 		b, err := strconv.ParseBool(parts[1])
 		if err != nil {
 			log.Fatalf("Could not parse bool from %s: %v", comment, err)
-			return
 		}
 		props.ExclusiveMinimum = b
 	case "MaxLength":
@@ -517,7 +527,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		v := int64(i)
 		if err != nil {
 			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
 		}
 		props.MaxLength = &v
 	case "MinLength":
@@ -525,7 +534,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		v := int64(i)
 		if err != nil {
 			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
 		}
 		props.MinLength = &v
 	case "Pattern":
@@ -536,7 +544,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 			v := int64(i)
 			if err != nil {
 				log.Fatalf("Could not parse int from %s: %v", comment, err)
-				return
 			}
 			props.MaxItems = &v
 		}
@@ -546,7 +553,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 			v := int64(i)
 			if err != nil {
 				log.Fatalf("Could not parse int from %s: %v", comment, err)
-				return
 			}
 			props.MinItems = &v
 		}
@@ -555,7 +561,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 			b, err := strconv.ParseBool(parts[1])
 			if err != nil {
 				log.Fatalf("Could not parse bool from %s: %v", comment, err)
-				return
 			}
 			props.UniqueItems = b
 		}
@@ -563,7 +568,6 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		f, err := strconv.ParseFloat(parts[1], 64)
 		if err != nil {
 			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
 		}
 		props.MultipleOf = &f
 	case "Enum":
@@ -577,6 +581,20 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		}
 	case "Format":
 		props.Format = parts[1]
+	case "Title":
+		title := strings.TrimSpace(strings.Join(parts[1:], " "))
+		if len(title) > 2 {
+			// Remove beginning and ending quote from non-empty strings.
+			if title[0] == '"' {
+				title = title[1:]
+			}
+			if title[len(title)-1] == '"' {
+				title = title[:len(title)-1]
+			}
+			props.Title = strings.TrimSpace(title)
+		} else {
+			log.Fatalf(`'%s' is not a valid title`, title)
+		}
 	default:
 		log.Fatalf("Unsupport validation: %s", comment)
 	}

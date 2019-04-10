@@ -47,6 +47,7 @@ type ToySpec struct {
 	Name string `json:"name,omitempty"`
 
 	// This is a comment on an array field.
+	// +kubebuilder:validation:Title="A List of Knights"
 	// +kubebuilder:validation:MaxItems=500
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false

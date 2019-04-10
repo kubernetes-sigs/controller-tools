@@ -89,6 +89,7 @@ spec:
                 type: string
               maxItems: 500
               minItems: 1
+              title: A List of Knights
               type: array
             location:
               additionalProperties:
