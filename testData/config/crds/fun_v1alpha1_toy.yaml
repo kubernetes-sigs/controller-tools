@@ -89,16 +89,18 @@ spec:
                 type: string
               maxItems: 500
               minItems: 1
-              title: A List of Knights
+              title: A \"List\" "of" Knights
               type: array
             location:
               additionalProperties:
                 type: string
               description: This is a comment on a map field.
+              title: A Map
               type: object
             name:
               maxLength: 15
               minLength: 1
+              title: A primitive Name
               type: string
             power:
               exclusiveMinimum: true
@@ -132,6 +134,7 @@ spec:
               type: object
             template:
               description: This is a comment on an object field.
+              title: An Object
               type: object
             winner:
               description: This is a comment on a boolean field.

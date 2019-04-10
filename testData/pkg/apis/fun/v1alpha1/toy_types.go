@@ -44,10 +44,11 @@ type ToySpec struct {
 
 	// +kubebuilder:validation:MaxLength=15
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Title="A primitive Name"
 	Name string `json:"name,omitempty"`
 
 	// This is a comment on an array field.
-	// +kubebuilder:validation:Title="A List of Knights"
+	// +kubebuilder:validation:Title="A \"List\" "of" Knights"
 	// +kubebuilder:validation:MaxItems=500
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
@@ -68,6 +69,7 @@ type ToySpec struct {
 	Description string `json:"description"`
 
 	// This is a comment on an object field.
+	// +kubebuilder:validation:Title="An Object"
 	Template v1.PodTemplateSpec `json:"template"`
 
 	Claim v1.PersistentVolumeClaim `json:"claim,omitempty"`
@@ -84,6 +86,7 @@ type ToySpec struct {
 	S3Log ToyS3LogConfig `json:"s3Log"`
 
 	// This is a comment on a map field.
+	// +kubebuilder:validation:Title="A Map"
 	Location map[string]string `json:"location"`
 
 	// This is an IPv4 address.
