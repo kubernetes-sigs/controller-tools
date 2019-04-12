@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"fmt"
 	"go/build"
 	"io/ioutil"
 	"log"
@@ -26,36 +25,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-type MultiVersionOptions struct {
-	// InputPackage is the path of the input package that contains source files.
-	InputPackage string
-	// Types is a list of target types.
-	Types []string
+type listDirsFn func(pkgPath string) (dirs []string, e error)
 
-	// fs is provided FS. We can use afero.NewMemFs() for testing.
-	fs afero.Fs
-}
-
-type MultiVersionGenerator struct {
-	MultiVersionOptions
-	WriterOptions
-}
-
-func (op *MultiVersionGenerator) Generate() {
-	if len(op.InputPackage) == 0 || len(op.OutputPath) == 0 {
-		log.Panic("Both input path and output paths need to be set")
-	}
-
-	if op.fs == nil {
-		op.fs = afero.NewOsFs()
-	}
-
-	op.crdSpecs = op.parse()
-
-	op.write(true, op.Types)
-}
-
-func listDirs(path string) ([]string, error) {
+var defaultListDirs = func(path string) ([]string, error) {
 	pkg, err := build.Import(path, "", 0)
 	if err != nil {
 		return nil, err
@@ -73,17 +45,50 @@ func listDirs(path string) ([]string, error) {
 	return dirs, nil
 }
 
+type MultiVersionOptions struct {
+	// InputPackage is the path of the input package that contains source files.
+	InputPackage string
+	// Types is a list of target types.
+	Types []string
+
+	// fs is provided FS. We can use afero.NewMemFs() for testing.
+	fs          afero.Fs
+	listDirsFn  listDirsFn
+	listFilesFn listFilesFn
+}
+
+type MultiVersionGenerator struct {
+	MultiVersionOptions
+	WriterOptions
+}
+
+func (op *MultiVersionGenerator) Generate() {
+	if len(op.InputPackage) == 0 || len(op.OutputPath) == 0 {
+		log.Panic("Both input path and output paths need to be set")
+	}
+
+	if op.fs == nil {
+		op.fs = afero.NewOsFs()
+	}
+	if op.listDirsFn == nil {
+		op.listDirsFn = defaultListDirs
+	}
+
+	op.crdSpecs = op.parse()
+
+	op.write(true, op.Types)
+}
+
 func (op *MultiVersionOptions) parse() crdSpecByKind {
 	startingPointMap := make(map[string]bool)
 	for i := range op.Types {
 		startingPointMap[op.Types[i]] = true
 	}
 
-	dirs, err := listDirs(op.InputPackage)
+	dirs, err := op.listDirsFn(op.InputPackage)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(dirs)
 
 	crdSpecs := crdSpecByKind{}
 	for _, dir := range dirs {
@@ -92,6 +97,9 @@ func (op *MultiVersionOptions) parse() crdSpecByKind {
 			InputPackage: filepath.Join(op.InputPackage, dir),
 			Flatten:      false,
 			fs:           op.fs,
+		}
+		if op.listFilesFn != nil {
+			singleVer.listFilesFn = op.listFilesFn
 		}
 		_, crdSingleVersionSpecs := singleVer.parse()
 		// merge crd versions
