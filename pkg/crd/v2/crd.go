@@ -162,16 +162,6 @@ func hasPrintColumn(comments []string) bool {
 	return false
 }
 
-// IsInformer returns true if t has a +informers or +kubebuilder:informers tag
-func IsInformer(comments []string) bool {
-	for _, c := range comments {
-		if strings.Contains(c, "+informers") || strings.Contains(c, "+kubebuilder:informers") {
-			return true
-		}
-	}
-	return false
-}
-
 // IsAPISubresource returns true if t has a +subresource-request comment tag
 func IsAPISubresource(comments []string) bool {
 	for _, c := range comments {

@@ -19,166 +19,283 @@ package v2
 import (
 	"fmt"
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"log"
-	"strconv"
+	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
+
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// filterDescription parse comments above each field in the type definition.
-func filterDescription(res string) string {
-	var temp strings.Builder
-	var desc string
-	for _, comment := range strings.Split(res, "\n") {
-		comment = strings.Trim(comment, " ")
-		if !(strings.Contains(comment, "+kubebuilder") || strings.HasPrefix(comment, "+")) {
-			temp.WriteString(comment)
-			temp.WriteString(" ")
-			desc = strings.TrimRight(temp.String(), " ")
+func (pr *prsr) parseTypesInFile(filePath string, curPkgPrefix string, skipCRD bool) (
+	v1beta1.JSONSchemaDefinitions, ExternalReferences, crdSpecByKind) {
+	// Open the input go file and parse the Abstract Syntax Tree
+	fset := token.NewFileSet()
+	srcFile, err := pr.fs.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	node, err := parser.ParseFile(fset, filePath, srcFile, parser.ParseComments)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	definitions := make(v1beta1.JSONSchemaDefinitions)
+	externalRefs := make(ExternalReferences)
+
+	// Parse import statements to get "alias: pkgName" mapping
+	importPaths := make(map[string]string)
+	for _, importItem := range node.Imports {
+		pathValue := strings.Trim(importItem.Path.Value, "\"")
+		if importItem.Name != nil {
+			// Process aliased import
+			importPaths[importItem.Name.Name] = pathValue
+		} else if strings.Contains(pathValue, "/") {
+			// Process unnamed imports with "/"
+			segments := strings.Split(pathValue, "/")
+			importPaths[segments[len(segments)-1]] = pathValue
+		} else {
+			importPaths[pathValue] = pathValue
 		}
 	}
-	return desc
+
+	// Create an ast.CommentMap from the ast.File's comments.
+	// This helps keeping the association between comments and AST nodes.
+	// TODO: if necessary, support our own rules of comments ownership, golang's
+	// builtin rules are listed at https://golang.org/pkg/go/ast/#NewCommentMap.
+	// It seems it can meet our need at the moment.
+	cmap := ast.NewCommentMap(fset, node, node.Comments)
+
+	f := &file{
+		pkgPrefix:   curPkgPrefix,
+		importPaths: importPaths,
+		commentMap:  cmap,
+	}
+
+	crdSpecs := crdSpecByKind{}
+	for i := range node.Decls {
+		declaration, ok := node.Decls[i].(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+
+		// Skip it if it's not type declaration.
+		if declaration.Tok != token.TYPE {
+			continue
+		}
+
+		// We support the following format
+		// // TreeNode doc
+		// type TreeNode struct {
+		//   left, right *TreeNode
+		//   value *Comparable
+		// }
+		// but not
+		// type (
+		//   // Point doc
+		//   Point struct{ x, y float64 }
+		//   // Point2 doc
+		//   Point2 struct{ x, y int }
+		// )
+		// since the latter format is rarely used in k8s.
+		if len(declaration.Specs) != 1 {
+			continue
+		}
+		ts := declaration.Specs[0]
+		typeSpec, ok := ts.(*ast.TypeSpec)
+		if !ok {
+			fmt.Printf("spec type is: %T\n", ts)
+			continue
+		}
+
+		typeName := typeSpec.Name.Name
+		typeDescription := declaration.Doc.Text()
+
+		fmt.Println("Generating schema definition for type:", typeName)
+		def, refTypes := f.exprToSchema(typeSpec.Type, typeDescription, []*ast.CommentGroup{})
+		definitions[getFullName(typeName, curPkgPrefix)] = *def
+		externalRefs[getFullName(typeName, curPkgPrefix)] = refTypes
+
+		var comments []string
+		for _, c := range f.commentMap[node.Decls[i]] {
+			comments = append(comments, strings.Split(c.Text(), "\n")...)
+		}
+
+		if !skipCRD {
+			crdSpec := parseCRDs(comments)
+			if crdSpec != nil {
+				crdSpec.Names.Kind = typeName
+				gk := schema.GroupKind{Kind: typeName}
+				crdSpecs[gk] = crdSpec
+				// TODO: validate the CRD spec for one version.
+			}
+		}
+	}
+
+	if !skipCRD {
+		// process top-level (not tied to a struct field) markers.
+		// e.g. group name marker +groupName=<group-name>
+		pr.processTopLevelMarkers(node.Comments)
+	}
+
+	// Overwrite import aliases with actual package names
+	for typeName := range externalRefs {
+		for i, ref := range externalRefs[typeName] {
+			externalRefs[typeName][i].PackageName = importPaths[ref.PackageName]
+		}
+	}
+
+	return definitions, externalRefs, crdSpecs
 }
 
-func processMarkersInComments(def *v1beta1.JSONSchemaProps, commentGroups ...*ast.CommentGroup) {
-	for _, commentGroup := range commentGroups {
-		for _, comment := range strings.Split(commentGroup.Text(), "\n") {
-			getValidation(comment, def)
+// processTopLevelMarkers process top-level (not tied to a struct field) markers.
+// e.g. group name marker +groupName=<group-name>
+func (pr *prsr) processTopLevelMarkers(comments []*ast.CommentGroup) {
+	for _, c := range comments {
+		commentLines := strings.Split(c.Text(), "\n")
+		cs := Comments(commentLines)
+		if cs.hasTag("groupName") {
+			group := cs.getTag("groupName", "=")
+			if len(group) == 0 {
+				log.Fatalf("can't use an empty name for the +groupName marker")
+			}
+			if pr.generatorOptions != nil && len(pr.generatorOptions.group) > 0 && group != pr.generatorOptions.group {
+				log.Fatalf("can't have different group names %q and %q one package", pr.generatorOptions.group, group)
+			}
+			if pr.generatorOptions == nil {
+				pr.generatorOptions = &toplevelGeneratorOptions{group: group}
+			} else {
+				pr.generatorOptions.group = group
+			}
+		}
+
+		if cs.hasTag("versionName") {
+			version := cs.getTag("versionName", "=")
+			if len(version) == 0 {
+				log.Fatalf("can't use an empty name for the +versionName marker")
+			}
+			if pr.generatorOptions != nil && len(pr.generatorOptions.version) > 0 && version != pr.generatorOptions.version {
+				log.Fatalf("can't have different version names %q and %q one package", pr.generatorOptions.version, version)
+			}
+			if pr.generatorOptions == nil {
+				pr.generatorOptions = &toplevelGeneratorOptions{version: version}
+			} else {
+				pr.generatorOptions.version = version
+			}
 		}
 	}
 }
 
-// This method is ported from controller-tools, it can removed when things are moved back.
-// getValidation parses the validation tags from the comment and sets the
-// validation rules on the given JSONSchemaProps.
-// TODO: reduce the cyclomatic complexity and remove next line
-//// nolint: gocyclo
-func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
-	const arrayType = "array"
-	comment = strings.TrimLeft(comment, " ")
-	if !strings.HasPrefix(comment, "+kubebuilder:validation:") {
-		return
+func (pr *prsr) parseTypesInPackage(pkgName string, referencedTypes map[string]bool, rootPackage, skipCRD bool) (
+	v1beta1.JSONSchemaDefinitions, crdSpecByKind) {
+	pkgDefs := make(v1beta1.JSONSchemaDefinitions)
+	pkgExternalTypes := make(ExternalReferences)
+	pkgCRDSpecs := make(crdSpecByKind)
+
+	pkgDir, listOfFiles, err := pr.listFilesFn(pkgName)
+	if err != nil {
+		log.Fatal(err)
 	}
-	c := strings.Replace(comment, "+kubebuilder:validation:", "", -1)
-	parts := strings.Split(c, "=")
-	if len(parts) != 2 {
-		log.Fatalf("Expected +kubebuilder:validation:<key>=<value> actual: %s", comment)
-		return
+
+	pkgPrefix := strings.Replace(pkgName, "/", ".", -1)
+	if rootPackage {
+		pkgPrefix = ""
 	}
-	switch parts[0] {
-	case "Maximum":
-		f, err := strconv.ParseFloat(parts[1], 64)
-		if err != nil {
-			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
-		}
-		props.Maximum = &f
-	case "ExclusiveMaximum":
-		b, err := strconv.ParseBool(parts[1])
-		if err != nil {
-			log.Fatalf("Could not parse bool from %s: %v", comment, err)
-			return
-		}
-		props.ExclusiveMaximum = b
-	case "Minimum":
-		f, err := strconv.ParseFloat(parts[1], 64)
-		if err != nil {
-			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
-		}
-		props.Minimum = &f
-	case "ExclusiveMinimum":
-		b, err := strconv.ParseBool(parts[1])
-		if err != nil {
-			log.Fatalf("Could not parse bool from %s: %v", comment, err)
-			return
-		}
-		props.ExclusiveMinimum = b
-	case "MaxLength":
-		i, err := strconv.Atoi(parts[1])
-		v := int64(i)
-		if err != nil {
-			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
-		}
-		props.MaxLength = &v
-	case "MinLength":
-		i, err := strconv.Atoi(parts[1])
-		v := int64(i)
-		if err != nil {
-			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
-		}
-		props.MinLength = &v
-	case "Pattern":
-		props.Pattern = parts[1]
-	case "MaxItems":
-		if props.Type == arrayType {
-			i, err := strconv.Atoi(parts[1])
-			v := int64(i)
-			if err != nil {
-				log.Fatalf("Could not parse int from %s: %v", comment, err)
-				return
-			}
-			props.MaxItems = &v
-		}
-	case "MinItems":
-		if props.Type == arrayType {
-			i, err := strconv.Atoi(parts[1])
-			v := int64(i)
-			if err != nil {
-				log.Fatalf("Could not parse int from %s: %v", comment, err)
-				return
-			}
-			props.MinItems = &v
-		}
-	case "UniqueItems":
-		if props.Type == arrayType {
-			b, err := strconv.ParseBool(parts[1])
-			if err != nil {
-				log.Fatalf("Could not parse bool from %s: %v", comment, err)
-				return
-			}
-			props.UniqueItems = b
-		}
-	case "MultipleOf":
-		f, err := strconv.ParseFloat(parts[1], 64)
-		if err != nil {
-			log.Fatalf("Could not parse float from %s: %v", comment, err)
-			return
-		}
-		props.MultipleOf = &f
-	case "Enum":
-		if props.Type != arrayType {
-			value := strings.Split(parts[1], ",")
-			enums := []v1beta1.JSON{}
-			for _, s := range value {
-				checkType(props, s, &enums)
-			}
-			props.Enum = enums
-		}
-	case "Format":
-		props.Format = parts[1]
-	default:
-		log.Fatalf("Unsupport validation: %s", comment)
+	fmt.Println("pkgPrefix=", pkgPrefix)
+	for _, fileName := range listOfFiles {
+		fmt.Println("Processing file ", fileName)
+		fileDefs, fileExternalRefs, fileCRDSpecs := pr.parseTypesInFile(filepath.Join(pkgDir, fileName), pkgPrefix, skipCRD)
+		mergeDefs(pkgDefs, fileDefs)
+		mergeExternalRefs(pkgExternalTypes, fileExternalRefs)
+		mergeCRDSpecs(pkgCRDSpecs, fileCRDSpecs)
 	}
+
+	// Add pkg prefix to referencedTypes
+	newReferencedTypes := make(map[string]bool)
+	for key := range referencedTypes {
+		altKey := getFullName(key, pkgPrefix)
+		newReferencedTypes[altKey] = referencedTypes[key]
+	}
+	referencedTypes = newReferencedTypes
+
+	fmt.Println("referencedTypes")
+	debugPrint(referencedTypes)
+
+	allReachableTypes := getReachableTypes(referencedTypes, pkgDefs)
+	for key := range pkgDefs {
+		if _, exists := allReachableTypes[key]; !exists {
+			delete(pkgDefs, key)
+			delete(pkgExternalTypes, key)
+		}
+	}
+	fmt.Println("allReachableTypes")
+	debugPrint(allReachableTypes)
+	fmt.Println("pkgDefs")
+	debugPrint(pkgDefs)
+	fmt.Println("pkgExternalTypes")
+	debugPrint(pkgExternalTypes)
+
+	uniquePkgTypeRefs := make(map[string]map[string]bool)
+	for _, item := range pkgExternalTypes {
+		for _, typeRef := range item {
+			if _, ok := uniquePkgTypeRefs[typeRef.PackageName]; !ok {
+				uniquePkgTypeRefs[typeRef.PackageName] = make(map[string]bool)
+			}
+			uniquePkgTypeRefs[typeRef.PackageName][typeRef.TypeName] = true
+		}
+	}
+
+	for childPkgName := range uniquePkgTypeRefs {
+		childTypes := uniquePkgTypeRefs[childPkgName]
+		childPkgPr := prsr{fs: pr.fs}
+		childDefs, _ := childPkgPr.parseTypesInPackage(childPkgName, childTypes, false, true)
+		mergeDefs(pkgDefs, childDefs)
+	}
+
+	return pkgDefs, pkgCRDSpecs
 }
 
-// check type of enum element value to match type of field
-func checkType(props *v1beta1.JSONSchemaProps, s string, enums *[]v1beta1.JSON) {
-	switch props.Type {
-	case "integer":
-		if _, err := strconv.ParseInt(s, 0, 64); err != nil {
-			log.Fatalf("Invalid integer value [%v] for a field of integer type", s)
+type toplevelGeneratorOptions struct {
+	group   string
+	version string
+}
+
+type prsr struct {
+	generatorOptions *toplevelGeneratorOptions
+
+	listFilesFn listFilesFn
+	fs          afero.Fs
+}
+
+func (pr *prsr) linkCRDSpec(defs v1beta1.JSONSchemaDefinitions, crdSpecs crdSpecByKind) crdSpecByKind {
+	rtCRDSpecs := crdSpecByKind{}
+	for gk := range crdSpecs {
+		if pr.generatorOptions != nil {
+			crdSpecs[gk].Group = pr.generatorOptions.group
+			rtCRDSpecs[schema.GroupKind{Group: pr.generatorOptions.group, Kind: gk.Kind}] = crdSpecs[gk]
+		} else {
+			rtCRDSpecs[gk] = crdSpecs[gk]
 		}
-		*enums = append(*enums, v1beta1.JSON{Raw: []byte(fmt.Sprintf("%v", s))})
-	case "float", "number":
-		if _, err := strconv.ParseFloat(s, 64); err != nil {
-			log.Fatalf("Invalid float value [%v] for a field of float type", s)
+
+		if len(crdSpecs[gk].Versions) == 0 {
+			log.Printf("no version for CRD %q", gk)
+			continue
 		}
-		*enums = append(*enums, v1beta1.JSON{Raw: []byte(fmt.Sprintf("%v", s))})
-	case "string":
-		*enums = append(*enums, v1beta1.JSON{Raw: []byte(`"` + s + `"`)})
+		if len(crdSpecs[gk].Versions) > 1 {
+			log.Fatalf("the number of versions in one package is more than 1")
+		}
+		def, ok := defs[gk.Kind]
+		if !ok {
+			log.Printf("can't get json shchema for %q", gk)
+			continue
+		}
+		crdSpecs[gk].Versions[0].Schema = &v1beta1.CustomResourceValidation{
+			OpenAPIV3Schema: &def,
+		}
 	}
+	return rtCRDSpecs
 }
