@@ -167,7 +167,7 @@ func (pr *prsr) processTopLevelMarkers(comments []*ast.CommentGroup) {
 				log.Fatalf("can't have different group names %q and %q one package", pr.generatorOptions.group, group)
 			}
 			if pr.generatorOptions == nil {
-				pr.generatorOptions = &toplevelGeneratorOptions{group: group}
+				pr.generatorOptions = &pkglevelGeneratorOptions{group: group}
 			} else {
 				pr.generatorOptions.group = group
 			}
@@ -182,7 +182,7 @@ func (pr *prsr) processTopLevelMarkers(comments []*ast.CommentGroup) {
 				log.Fatalf("can't have different version names %q and %q one package", pr.generatorOptions.version, version)
 			}
 			if pr.generatorOptions == nil {
-				pr.generatorOptions = &toplevelGeneratorOptions{version: version}
+				pr.generatorOptions = &pkglevelGeneratorOptions{version: version}
 			} else {
 				pr.generatorOptions.version = version
 			}
@@ -256,45 +256,32 @@ func (pr *prsr) parseTypesInPackage(pkgName string, referencedTypes map[string]b
 		mergeDefs(pkgDefs, childDefs)
 	}
 
-	return pkgDefs, pkgCRDSpecs
+	return pkgDefs, pr.fanoutPkgLevelOptions(pkgCRDSpecs)
 }
 
-type toplevelGeneratorOptions struct {
+type pkglevelGeneratorOptions struct {
 	group   string
 	version string
 }
 
 type prsr struct {
-	generatorOptions *toplevelGeneratorOptions
+	generatorOptions *pkglevelGeneratorOptions
 
 	listFilesFn listFilesFn
 	fs          afero.Fs
 }
 
-func (pr *prsr) linkCRDSpec(defs v1beta1.JSONSchemaDefinitions, crdSpecs crdSpecByKind) crdSpecByKind {
+func (pr *prsr) fanoutPkgLevelOptions(crdSpecs crdSpecByKind) crdSpecByKind {
 	rtCRDSpecs := crdSpecByKind{}
 	for gk := range crdSpecs {
 		if pr.generatorOptions != nil {
 			crdSpecs[gk].Group = pr.generatorOptions.group
+			if len(crdSpecs[gk].Versions) == 1 {
+				crdSpecs[gk].Versions[0].Name = pr.generatorOptions.version
+			}
 			rtCRDSpecs[schema.GroupKind{Group: pr.generatorOptions.group, Kind: gk.Kind}] = crdSpecs[gk]
 		} else {
 			rtCRDSpecs[gk] = crdSpecs[gk]
-		}
-
-		if len(crdSpecs[gk].Versions) == 0 {
-			log.Printf("no version for CRD %q", gk)
-			continue
-		}
-		if len(crdSpecs[gk].Versions) > 1 {
-			log.Fatalf("the number of versions in one package is more than 1")
-		}
-		def, ok := defs[gk.Kind]
-		if !ok {
-			log.Printf("can't get json shchema for %q", gk)
-			continue
-		}
-		crdSpecs[gk].Versions[0].Schema = &v1beta1.CustomResourceValidation{
-			OpenAPIV3Schema: &def,
 		}
 	}
 	return rtCRDSpecs
