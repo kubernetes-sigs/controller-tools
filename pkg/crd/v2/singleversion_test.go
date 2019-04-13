@@ -20,12 +20,11 @@ import (
 	"reflect"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"github.com/ghodss/yaml"
 	"github.com/spf13/afero"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type singleVersionTestcase struct {
@@ -71,6 +70,74 @@ type Toy struct {
   - replicas
   type: object
 `),
+		},
+		{
+			inputPackage: "github.com/myorg/myapi",
+			types:        []string{"Toy"},
+			flatten:      false,
+			listFilesFn: func(pkgPath string) (s string, strings []string, e error) {
+				return "github.com/myorg/myapi", []string{"types.go"}, nil
+			},
+			inputFiles: map[string][]byte{
+				"github.com/myorg/myapi/types.go": []byte(`
+package myapi
+
+// +groupName=foo.bar.com
+// +versionName=v1
+
+// +kubebuilder:resource:path=toys,shortName=to;ty
+// +kubebuilder:singular=toy
+
+// Toy is a toy struct
+type Toy struct {
+	// +kubebuilder:validation:Maximum=90
+	// +kubebuilder:validation:Minimum=1
+
+	// Replicas is a number
+	Replicas int32 ` + "`" + `json:"replicas"` + "`" + `
+}
+`),
+			},
+			expectedDefs: []byte(`Toy:
+  description: Toy is a toy struct
+  properties:
+    replicas:
+      description: Replicas is a number
+      maximum: 90
+      minimum: 1
+      type: integer
+  required:
+  - replicas
+  type: object
+`),
+			expectedCrdSpecs: map[schema.GroupKind][]byte{
+				schema.GroupKind{Group: "foo.bar.com", Kind: "Toy"}: []byte(`group: foo.bar.com
+names:
+  kind: Toy
+  plural: toys
+  shortNames:
+  - to
+  - ty
+  singular: toy
+scope: Namespaced
+versions:
+- name: v1
+  schema:
+    openAPIV3Schema:
+      description: Toy is a toy struct
+      properties:
+        replicas:
+          description: Replicas is a number
+          maximum: 90
+          minimum: 1
+          type: integer
+      required:
+      - replicas
+      type: object
+  served: true
+  storage: false
+`),
+			},
 		},
 	}
 	for _, tc := range testcases {
@@ -118,8 +185,8 @@ type Toy struct {
 				expectedSpecsByKind[gk] = &spec
 			}
 
-			if !reflect.DeepEqual(crdSpecs, expectedSpecsByKind) {
-				t.Errorf("expected: %s, but got: %s", expectedSpecsByKind, crdSpecs)
+			if !reflect.DeepEqual(crdSpecs, crdSpecByKind(expectedSpecsByKind)) {
+				t.Errorf("expected:\n%+v,\nbut got:\n%+v\n", expectedSpecsByKind, crdSpecs)
 				continue
 			}
 		}

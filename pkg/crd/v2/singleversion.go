@@ -85,7 +85,8 @@ func (op *SingleVersionOptions) parse() (v1beta1.JSONSchemaDefinitions, crdSpecB
 		defs = newDefs
 	}
 
-	return defs, pr.linkCRDSpec(defs, crdSpecs)
+	pr.linkCRDSpec(defs, crdSpecs)
+	return defs, crdSpecs
 }
 
 func (op *SingleVersionGenerator) Generate() {
@@ -108,4 +109,24 @@ func (op *SingleVersionGenerator) Generate() {
 	op.defs, op.crdSpecs = op.parse()
 
 	op.write(op.outputCRD, op.Types)
+}
+
+func (pr *prsr) linkCRDSpec(defs v1beta1.JSONSchemaDefinitions, crdSpecs crdSpecByKind) {
+	for gk := range crdSpecs {
+		if len(crdSpecs[gk].Versions) == 0 {
+			log.Printf("no version for CRD %q", gk)
+			continue
+		}
+		if len(crdSpecs[gk].Versions) > 1 {
+			log.Fatalf("the number of versions in one package should not be more than 1")
+		}
+		def, ok := defs[gk.Kind]
+		if !ok {
+			log.Printf("can't get json shchema for %q", gk)
+			continue
+		}
+		crdSpecs[gk].Versions[0].Schema = &v1beta1.CustomResourceValidation{
+			OpenAPIV3Schema: &def,
+		}
+	}
 }
