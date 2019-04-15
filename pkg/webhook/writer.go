@@ -3,7 +3,6 @@ package webhook
 import (
 	"bytes"
 	"fmt"
-	"path"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
@@ -84,7 +83,7 @@ func (o *WriterOptions) WriteObjectsToDisk(objects ...runtime.Object) error {
 		}
 		isFirstObject = false
 	}
-	err = afero.WriteFile(o.outFs, path.Join(o.OutputDir, "webhookmanifests.yaml"), buf.Bytes(), 0644)
+	err = afero.WriteFile(o.outFs, filepath.Join(o.OutputDir, "webhookmanifests.yaml"), buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}

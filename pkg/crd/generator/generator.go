@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -91,7 +92,7 @@ func (c *Generator) ValidateAndInitFields() error {
 
 	// Init output directory
 	if c.OutputDir == "" {
-		c.OutputDir = path.Join(c.RootPath, "config/crds")
+		c.OutputDir = filepath.Join(c.RootPath, "config/crds")
 	}
 
 	return nil
@@ -144,7 +145,7 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 	}
 
 	for file, crd := range crds {
-		outFile := path.Join(c.OutputDir, file)
+		outFile := filepath.Join(c.OutputDir, file)
 		if err := (&util.FileWriter{Fs: c.OutFs}).WriteFile(outFile, crd); err != nil {
 			return err
 		}
