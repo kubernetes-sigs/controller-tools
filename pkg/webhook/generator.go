@@ -18,6 +18,8 @@ package webhook
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"path"
@@ -100,11 +102,42 @@ func (o *generatorOptions) setDefaults() {
 	}
 }
 
+func (o *generatorOptions) validate() error {
+	if o.port <= 0 {
+		return fmt.Errorf("port should be set with marker %q and greater than 0", "+kubebuilder:webhook:port=<portNum>")
+	}
+	if len(o.certDir) == 0 {
+		return fmt.Errorf("certDir should be set with marker %q and non-empty", "+kubebuilder:webhook:cert-dir=<path>")
+	}
+	if len(o.mutatingWebhookConfigName) == 0 {
+		return fmt.Errorf("mutatingWebhookConfigName should be set with marker %q and non-empty", "+kubebuilder:webhook:mutating-webhook-config-name=<name>")
+	}
+	if len(o.validatingWebhookConfigName) == 0 {
+		return fmt.Errorf("validatingWebhookConfigName should be set with marker %q and non-empty", "+kubebuilder:webhook:validating-webhook-config-name=<name>")
+	}
+	if o.host == nil && o.service == nil {
+		return fmt.Errorf("you should either set host with marker %q or set service with %q",
+			"+kubebuilder:webhook:host=<path>",
+			"+kubebuilder:webhook:service=<namespace>:<name>,selector=<selectorKey>:<selectorValue>")
+	}
+	if o.service != nil && (len(o.service.name) == 0 || len(o.service.namespace) == 0 || len(o.service.selectors) == 0) {
+		return fmt.Errorf("service should be set with marker %q",
+			"+kubebuilder:webhook:service=<namespace>:<name>,selector=<selectorKey>:<selectorValue>")
+	}
+	if o.secret == nil {
+		log.Printf("it is recommended to use secret to host the certificate")
+	}
+	return nil
+}
+
 // Generate creates the AdmissionWebhookConfiguration objects and Service if any.
 // It also provisions the certificate for the admission server.
 func (o *generatorOptions) Generate() ([]runtime.Object, error) {
 	// do defaulting if necessary
 	o.setDefaults()
+	if err := o.validate(); err != nil {
+		return nil, err
+	}
 
 	webhookConfigurations, err := o.whConfigs()
 	if err != nil {
