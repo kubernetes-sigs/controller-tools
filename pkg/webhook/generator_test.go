@@ -27,8 +27,6 @@ var expected = map[string]string{
 	"config/webhook/webhookmanifests.yaml": `apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
-  annotations:
-    alpha.admissionwebhook.cert-manager.io: "true"
   creationTimestamp: null
   name: test-mutating-webhook-cfg
 webhooks:
@@ -56,8 +54,6 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
-  annotations:
-    alpha.admissionwebhook.cert-manager.io: "true"
   creationTimestamp: null
   name: test-validating-webhook-cfg
 webhooks:
@@ -86,8 +82,6 @@ webhooks:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    alpha.service.cert-manager.io/serving-cert-secret-name: webhook-secret
   creationTimestamp: null
   name: webhook-service
   namespace: test-system
