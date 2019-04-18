@@ -170,10 +170,6 @@ func (o *generatorOptions) mutatingWHConfig() (runtime.Object, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.mutatingWebhookConfigName,
-				Annotations: map[string]string{
-					// TODO(DirectXMan12): Change the annotation to the format that cert-manager decides to use.
-					"alpha.admissionwebhook.cert-manager.io": "true",
-				},
 			},
 			Webhooks: mutatingWebhooks,
 		}, nil
@@ -209,10 +205,6 @@ func (o *generatorOptions) validatingWHConfigs() (runtime.Object, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.validatingWebhookConfigName,
-				Annotations: map[string]string{
-					// TODO(DirectXMan12): Change the annotation to the format that cert-manager decides to use.
-					"alpha.admissionwebhook.cert-manager.io": "true",
-				},
 			},
 			Webhooks: validatingWebhooks,
 		}, nil
@@ -313,11 +305,6 @@ func (o *generatorOptions) getService() runtime.Object {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      o.service.name,
 			Namespace: o.service.namespace,
-			Annotations: map[string]string{
-				// Secret here only need name, since it will be in the same namespace as the service.
-				// TODO(DirectXMan12): Change the annotation to the format that cert-manager decides to use.
-				"alpha.service.cert-manager.io/serving-cert-secret-name": o.secret.Name,
-			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: o.service.selectors,
