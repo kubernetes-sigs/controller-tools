@@ -1,4 +1,4 @@
-module sigs.k8s.io/controller-tools/pkg/crd/generator/testData
+module sigs.k8s.io/controller-tools/testData
 
 go 1.12
 
