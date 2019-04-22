@@ -16,7 +16,7 @@ limitations under the License.
 package apis
 
 import (
-	"sigs.k8s.io/controller-tools/pkg/crd/generator/testData/pkg/apis/fun/v1alpha1"
+	"sigs.k8s.io/controller-tools/testData/pkg/apis/fun/v1alpha1"
 )
 
 func init() {

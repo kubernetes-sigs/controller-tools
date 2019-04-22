@@ -18,7 +18,7 @@ limitations under the License.
 // Package v1alpha1 contains API Schema definitions for the fun v1alpha1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/pkg/crd/generator/testData/pkg/apis/fun
+// +k8s:conversion-gen=sigs.k8s.io/controller-tools/testData/pkg/apis/fun
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=fun.myk8s.io
 package v1alpha1
