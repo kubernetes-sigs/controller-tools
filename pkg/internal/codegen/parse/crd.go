@@ -188,9 +188,12 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case quantity:
 		specialTypeProps.Type = "string"
 		return specialTypeProps, b.getQuantity()
-	case meta, unstructured, rawExtension:
+	case unstructured, rawExtension:
 		specialTypeProps.Type = "object"
 		return specialTypeProps, b.objSchema()
+	case meta:
+		// Validating ObjectMeta as part of https://github.com/kubernetes-sigs/controller-tools/issues/167
+		return b.parseNativeObjectValidation(t, found, comments, isRoot)
 	case intOrString:
 		specialTypeProps.AnyOf = []v1beta1.JSONSchemaProps{
 			{
@@ -467,6 +470,30 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 			log.Fatalf("%v", err)
 		}
 	}
+	return props, buff.String()
+}
+
+// parseNativeObjectValidation returns a JSONSchemaProps object and its serialization in
+// Go that describe the validations for the given native object type.
+func (b *APIs) parseNativeObjectValidation(t *types.Type, found sets.String, comments []string, isRoot bool) (v1beta1.JSONSchemaProps, string) {
+	buff := &bytes.Buffer{}
+	props := v1beta1.JSONSchemaProps{
+		Type:        "object",
+		Description: parseDescription(comments),
+	}
+
+	for _, l := range comments {
+		getValidation(l, &props)
+	}
+
+	m, result, required := b.getMembers(t, found)
+	props.Properties = m
+	props.Required = required
+
+	if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result, required, isRoot}); err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	return props, buff.String()
 }
 
