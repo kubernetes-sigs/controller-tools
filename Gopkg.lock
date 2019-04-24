@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  pruneopts = "UT"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -203,7 +211,7 @@
   version = "kubernetes-1.13.4"
 
 [[projects]]
-  digest = "1:cdadd6ffbd40cc74095fc26f5cf8bb06631adf7a614307b6c6ddf19da29dec05"
+  digest = "1:1866d81bf51eb2dd0f10a0efeb47755441c35ff44aa39c76b85a5fd77d01a555"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/resource",
@@ -216,6 +224,7 @@
     "pkg/runtime/schema",
     "pkg/selection",
     "pkg/types",
+    "pkg/util/diff",
     "pkg/util/errors",
     "pkg/util/intstr",
     "pkg/util/json",
@@ -272,6 +281,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/diff",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/sets",
     "k8s.io/gengo/args",

@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/util/diff"
 	crdgenerator "sigs.k8s.io/controller-tools/pkg/crd/generator"
 )
 
@@ -60,7 +61,7 @@ func TestGenerator(t *testing.T) {
 			t.Fatalf("reading file failed %v", err)
 		}
 		if !reflect.DeepEqual(crdContent, expectedContent) {
-			t.Fatalf("CRD output does not match exp:%v got:%v \n", string(expectedContent), string(crdContent))
+			t.Fatalf("CRD output does not match expected CRD output:%v\n", diff.StringDiff(string(expectedContent), string(crdContent)))
 		}
 	}
 	// examine content of the in-memory filesystem
