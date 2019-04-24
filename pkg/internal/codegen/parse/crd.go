@@ -136,8 +136,16 @@ func (b *APIs) parseCRDs() {
 
 func (b *APIs) getTime() string {
 	return `v1beta1.JSONSchemaProps{
-    Type:   "string",
-    Format: "date-time",
+    AnyOf:  []v1beta1.JSONSchemaProps{
+			{
+				Type:   "string",
+				Format: "date-time",
+			}, {
+				Enum: []v1beta1.JSON{
+					{Raw: []byte("\"null\"")},
+				},
+			},
+		},
 }`
 }
 
@@ -179,8 +187,16 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	}
 	switch t.Name {
 	case time:
-		specialTypeProps.Type = "string"
-		specialTypeProps.Format = "date-time"
+		specialTypeProps.AnyOf = []v1beta1.JSONSchemaProps{
+			{
+				Type:   "string",
+				Format: "date-time",
+			}, {
+				Enum: []v1beta1.JSON{
+					{Raw: []byte("\"null\"")},
+				},
+			},
+		}
 		return specialTypeProps, b.getTime()
 	case duration:
 		specialTypeProps.Type = "string"
@@ -439,7 +455,7 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
     },
     {{if .Required}}Required: []string{
         {{ range $k, $v := .Required -}}
-        "{{ $v }}", 
+        "{{ $v }}",
         {{ end -}}
     },{{ end -}}
 }`))
