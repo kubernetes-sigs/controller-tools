@@ -203,7 +203,7 @@ func (c *Generator) setAPIsPkg() error {
 	c.apisPkg = c.APIsPkg
 	if c.apisPkg == "" {
 		// Validate apis directory exists under working path
-		apisPath := path.Join(c.RootPath, c.APIsPath)
+		apisPath := filepath.Join(c.RootPath, c.APIsPath)
 		if _, err := os.Stat(apisPath); err != nil {
 			return fmt.Errorf("error validating apis path %s: %v", apisPath, err)
 		}
