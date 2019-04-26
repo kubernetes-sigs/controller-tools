@@ -23,11 +23,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/afero"
 	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/types"
+	"sigs.k8s.io/yaml"
+
 	crdutil "sigs.k8s.io/controller-tools/pkg/crd/util"
 	"sigs.k8s.io/controller-tools/pkg/internal/codegen"
 	"sigs.k8s.io/controller-tools/pkg/internal/codegen/parse"

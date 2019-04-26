@@ -23,8 +23,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )

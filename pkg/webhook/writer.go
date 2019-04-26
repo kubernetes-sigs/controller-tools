@@ -6,8 +6,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/ghodss/yaml"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )

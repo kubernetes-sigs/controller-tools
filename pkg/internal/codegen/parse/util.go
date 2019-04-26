@@ -223,8 +223,8 @@ func hasSingular(t *types.Type) bool {
 	if !IsAPIResource(t) {
 		return false
 	}
-	for _, c := range t.CommentLines{
-		if strings.Contains(c, "+kubebuilder:singular"){
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:singular") {
 			return true
 		}
 	}
