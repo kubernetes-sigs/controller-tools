@@ -22,7 +22,6 @@ import (
 	gobuild "go/build"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -30,7 +29,7 @@ import (
 // IsGoSrcPath validate if given path is of path $GOPATH/src.
 func IsGoSrcPath(filePath string) bool {
 	for _, gopath := range getGoPaths() {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if filePath == goSrc {
 			return true
 		}
@@ -42,7 +41,7 @@ func IsGoSrcPath(filePath string) bool {
 // IsUnderGoSrcPath validate if given path is under path $GOPATH/src.
 func IsUnderGoSrcPath(filePath string) bool {
 	for _, gopath := range getGoPaths() {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if strings.HasPrefix(filepath.Dir(filePath), goSrc) {
 			return true
 		}
@@ -57,7 +56,7 @@ func IsUnderGoSrcPath(filePath string) bool {
 func DirToGoPkg(dir string) (pkg string, err error) {
 	goPaths := getGoPaths()
 	for _, gopath := range goPaths {
-		goSrc := path.Join(gopath, "src")
+		goSrc := filepath.Join(gopath, "src")
 		if !strings.HasPrefix(dir, goSrc) {
 			continue
 		}
@@ -80,7 +79,7 @@ func getGoPaths() []string {
 
 // PathHasProjectFile validate if PROJECT file exists under the path.
 func PathHasProjectFile(filePath string) bool {
-	if _, err := os.Stat(path.Join(filePath, "PROJECT")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(filePath, "PROJECT")); os.IsNotExist(err) {
 		return false
 	}
 
@@ -101,7 +100,7 @@ func GetRepoFromProject(rootPath string) string {
 func GetFieldFromProject(fieldKey string, rootPath string) string {
 	var fieldVal string
 
-	file, err := os.Open(path.Join(rootPath, "PROJECT"))
+	file, err := os.Open(filepath.Join(rootPath, "PROJECT"))
 	if err != nil {
 		log.Fatal(err)
 	}

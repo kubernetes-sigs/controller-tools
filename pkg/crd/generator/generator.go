@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -95,7 +96,7 @@ func (c *Generator) ValidateAndInitFields() error {
 
 	// Init output directory
 	if c.OutputDir == "" {
-		c.OutputDir = path.Join(c.RootPath, "config/crds")
+		c.OutputDir = filepath.Join(c.RootPath, "config/crds")
 	}
 
 	return nil
@@ -148,7 +149,7 @@ func (c *Generator) writeCRDs(crds map[string][]byte) error {
 	}
 
 	for file, crd := range crds {
-		outFile := path.Join(c.OutputDir, file)
+		outFile := filepath.Join(c.OutputDir, file)
 		if err := (&util.FileWriter{Fs: c.OutFs}).WriteFile(outFile, crd); err != nil {
 			return err
 		}
@@ -206,7 +207,7 @@ func (c *Generator) setAPIsPkg() error {
 	c.apisPkg = c.APIsPkg
 	if c.apisPkg == "" {
 		// Validate apis directory exists under working path
-		apisPath := path.Join(c.RootPath, c.APIsPath)
+		apisPath := filepath.Join(c.RootPath, c.APIsPath)
 		if _, err := os.Stat(apisPath); err != nil {
 			return fmt.Errorf("error validating apis path %s: %v", apisPath, err)
 		}

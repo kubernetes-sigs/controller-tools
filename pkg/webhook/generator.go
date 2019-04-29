@@ -22,7 +22,7 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 
@@ -87,7 +87,7 @@ func (o *generatorOptions) setDefaults() {
 		o.port = 443
 	}
 	if len(o.certDir) == 0 {
-		o.certDir = path.Join("/tmp", "k8s-webhook-server", "serving-certs")
+		o.certDir = filepath.Join("/tmp", "k8s-webhook-server", "serving-certs")
 	}
 
 	if len(o.mutatingWebhookConfigName) == 0 {
