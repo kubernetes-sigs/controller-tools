@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 	"sigs.k8s.io/controller-tools/pkg/rbac"
+	"sigs.k8s.io/controller-tools/pkg/webhook"
 )
 
 // Options are specified to controller-gen by turning generators and output rules into
@@ -42,6 +43,7 @@ var (
 		"crd":     crd.Generator{},
 		"rbac":    rbac.Generator{},
 		"object":  deepcopy.Generator{},
+		"webhook": webhook.Generator{},
 	}
 
 	// allOutputRules defines the list of all known output rules, giving
