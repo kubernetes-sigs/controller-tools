@@ -115,22 +115,22 @@ header_text "running golangci-lint"
 
 golangci-lint run --disable-all \
     --enable=misspell \
-    --enable=structcheck \
     --enable=golint \
     --enable=deadcode \
     --enable=goimports \
     --enable=errcheck \
     --enable=varcheck \
-    --enable=goconst \
     --enable=unparam \
     --enable=ineffassign \
     --enable=nakedret \
-    --enable=interfacer \
     --enable=misspell \
     --enable=gocyclo \
     --enable=gosec \
-    --skip-dirs=parse \
     ./pkg/... ./cmd/...
+
+# --enable=structcheck \  # doesn't understand embedded structs
+# --enable=goconst \  # complains about constants that shouldn't be constants
+# --enable=interfacer \ # just kinda strange, deprecated, has bad suggestions that defeat self-documenting code
 
 header_text "running go test"
 
