@@ -11,4 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# editor stuff
 .idea
+*.swp
+*.swo
+*~
