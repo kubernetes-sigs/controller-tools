@@ -49,7 +49,7 @@ func TestGenerator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generator validate should have succeeded %v", err)
 	}
-	for _, f := range []string{"fun_v1alpha1_toy.yaml"} {
+	for _, f := range []string{"api_v1alpha1_foo.yaml", "fun_v1alpha1_toy.yaml"} {
 		crdOuputFile := filepath.Join("/tmp", f)
 		crdContent, err := afero.ReadFile(outFs, crdOuputFile)
 		if err != nil {
