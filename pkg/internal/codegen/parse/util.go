@@ -258,7 +258,10 @@ func GetGroup(t *types.Type) string {
 // GetGroupPackage returns group package of t.
 func GetGroupPackage(t *types.Type) string {
 	if IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) {
-		return t.Name.Package
+		// Make sure it is actually the API dir and not just a group called 'api' or 'apis' (#201).
+		if !IsApisDir(filepath.Base(filepath.Base(filepath.Dir(t.Name.Package)))) {
+			return t.Name.Package
+		}
 	}
 	return filepath.Dir(t.Name.Package)
 }
