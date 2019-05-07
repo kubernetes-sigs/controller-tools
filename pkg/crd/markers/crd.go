@@ -119,9 +119,9 @@ type PrintColumn struct {
 	Name        string
 	Type        string
 	JSONPath    string `marker:"JSONPath"` // legacy cruft
-	Description string
-	Format      string
-	Priority    int32
+	Description string `marker:",optional"`
+	Format      string `marker:",optional"`
+	Priority    int32  `marker:",optional"`
 }
 
 func (s PrintColumn) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
