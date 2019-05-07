@@ -137,5 +137,11 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind) {
 		packages[0].AddError(fmt.Errorf("CRD for %s has no storage version", groupKind))
 	}
 
+	// NB(directxman12): CRD's status doesn't have omitempty markers, which means things
+	// get serialized as null, which causes the validator to freak out.  Manually set
+	// these to empty till we get a better solution.
+	crd.Status.Conditions = []apiext.CustomResourceDefinitionCondition{}
+	crd.Status.StoredVersions = []string{}
+
 	p.CustomResourceDefinitions[groupKind] = crd
 }

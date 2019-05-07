@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/types"
 
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
@@ -29,12 +30,17 @@ import (
 )
 
 // Generator is a genall.Generator that generates CRDs.
-type Generator struct{}
+type Generator struct {
+	// TrivialVersions indicates that we should produce a legacy
+	// "trival-version" CRD compatible with older (pre 1.13) Kubernetes API
+	// servers.  The storage version's schema will be used as the CRD's schema.
+	TrivialVersions bool `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return crdmarkers.Register(into)
 }
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	parser := &Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
@@ -61,6 +67,9 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 	for _, groupKind := range kubeKinds {
 		parser.NeedCRDFor(groupKind)
 		crd := parser.CustomResourceDefinitions[groupKind]
+		if g.TrivialVersions {
+			toTrivialVersions(&crd)
+		}
 		fileName := fmt.Sprintf("%s_%s.yaml", crd.Spec.Group, crd.Spec.Names.Plural)
 		if err := ctx.WriteYAML(crd, fileName); err != nil {
 			return err
@@ -68,6 +77,32 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	return nil
+}
+
+// toTrivialVersions strips out all schemata except for the storage schema,
+// and moves that up into the root object.  This makes the CRD compatible
+// with pre 1.13 clusters.
+func toTrivialVersions(crd *apiext.CustomResourceDefinition) {
+	var canonicalSchema *apiext.CustomResourceValidation
+	var canonicalSubresources *apiext.CustomResourceSubresources
+	var canonicalColumns []apiext.CustomResourceColumnDefinition
+	for i, ver := range crd.Spec.Versions {
+		if ver.Storage == true {
+			canonicalSchema = ver.Schema
+			canonicalSubresources = ver.Subresources
+			canonicalColumns = ver.AdditionalPrinterColumns
+		}
+		crd.Spec.Versions[i].Schema = nil
+		crd.Spec.Versions[i].Subresources = nil
+		crd.Spec.Versions[i].AdditionalPrinterColumns = nil
+	}
+	if canonicalSchema == nil {
+		return
+	}
+
+	crd.Spec.Validation = canonicalSchema
+	crd.Spec.Subresources = canonicalSubresources
+	crd.Spec.AdditionalPrinterColumns = canonicalColumns
 }
 
 // findMetav1 locates the actual package representing metav1 amongst
