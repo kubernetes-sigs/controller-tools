@@ -166,8 +166,12 @@ extractQueries:
 		containsCandidates = append(containsCandidates, modifiedPkgs...)
 		containsCandidates = append(containsCandidates, needPkgs...)
 	}
-	if err := addNeededOverlayPackages(cfg, golistDriver, response, needPkgs); err != nil {
-		return nil, err
+
+	if len(needPkgs) > 0 {
+		addNeededOverlayPackages(cfg, golistDriver, response, needPkgs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// Check candidate packages for containFiles.
 	if len(containFiles) > 0 {
@@ -187,9 +191,6 @@ extractQueries:
 }
 
 func addNeededOverlayPackages(cfg *Config, driver driver, response *responseDeduper, pkgs []string) error {
-	if len(pkgs) == 0 {
-		return nil
-	}
 	dr, err := driver(cfg, pkgs...)
 	if err != nil {
 		return err
@@ -197,11 +198,6 @@ func addNeededOverlayPackages(cfg *Config, driver driver, response *responseDedu
 	for _, pkg := range dr.Packages {
 		response.addPackage(pkg)
 	}
-	_, needPkgs, err := processGolistOverlay(cfg, response.dr)
-	if err != nil {
-		return err
-	}
-	addNeededOverlayPackages(cfg, driver, response, needPkgs)
 	return nil
 }
 
@@ -765,15 +761,8 @@ func invokeGo(cfg *Config, args ...string) (*bytes.Buffer, error) {
 		// the error in the Err section of stdout in case -e option is provided.
 		// This fix is provided for backwards compatibility.
 		if len(stderr.String()) > 0 && strings.Contains(stderr.String(), "named files must be .go files") {
-			output := fmt.Sprintf(`{"ImportPath": "command-line-arguments","Incomplete": true,"Error": {"Pos": "","Err": %q}}`,
-				strings.Trim(stderr.String(), "\n"))
-			return bytes.NewBufferString(output), nil
-		}
-
-		// Workaround for #29280: go list -e has incorrect behavior when an ad-hoc package doesn't exist.
-		if len(stderr.String()) > 0 && strings.Contains(stderr.String(), "no such file or directory") {
-			output := fmt.Sprintf(`{"ImportPath": "command-line-arguments","Incomplete": true,"Error": {"Pos": "","Err": %q}}`,
-				strings.Trim(stderr.String(), "\n"))
+			output := fmt.Sprintf(`{"ImportPath": "","Incomplete": true,"Error": {"Pos": "","Err": %s}}`,
+				strconv.Quote(strings.Trim(stderr.String(), "\n")))
 			return bytes.NewBufferString(output), nil
 		}
 
