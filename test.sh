@@ -73,10 +73,6 @@ SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:-""}
 
 # fetch k8s API gen tools and make it available under kb_root_dir/bin.
 function fetch_kb_tools {
-  if [ -n "$SKIP_FETCH_TOOLS" ]; then
-    return 0
-  fi
-
   header_text "fetching tools"
   kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
@@ -97,12 +93,37 @@ function setup_envs {
   export TEST_ASSET_ETCD=$kb_root_dir/bin/etcd
 }
 
+function is_installed {
+  if [ command -v $1 &>/dev/null ]; then
+    return 0
+  fi
+  return 1
+}
+
+function fetch_go_tools {
+  header_text "Checking for golangci-lint"
+  if ! is_installed golangci-lint; then
+    header_text "Installing golangci-lint"
+    curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
+  fi
+
+  DEP_LATEST=$(git describe --abbrev=0 --tags)
+  
+  header_text "Checking for dep"
+  if ! is_installed dep; then
+    header_text "Installing dep"
+    GO111MODULE=off go get -v -u github.com/golang/dep/cmd/dep
+  fi
+}
+
 header_text "using tools"
 
-which golangci-lint
+if [ -z "$SKIP_FETCH_TOOLS" ]; then
+  fetch_go_tools # fetch golangci-lint, dep
+  set -o pipefail
+  fetch_kb_tools # fetch the testing binaries - e.g. apiserver and etcd
+fi
 
-# fetch the testing binaries - e.g. apiserver and etcd
-fetch_kb_tools
 
 # setup testing env
 setup_envs
