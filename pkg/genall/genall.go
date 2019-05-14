@@ -83,27 +83,29 @@ type GenerationContext struct {
 	InputRule
 }
 
-// WriteYAML writes the given object out, serialized as YAML, using the
+// WriteYAML writes the given objects out, serialized as YAML, using the
 // context's OutputRule.
-func (g GenerationContext) WriteYAML(obj interface{}, itemPath string) error {
-	yamlContent, err := yaml.Marshal(obj)
-	if err != nil {
-		return err
-	}
-
+func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error {
 	out, err := g.Open(nil, itemPath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	n, err := out.Write(yamlContent)
-	if err != nil {
-		return err
+	for _, obj := range objs {
+		yamlContent, err := yaml.Marshal(obj)
+		if err != nil {
+			return err
+		}
+		n, err := out.Write(append([]byte("\n---\n"), yamlContent...))
+		if err != nil {
+			return err
+		}
+		if n < len(yamlContent) {
+			return io.ErrShortWrite
+		}
 	}
-	if n < len(yamlContent) {
-		return io.ErrShortWrite
-	}
+
 	return nil
 }
 

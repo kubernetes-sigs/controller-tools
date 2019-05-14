@@ -85,7 +85,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		return nil
 	}
 
-	if err := ctx.WriteYAML(rbacv1.ClusterRole{
+	if err := ctx.WriteYAML("role.yaml", rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -94,7 +94,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			Name: g.RoleName,
 		},
 		Rules: rules,
-	}, "role.yaml"); err != nil {
+	}); err != nil {
 		return err
 	}
 

@@ -140,28 +140,30 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
+	var objs []interface{}
 	if len(mutatingCfgs) > 0 {
-		if err := ctx.WriteYAML(admissionreg.MutatingWebhookConfiguration{
+		objs = append(objs, &admissionreg.MutatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "MutatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
 			Webhooks: mutatingCfgs,
-		}, "mutating-webhook.yaml"); err != nil {
-			return err
-		}
+		})
 	}
 
 	if len(validatingCfgs) > 0 {
-		if err := ctx.WriteYAML(admissionreg.ValidatingWebhookConfiguration{
+		objs = append(objs, &admissionreg.ValidatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ValidatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
 			Webhooks: validatingCfgs,
-		}, "validating-webhook.yaml"); err != nil {
-			return err
-		}
+		})
+
+	}
+
+	if err := ctx.WriteYAML("manifests.yaml", objs...); err != nil {
+		return err
 	}
 
 	return nil
