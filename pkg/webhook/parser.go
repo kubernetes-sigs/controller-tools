@@ -109,7 +109,9 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 		FailurePolicy: &failurePolicy,
 		ClientConfig: admissionreg.WebhookClientConfig{
 			Service: &admissionreg.ServiceReference{
-				Path: &path,
+				Name:      "webhook-service",
+				Namespace: "system",
+				Path:      &path,
 			},
 		},
 	}
@@ -147,6 +149,9 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 				Kind:       "MutatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "mutating-webhook-configuration",
+			},
 			Webhooks: mutatingCfgs,
 		})
 	}
@@ -156,6 +161,9 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ValidatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "validating-webhook-configuration",
 			},
 			Webhooks: validatingCfgs,
 		})
