@@ -109,8 +109,14 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 		FailurePolicy: &failurePolicy,
 		ClientConfig: admissionreg.WebhookClientConfig{
 			Service: &admissionreg.ServiceReference{
-				Path: &path,
+				Name:      "webhook-service",
+				Namespace: "system",
+				Path:      &path,
 			},
+			// OpenAPI marks the field as required before 1.13 because of a bug that got fixed in
+			// https://github.com/kubernetes/api/commit/e7d9121e9ffd63cea0288b36a82bcc87b073bd1b
+			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
+			CABundle: []byte("\n"),
 		},
 	}
 }
@@ -121,6 +127,7 @@ type Generator struct{}
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return into.Register(ConfigDefinition)
 }
+
 func (Generator) Generate(ctx *genall.GenerationContext) error {
 	var mutatingCfgs []admissionreg.Webhook
 	var validatingCfgs []admissionreg.Webhook
@@ -140,28 +147,36 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
+	var objs []interface{}
 	if len(mutatingCfgs) > 0 {
-		if err := ctx.WriteYAML(admissionreg.MutatingWebhookConfiguration{
+		objs = append(objs, &admissionreg.MutatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "MutatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "mutating-webhook-configuration",
+			},
 			Webhooks: mutatingCfgs,
-		}, "mutating-webhook.yaml"); err != nil {
-			return err
-		}
+		})
 	}
 
 	if len(validatingCfgs) > 0 {
-		if err := ctx.WriteYAML(admissionreg.ValidatingWebhookConfiguration{
+		objs = append(objs, &admissionreg.ValidatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ValidatingWebhookConfiguration",
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "validating-webhook-configuration",
+			},
 			Webhooks: validatingCfgs,
-		}, "validating-webhook.yaml"); err != nil {
-			return err
-		}
+		})
+
+	}
+
+	if err := ctx.WriteYAML("manifests.yaml", objs...); err != nil {
+		return err
 	}
 
 	return nil

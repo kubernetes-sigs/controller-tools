@@ -71,7 +71,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			toTrivialVersions(&crd)
 		}
 		fileName := fmt.Sprintf("%s_%s.yaml", crd.Spec.Group, crd.Spec.Names.Plural)
-		if err := ctx.WriteYAML(crd, fileName); err != nil {
+		if err := ctx.WriteYAML(fileName, crd); err != nil {
 			return err
 		}
 	}
