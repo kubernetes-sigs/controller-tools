@@ -34,6 +34,12 @@ var KnownPackages = map[string]PackageOverride{
 			// TODO(directxman12): regexp validation for this (or get kube to support it as a format value)
 			Type: "string",
 		}
+		p.Schemata[TypeIdent{Name: "Fields", Package: pkg}] = apiext.JSONSchemaProps{
+			// this is a recursive structure that can't be flattened or, for that matter, properly generated.
+			// so just treat it as an arbitrary map
+			Type:                 "object",
+			AdditionalProperties: &apiext.JSONSchemaPropsOrBool{Allows: true},
+		}
 		p.AddPackage(pkg) // get the rest of the types
 	},
 

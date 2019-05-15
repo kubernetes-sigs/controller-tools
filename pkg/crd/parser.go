@@ -147,6 +147,9 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 		return
 	}
 
+	// avoid tripping recursive schemata, like ManagedFields, by adding an empty WIP schema
+	p.Schemata[typ] = apiext.JSONSchemaProps{}
+
 	schemaCtx := newSchemaContext(typ.Package, p)
 	schema := infoToSchema(schemaCtx.ForInfo(info))
 
