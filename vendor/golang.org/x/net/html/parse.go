@@ -630,16 +630,7 @@ func inHeadIM(p *parser) bool {
 			p.oe.pop()
 			p.acknowledgeSelfClosingTag()
 			return true
-		case a.Noscript:
-			p.addElement()
-			if p.scripting {
-				p.setOriginalIM()
-				p.im = textIM
-			} else {
-				p.im = inHeadNoscriptIM
-			}
-			return true
-		case a.Script, a.Title, a.Noframes, a.Style:
+		case a.Script, a.Title, a.Noscript, a.Noframes, a.Style:
 			p.addElement()
 			p.setOriginalIM()
 			p.im = textIM
@@ -698,49 +689,6 @@ func inHeadIM(p *parser) bool {
 	}
 
 	p.parseImpliedToken(EndTagToken, a.Head, a.Head.String())
-	return false
-}
-
-// 12.2.6.4.5.
-func inHeadNoscriptIM(p *parser) bool {
-	switch p.tok.Type {
-	case DoctypeToken:
-		// Ignore the token.
-		return true
-	case StartTagToken:
-		switch p.tok.DataAtom {
-		case a.Html:
-			return inBodyIM(p)
-		case a.Basefont, a.Bgsound, a.Link, a.Meta, a.Noframes, a.Style:
-			return inHeadIM(p)
-		case a.Head, a.Noscript:
-			// Ignore the token.
-			return true
-		}
-	case EndTagToken:
-		switch p.tok.DataAtom {
-		case a.Noscript, a.Br:
-		default:
-			// Ignore the token.
-			return true
-		}
-	case TextToken:
-		s := strings.TrimLeft(p.tok.Data, whitespace)
-		if len(s) == 0 {
-			// It was all whitespace.
-			return inHeadIM(p)
-		}
-	case CommentToken:
-		return inHeadIM(p)
-	}
-	p.oe.pop()
-	if p.top().DataAtom != a.Head {
-		panic("html: the new current node will be a head element.")
-	}
-	p.im = inHeadIM
-	if p.tok.DataAtom == a.Noscript {
-		return true
-	}
 	return false
 }
 
@@ -1744,9 +1692,8 @@ func inCellIM(p *parser) bool {
 				return true
 			}
 			// Close the cell and reprocess.
-			if p.popUntil(tableScope, a.Td, a.Th) {
-				p.clearActiveFormattingElements()
-			}
+			p.popUntil(tableScope, a.Td, a.Th)
+			p.clearActiveFormattingElements()
 			p.im = inRowIM
 			return false
 		}
@@ -2300,33 +2247,6 @@ func (p *parser) parse() error {
 //
 // The input is assumed to be UTF-8 encoded.
 func Parse(r io.Reader) (*Node, error) {
-	return ParseWithOptions(r)
-}
-
-// ParseFragment parses a fragment of HTML and returns the nodes that were
-// found. If the fragment is the InnerHTML for an existing element, pass that
-// element in context.
-//
-// It has the same intricacies as Parse.
-func ParseFragment(r io.Reader, context *Node) ([]*Node, error) {
-	return ParseFragmentWithOptions(r, context)
-}
-
-// ParseOption configures a parser.
-type ParseOption func(p *parser)
-
-// ParseOptionEnableScripting configures the scripting flag.
-// https://html.spec.whatwg.org/multipage/webappapis.html#enabling-and-disabling-scripting
-//
-// By default, scripting is enabled.
-func ParseOptionEnableScripting(enable bool) ParseOption {
-	return func(p *parser) {
-		p.scripting = enable
-	}
-}
-
-// ParseWithOptions is like Parse, with options.
-func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 	p := &parser{
 		tokenizer: NewTokenizer(r),
 		doc: &Node{
@@ -2336,11 +2256,6 @@ func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 		framesetOK: true,
 		im:         initialIM,
 	}
-
-	for _, f := range opts {
-		f(p)
-	}
-
 	err := p.parse()
 	if err != nil {
 		return nil, err
@@ -2348,8 +2263,12 @@ func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 	return p.doc, nil
 }
 
-// ParseFragmentWithOptions is like ParseFragment, with options.
-func ParseFragmentWithOptions(r io.Reader, context *Node, opts ...ParseOption) ([]*Node, error) {
+// ParseFragment parses a fragment of HTML and returns the nodes that were
+// found. If the fragment is the InnerHTML for an existing element, pass that
+// element in context.
+//
+// It has the same intricacies as Parse.
+func ParseFragment(r io.Reader, context *Node) ([]*Node, error) {
 	contextTag := ""
 	if context != nil {
 		if context.Type != ElementNode {
@@ -2371,10 +2290,6 @@ func ParseFragmentWithOptions(r io.Reader, context *Node, opts ...ParseOption) (
 		scripting: true,
 		fragment:  true,
 		context:   context,
-	}
-
-	for _, f := range opts {
-		f(p)
 	}
 
 	root := &Node{
