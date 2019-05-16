@@ -57,6 +57,7 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	Enum(nil),
 	Format(""),
 	Type(""),
+	Nullable(false),
 )
 
 func init() {
@@ -86,6 +87,7 @@ type UniqueItems bool
 type Enum []interface{}
 type Format string
 type Type string
+type Nullable bool
 
 func (m Maximum) ApplyToSchema(schema *v1beta1.JSONSchemaProps) error {
 	if schema.Type != "integer" {
@@ -207,3 +209,8 @@ func (m Type) ApplyToSchema(schema *v1beta1.JSONSchemaProps) error {
 }
 
 func (m Type) ApplyFirst() {}
+
+func (m Nullable) ApplyToSchema(schema *v1beta1.JSONSchemaProps) error {
+	schema.Nullable = bool(m)
+	return nil
+}
