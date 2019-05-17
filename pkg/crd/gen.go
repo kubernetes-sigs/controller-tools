@@ -147,7 +147,6 @@ func findKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 			fieldPkgPath := loader.NonVendorPath(namedField.Obj().Pkg().Path())
 			fieldPkg := pkg.Imports()[fieldPkgPath]
 			if fieldPkg != metav1Pkg {
-				fmt.Printf("field %q's package is %q (%v), not metav1", field.Name, namedField.Obj().Pkg().Path(), fieldPkg)
 				continue
 			}
 

@@ -82,6 +82,7 @@ func mapImports(file *ast.File, importedPkgs map[string]*Package) (*importsMap, 
 type referenceSet struct {
 	file    *ast.File
 	imports *importsMap
+	pkg     *Package
 
 	externalRefs map[*Package]struct{}
 }
@@ -109,6 +110,10 @@ func (r *referenceSet) collectReferences(rawType ast.Expr, filterNode NodeFilter
 // external saves an external reference to the given named package.
 func (r *referenceSet) external(pkgName string) {
 	pkg := r.imports.byName[pkgName]
+	if pkg == nil {
+		r.pkg.AddError(fmt.Errorf("use of unimported package %q", pkgName))
+		return
+	}
 	r.externalRefs[pkg] = struct{}{}
 }
 
@@ -149,6 +154,7 @@ func allReferencedPackages(pkg *Package, filterNodes NodeFilter) []*Package {
 		refs := &referenceSet{
 			file:    file,
 			imports: imports,
+			pkg:     pkg,
 		}
 		refsByFile[file] = refs
 	}
