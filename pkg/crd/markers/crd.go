@@ -31,6 +31,7 @@ var CRDMarkers = []*markers.Definition{
 	markers.Must(markers.MakeDefinition("kubebuilder:subresource:scale", markers.DescribesType, SubresourceScale{})),
 	markers.Must(markers.MakeDefinition("kubebuilder:printcolumn", markers.DescribesType, PrintColumn{})),
 	markers.Must(markers.MakeDefinition("kubebuilder:resource", markers.DescribesType, Resource{})),
+	markers.Must(markers.MakeDefinition("kubebuilder:storageversion", markers.DescribesType, StorageVersion{})),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -110,6 +111,26 @@ func (s SubresourceScale) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, v
 		SpecReplicasPath:   s.SpecPath,
 		StatusReplicasPath: s.StatusPath,
 		LabelSelectorPath:  s.SelectorPath,
+	}
+	return nil
+}
+
+// StorageVersion defines "+kubebuilder:storageversion"
+type StorageVersion struct{}
+
+func (s StorageVersion) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+	if version == "" {
+		// single-version, do nothing
+		return nil
+	}
+	// multi-version
+	for i := range crd.Versions {
+		ver := &crd.Versions[i]
+		if ver.Name != version {
+			continue
+		}
+		ver.Storage = true
+		break
 	}
 	return nil
 }
