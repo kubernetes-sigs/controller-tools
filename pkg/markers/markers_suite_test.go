@@ -54,7 +54,7 @@ var _ = BeforeSuite(func() {
 						foo "fmt" // +testing:pkglvl="not here import 3"
 
 						// +testing:pkglvl="not here import 4"
-					) 
+					)
 
 					// +testing:pkglvl="here unattached"
 
@@ -105,6 +105,15 @@ var _ = BeforeSuite(func() {
 
 					// +testing:typelvl="here on typedecl with no more"
 					type Cheese struct { }
+
+					// ensure that we're fine if we've got an end-of-line
+					// comment that's the last comment of the file, but
+					// we still have a bit more to traverse (field list --> ident).
+					// THIS MUST CONTAIN THE LAST COMMENT IN THE FILE
+					// TODO(directxman12): split this off into its own case
+					type private struct {
+						bar int // not collected
+					}
 				`,
 			},
 		},
