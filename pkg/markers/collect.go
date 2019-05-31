@@ -290,7 +290,9 @@ func (v markerSubVisitor) Visit(node ast.Node) ast.Visitor {
 	}
 
 	// skip comments on the same line as the previous node
-	if v.lastLineCommentGroup != nil && v.lastLineCommentGroup.Pos() == v.allComments[v.commentInd].Pos() {
+	// making sure to double-check for the case where we've gone past the end of the comments
+	// but still have to finish up typespec-gendecl association (see below).
+	if v.lastLineCommentGroup != nil && v.commentInd < len(v.allComments) && v.lastLineCommentGroup.Pos() == v.allComments[v.commentInd].Pos() {
 		v.commentInd++
 	}
 
