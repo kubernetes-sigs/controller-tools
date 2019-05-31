@@ -104,7 +104,9 @@ function fetch_go_tools {
   header_text "Checking for golangci-lint"
   if ! is_installed golangci-lint; then
     header_text "Installing golangci-lint"
-    curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.16.0
+    GO111MODULE=on go get -d github.com/golangci/golangci-lint/cmd/golangci-lint@v1.16.0
+    cd $(go env GOPATH)/src/github.com/golangci/golangci-lint/cmd/golangci-lint
+    go install -ldflags "-X 'main.version=$(git describe --tags)' -X 'main.commit=$(git rev-parse --short HEAD)' -X 'main.date=$(date)'"
   fi
 
   DEP_LATEST=$(git describe --abbrev=0 --tags)
