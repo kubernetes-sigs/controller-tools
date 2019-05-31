@@ -106,7 +106,7 @@ function fetch_go_tools {
     header_text "Installing golangci-lint"
     GO111MODULE=off go get -d github.com/golangci/golangci-lint/cmd/golangci-lint
     cd $(go env GOPATH)/src/github.com/golangci/golangci-lint
-    LATEST=$(git describe --abbrev=0 --tags)
+    LATEST=v1.15.0
     git checkout $LATEST
     go install -ldflags="-X main.version=$LATEST" ./cmd/golangci-lint
   fi
