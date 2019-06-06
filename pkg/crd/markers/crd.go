@@ -36,7 +36,6 @@ var CRDMarkers = []*markers.Definition{
 
 // TODO: categories and singular used to be annotations types
 // TODO: doc
-// TODO: nonNamespaced
 
 func init() {
 	AllDefinitions = append(AllDefinitions, CRDMarkers...)
@@ -184,12 +183,20 @@ type Resource struct {
 	ShortName  []string `marker:",optional"`
 	Categories []string `marker:",optional"`
 	Singular   string   `marker:",optional"`
+	Scope      string   `marker:",optional"`
 }
 
 func (s Resource) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
 	crd.Names.Plural = s.Path
 	crd.Names.ShortNames = s.ShortName
 	crd.Names.Categories = s.Categories
+
+	switch s.Scope {
+	case "":
+		crd.Scope = apiext.NamespaceScoped
+	default:
+		crd.Scope = apiext.ResourceScope(s.Scope)
+	}
 
 	return nil
 }
