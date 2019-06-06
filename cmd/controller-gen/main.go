@@ -205,7 +205,7 @@ func main() {
 		Long:  "Generate Kubernetes API extension resources and code.",
 		Example: `	# Generate RBAC manifests and crds for all types under apis/,
 	# outputting crds to /tmp/crds and everything else to stdout
-	controller-gen rbac crd paths=./apis/... output:crd:dir=/tmp/crds output:stdout
+	controller-gen rbac:roleName=<role name> crd paths=./apis/... output:crd:dir=/tmp/crds output:stdout
 
 	# Generate deepcopy implementations for a particular file
 	controller-gen deepcopy paths=./apis/v1beta1/some_types.go
