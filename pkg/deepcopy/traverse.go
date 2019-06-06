@@ -409,7 +409,7 @@ func (c *copyMethodMaker) genStructDeepCopy(_ string, structType *types.Struct) 
 				c.Linef("in, out := &in.%[1]s, &out.%[1]s", field.Name())
 				c.genDeepCopyIntoBlock(c.syntaxFor(field.Type()), field.Type())
 			})
-			return
+			continue
 		}
 
 		// otherwise...
