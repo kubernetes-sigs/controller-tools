@@ -190,7 +190,13 @@ func (s Resource) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version s
 	crd.Names.Plural = s.Path
 	crd.Names.ShortNames = s.ShortName
 	crd.Names.Categories = s.Categories
-	crd.Scope = apiext.ResourceScope(s.Scope)
+
+	switch s.Scope {
+	case "":
+		crd.Scope = apiext.NamespaceScoped
+	default:
+		crd.Scope = apiext.ResourceScope(s.Scope)
+	}
 
 	return nil
 }
