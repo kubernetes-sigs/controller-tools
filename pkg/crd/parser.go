@@ -151,7 +151,15 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	p.Schemata[typ] = apiext.JSONSchemaProps{}
 
 	schemaCtx := newSchemaContext(typ.Package, p)
-	schema := infoToSchema(schemaCtx.ForInfo(info))
+	ctxForInfo := schemaCtx.ForInfo(info)
+
+	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)
+	if err != nil {
+		typ.Package.AddError(err)
+	}
+	ctxForInfo.PackageMarkers = pkgMarkers
+
+	schema := infoToSchema(ctxForInfo)
 
 	p.Schemata[typ] = *schema
 

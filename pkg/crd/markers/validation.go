@@ -26,7 +26,8 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-// ValidationMarkers lists all available markers that affect CRD schema generation.
+// ValidationMarkers lists all available markers that affect CRD schema generation,
+// except for the few that don't make sense as type-level markers (see FieldOnlyMarkers).
 // All markers start with `+kubebuilder:validation:`, and continue with their type name.
 // A copy is produced of all markers that describes types as well, for making types
 // reusable and writing complex validations on slice items.
@@ -60,6 +61,14 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	Nullable(false),
 )
 
+// FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
+// sense on a type, and thus aren't in ValidationMarkers).
+var FieldOnlyMarkers = []*markers.Definition{
+	markers.Must(markers.MakeDefinition("kubebuilder:validation:Required", markers.DescribesField, struct{}{})),
+	markers.Must(markers.MakeDefinition("kubebuilder:validation:Optional", markers.DescribesField, struct{}{})),
+	markers.Must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})),
+}
+
 func init() {
 	AllDefinitions = append(AllDefinitions, ValidationMarkers...)
 
@@ -88,6 +97,8 @@ type Enum []interface{}
 type Format string
 type Type string
 type Nullable bool
+type Required struct{}
+type Optional struct{}
 
 func (m Maximum) ApplyToSchema(schema *v1beta1.JSONSchemaProps) error {
 	if schema.Type != "integer" {

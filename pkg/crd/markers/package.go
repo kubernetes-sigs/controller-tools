@@ -24,5 +24,7 @@ func init() {
 	AllDefinitions = append(AllDefinitions,
 		markers.Must(markers.MakeDefinition("groupName", markers.DescribesPackage, "")),
 		markers.Must(markers.MakeDefinition("versionName", markers.DescribesPackage, "")),
+		markers.Must(markers.MakeDefinition("kubebuilder:validation:Optional", markers.DescribesPackage, struct{}{})),
+		markers.Must(markers.MakeDefinition("kubebuilder:validation:Required", markers.DescribesPackage, struct{}{})),
 	)
 }

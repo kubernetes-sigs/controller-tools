@@ -66,6 +66,7 @@ type schemaContext struct {
 	info *markers.TypeInfo
 
 	schemaRequester schemaRequester
+	PackageMarkers  markers.MarkerValues
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
@@ -342,8 +343,26 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *v1beta1.JSO
 		fieldName := jsonOpts[0]
 		inline = inline || fieldName == "" // anonymous fields are inline fields in YAML/JSON
 
-		if !inline && !omitEmpty {
-			props.Required = append(props.Required, fieldName)
+		// if no default required mode is set, default to required
+		defaultMode := "required"
+		if ctx.PackageMarkers.Get("kubebuilder:validation:Optional") != nil {
+			defaultMode = "optional"
+		}
+
+		switch defaultMode {
+		// if this package isn't set to optional default...
+		case "required":
+			// ...everything that's not inline, omitempty, or explicitly optional is required
+			if !inline && !omitEmpty && field.Markers.Get("kubebuilder:validation:Optional") == nil && field.Markers.Get("optional") == nil {
+				props.Required = append(props.Required, fieldName)
+			}
+
+		// if this package isn't set to required default...
+		case "optional":
+			// ...everything that isn't explicitly required is optional
+			if field.Markers.Get("kubebuilder:validation:Required") != nil {
+				props.Required = append(props.Required, fieldName)
+			}
 		}
 
 		propSchema := typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
