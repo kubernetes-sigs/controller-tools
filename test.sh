@@ -106,12 +106,15 @@ function fetch_go_tools {
     GO111MODULE=on go get -d github.com/golangci/golangci-lint/cmd/golangci-lint@v1.15.0 
   fi
 
-  DEP_LATEST=$(git describe --abbrev=0 --tags)
-  
+
   header_text "Checking for dep"
   if ! is_installed dep; then
     header_text "Installing dep"
-    GO111MODULE=off go get -v -u github.com/golang/dep/cmd/dep
+    GO111MODULE=off go get -d -u github.com/golang/dep
+    cd $(go env GOPATH)/src/github.com/golang/dep
+    DEP_LATEST=$(git describe --abbrev=0 --tags)
+    git checkout $DEP_LATEST
+    go install -ldflags="-X main.version=$DEP_LATEST" ./cmd/dep
   fi
 }
 
