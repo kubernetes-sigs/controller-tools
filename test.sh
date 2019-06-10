@@ -109,7 +109,7 @@ setup_envs
 
 header_text "running go vet"
 
-go vet -mod=vendor ./pkg/... ./cmd/...
+go vet ./pkg/... ./cmd/...
 
 header_text "running golangci-lint"
 
@@ -134,7 +134,7 @@ golangci-lint run --disable-all \
 
 header_text "running go test"
 
-go test -mod=vendor ./pkg/... ./cmd/... -parallel 4
+go test ./pkg/... ./cmd/... -parallel 4
 
 # ensure that Gopkg.{toml,lock} are up-to-date
 header_text "ensuring that Gopkg.{toml,lock} are up to date..."
