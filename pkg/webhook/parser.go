@@ -118,6 +118,15 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
 			CABundle: []byte("\n"),
 		},
+		NamespaceSelector: &metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "control-plane",
+					Operator: metav1.LabelSelectorOpNotIn,
+					Values:   []string{"controller-manager"},
+				},
+			},
+		},
 	}
 }
 
