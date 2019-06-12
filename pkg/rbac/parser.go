@@ -81,20 +81,21 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
-	if len(rules) == 0 {
-		return nil
+	var objs []interface{}
+	if len(rules) != 0 {
+		objs = append(objs, &rbacv1.ClusterRole{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ClusterRole",
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: g.RoleName,
+			},
+			Rules: rules,
+		})
 	}
 
-	if err := ctx.WriteYAML("role.yaml", rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: g.RoleName,
-		},
-		Rules: rules,
-	}); err != nil {
+	if err := ctx.WriteYAML("role.yaml", objs...); err != nil {
 		return err
 	}
 
