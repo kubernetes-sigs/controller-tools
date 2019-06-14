@@ -77,7 +77,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind) {
 		if typeInfo == nil {
 			continue
 		}
-		fullSchema := FlattenEmbedded(p.flattener.FlattenType(typeIdent))
+		fullSchema := FlattenEmbedded(p.flattener.FlattenType(typeIdent), pkg)
 		ver := apiext.CustomResourceDefinitionVersion{
 			Name:   p.GroupVersions[pkg].Version,
 			Served: true,
