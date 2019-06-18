@@ -142,11 +142,7 @@ func flattenAllOfInto(dst *apiext.JSONSchemaProps, src apiext.JSONSchemaProps, e
 				dstProps.Schema = &apiext.JSONSchemaProps{}
 			}
 			flattenAllOfInto(dstProps.Schema, *srcProps.Schema, errRec)
-		case "Nullable":
-			// true overrides false
-			if srcInt.(bool) {
-				dstField.Set(srcField)
-			}
+		// NB(directxman12): no need to explicitly handle nullable -- false is considered to be the zero value
 		// TODO(directxman12): src isn't necessarily the field value -- it's just the most recent allOf entry
 		default:
 			// hoist into allOf...
@@ -194,10 +190,6 @@ func (v *allOfVisitor) Visit(schema *apiext.JSONSchemaProps) SchemaVisitor {
 	schema.AllOf = nil
 
 	for _, embedded := range origAllOf {
-		if embedded.Ref != nil && len(*embedded.Ref) > 0 {
-			schema.AllOf = append(schema.AllOf, embedded)
-			continue
-		}
 		flattenAllOfInto(schema, embedded, v.errRec)
 	}
 	return v
