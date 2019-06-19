@@ -19,6 +19,7 @@ package crd
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -169,6 +170,8 @@ func flattenAllOfInto(dst *apiext.JSONSchemaProps, src apiext.JSONSchemaProps, e
 		for req := range reqUniq {
 			dst.Required = append(dst.Required, req)
 		}
+		// be deterministic
+		sort.Strings(dst.Required)
 	}
 }
 

@@ -300,6 +300,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *v1beta1.JSONSchemaPr
 		Type: "object",
 		AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
 			Schema: valSchema,
+			Allows: true, /* set automatically by serialization, but useful for testing */
 		},
 	}
 }
