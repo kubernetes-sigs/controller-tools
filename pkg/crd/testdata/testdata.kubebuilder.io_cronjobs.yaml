@@ -427,6 +427,10 @@ spec:
                 description: This tests byte slice schema generation.
                 format: byte
                 type: string
+              canBeNull:
+                description: This tests that nullable works correctly
+                nullable: true
+                type: string
               concurrencyPolicy:
                 description: 'Specifies how to treat concurrent executions of a Job.
                   Valid values are: - "Allow" (default): allows CronJobs to run concurrently;
@@ -6197,6 +6201,7 @@ spec:
                 type: boolean
             required:
             - binaryName
+            - canBeNull
             - jobTemplate
             - schedule
             type: object
