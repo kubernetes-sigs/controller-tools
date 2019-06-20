@@ -34,9 +34,9 @@ func main() {
 		Long:  `A reference implementation generation tool for Kubernetes APIs.`,
 		Example: `	# Generate RBAC manifests for a project
 	controller-gen rbac
-	
+
 	# Generate CRD manifests for a project
-	controller-gen crd 
+	controller-gen crd
 
 	# Run all the generators for a given project
 	controller-gen all
@@ -155,7 +155,10 @@ Usage:
 			fmt.Printf("CRD manifests generated under '%s' \n", crdGen.OutputDir)
 
 			// RBAC generation
-			rbacOptions := &rbac.ManifestOptions{}
+			rbacOptions := &rbac.ManifestOptions{
+				InputDir:  filepath.Join(projectDir, "pkg"),
+				OutputDir: filepath.Join(projectDir, "config", "rbac"),
+			}
 			rbacOptions.SetDefaults()
 			if err := rbac.Generate(rbacOptions); err != nil {
 				log.Fatal(err)

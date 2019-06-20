@@ -42,11 +42,21 @@ type ManifestOptions struct {
 
 // SetDefaults sets up the default options for RBAC Manifest generator.
 func (o *ManifestOptions) SetDefaults() {
-	o.Name = "manager"
-	o.InputDir = filepath.Join(".", "pkg")
-	o.OutputDir = filepath.Join(".", "config", "rbac")
-	o.ServiceAccount = "default"
-	o.Namespace = "system"
+	if o.Name == "" {
+		o.Name = "manager"
+	}
+	if o.InputDir == "" {
+		o.InputDir = filepath.Join(".", "pkg")
+	}
+	if o.OutputDir == "" {
+		o.OutputDir = filepath.Join(".", "config", "rbac")
+	}
+	if o.ServiceAccount == "" {
+		o.ServiceAccount = "default"
+	}
+	if o.Namespace == "" {
+		o.Namespace = "system"
+	}
 }
 
 // RoleName returns the RBAC role name to be used in the manifests.
