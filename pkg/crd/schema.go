@@ -186,8 +186,8 @@ func qualifiedName(pkgName, typeName string) string {
 	return typeName
 }
 
-// definitionLink creates a definition link for the given type and package.
-func definitionLink(pkgName, typeName string) string {
+// TypeRefLink creates a definition link for the given type and package.
+func TypeRefLink(pkgName, typeName string) string {
 	return defPrefix + qualifiedName(pkgName, typeName)
 }
 
@@ -218,7 +218,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *v1beta1.JSONSchem
 		pkgPath = ""
 	}
 	ctx.requestSchema(pkgPath, typeNameInfo.Name())
-	link := definitionLink(pkgPath, typeNameInfo.Name())
+	link := TypeRefLink(pkgPath, typeNameInfo.Name())
 	return &v1beta1.JSONSchemaProps{
 		Ref: &link,
 	}
@@ -235,7 +235,7 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *v1beta1.JSONSch
 	typeNameInfo := typeInfo.Obj()
 	nonVendorPath := loader.NonVendorPath(typeNameInfo.Pkg().Path())
 	ctx.requestSchema(nonVendorPath, typeNameInfo.Name())
-	link := definitionLink(nonVendorPath, typeNameInfo.Name())
+	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
 	return &v1beta1.JSONSchemaProps{
 		Ref: &link,
 	}

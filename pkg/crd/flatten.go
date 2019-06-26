@@ -218,6 +218,8 @@ type Flattener struct {
 	// Parser is used to lookup package and type details, and parse in new packages.
 	Parser *Parser
 
+	LookupReference func(ref string, contextPkg *loader.Package) (TypeIdent, error)
+
 	// flattenedTypes hold the flattened version of each seen type for later reuse.
 	flattenedTypes map[TypeIdent]apiext.JSONSchemaProps
 	initOnce       sync.Once
@@ -226,6 +228,9 @@ type Flattener struct {
 func (f *Flattener) init() {
 	f.initOnce.Do(func() {
 		f.flattenedTypes = make(map[TypeIdent]apiext.JSONSchemaProps)
+		if f.LookupReference == nil {
+			f.LookupReference = identFromRef
+		}
 	})
 }
 
@@ -275,29 +280,47 @@ func (f *Flattener) FlattenSchema(baseSchema apiext.JSONSchemaProps, currentPack
 	return resSchema
 }
 
-// identFromRef converts the given schema ref from the given package back
-// into the TypeIdent that it represents.
-func identFromRef(ref string, contextPkg *loader.Package) (TypeIdent, error) {
+// RefParts splits a reference produced by the schema generator into its component
+// type name and package name (if it's a cross-package reference).  Note that
+// referenced packages *must* be looked up relative to the current package.
+func RefParts(ref string) (typ string, pkgName string, err error) {
 	if !strings.HasPrefix(ref, defPrefix) {
-		return TypeIdent{}, fmt.Errorf("non-standard reference link %q", ref)
+		return "", "", fmt.Errorf("non-standard reference link %q", ref)
 	}
 	ref = ref[len(defPrefix):]
 	// decode the json pointer encodings
 	ref = strings.Replace(ref, "~1", "/", -1)
 	ref = strings.Replace(ref, "~0", "~", -1)
 	nameParts := strings.SplitN(ref, "~", 2)
+
 	if len(nameParts) == 1 {
+		// local reference
+		return nameParts[0], "", nil
+	}
+	// cross-package reference
+	return nameParts[1], nameParts[0], nil
+}
+
+// identFromRef converts the given schema ref from the given package back
+// into the TypeIdent that it represents.
+func identFromRef(ref string, contextPkg *loader.Package) (TypeIdent, error) {
+	typ, pkgName, err := RefParts(ref)
+	if err != nil {
+		return TypeIdent{}, err
+	}
+
+	if pkgName == "" {
 		// a local reference
 		return TypeIdent{
-			Name:    nameParts[0],
+			Name:    typ,
 			Package: contextPkg,
 		}, nil
 	}
 
 	// an external reference
 	return TypeIdent{
-		Name:    nameParts[1],
-		Package: contextPkg.Imports()[nameParts[0]],
+		Name:    typ,
+		Package: contextPkg.Imports()[pkgName],
 	}, nil
 }
 
@@ -327,13 +350,13 @@ func preserveFields(dst *apiext.JSONSchemaProps, src apiext.JSONSchemaProps) {
 		dst.Description = srcDesc
 	}
 	if srcTitle != "" {
-		src.Title = srcTitle
+		dst.Title = srcTitle
 	}
 	if srcExDoc != nil {
-		src.ExternalDocs = srcExDoc
+		dst.ExternalDocs = srcExDoc
 	}
 	if srcEx != nil {
-		src.Example = srcEx
+		dst.Example = srcEx
 	}
 }
 
@@ -363,7 +386,7 @@ func (f *flattenVisitor) Visit(baseSchema *apiext.JSONSchemaProps) SchemaVisitor
 	// if we get a type that's just a ref, resolve it
 	if baseSchema.Ref != nil && len(*baseSchema.Ref) > 0 {
 		// resolve this ref
-		refIdent, err := identFromRef(*baseSchema.Ref, f.currentPackage)
+		refIdent, err := f.LookupReference(*baseSchema.Ref, f.currentPackage)
 		if err != nil {
 			f.currentPackage.AddError(err)
 			return nil
