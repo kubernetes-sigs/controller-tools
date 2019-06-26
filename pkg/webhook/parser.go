@@ -50,6 +50,9 @@ type Config struct {
 
 	Name string
 	Path string
+
+	SelectorLabelName  *string
+	SelectorLabelValue *string
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -102,6 +105,12 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 	default:
 		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
 	}
+
+	var namespaceSelector *metav1.LabelSelector
+	if c.SelectorLabelName != nil && c.SelectorLabelValue != nil && *c.SelectorLabelName != "" && *c.SelectorLabelValue != "" {
+		namespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{*c.SelectorLabelName: *c.SelectorLabelValue}}
+	}
+
 	path := c.Path
 	return admissionreg.Webhook{
 		Name:          c.Name,
@@ -118,6 +127,7 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
 			CABundle: []byte("\n"),
 		},
+		NamespaceSelector: namespaceSelector,
 	}
 }
 
