@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/gobuffalo/envy v1.6.15 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/google/go-cmp v0.3.0
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
