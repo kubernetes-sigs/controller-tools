@@ -80,6 +80,6 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
 
 		By("comparing the two")
-		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 	})
 })
