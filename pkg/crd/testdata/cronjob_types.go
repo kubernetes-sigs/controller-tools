@@ -62,6 +62,10 @@ type CronJobSpec struct {
 	// This tests byte slice schema generation.
 	BinaryName []byte `json:"binaryName"`
 
+	// This tests that nullable works correctly
+	// +nullable
+	CanBeNull string `json:"canBeNull"`
+
 	// Specifies the job that will be created when executing a CronJob.
 	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
