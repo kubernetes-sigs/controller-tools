@@ -53,6 +53,10 @@ type Generator interface {
 	// Generate generates artifacts produced by this marker.
 	// It's called *after* RegisterMarkers has been called.
 	Generate(*GenerationContext) error
+}
+
+// HasHelp is some Generator, OutputRule, etc with a help method.
+type HasHelp interface {
 	// Help returns help for this generator.
 	Help() *markers.DefinitionHelp
 }
@@ -152,6 +156,11 @@ func (g Generators) ForRoots(rootPaths ...string) (*Runtime, error) {
 func (r *Runtime) Run() bool {
 	// TODO(directxman12): we could make this parallel,
 	// but we'd need to ensure all underlying machinery is threadsafe
+	if len(r.Generators) == 0 {
+		fmt.Fprintln(os.Stderr, "no generators to run")
+		return true
+	}
+
 	for _, gen := range r.Generators {
 		ctx := r.GenerationContext // make a shallow copy
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
