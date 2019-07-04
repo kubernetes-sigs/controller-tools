@@ -53,6 +53,8 @@ type Generator interface {
 	// Generate generates artifacts produced by this marker.
 	// It's called *after* RegisterMarkers has been called.
 	Generate(*GenerationContext) error
+	// Help returns help for this generator.
+	Help() *markers.DefinitionHelp
 }
 
 // Runtime collects generators, loaded program data (Collector, root Packages),
