@@ -346,6 +346,7 @@
     "github.com/onsi/gomega",
     "github.com/onsi/gomega/gstruct",
     "github.com/spf13/cobra",
+    "github.com/spf13/pflag",
     "golang.org/x/tools/go/packages",
     "golang.org/x/tools/go/packages/packagestest",
     "k8s.io/api/admissionregistration/v1beta1",
