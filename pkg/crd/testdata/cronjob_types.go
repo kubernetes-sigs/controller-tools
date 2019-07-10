@@ -78,6 +78,12 @@ type CronJobSpec struct {
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
+
+	// This tests byte slices are allowed as map values.
+	ByteSliceData map[string][]byte `json:"byteSliceData,omitempty"`
+
+	// This tests string slices are allowed as map values.
+	StringSliceData map[string][]string `json:"stringSliceData,omitempty"`
 }
 
 // use an explicit type marker to verify that apply-first markers generate properly
@@ -85,8 +91,13 @@ type CronJobSpec struct {
 // +kubebuilder:validation:Type=string
 // TotallyABool is a bool that serializes as a string.
 type TotallyABool bool
+
 func (t TotallyABool) MarshalJSON() ([]byte, error) {
-	if t { return []byte(`"true"`), nil } else { return []byte(`"false"`), nil}
+	if t {
+		return []byte(`"true"`), nil
+	} else {
+		return []byte(`"false"`), nil
+	}
 }
 func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	switch string(in) {
@@ -99,7 +110,6 @@ func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 		return fmt.Errorf("bad TotallyABool value %q", string(in))
 	}
 }
-
 
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.

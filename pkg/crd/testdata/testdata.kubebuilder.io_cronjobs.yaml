@@ -427,6 +427,12 @@ spec:
                 description: This tests byte slice schema generation.
                 format: byte
                 type: string
+              byteSliceData:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: This tests byte slices are allowed as map values.
+                type: object
               canBeNull:
                 description: This tests that nullable works correctly
                 nullable: true
@@ -6189,6 +6195,13 @@ spec:
                   will be counted as failed ones.
                 format: int64
                 type: integer
+              stringSliceData:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                description: This tests string slices are allowed as map values.
+                type: object
               successfulJobsHistoryLimit:
                 description: The number of successful finished jobs to retain. This
                   is a pointer to distinguish between explicit zero and not specified.

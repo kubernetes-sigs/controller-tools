@@ -291,6 +291,12 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *v1beta1.JSONSchemaPr
 		valSchema = localNamedToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	case *ast.SelectorExpr:
 		valSchema = namedToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
+	case *ast.ArrayType:
+		valSchema = arrayToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
+		if valSchema.Type == "array" && valSchema.Items.Schema.Type != "string" {
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
+			return &v1beta1.JSONSchemaProps{}
+		}
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
 		return &v1beta1.JSONSchemaProps{}
