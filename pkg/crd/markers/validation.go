@@ -66,6 +66,7 @@ var FieldOnlyMarkers = []*markers.Definition{
 	markers.Must(markers.MakeDefinition("kubebuilder:validation:Required", markers.DescribesField, struct{}{})),
 	markers.Must(markers.MakeDefinition("kubebuilder:validation:Optional", markers.DescribesField, struct{}{})),
 	markers.Must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})),
+	markers.Must(markers.MakeDefinition("required", markers.DescribesField, struct{}{})),
 	markers.Must(markers.MakeDefinition("nullable", markers.DescribesField, Nullable{})),
 }
 

@@ -361,7 +361,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *v1beta1.JSO
 		// if this package isn't set to required default...
 		case "optional":
 			// ...everything that isn't explicitly required is optional
-			if field.Markers.Get("kubebuilder:validation:Required") != nil {
+			if field.Markers.Get("kubebuilder:validation:Required") != nil && field.Markers.Get("required") != nil {
 				props.Required = append(props.Required, fieldName)
 			}
 		}
