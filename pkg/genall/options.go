@@ -45,6 +45,21 @@ func RegisterOptionsMarkers(into *markers.Registry) error {
 	return nil
 }
 
+// RegistryFromOptions produces just the marker registry that would be used by FromOptions, without
+// attempting to produce a full Runtime.  This can be useful if you want to display help without
+// trying to load roots.
+func RegistryFromOptions(optionsRegistry *markers.Registry, options []string) (*markers.Registry, error) {
+	protoRt, err := protoFromOptions(optionsRegistry, options)
+	if err != nil {
+		return nil, err
+	}
+	reg := &markers.Registry{}
+	if err := protoRt.Generators.RegisterMarkers(reg); err != nil {
+		return nil, err
+	}
+	return reg, nil
+}
+
 // FromOptions parses the options from markers stored in the given registry out into a runtime.
 // The markers in the registry must be either
 //
@@ -57,6 +72,40 @@ func RegisterOptionsMarkers(into *markers.Registry) error {
 // further modified.  Not default generators are used if none are specified -- you can check
 // the output and rerun for that.
 func FromOptions(optionsRegistry *markers.Registry, options []string) (*Runtime, error) {
+
+	protoRt, err := protoFromOptions(optionsRegistry, options)
+	if err != nil {
+		return nil, err
+	}
+
+	// make the runtime
+	genRuntime, err := protoRt.Generators.ForRoots(protoRt.Paths...)
+	if err != nil {
+		return nil, err
+	}
+
+	// attempt to figure out what the user wants without a lot of verbose specificity:
+	// if the user specifies a default rule, assume that they probably want to fall back
+	// to that.  Otherwise, assume that they just wanted to customize one option from the
+	// set, and leave the rest in the standard configuration.
+	if protoRt.OutputRules.Default != nil {
+		genRuntime.OutputRules = protoRt.OutputRules
+		return genRuntime, nil
+	}
+
+	outRules := DirectoryPerGenerator("config", protoRt.GeneratorsByName)
+	for gen, rule := range protoRt.OutputRules.ByGenerator {
+		outRules.ByGenerator[gen] = rule
+	}
+
+	genRuntime.OutputRules = outRules
+	return genRuntime, nil
+}
+
+// protoFromOptions returns a proto-Runtime from the given options registry and
+// options set.  This can then be used to construct an actual Runtime.  See the
+// FromOptions function for more details about how the options work.
+func protoFromOptions(optionsRegistry *markers.Registry, options []string) (protoRuntime, error) {
 	var gens Generators
 	rules := OutputRules{
 		ByGenerator: make(map[Generator]OutputRule),
@@ -74,12 +123,12 @@ func FromOptions(optionsRegistry *markers.Registry, options []string) (*Runtime,
 		}
 		defn := optionsRegistry.Lookup(rawOpt, markers.DescribesPackage)
 		if defn == nil {
-			return nil, fmt.Errorf("unknown option %q", rawOpt[1:])
+			return protoRuntime{}, fmt.Errorf("unknown option %q", rawOpt[1:])
 		}
 
 		val, err := defn.Parse(rawOpt)
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse option %q: %v", rawOpt[1:], err)
+			return protoRuntime{}, fmt.Errorf("unable to parse option %q: %v", rawOpt[1:], err)
 		}
 
 		switch val := val.(type) {
@@ -99,7 +148,7 @@ func FromOptions(optionsRegistry *markers.Registry, options []string) (*Runtime,
 		case InputPaths:
 			paths = append(paths, val...)
 		default:
-			return nil, fmt.Errorf("unknown option marker %q", defn.Name)
+			return protoRuntime{}, fmt.Errorf("unknown option marker %q", defn.Name)
 		}
 	}
 
@@ -107,34 +156,27 @@ func FromOptions(optionsRegistry *markers.Registry, options []string) (*Runtime,
 	for genName, outputRule := range outputByGen {
 		gen, knownGen := gensByName[genName]
 		if !knownGen {
-			return nil, fmt.Errorf("non-invoked generator %q", genName)
+			return protoRuntime{}, fmt.Errorf("non-invoked generator %q", genName)
 		}
 
 		rules.ByGenerator[gen] = outputRule
 	}
 
-	// make the runtime
-	genRuntime, err := Generators(gens).ForRoots(paths...)
-	if err != nil {
-		return nil, err
-	}
+	return protoRuntime{
+		Paths:            paths,
+		Generators:       Generators(gens),
+		OutputRules:      rules,
+		GeneratorsByName: gensByName,
+	}, nil
+}
 
-	// attempt to figure out what the user wants without a lot of verbose specificity:
-	// if the user specifies a default rule, assume that they probably want to fall back
-	// to that.  Otherwise, assume that they just wanted to customize one option from the
-	// set, and leave the rest in the standard configuration.
-	if rules.Default != nil {
-		genRuntime.OutputRules = rules
-		return genRuntime, nil
-	}
-
-	outRules := DirectoryPerGenerator("config", gensByName)
-	for gen, rule := range rules.ByGenerator {
-		outRules.ByGenerator[gen] = rule
-	}
-
-	genRuntime.OutputRules = outRules
-	return genRuntime, nil
+// protoRuntime represents the raw pieces needed to compose a runtime, as
+// parsed from some options.
+type protoRuntime struct {
+	Paths            []string
+	Generators       Generators
+	OutputRules      OutputRules
+	GeneratorsByName map[string]Generator
 }
 
 // splitOutputRuleOption splits a marker name of "output:rule:gen" or "output:rule"

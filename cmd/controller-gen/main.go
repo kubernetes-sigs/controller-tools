@@ -157,18 +157,20 @@ func main() {
 }
 
 func runGenerators(c *cobra.Command, rawOptions []string, whichLevel int) error {
-	rt, err := genall.FromOptions(optionsRegistry, rawOptions)
-	if err != nil {
-		return err
-	}
-
 	if whichLevel > 0 {
-		reg := &markers.Registry{}
-		if err := rt.Generators.RegisterMarkers(reg); err != nil {
+		// just grab a registry so we don't lag while trying to load roots
+		// (like we'd do if we just constructed the full runtime).
+		reg, err := genall.RegistryFromOptions(optionsRegistry, rawOptions)
+		if err != nil {
 			return err
 		}
 
 		return helpForLevels(c.OutOrStdout(), c.OutOrStderr(), whichLevel, reg, help.SortByCategory)
+	}
+
+	rt, err := genall.FromOptions(optionsRegistry, rawOptions)
+	if err != nil {
+		return err
 	}
 
 	if hadErrs := rt.Run(); hadErrs {
