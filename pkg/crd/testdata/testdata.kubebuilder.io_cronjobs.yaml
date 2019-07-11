@@ -10,7 +10,7 @@ spec:
   names:
     kind: CronJob
     plural: cronjobs
-  scope: ""
+  scope: Namespaced
   versions:
   - name: v1
     schema:
