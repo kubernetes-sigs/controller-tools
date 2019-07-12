@@ -26,6 +26,17 @@ import (
 var KnownPackages = map[string]PackageOverride{
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1": func(p *Parser, pkg *loader.Package) {
+		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiext.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]apiext.JSONSchemaProps{
+				"name": {
+					Type: "string",
+				},
+				"generateName": {
+					Type: "string",
+				},
+			},
+		}
 		p.Schemata[TypeIdent{Name: "Time", Package: pkg}] = apiext.JSONSchemaProps{
 			Type:   "string",
 			Format: "date-time",
