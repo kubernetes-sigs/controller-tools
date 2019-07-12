@@ -179,7 +179,7 @@ func (s PrintColumn) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, versio
 
 // Resource defines "+kubebuilder:resource"
 type Resource struct {
-	Path       string
+	Path       string   `marker:",optional"`
 	ShortName  []string `marker:",optional"`
 	Categories []string `marker:",optional"`
 	Singular   string   `marker:",optional"`
@@ -187,7 +187,9 @@ type Resource struct {
 }
 
 func (s Resource) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
-	crd.Names.Plural = s.Path
+	if s.Path != "" {
+		crd.Names.Plural = s.Path
+	}
 	crd.Names.ShortNames = s.ShortName
 	crd.Names.Categories = s.Categories
 
