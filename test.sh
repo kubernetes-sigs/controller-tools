@@ -134,7 +134,7 @@ golangci-lint run --disable-all \
 
 header_text "running go test"
 
-go test ./pkg/... ./cmd/... -parallel 4
+go test -race ./pkg/... ./cmd/... -parallel 4
 
 # ensure that Gopkg.{toml,lock} are up-to-date
 header_text "ensuring that Gopkg.{toml,lock} are up to date..."
