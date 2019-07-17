@@ -27,7 +27,8 @@ type SchemaVisitor interface {
 	// this visitor will be called again with `nil` to indicate that
 	// all children have been visited.  If a nil visitor is returned,
 	// children are not visited.
-	Visit(schema *apiext.JSONSchemaProps) SchemaVisitor
+	// level is the current depth of the visitor in the tree.
+	Visit(schema *apiext.JSONSchemaProps, level int) SchemaVisitor
 }
 
 // EditSchema walks the given schema using the given visitor.  Actual
@@ -35,7 +36,7 @@ type SchemaVisitor interface {
 // made by the visitor will be reflected to the passed-in schema.
 func EditSchema(schema *apiext.JSONSchemaProps, visitor SchemaVisitor) {
 	walker := schemaWalker{visitor: visitor}
-	walker.walkSchema(schema)
+	walker.walkSchema(schema, 0 /* level at the root is 0 */)
 }
 
 // schemaWalker knows how to walk the schema, saving modifications
@@ -47,41 +48,42 @@ type schemaWalker struct {
 // walkSchema walks the given schema, saving modifications made by the
 // visitor (this is as simple as passing a pointer in most cases,
 // but special care needs to be taken to persist with maps).
-func (w schemaWalker) walkSchema(schema *apiext.JSONSchemaProps) {
-	subVisitor := w.visitor.Visit(schema)
+func (w schemaWalker) walkSchema(schema *apiext.JSONSchemaProps, level int) {
+	subVisitor := w.visitor.Visit(schema, level)
 	if subVisitor == nil {
 		return
 	}
-	defer subVisitor.Visit(nil)
+	nextLevel := level + 1
+	defer subVisitor.Visit(nil, nextLevel)
 
 	subWalker := schemaWalker{visitor: subVisitor}
 	if schema.Items != nil {
-		subWalker.walkPtr(schema.Items.Schema)
-		subWalker.walkSlice(schema.Items.JSONSchemas)
+		subWalker.walkPtr(schema.Items.Schema, nextLevel)
+		subWalker.walkSlice(schema.Items.JSONSchemas, nextLevel)
 	}
-	subWalker.walkSlice(schema.AllOf)
-	subWalker.walkSlice(schema.OneOf)
-	subWalker.walkSlice(schema.AnyOf)
-	subWalker.walkPtr(schema.Not)
-	subWalker.walkMap(schema.Properties)
+	subWalker.walkSlice(schema.AllOf, nextLevel)
+	subWalker.walkSlice(schema.OneOf, nextLevel)
+	subWalker.walkSlice(schema.AnyOf, nextLevel)
+	subWalker.walkPtr(schema.Not, nextLevel)
+	subWalker.walkMap(schema.Properties, nextLevel)
 	if schema.AdditionalProperties != nil {
-		subWalker.walkPtr(schema.AdditionalProperties.Schema)
+		subWalker.walkPtr(schema.AdditionalProperties.Schema, nextLevel)
 	}
-	subWalker.walkMap(schema.PatternProperties)
+	subWalker.walkMap(schema.PatternProperties, nextLevel)
 	for name, dep := range schema.Dependencies {
-		subWalker.walkPtr(dep.Schema)
+		subWalker.walkPtr(dep.Schema, nextLevel)
 		schema.Dependencies[name] = dep
 	}
 	if schema.AdditionalItems != nil {
-		subWalker.walkPtr(schema.AdditionalItems.Schema)
+		subWalker.walkPtr(schema.AdditionalItems.Schema, nextLevel)
 	}
-	subWalker.walkMap(schema.Definitions)
+	subWalker.walkMap(schema.Definitions, nextLevel)
 }
 
 // walkMap walks over values of the given map, saving changes to them.
-func (w schemaWalker) walkMap(defs map[string]apiext.JSONSchemaProps) {
+func (w schemaWalker) walkMap(defs map[string]apiext.JSONSchemaProps, level int) {
 	for name, def := range defs {
-		w.walkSchema(&def)
+		w.walkSchema(&def, level)
 		// make sure the edits actually go through since we can't
 		// take a reference to the value in the map
 		defs[name] = def
@@ -89,16 +91,16 @@ func (w schemaWalker) walkMap(defs map[string]apiext.JSONSchemaProps) {
 }
 
 // walkSlice walks over items of the given slice.
-func (w schemaWalker) walkSlice(defs []apiext.JSONSchemaProps) {
+func (w schemaWalker) walkSlice(defs []apiext.JSONSchemaProps, level int) {
 	for i := range defs {
-		w.walkSchema(&defs[i])
+		w.walkSchema(&defs[i], level)
 	}
 }
 
 // walkPtr walks over the contents of the given pointer, if it's not nil.
-func (w schemaWalker) walkPtr(def *apiext.JSONSchemaProps) {
+func (w schemaWalker) walkPtr(def *apiext.JSONSchemaProps, level int) {
 	if def == nil {
 		return
 	}
-	w.walkSchema(def)
+	w.walkSchema(def, level)
 }

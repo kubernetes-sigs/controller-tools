@@ -183,7 +183,7 @@ type allOfVisitor struct {
 	errRec ErrorRecorder
 }
 
-func (v *allOfVisitor) Visit(schema *apiext.JSONSchemaProps) SchemaVisitor {
+func (v *allOfVisitor) Visit(schema *apiext.JSONSchemaProps, level int) SchemaVisitor {
 	if schema == nil {
 		return v
 	}
@@ -370,7 +370,7 @@ type flattenVisitor struct {
 	originalField  apiext.JSONSchemaProps
 }
 
-func (f *flattenVisitor) Visit(baseSchema *apiext.JSONSchemaProps) SchemaVisitor {
+func (f *flattenVisitor) Visit(baseSchema *apiext.JSONSchemaProps, level int) SchemaVisitor {
 	if baseSchema == nil {
 		// end-of-node marker, cache the results
 		if f.currentType != nil {
@@ -390,6 +390,13 @@ func (f *flattenVisitor) Visit(baseSchema *apiext.JSONSchemaProps) SchemaVisitor
 		if err != nil {
 			f.currentPackage.AddError(err)
 			return nil
+		}
+
+		overrideSchema := schemaOverride(refIdent, &flattenContext{level: level})
+		if overrideSchema != nil {
+			preserveFields(overrideSchema, *baseSchema)
+			*baseSchema = *overrideSchema
+			return nil // don't recurse, we're done
 		}
 
 		// load and potentially flatten the schema
@@ -438,4 +445,50 @@ func (f *flattenVisitor) Visit(baseSchema *apiext.JSONSchemaProps) SchemaVisitor
 	}
 
 	return f
+}
+
+// schemaOverride overrides the default schema for given a type and
+// flattening context. A non-nil value means override the default, else carry on
+// with the default flattening workflow for this type.
+// An example of an override will be to implement structuralschema for metadata
+// or embedded kubernetes types as defined in this KEP
+// https://github.com/kubernetes/enhancements/blob/master/keps/sig-api-machinery/20190425-structural-openapi.md
+func schemaOverride(ident TypeIdent, flattenCtx *flattenContext) *apiext.JSONSchemaProps {
+	metav1Pkg := "k8s.io/apimachinery/pkg/apis/meta/v1"
+	switch {
+	// root level ObjectMeta should not be specified in the validation schema
+	// because it is managed by kube-apiserver. Refer to the KEP specified
+	// above.
+	case flattenCtx.level == 1 /* root level metadata */ &&
+		ident.Package.ID == metav1Pkg && ident.Name == "ObjectMeta":
+		return &apiext.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]apiext.JSONSchemaProps{
+				"name": {
+					//TODO(droot): figure out a way to get the description
+					Type: "string",
+				},
+				"generateName": {
+					Type: "string",
+				},
+			},
+		}
+	case flattenCtx.level > 1 /* ObjectMeta being used at a non-root level */ &&
+		ident.Package.ID == metav1Pkg && ident.Name == "ObjectMeta":
+		return nil
+		// TODO(droot): enable it once we move k8s 1.15
+		// return &apiext.JSONSchemaProps{
+		// 	// XEmbeddedResource: true,
+		// 	Type: "object",
+		// }
+	default:
+		return nil
+	}
+	return nil
+}
+
+// flattenContext contains the flattening context info.
+type flattenContext struct {
+	// level (depth in the schema tree) at which the schema is being flattened
+	level int
 }
