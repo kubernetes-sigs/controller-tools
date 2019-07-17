@@ -64,6 +64,10 @@ func (Rule) Help() *markers.DefinitionHelp {
 				Summary: "URL specifies the non-resource URLs that this rule encompasses.",
 				Details: "",
 			},
+			"Namespace": markers.DetailedHelp{
+				Summary: "specifies the scope of the Rule. If not set, the Rule belongs to the generated ClusterRole. If set, the Rule belongs to a Role, whose namespace is specified by this field.",
+				Details: "",
+			},
 		},
 	}
 }

@@ -42,3 +42,39 @@ rules:
   - get
   - patch
   - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: manager-role
+  namespace: park
+rules:
+- apiGroups:
+  - art
+  resources:
+  - jobs
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: manager-role
+  namespace: zoo
+rules:
+- apiGroups:
+  - art
+  resources:
+  - jobs
+  verbs:
+  - get
+- apiGroups:
+  - wave
+  resources:
+  - jobs
+  verbs:
+  - get
