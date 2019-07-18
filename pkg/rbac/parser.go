@@ -40,12 +40,18 @@ var (
 	RuleDefinition = markers.Must(markers.MakeDefinition("kubebuilder:rbac", markers.DescribesPackage, Rule{}))
 )
 
-// Rule is a marker value that describes a kubernetes RBAC rule.
+// +controllertools:marker:generateHelp:category=RBAC
+
+// Rule specifies an RBAC rule to all access to some resources or non-resource URLs.
 type Rule struct {
-	Groups    []string `marker:",optional"`
+	// Groups specifies the API groups that this rule encompasses.
+	Groups []string `marker:",optional"`
+	// Resources specifies the API resources that this rule encompasses.
 	Resources []string `marker:",optional"`
-	Verbs     []string
-	URLs      []string `marker:"urls,optional"`
+	// Verbs specifies the (lowercase) kubernetes API verbs that this rule encompasses.
+	Verbs []string
+	// URL specifies the non-resource URLs that this rule encompasses.
+	URLs []string `marker:"urls,optional"`
 }
 
 // ruleKey represents the resources and non-resources a Rule applies.
@@ -124,13 +130,20 @@ func (r *Rule) ToRule() rbacv1.PolicyRule {
 	}
 }
 
-// Generator is a genall.Generator that generated RBAC manifests..
+// +controllertools:marker:generateHelp
+
+// Generator generates ClusterRole objects.
 type Generator struct {
+	// RoleName sets the name of the generated ClusterRole.
 	RoleName string
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
-	return into.Register(RuleDefinition)
+	if err := into.Register(RuleDefinition); err != nil {
+		return err
+	}
+	into.AddHelp(RuleDefinition, Rule{}.Help())
+	return nil
 }
 
 // GenerateClusterRole generates a rbacv1.ClusterRole object

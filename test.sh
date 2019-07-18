@@ -107,15 +107,12 @@ fetch_kb_tools
 # setup testing env
 setup_envs
 
-header_text "running go vet"
-
-go vet ./pkg/... ./cmd/...
-
 header_text "running golangci-lint"
 
 golangci-lint run --disable-all \
     --enable=misspell \
     --enable=golint \
+    --enable=govet \
     --enable=deadcode \
     --enable=goimports \
     --enable=errcheck \
