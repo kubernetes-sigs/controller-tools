@@ -33,6 +33,8 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/webhook"
 )
 
+//go:generate go run ../helpgen/main.go paths=../../pkg/... generate:headerFile=../../boilerplate.go.txt,year=2019
+
 // Options are specified to controller-gen by turning generators and output rules into
 // markers, and then parsing them using the standard registry logic (without the "+").
 // Each marker and output rule should thus be usable as a marker target.

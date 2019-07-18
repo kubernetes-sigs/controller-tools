@@ -204,7 +204,7 @@ func (Generator) Help() *markers.DefinitionHelp {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: help-gen generate:headerFile=./hack/boilerplate.go.txt,year=2019 paths=./pkg/...")
+	fmt.Fprintf(os.Stderr, "usage: %s generate:headerFile=./boilerplate.go.txt,year=2019 paths=./pkg/...\n", os.Args[0])
 
 	optInfo := help.ByCategory(optionsRegistry, help.SortByOption)
 	for _, cat := range optInfo {
