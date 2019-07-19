@@ -4978,6 +4978,11 @@ spec:
                       type: string
                   type: object
                 type: array
+              lastScheduleMicroTime:
+                description: Information about the last time the job was successfully
+                  scheduled, with microsecond precision.
+                format: date-time
+                type: string
               lastScheduleTime:
                 description: Information when was the last time the job was successfully
                   scheduled.
