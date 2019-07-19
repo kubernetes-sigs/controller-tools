@@ -148,6 +148,11 @@ func findKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 				// ObjectMeta and TypeMeta are named types
 				continue
 			}
+			if namedField.Obj().Pkg() == nil {
+				// Embedded non-builtin universe type (specifically, it's probably `error`),
+				// so it can't be ObjectMeta or TypeMeta
+				continue
+			}
 			fieldPkgPath := loader.NonVendorPath(namedField.Obj().Pkg().Path())
 			fieldPkg := pkg.Imports()[fieldPkgPath]
 			if fieldPkg != metav1Pkg {
