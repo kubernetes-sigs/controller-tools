@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -113,9 +114,15 @@ func init() {
 	}
 }
 
+// noUsageError suppresses usage printing when it occurs
+// (since cobra doesn't provide a good way to avoid printing
+// out usage in only certain situations).
+type noUsageError struct{ error }
+
 func main() {
 	helpLevel := 0
 	whichLevel := 0
+
 	cmd := &cobra.Command{
 		Use:   "controller-gen",
 		Short: "Generate Kubernetes API extension resources and code.",
@@ -134,11 +141,32 @@ func main() {
 	controller-gen crd -ww
 `,
 		RunE: func(c *cobra.Command, rawOpts []string) error {
+			// print the help if we asked for it (since we've got a different help flag :-/), then bail
 			if helpLevel > 0 {
 				return c.Usage()
 			}
-			return runGenerators(c, rawOpts, whichLevel)
+
+			// print the marker docs if we asked for them, then bail
+			if whichLevel > 0 {
+				return printMarkerDocs(c, rawOpts, whichLevel)
+			}
+
+			// otherwise, set up the runtime for actually running the generators
+			rt, err := genall.FromOptions(optionsRegistry, rawOpts)
+			if err != nil {
+				return err
+			}
+			if len(rt.Generators) == 0 {
+				return fmt.Errorf("no generators specified")
+			}
+
+			if hadErrs := rt.Run(); hadErrs {
+				// don't obscure the actual error with a bunch of usage
+				return noUsageError{fmt.Errorf("not all generators ran successfully")}
+			}
+			return nil
 		},
+		SilenceUsage: true, // silence the usage, then print it out ourselves if it wasn't suppressed
 	}
 	cmd.Flags().CountVarP(&whichLevel, "which-markers", "w", "print out all markers available with the requested generators\n(up to -www for the most detailed output, or -wwww for json output)")
 	cmd.Flags().CountVarP(&helpLevel, "detailed-help", "h", "print out more detailed help\n(up to -hhh for the most detailed output, or -hhhh for json output)")
@@ -156,33 +184,28 @@ func main() {
 	})
 
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		if _, noUsage := err.(noUsageError); !noUsage {
+			// print the usage unless we suppressed it
+			if err := cmd.Usage(); err != nil {
+				panic(err)
+			}
+		}
+		fmt.Fprintf(cmd.OutOrStderr(), "run `%[1]s %[2]s -w` to see all available markers, or `%[1]s %[2]s -h` for usage\n", cmd.CalledAs(), strings.Join(os.Args[1:], " "))
 		os.Exit(1)
 	}
 }
 
-func runGenerators(c *cobra.Command, rawOptions []string, whichLevel int) error {
-	if whichLevel > 0 {
-		// just grab a registry so we don't lag while trying to load roots
-		// (like we'd do if we just constructed the full runtime).
-		reg, err := genall.RegistryFromOptions(optionsRegistry, rawOptions)
-		if err != nil {
-			return err
-		}
-
-		return helpForLevels(c.OutOrStdout(), c.OutOrStderr(), whichLevel, reg, help.SortByCategory)
-	}
-
-	rt, err := genall.FromOptions(optionsRegistry, rawOptions)
+// printMarkerDocs prints out marker help for the given generators specified in
+// the rawOptions, at the given level.
+func printMarkerDocs(c *cobra.Command, rawOptions []string, whichLevel int) error {
+	// just grab a registry so we don't lag while trying to load roots
+	// (like we'd do if we just constructed the full runtime).
+	reg, err := genall.RegistryFromOptions(optionsRegistry, rawOptions)
 	if err != nil {
 		return err
 	}
 
-	if hadErrs := rt.Run(); hadErrs {
-		return fmt.Errorf("not all generators ran successfully")
-	}
-
-	return nil
+	return helpForLevels(c.OutOrStdout(), c.OutOrStderr(), whichLevel, reg, help.SortByCategory)
 }
 
 func helpForLevels(mainOut io.Writer, errOut io.Writer, whichLevel int, reg *markers.Registry, sorter help.SortGroup) error {
