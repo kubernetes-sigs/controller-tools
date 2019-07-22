@@ -124,8 +124,8 @@ func main() {
 	# outputting crds to /tmp/crds and everything else to stdout
 	controller-gen rbac:roleName=<role name> crd paths=./apis/... output:crd:dir=/tmp/crds output:stdout
 
-	# Generate deepcopy implementations for a particular file
-	controller-gen deepcopy paths=./apis/v1beta1/some_types.go
+	# Generate deepcopy/runtime.Object implementations for a particular file
+	controller-gen object paths=./apis/v1beta1/some_types.go
 
 	# Run all the generators for a given project
 	controller-gen paths=./apis/...
