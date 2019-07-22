@@ -129,6 +129,9 @@ func main() {
 
 	# Run all the generators for a given project
 	controller-gen paths=./apis/...
+
+	# Explain the markers for generating CRDs, and their arguments
+	controller-gen crd -ww
 `,
 		RunE: func(c *cobra.Command, rawOpts []string) error {
 			if helpLevel > 0 {
@@ -137,8 +140,8 @@ func main() {
 			return runGenerators(c, rawOpts, whichLevel)
 		},
 	}
-	cmd.Flags().CountVarP(&whichLevel, "which-markers", "w", "print out all markers available with the requested generators (passing more times yields more detailed information)")
-	cmd.Flags().CountVarP(&helpLevel, "detailed-help", "h", "print out more detailed help (passing more times yields more detailed information about options)")
+	cmd.Flags().CountVarP(&whichLevel, "which-markers", "w", "print out all markers available with the requested generators\n(up to -www for the most detailed output, or -wwww for json output)")
+	cmd.Flags().CountVarP(&helpLevel, "detailed-help", "h", "print out more detailed help\n(up to -hhh for the most detailed output, or -hhhh for json output)")
 	cmd.Flags().Bool("help", false, "print out usage and a summary of options")
 	oldUsage := cmd.UsageFunc()
 	cmd.SetUsageFunc(func(c *cobra.Command) error {
