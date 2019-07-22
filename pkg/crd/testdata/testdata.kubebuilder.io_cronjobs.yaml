@@ -4929,11 +4929,23 @@ spec:
                   executions, it does not apply to already started executions.  Defaults
                   to false.
                 type: boolean
+              twoOfAKindPart0:
+                description: This tests that markers that are allowed on both fields
+                  and types are applied to fields
+                minLength: 4
+                type: string
+              twoOfAKindPart1:
+                description: This tests that markers that are allowed on both fields
+                  and types are applied to types
+                minLength: 4
+                type: string
             required:
             - binaryName
             - canBeNull
             - jobTemplate
             - schedule
+            - twoOfAKindPart0
+            - twoOfAKindPart1
             type: object
           status:
             description: CronJobStatus defines the observed state of CronJob

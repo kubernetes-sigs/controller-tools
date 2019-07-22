@@ -10,7 +10,14 @@ Book](https://book.kubebuilder.io/cronjob-tutorial.html), but with added
 fields to test additional markers and generation behavior.
 
 If you add a new marker, re-generate the golden output file,
-`testdata.kubebuilder.io_cronjobs.yaml`, with:
+`testdata.kubebuilder.io_cronjobs.yaml`, with (if you have the latest
+controller-gen on your path):
+
+```bash
+go generate
+```
+
+or, if you don't have the latest controller-gen on your path, use:
 
 ```bash
 $ /path/to/current/build/of/controller-gen crd paths=. output:dir=.
