@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//go:generate controller-gen crd paths=. output:dir=.
+
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
 package cronjob
@@ -84,7 +86,18 @@ type CronJobSpec struct {
 
 	// This tests string slices are allowed as map values.
 	StringSliceData map[string][]string `json:"stringSliceData,omitempty"`
+
+	// This tests that markers that are allowed on both fields and types are applied to fields
+	// +kubebuilder:validation:MinLength=4
+	TwoOfAKindPart0 string `json:"twoOfAKindPart0"`
+
+	// This tests that markers that are allowed on both fields and types are applied to types
+	TwoOfAKindPart1 LongerString `json:"twoOfAKindPart1"`
 }
+
+// +kubebuilder:validation:MinLength=4
+// This tests that markers that are allowed on both fields and types are applied to types
+type LongerString string
 
 // use an explicit type marker to verify that apply-first markers generate properly
 
