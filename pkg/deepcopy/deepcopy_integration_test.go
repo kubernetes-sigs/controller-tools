@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package crd_test
+package deepcopy_test
 
 import (
 	"io/ioutil"
@@ -24,12 +24,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/controller-tools/pkg/crd"
-	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/deepcopy"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -65,37 +61,29 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(pkgs).To(HaveLen(1))
 		cronJobPkg := pkgs[0]
 
-		By("setting up the parser")
-		reg := &markers.Registry{}
-		Expect(crdmarkers.Register(reg)).To(Succeed())
-		parser := &crd.Parser{
-			Collector: &markers.Collector{Registry: reg},
-			Checker:   &loader.TypeChecker{},
+		By("setting up the generation context")
+		collector := &markers.Collector{Registry: &markers.Registry{}}
+		Expect(deepcopy.Generator{}.RegisterMarkers(collector.Registry)).To(Succeed())
+		checker := &loader.TypeChecker{}
+		ctx := &deepcopy.ObjectGenCtx{
+			Collector: collector,
+			Checker:   checker,
 		}
-		crd.AddKnownTypes(parser)
 
-		By("requesting that the package be parsed")
-		parser.NeedPackage(cronJobPkg)
-
-		By("requesting that the CRD be generated")
-		groupKind := schema.GroupKind{Kind: "CronJob", Group: "testdata.kubebuilder.io"}
-		parser.NeedCRDFor(groupKind)
+		By("requesting that types be generated")
+		outContents := ctx.GenerateForPackage(cronJobPkg)
 
 		By("checking that no errors occurred along the way (expect for type errors)")
 		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
 
-		By("checking that the CRD is present")
-		Expect(parser.CustomResourceDefinitions).To(HaveKey(groupKind))
+		By("checking that we got output contents")
+		Expect(outContents).NotTo(BeNil())
 
-		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("testdata.kubebuilder.io_cronjobs.yaml")
+		By("loading the desired code")
+		expectedFile, err := ioutil.ReadFile("zz_generated.deepcopy.go")
 		Expect(err).NotTo(HaveOccurred())
 
-		By("parsing the desired YAML")
-		var crd apiext.CustomResourceDefinition
-		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
-
 		By("comparing the two")
-		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+		Expect(outContents).To(Equal(expectedFile), "generated code not as expected, check pkg/deepcopy/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(outContents, expectedFile))
 	})
 })
