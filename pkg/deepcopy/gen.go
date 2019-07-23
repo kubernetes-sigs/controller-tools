@@ -137,7 +137,7 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 		headerText = string(headerBytes)
 	}
-	headerText = strings.ReplaceAll(headerText, " YEAR", d.Year)
+	headerText = strings.ReplaceAll(headerText, " YEAR", " "+d.Year)
 
 	for _, root := range ctx.Roots {
 		allTypes, err := enabledOnPackage(ctx.Collector, root)
