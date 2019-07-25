@@ -17,12 +17,14 @@ limitations under the License.
 package genall
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
 	"golang.org/x/tools/go/packages"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -99,10 +101,28 @@ func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error
 	defer out.Close()
 
 	for _, obj := range objs {
-		yamlContent, err := yaml.Marshal(obj)
+		jsonBytes, err := json.Marshal(obj)
 		if err != nil {
 			return err
 		}
+
+		var r unstructured.Unstructured
+		if err := json.Unmarshal(jsonBytes, &r.Object); err != nil {
+			return err
+		}
+
+		unstructured.RemoveNestedField(r.Object, "status")
+
+		jsonBytes, err = json.MarshalIndent(r.Object, "", "    ")
+		if err != nil {
+			return err
+		}
+
+		yamlContent, err := yaml.JSONToYAML(jsonBytes)
+		if err != nil {
+			return err
+		}
+
 		n, err := out.Write(append([]byte("\n---\n"), yamlContent...))
 		if err != nil {
 			return err
