@@ -155,6 +155,11 @@ type CronJobStatus struct {
 	// Information when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+
+	// Information about the last time the job was successfully scheduled,
+	// with microsecond precision.
+	// +optional
+	LastScheduleMicroTime *metav1.MicroTime `json:"lastScheduleMicroTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
