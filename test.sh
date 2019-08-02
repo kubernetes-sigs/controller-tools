@@ -123,6 +123,7 @@ golangci-lint run --disable-all \
     --enable=misspell \
     --enable=gocyclo \
     --enable=gosec \
+    --deadline=5m \
     ./pkg/... ./cmd/...
 
 # --enable=structcheck \  # doesn't understand embedded structs
