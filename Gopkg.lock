@@ -290,9 +290,10 @@
   version = "kubernetes-1.14.1"
 
 [[projects]]
-  digest = "1:2949c401dc3fabc93e6688d3d65e63600778ce706e2eb0ad0c702cddb319c124"
+  digest = "0:"
   name = "k8s.io/apimachinery"
   packages = [
+    "pkg/api/equality",
     "pkg/api/resource",
     "pkg/apis/meta/v1",
     "pkg/conversion",
@@ -352,6 +353,7 @@
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    "k8s.io/apimachinery/pkg/api/equality",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "sigs.k8s.io/yaml",
