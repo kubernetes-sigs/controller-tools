@@ -121,7 +121,7 @@ func MergeIdenticalVersionInfo(crd *apiext.CustomResourceDefinition) {
 // NeedCRDFor requests the full CRD for the given group-kind.  It requires
 // that the packages containing the Go structs for that CRD have already
 // been loaded with NeedPackage.
-func (p *Parser) NeedCRDFor(groupKind schema.GroupKind) {
+func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	p.init()
 
 	if _, exists := p.CustomResourceDefinitions[groupKind]; exists {
@@ -160,9 +160,10 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind) {
 		if typeInfo == nil {
 			continue
 		}
-		fullSchema := TruncateDescription(
-			FlattenEmbedded(p.flattener.FlattenType(typeIdent), pkg),
-			0)
+		fullSchema := FlattenEmbedded(p.flattener.FlattenType(typeIdent), pkg)
+		if maxDescLen != nil {
+			TruncateDescription(fullSchema, *maxDescLen)
+		}
 		ver := apiext.CustomResourceDefinitionVersion{
 			Name:   p.GroupVersions[pkg].Version,
 			Served: true,
