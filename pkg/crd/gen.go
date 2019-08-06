@@ -39,6 +39,10 @@ type Generator struct {
 	// Kubernetes API servers.  The storage version's schema will be used as
 	// the CRD's schema.
 	TrivialVersions bool `marker:",optional"`
+
+	// MaxDescLen is the maximum allowed length for description for each
+	// field in CRD's OpenAPI schema.
+	// MaxDescLen int64 `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
