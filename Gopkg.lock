@@ -74,14 +74,6 @@
 
 [[projects]]
   digest = "0:"
-  name = "github.com/json-iterator/go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "27518f6661eba504be5a7a9a9f6d9460d892ade3"
-  version = "v1.1.7"
-
-[[projects]]
-  digest = "0:"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   pruneopts = "UT"
@@ -95,22 +87,6 @@
   pruneopts = "UT"
   revision = "1311e847b0cb909da63b5fecfb5370aa66236465"
   version = "v0.0.8"
-
-[[projects]]
-  digest = "0:"
-  name = "github.com/modern-go/concurrent"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94"
-  version = "1.0.3"
-
-[[projects]]
-  digest = "0:"
-  name = "github.com/modern-go/reflect2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
-  version = "1.0.1"
 
 [[projects]]
   digest = "1:e9c3bb68a6c9470302b8046d4647e0612a2ea6037b9c6a47de60c0a90db504f8"
@@ -161,14 +137,6 @@
   pruneopts = "UT"
   revision = "90e289841c1ed79b7a598a7cd9959750cb5e89e2"
   version = "v1.5.0"
-
-[[projects]]
-  digest = "0:"
-  name = "github.com/sergi/go-diff"
-  packages = ["diffmatchpatch"]
-  pruneopts = "UT"
-  revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
@@ -300,6 +268,14 @@
   version = "v2.2.2"
 
 [[projects]]
+  branch = "v3"
+  digest = "0:"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "674ba3eaed223079f9377fbb0c98c0951bf6ec10"
+
+[[projects]]
   digest = "1:45cc31023bf536943730c88567bd196e81d5aba7fa965649eb34e46c0debd0e1"
   name = "k8s.io/api"
   packages = [
@@ -328,22 +304,15 @@
     "pkg/api/equality",
     "pkg/api/resource",
     "pkg/apis/meta/v1",
-    "pkg/apis/meta/v1/unstructured",
     "pkg/conversion",
     "pkg/conversion/queryparams",
     "pkg/fields",
     "pkg/labels",
     "pkg/runtime",
     "pkg/runtime/schema",
-    "pkg/runtime/serializer",
-    "pkg/runtime/serializer/json",
-    "pkg/runtime/serializer/protobuf",
-    "pkg/runtime/serializer/recognizer",
-    "pkg/runtime/serializer/versioning",
     "pkg/selection",
     "pkg/types",
     "pkg/util/errors",
-    "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
     "pkg/util/naming",
@@ -352,7 +321,6 @@
     "pkg/util/sets",
     "pkg/util/validation",
     "pkg/util/validation/field",
-    "pkg/util/yaml",
     "pkg/watch",
     "third_party/forked/golang/reflect",
   ]
@@ -386,22 +354,17 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "github.com/onsi/gomega/gstruct",
-    "github.com/sergi/go-diff/diffmatchpatch",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "golang.org/x/tools/go/packages",
     "golang.org/x/tools/go/packages/packagestest",
-    "gopkg.in/yaml.v2",
+    "gopkg.in/yaml.v3",
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/equality",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
-    "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
-    "k8s.io/apimachinery/pkg/runtime/serializer",
-    "k8s.io/apimachinery/pkg/util/json",
-    "k8s.io/apimachinery/pkg/util/runtime",
     "sigs.k8s.io/yaml",
   ]
   solver-name = "gps-cdcl"

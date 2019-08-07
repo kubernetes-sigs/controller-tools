@@ -170,7 +170,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 			Name:   p.GroupVersions[pkg].Version,
 			Served: true,
 			Schema: &apiext.CustomResourceValidation{
-				OpenAPIV3Schema: &fullSchema,  // fine to take a reference since we deepcopy above
+				OpenAPIV3Schema: &fullSchema, // fine to take a reference since we deepcopy above
 			},
 		}
 		crd.Spec.Versions = append(crd.Spec.Versions, ver)
