@@ -58,6 +58,10 @@ type Parser struct {
 	GroupVersions map[*loader.Package]schema.GroupVersion
 	// CustomResourceDefinitions contains the known CustomResourceDefinitions for types in this parser.
 	CustomResourceDefinitions map[schema.GroupKind]apiext.CustomResourceDefinition
+	// FlattenedSchemata contains fully flattened schemata for use in building
+	// CustomResourceDefinition validation.  Each schema has been flattened by the flattener,
+	// and then embedded fields have been flattened with FlattenEmbedded.
+	FlattenedSchemata map[TypeIdent]apiext.JSONSchemaProps
 
 	// PackageOverrides indicates that the loading of any package with
 	// the given path should be handled by the given overrider.
@@ -94,6 +98,9 @@ func (p *Parser) init() {
 	}
 	if p.CustomResourceDefinitions == nil {
 		p.CustomResourceDefinitions = make(map[schema.GroupKind]apiext.CustomResourceDefinition)
+	}
+	if p.FlattenedSchemata == nil {
+		p.FlattenedSchemata = make(map[TypeIdent]apiext.JSONSchemaProps)
 	}
 }
 
@@ -162,8 +169,20 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	schema := infoToSchema(ctxForInfo)
 
 	p.Schemata[typ] = *schema
+}
 
-	return
+func (p *Parser) NeedFlattenedSchemaFor(typ TypeIdent) {
+	p.init()
+
+	if _, knownSchema := p.FlattenedSchemata[typ]; knownSchema {
+		return
+	}
+
+	p.NeedSchemaFor(typ)
+	partialFlattened := p.flattener.FlattenType(typ)
+	fullyFlattened := FlattenEmbedded(partialFlattened, typ.Package)
+
+	p.FlattenedSchemata[typ] = *fullyFlattened
 }
 
 // NeedCRDFor lives off in spec.go
