@@ -39,6 +39,13 @@ type Generator struct {
 	// Kubernetes API servers.  The storage version's schema will be used as
 	// the CRD's schema.
 	TrivialVersions bool `marker:",optional"`
+
+	// MaxDescLen limits the description length of each field in CRD's OpenAPI schema.
+	//
+	// nil (default) indicates no limit on description of fields
+	// 0 indicates drop the description completely
+	// n means at most n characters
+	MaxDescLen *int `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -69,7 +76,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	for _, groupKind := range kubeKinds {
-		parser.NeedCRDFor(groupKind)
+		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crd := parser.CustomResourceDefinitions[groupKind]
 		if g.TrivialVersions {
 			toTrivialVersions(&crd)
