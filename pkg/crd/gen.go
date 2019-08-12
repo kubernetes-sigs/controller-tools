@@ -40,11 +40,11 @@ type Generator struct {
 	// the CRD's schema.
 	TrivialVersions bool `marker:",optional"`
 
-	// MaxDescLen limits the description length of each field in CRD's OpenAPI schema.
+	// MaxDescLen specifies the maximum description length for fields in CRD's OpenAPI schema.
 	//
-	// nil (default) indicates no limit on description of fields
-	// 0 indicates drop the description completely
-	// n means at most n characters
+	// 0 indicates drop the description for all fields completely.
+	// n indicates limit the description to at most n characters and truncate the description to
+	// closest sentence boundary if it exceeds n characters.
 	MaxDescLen *int `marker:",optional"`
 }
 
