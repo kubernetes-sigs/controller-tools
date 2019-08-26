@@ -9,7 +9,9 @@ spec:
   group: testdata.kubebuilder.io
   names:
     kind: CronJob
+    listKind: CronJobList
     plural: cronjobs
+    singular: cronjob
   scope: Namespaced
   version: v1
   versions:
