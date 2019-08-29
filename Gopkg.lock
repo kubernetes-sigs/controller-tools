@@ -268,6 +268,14 @@
   version = "v2.2.2"
 
 [[projects]]
+  branch = "v3"
+  digest = "0:"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "674ba3eaed223079f9377fbb0c98c0951bf6ec10"
+
+[[projects]]
   digest = "1:45cc31023bf536943730c88567bd196e81d5aba7fa965649eb34e46c0debd0e1"
   name = "k8s.io/api"
   packages = [
@@ -350,6 +358,7 @@
     "github.com/spf13/pflag",
     "golang.org/x/tools/go/packages",
     "golang.org/x/tools/go/packages/packagestest",
+    "gopkg.in/yaml.v3",
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
