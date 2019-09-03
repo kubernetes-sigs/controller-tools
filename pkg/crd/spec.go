@@ -148,8 +148,10 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		Spec: apiext.CustomResourceDefinitionSpec{
 			Group: groupKind.Group,
 			Names: apiext.CustomResourceDefinitionNames{
-				Kind:   groupKind.Kind,
-				Plural: defaultPlural,
+				Kind:     groupKind.Kind,
+				ListKind: groupKind.Kind + "List",
+				Plural:   defaultPlural,
+				Singular: strings.ToLower(groupKind.Kind),
 			},
 		},
 	}
