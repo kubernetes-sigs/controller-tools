@@ -68,6 +68,13 @@ var KnownPackages = map[string]PackageOverride{
 		p.AddPackage(pkg) // get the rest of the types
 	},
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured": func(p *Parser, pkg *loader.Package) {
+		p.Schemata[TypeIdent{Name: "Unstructured", Package: pkg}] = apiext.JSONSchemaProps{
+			Type: "object",
+		}
+		p.AddPackage(pkg) // get the rest of the types
+	},
+
 	"k8s.io/apimachinery/pkg/util/intstr": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "IntOrString", Package: pkg}] = apiext.JSONSchemaProps{
 			AnyOf: []apiext.JSONSchemaProps{
