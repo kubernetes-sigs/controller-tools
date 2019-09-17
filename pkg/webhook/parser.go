@@ -23,6 +23,7 @@ limitations under the License.
 package webhook
 
 import (
+	"fmt"
 	"strings"
 
 	admissionreg "k8s.io/api/admissionregistration/v1beta1"
@@ -94,8 +95,12 @@ func verbToAPIVariant(verbRaw string) admissionreg.OperationType {
 	}
 }
 
-// ToRule converts this rule to its Kubernetes API form.
-func (c Config) ToWebhook() admissionreg.Webhook {
+// ToMutatingWebhook converts this rule to its Kubernetes API form.
+func (c Config) ToMutatingWebhook() (admissionreg.MutatingWebhook, error) {
+	if !c.Mutating {
+		return admissionreg.MutatingWebhook{}, fmt.Errorf("%s is a validating webhook", c.Name)
+	}
+
 	whConfig := admissionreg.RuleWithOperations{
 		Rule: admissionreg.Rule{
 			APIGroups:   c.Groups,
@@ -126,7 +131,7 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
 	}
 	path := c.Path
-	return admissionreg.Webhook{
+	return admissionreg.MutatingWebhook{
 		Name:          c.Name,
 		Rules:         []admissionreg.RuleWithOperations{whConfig},
 		FailurePolicy: &failurePolicy,
@@ -141,7 +146,61 @@ func (c Config) ToWebhook() admissionreg.Webhook {
 			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
 			CABundle: []byte("\n"),
 		},
+	}, nil
+}
+
+// ToValidatingWebhook converts this rule to its Kubernetes API form.
+func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
+	if c.Mutating {
+		return admissionreg.ValidatingWebhook{}, fmt.Errorf("%s is a mutating webhook", c.Name)
 	}
+
+	whConfig := admissionreg.RuleWithOperations{
+		Rule: admissionreg.Rule{
+			APIGroups:   c.Groups,
+			APIVersions: c.Versions,
+			Resources:   c.Resources,
+		},
+		Operations: make([]admissionreg.OperationType, len(c.Verbs)),
+	}
+
+	for i, verbRaw := range c.Verbs {
+		whConfig.Operations[i] = verbToAPIVariant(verbRaw)
+	}
+
+	// fix the group names, since letting people type "core" is nice
+	for i, group := range whConfig.APIGroups {
+		if group == "core" {
+			whConfig.APIGroups[i] = ""
+		}
+	}
+
+	var failurePolicy admissionreg.FailurePolicyType
+	switch strings.ToLower(c.FailurePolicy) {
+	case strings.ToLower(string(admissionreg.Ignore)):
+		failurePolicy = admissionreg.Ignore
+	case strings.ToLower(string(admissionreg.Fail)):
+		failurePolicy = admissionreg.Fail
+	default:
+		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
+	}
+	path := c.Path
+	return admissionreg.ValidatingWebhook{
+		Name:          c.Name,
+		Rules:         []admissionreg.RuleWithOperations{whConfig},
+		FailurePolicy: &failurePolicy,
+		ClientConfig: admissionreg.WebhookClientConfig{
+			Service: &admissionreg.ServiceReference{
+				Name:      "webhook-service",
+				Namespace: "system",
+				Path:      &path,
+			},
+			// OpenAPI marks the field as required before 1.13 because of a bug that got fixed in
+			// https://github.com/kubernetes/api/commit/e7d9121e9ffd63cea0288b36a82bcc87b073bd1b
+			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
+			CABundle: []byte("\n"),
+		},
+	}, nil
 }
 
 // +controllertools:marker:generateHelp
@@ -158,8 +217,8 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 }
 
 func (Generator) Generate(ctx *genall.GenerationContext) error {
-	var mutatingCfgs []admissionreg.Webhook
-	var validatingCfgs []admissionreg.Webhook
+	var mutatingCfgs []admissionreg.MutatingWebhook
+	var validatingCfgs []admissionreg.ValidatingWebhook
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
 		if err != nil {
@@ -169,9 +228,11 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 		for _, cfg := range markerSet[ConfigDefinition.Name] {
 			cfg := cfg.(Config)
 			if cfg.Mutating {
-				mutatingCfgs = append(mutatingCfgs, cfg.ToWebhook())
+				w, _ := cfg.ToMutatingWebhook()
+				mutatingCfgs = append(mutatingCfgs, w)
 			} else {
-				validatingCfgs = append(validatingCfgs, cfg.ToWebhook())
+				w, _ := cfg.ToValidatingWebhook()
+				validatingCfgs = append(validatingCfgs, w)
 			}
 		}
 	}
