@@ -101,51 +101,11 @@ func (c Config) ToMutatingWebhook() (admissionreg.MutatingWebhook, error) {
 		return admissionreg.MutatingWebhook{}, fmt.Errorf("%s is a validating webhook", c.Name)
 	}
 
-	whConfig := admissionreg.RuleWithOperations{
-		Rule: admissionreg.Rule{
-			APIGroups:   c.Groups,
-			APIVersions: c.Versions,
-			Resources:   c.Resources,
-		},
-		Operations: make([]admissionreg.OperationType, len(c.Verbs)),
-	}
-
-	for i, verbRaw := range c.Verbs {
-		whConfig.Operations[i] = verbToAPIVariant(verbRaw)
-	}
-
-	// fix the group names, since letting people type "core" is nice
-	for i, group := range whConfig.APIGroups {
-		if group == "core" {
-			whConfig.APIGroups[i] = ""
-		}
-	}
-
-	var failurePolicy admissionreg.FailurePolicyType
-	switch strings.ToLower(c.FailurePolicy) {
-	case strings.ToLower(string(admissionreg.Ignore)):
-		failurePolicy = admissionreg.Ignore
-	case strings.ToLower(string(admissionreg.Fail)):
-		failurePolicy = admissionreg.Fail
-	default:
-		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
-	}
-	path := c.Path
 	return admissionreg.MutatingWebhook{
 		Name:          c.Name,
-		Rules:         []admissionreg.RuleWithOperations{whConfig},
-		FailurePolicy: &failurePolicy,
-		ClientConfig: admissionreg.WebhookClientConfig{
-			Service: &admissionreg.ServiceReference{
-				Name:      "webhook-service",
-				Namespace: "system",
-				Path:      &path,
-			},
-			// OpenAPI marks the field as required before 1.13 because of a bug that got fixed in
-			// https://github.com/kubernetes/api/commit/e7d9121e9ffd63cea0288b36a82bcc87b073bd1b
-			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
-			CABundle: []byte("\n"),
-		},
+		Rules:         c.rules(),
+		FailurePolicy: c.failurePolicy(),
+		ClientConfig:  c.clientConfig(),
 	}, nil
 }
 
@@ -155,6 +115,17 @@ func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
 		return admissionreg.ValidatingWebhook{}, fmt.Errorf("%s is a mutating webhook", c.Name)
 	}
 
+	return admissionreg.ValidatingWebhook{
+		Name:          c.Name,
+		Rules:         c.rules(),
+		FailurePolicy: c.failurePolicy(),
+		ClientConfig:  c.clientConfig(),
+	}, nil
+}
+
+// rules returns the configuration of what operations on what
+// resources/subresources a webhook should care about.
+func (c Config) rules() []admissionreg.RuleWithOperations {
 	whConfig := admissionreg.RuleWithOperations{
 		Rule: admissionreg.Rule{
 			APIGroups:   c.Groups,
@@ -175,6 +146,12 @@ func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
 		}
 	}
 
+	return []admissionreg.RuleWithOperations{whConfig}
+}
+
+// failurePolicy converts the string value to the proper value for the API.
+// Unrecognized values are passed through.
+func (c Config) failurePolicy() *admissionreg.FailurePolicyType {
 	var failurePolicy admissionreg.FailurePolicyType
 	switch strings.ToLower(c.FailurePolicy) {
 	case strings.ToLower(string(admissionreg.Ignore)):
@@ -184,23 +161,23 @@ func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
 	default:
 		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
 	}
+	return &failurePolicy
+}
+
+// clientConfig returns the client config for a webhook.
+func (c Config) clientConfig() admissionreg.WebhookClientConfig {
 	path := c.Path
-	return admissionreg.ValidatingWebhook{
-		Name:          c.Name,
-		Rules:         []admissionreg.RuleWithOperations{whConfig},
-		FailurePolicy: &failurePolicy,
-		ClientConfig: admissionreg.WebhookClientConfig{
-			Service: &admissionreg.ServiceReference{
-				Name:      "webhook-service",
-				Namespace: "system",
-				Path:      &path,
-			},
-			// OpenAPI marks the field as required before 1.13 because of a bug that got fixed in
-			// https://github.com/kubernetes/api/commit/e7d9121e9ffd63cea0288b36a82bcc87b073bd1b
-			// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
-			CABundle: []byte("\n"),
+	return admissionreg.WebhookClientConfig{
+		Service: &admissionreg.ServiceReference{
+			Name:      "webhook-service",
+			Namespace: "system",
+			Path:      &path,
 		},
-	}, nil
+		// OpenAPI marks the field as required before 1.13 because of a bug that got fixed in
+		// https://github.com/kubernetes/api/commit/e7d9121e9ffd63cea0288b36a82bcc87b073bd1b
+		// Put "\n" as an placeholder as a workaround til 1.13+ is almost everywhere.
+		CABundle: []byte("\n"),
+	}
 }
 
 // +controllertools:marker:generateHelp
