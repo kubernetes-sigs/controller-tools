@@ -286,8 +286,8 @@
     "rbac/v1",
   ]
   pruneopts = "UT"
-  revision = "7cf5895f2711098d7d9527db0a4a49fb0dff7de2"
-  version = "kubernetes-1.15.0"
+  revision = "95b840bb6a1f5f0462af804c8589396d294d4914"
+  version = "kubernetes-1.16.0"
 
 [[projects]]
   digest = "0:"
@@ -297,8 +297,8 @@
     "pkg/apis/apiextensions/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "14e95df34f1f469647f494f5185a036e26fddcab"
-  version = "kubernetes-1.15.0"
+  revision = "8f644eb6e783291c4b8cb8cb25a9983be1a74f5c"
+  version = "kubernetes-1.16.0"
 
 [[projects]]
   digest = "0:"
@@ -328,8 +328,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "1799e75a07195de9460b8ef7300883499f12127b"
-  version = "kubernetes-1.15.0"
+  revision = "27d36303b6556f377b4f34e64705fa9024a12b0c"
+  version = "kubernetes-1.16.0"
 
 [[projects]]
   digest = "0:"
