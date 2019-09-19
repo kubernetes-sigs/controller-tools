@@ -27,6 +27,36 @@ import (
 var _ = Describe("CRD Generation", func() {
 	Describe("Utilities", func() {
 		Describe("MergeIdenticalVersionInfo", func() {
+			It("should replace per-version schemata with a top-level schema if only one version", func() {
+				spec := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: true,
+								Schema: &apiext.CustomResourceValidation{
+									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+										Required:   []string{"foo"},
+										Type:       "object",
+										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+									},
+								},
+							},
+						},
+					},
+				}
+				crd.MergeIdenticalVersionInfo(spec)
+				Expect(spec.Spec.Validation).To(Equal(&apiext.CustomResourceValidation{
+					OpenAPIV3Schema: &apiext.JSONSchemaProps{
+						Required:   []string{"foo"},
+						Type:       "object",
+						Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+					},
+				}))
+				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+					{Name: "v1", Storage: true},
+				}))
+			})
 			It("should replace per-version schemata with a top-level schema if all are identical", func() {
 				spec := &apiext.CustomResourceDefinition{
 					Spec: apiext.CustomResourceDefinitionSpec{
@@ -100,6 +130,30 @@ var _ = Describe("CRD Generation", func() {
 				Expect(spec).To(Equal(orig))
 			})
 
+			It("should replace per-version subresources with top-level subresources if only one version", func() {
+				spec := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: true,
+								Subresources: &apiext.CustomResourceSubresources{
+									Status: &apiext.CustomResourceSubresourceStatus{},
+								},
+							},
+						},
+					},
+				}
+
+				crd.MergeIdenticalVersionInfo(spec)
+				Expect(spec.Spec.Subresources).To(Equal(&apiext.CustomResourceSubresources{
+					Status: &apiext.CustomResourceSubresourceStatus{},
+				}))
+				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+					{Name: "v1", Storage: true},
+				}))
+			})
+
 			It("should replace per-version subresources with top-level subresources if all are identical", func() {
 				spec := &apiext.CustomResourceDefinition{
 					Spec: apiext.CustomResourceDefinitionSpec{
@@ -150,6 +204,32 @@ var _ = Describe("CRD Generation", func() {
 				orig := spec.DeepCopy()
 				crd.MergeIdenticalVersionInfo(spec)
 				Expect(spec).To(Equal(orig))
+			})
+
+			It("should replace per-version printer columns with top-level printer columns if only one version", func() {
+				spec := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: true,
+								AdditionalPrinterColumns: []apiext.CustomResourceColumnDefinition{
+									{Name: "Cheddar", JSONPath: ".spec.cheddar"},
+									{Name: "Parmesan", JSONPath: ".status.parmesan"},
+								},
+							},
+						},
+					},
+				}
+
+				crd.MergeIdenticalVersionInfo(spec)
+				Expect(spec.Spec.AdditionalPrinterColumns).To(Equal([]apiext.CustomResourceColumnDefinition{
+					{Name: "Cheddar", JSONPath: ".spec.cheddar"},
+					{Name: "Parmesan", JSONPath: ".status.parmesan"},
+				}))
+				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+					{Name: "v1", Storage: true},
+				}))
 			})
 
 			It("should replace per-version printer columns with top-level printer columns if all are identical", func() {
