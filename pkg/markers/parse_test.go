@@ -18,6 +18,7 @@ package markers_test
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	sc "text/scanner"
 
@@ -174,6 +175,8 @@ var _ = Describe("Parsing", func() {
 		It("should support delimitted slices of bare slices", argParseTestCase{arg: sliceOSlice, raw: "{1;1,2;3,5;8}", output: sliceOSliceOut}.Run)
 		It("should support delimitted slices of delimitted slices", argParseTestCase{arg: sliceOSlice, raw: "{{1,1},{2,3},{5,8}}", output: sliceOSliceOut}.Run)
 
+		It("should support maps", argParseTestCase{arg: Argument{Type: MapType, ItemType: &Argument{Type: StringType}}, raw: "{formal: hello, `informal`: `hi!`}", output: map[string]string{"formal": "hello", "informal": "hi!"}}.Run)
+
 		Context("with any value", func() {
 			anyArg := Argument{Type: AnyType}
 			It("should support bare strings", argParseTestCase{arg: anyArg, raw: `some string here!`, output: "some string here!"}.Run)
@@ -190,6 +193,18 @@ var _ = Describe("Parsing", func() {
 			It("should support delimitted slices", argParseTestCase{arg: anyArg, raw: "{hi,hello,hey y'all}", output: []string{"hi", "hello", "hey y'all"}}.Run)
 			It("should support delimitted slices of bare slices", argParseTestCase{arg: anyArg, raw: "{1;1,2;3,5;8}", output: sliceOSliceOut}.Run)
 			It("should support delimitted slices of delimitted slices", argParseTestCase{arg: anyArg, raw: "{{1,1},{2,3},{5,8}}", output: sliceOSliceOut}.Run)
+
+			complexMap := map[string]interface{}{
+				"text":     "abc",
+				"len":      3,
+				"as bytes": []int{97, 98, 99},
+				"props": map[string]interface{}{
+					"encoding": "ascii",
+					"nullsafe": true,
+					"tags":     []string{"triple", "in a row"},
+				},
+			}
+			It("should support non-uniform, nested maps (and always guess as such)", argParseTestCase{arg: anyArg, raw: `{text: "abc", len: 3, "as bytes": 97;98;99, props: {encoding: ascii, nullsafe: true, tags: {"triple", "in a row"}}}`, output: complexMap}.Run)
 		})
 	})
 })
@@ -225,8 +240,8 @@ func (tc argParseTestCase) Run() {
 	scanner := sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(tc.raw))
 	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
-	scanner.Error = func(_ *sc.Scanner, msg string) {
-		Fail(msg)
+	scanner.Error = func(scanner *sc.Scanner, msg string) {
+		Fail(fmt.Sprintf("%s (at %s)", msg, scanner.Position))
 	}
 
 	var actualOut reflect.Value
