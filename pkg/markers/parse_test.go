@@ -76,10 +76,8 @@ var _ = Describe("Parsing", func() {
 			mustDefine(reg, "testing:tripleDefined", DescribesField, "")
 			mustDefine(reg, "testing:tripleDefined", DescribesType, false)
 
-			defn, err := MakeDefinition("testing:custom", DescribesPackage, CustomType{})
+			defn, err := MakeAnyTypeDefinition("testing:custom", DescribesPackage, CustomType{})
 			Expect(err).NotTo(HaveOccurred())
-			defn.FieldNames = map[string]string{"": "Value"}
-			defn.Fields = map[string]Argument{"": defn.Fields["value"]}
 
 			Expect(reg.Register(defn)).To(Succeed())
 		})

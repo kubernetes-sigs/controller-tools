@@ -93,6 +93,27 @@ type CronJobSpec struct {
 
 	// This tests that markers that are allowed on both fields and types are applied to types
 	TwoOfAKindPart1 LongerString `json:"twoOfAKindPart1"`
+
+	// This tests that primitive defaulting can be performed.
+	// +kubebuilder:validation:Default=forty-two
+	DefaultedString string `json:"defaultedString"`
+
+	// This tests that slice defaulting can be performed.
+	// +kubebuilder:validation:Default={a,b}
+	DefaultedSlice []string `json:"defaultedSlice"`
+
+	// This tests that object defaulting can be performed.
+	// +kubebuilder:validation:Default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
+	DefaultedObject []RootObject `json:"defaultedObject"`
+}
+
+type NestedObject struct {
+	Foo string `json:"foo"`
+	Bar bool   `json:"bar"`
+}
+
+type RootObject struct {
+	Nested NestedObject `json:"nested"`
 }
 
 // +kubebuilder:validation:MinLength=4
