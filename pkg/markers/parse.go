@@ -768,9 +768,21 @@ func (d *Definition) Parse(rawMarker string) (interface{}, error) {
 	// TODO(directxman12): strict parsing where we error out if certain fields aren't optional
 	seen := make(map[string]struct{}, len(d.Fields))
 	if d.AnonymousField() && scanner.Peek() != sc.EOF {
+		// might still be a struct that something fiddled with, so double check
+		structFieldName := d.FieldNames[""]
+		outTarget := out
+		if structFieldName != "" {
+			// it's a struct field mapped to an anonymous marker
+			outTarget = out.FieldByName(structFieldName)
+			if !outTarget.CanSet() {
+				scanner.Error(scanner, fmt.Sprintf("cannot set field %q (might not exist)", structFieldName))
+				return out.Interface(), loader.MaybeErrList(errs)
+			}
+		}
+
 		// no need for trying to parse field names if we're not a struct
 		field := d.Fields[""]
-		field.Parse(scanner, fields, out)
+		field.Parse(scanner, fields, outTarget)
 		seen[""] = struct{}{} // mark as seen for strict definitions
 	} else if !d.Empty() && scanner.Peek() != sc.EOF {
 		// if we expect *and* actually have arguments passed
