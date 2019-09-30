@@ -109,6 +109,11 @@ setup_envs
 
 header_text "running golangci-lint"
 
+header_text "generating marker help"
+pushd cmd/controller-gen > /dev/null
+  go generate
+popd > /dev/null
+
 golangci-lint run --disable-all \
     --enable=misspell \
     --enable=golint \

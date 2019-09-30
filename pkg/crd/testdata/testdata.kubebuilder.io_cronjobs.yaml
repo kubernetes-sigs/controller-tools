@@ -59,6 +59,42 @@ spec:
               - Forbid
               - Replace
               type: string
+            defaultedObject:
+              default:
+              - nested:
+                  bar: true
+                  foo: baz
+              - nested:
+                  bar: false
+              description: This tests that object defaulting can be performed.
+              items:
+                properties:
+                  nested:
+                    properties:
+                      bar:
+                        type: boolean
+                      foo:
+                        type: string
+                    required:
+                    - bar
+                    - foo
+                    type: object
+                required:
+                - nested
+                type: object
+              type: array
+            defaultedSlice:
+              default:
+              - a
+              - b
+              description: This tests that slice defaulting can be performed.
+              items:
+                type: string
+              type: array
+            defaultedString:
+              default: forty-two
+              description: This tests that primitive defaulting can be performed.
+              type: string
             failedJobsHistoryLimit:
               description: The number of failed finished jobs to retain. This is a
                 pointer to distinguish between explicit zero and not specified.
@@ -4790,6 +4826,9 @@ spec:
           required:
           - binaryName
           - canBeNull
+          - defaultedObject
+          - defaultedSlice
+          - defaultedString
           - jobTemplate
           - schedule
           - twoOfAKindPart0
