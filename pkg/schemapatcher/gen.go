@@ -22,10 +22,12 @@ import (
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextv1b1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog"
 	kyaml "sigs.k8s.io/yaml"
 
 	crdgen "sigs.k8s.io/controller-tools/pkg/crd"
@@ -146,21 +148,26 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 			existingInfo.Versions[ver] = struct{}{}
 		}
 
-		allSame := true
-		firstSchema := existingInfo.NewSchemata[someVer]
-		for ver := range existingInfo.Versions {
-			otherSchema, hasSchema := existingInfo.NewSchemata[ver]
-			if !hasSchema || !equality.Semantic.DeepEqual(firstSchema, otherSchema) {
-				allSame = false
-				break
+		globalSchemaWritten := false
+		if existingInfo.WriteGlobalSchema {
+			allSame := true
+			firstSchema := existingInfo.NewSchemata[someVer]
+			for ver := range existingInfo.Versions {
+				otherSchema, hasSchema := existingInfo.NewSchemata[ver]
+				if !hasSchema || !equality.Semantic.DeepEqual(firstSchema, otherSchema) {
+					allSame = false
+					break
+				}
+			}
+			if allSame {
+				if err := existingInfo.setGlobalSchema(); err != nil {
+					return fmt.Errorf("failed to set global firstSchema for %s: %v", existingInfo.GroupKind, err)
+				}
+				globalSchemaWritten = true
 			}
 		}
 
-		if allSame {
-			if err := existingInfo.setGlobalSchema(); err != nil {
-				return fmt.Errorf("failed to set global firstSchema for %s: %v", existingInfo.GroupKind, err)
-			}
-		} else {
+		if !globalSchemaWritten {
 			if err := existingInfo.setVersionedSchemata(); err != nil {
 				return fmt.Errorf("failed to set versioned schemas for %s: %v", existingInfo.GroupKind, err)
 			}
@@ -193,19 +200,23 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 // raw YAML representation of a CRD, plus some structured content (versions,
 // filename, etc) for easy lookup, and any new schemata registered.
 type partialCRD struct {
-	GroupKind schema.GroupKind
-	Yaml      *yaml.Node
-	Versions  map[string]struct{}
-	FileName  string
+	GroupKind         schema.GroupKind
+	Yaml              *yaml.Node
+	Versions          map[string]struct{}
+	FileName          string
+	WriteGlobalSchema bool
 
-	NewSchemata map[string]apiext.JSONSchemaProps
+	// Need to use apiextv1b1.JSONSchemaProps since that's what is currently
+	// output by crdgen.Parser. This is fine because v1 and v1beta1
+	// JSONSchemaProps are identical.
+	NewSchemata map[string]apiextv1b1.JSONSchemaProps
 }
 
 // setGlobalSchema sets the global schema to one of the schemata
 // for this CRD.  All schemata must be identical for this to be a valid operation.
 func (e *partialCRD) setGlobalSchema() error {
 	// there's no easy way to get a "random" key from a go map :-/
-	var schema apiext.JSONSchemaProps
+	var schema apiextv1b1.JSONSchemaProps
 	for ver := range e.NewSchemata {
 		schema = e.NewSchemata[ver]
 		break
@@ -304,7 +315,8 @@ func (e *partialCRD) setVersionedSchemata() error {
 // manner that preserves ordering, comments, etc in order to make patching
 // minimally invasive.  Returned CRDs are mapped by group-kind.
 func crdsFromDirectory(ctx *genall.GenerationContext, dir string) (map[schema.GroupKind]*partialCRD, error) {
-	apiextAPIVersion := apiext.SchemeGroupVersion.String()
+	apiextv1b1APIVersion := apiextv1b1.SchemeGroupVersion.String()
+	apiextv1APIVersion := apiextv1.SchemeGroupVersion.String()
 
 	res := map[schema.GroupKind]*partialCRD{}
 	dirEntries, err := ioutil.ReadDir(dir)
@@ -330,24 +342,31 @@ func crdsFromDirectory(ctx *genall.GenerationContext, dir string) (map[schema.Gr
 		if err := kyaml.Unmarshal(rawContent, &typeMeta); err != nil {
 			continue
 		}
-		if typeMeta.APIVersion != apiextAPIVersion || typeMeta.Kind != "CustomResourceDefinition" {
+		if typeMeta.Kind != "CustomResourceDefinition" {
 			continue
 		}
 
-		// collect the group-kind and versions from the actual structured form
-		var actualCRD apiext.CustomResourceDefinition
-		if err := kyaml.Unmarshal(rawContent, &actualCRD); err != nil {
-			continue
-		}
-		groupKind := schema.GroupKind{Group: actualCRD.Spec.Group, Kind: actualCRD.Spec.Names.Kind}
+		writeGlobalSchema := false
+		var groupKind *schema.GroupKind
 		var versions map[string]struct{}
-		if len(actualCRD.Spec.Versions) == 0 {
-			versions = map[string]struct{}{actualCRD.Spec.Version: struct{}{}}
-		} else {
-			versions = make(map[string]struct{}, len(actualCRD.Spec.Versions))
-			for _, ver := range actualCRD.Spec.Versions {
-				versions[ver.Name] = struct{}{}
+		// collect the group-kind and versions from the actual structured form
+		if typeMeta.APIVersion == apiextv1APIVersion {
+			groupKind, versions, err = unmarshalCRDV1(rawContent)
+			if err != nil {
+				klog.Warningf("failed to unmarshal to CRD v1: %v", err)
+				continue
 			}
+			// v1 CRD does not have a global schema
+		} else if typeMeta.APIVersion == apiextv1b1APIVersion {
+			groupKind, versions, err = unmarshalCRDV1beta1(rawContent)
+			if err != nil {
+				klog.Warningf("failed to unmarshal to CRD v1beta1: %v", err)
+				continue
+			}
+			// v1beta1 CRD has a global schema
+			writeGlobalSchema = true
+		} else {
+			return nil, fmt.Errorf("unknown CRD API version %q", typeMeta.APIVersion)
 		}
 
 		// then actually unmarshal in a manner that preserves ordering, etc
@@ -356,13 +375,51 @@ func crdsFromDirectory(ctx *genall.GenerationContext, dir string) (map[schema.Gr
 			continue
 		}
 
-		res[groupKind] = &partialCRD{
-			GroupKind:   groupKind,
-			Yaml:        &yamlNodeTree,
-			Versions:    versions,
-			FileName:    fileInfo.Name(),
-			NewSchemata: make(map[string]apiext.JSONSchemaProps),
+		res[*groupKind] = &partialCRD{
+			GroupKind:         *groupKind,
+			Yaml:              &yamlNodeTree,
+			Versions:          versions,
+			FileName:          fileInfo.Name(),
+			NewSchemata:       make(map[string]apiextv1b1.JSONSchemaProps),
+			WriteGlobalSchema: writeGlobalSchema,
 		}
 	}
 	return res, nil
+}
+
+// unmarshalCRDV1 unmarshalls a v1 CRD to the GroupKind kind and a
+// map whose keys identify the versions supported by the crd.
+func unmarshalCRDV1(rawContent []byte) (*schema.GroupKind, map[string]struct{}, error) {
+	var actualCRD apiextv1.CustomResourceDefinition
+	if err := kyaml.Unmarshal(rawContent, &actualCRD); err != nil {
+		return nil, nil, err
+	}
+	groupKind := &schema.GroupKind{Group: actualCRD.Spec.Group, Kind: actualCRD.Spec.Names.Kind}
+	var versions map[string]struct{}
+	// CRD v1 lacks a global schema
+	versions = make(map[string]struct{}, len(actualCRD.Spec.Versions))
+	for _, ver := range actualCRD.Spec.Versions {
+		versions[ver.Name] = struct{}{}
+	}
+	return groupKind, versions, nil
+}
+
+// unmarshalCRDV1 unmarshalls a v1beta1 CRD to the GroupKind kind and
+// a map whose keys identify the versions supported by the crd.
+func unmarshalCRDV1beta1(rawContent []byte) (*schema.GroupKind, map[string]struct{}, error) {
+	var actualCRD apiextv1b1.CustomResourceDefinition
+	if err := kyaml.Unmarshal(rawContent, &actualCRD); err != nil {
+		return nil, nil, err
+	}
+	groupKind := &schema.GroupKind{Group: actualCRD.Spec.Group, Kind: actualCRD.Spec.Names.Kind}
+	var versions map[string]struct{}
+	if len(actualCRD.Spec.Versions) == 0 {
+		versions = map[string]struct{}{actualCRD.Spec.Version: struct{}{}}
+	} else {
+		versions = make(map[string]struct{}, len(actualCRD.Spec.Versions))
+		for _, ver := range actualCRD.Spec.Versions {
+			versions[ver.Name] = struct{}{}
+		}
+	}
+	return groupKind, versions, nil
 }
