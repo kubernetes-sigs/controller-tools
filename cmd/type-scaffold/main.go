@@ -35,7 +35,7 @@ func main() {
 		Long: `Quickly scaffold out the structure of a type for a Kubernetes kind and associated types.
 Produces:
 
-- a root type with approparite metadata fields
+- a root type with appropriate metadata fields
 - Spec and Status types
 - a list type
 
