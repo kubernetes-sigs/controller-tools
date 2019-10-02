@@ -17,7 +17,6 @@ limitations under the License.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
-// +kubebuilder:skip=true
 package cronjob
 
 import (
