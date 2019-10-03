@@ -98,4 +98,40 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("comparing the two")
 		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 	})
+
+	It("should skip api internal package", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/internal_version")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+		cronJobPkg := pkgs[0]
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		parser := &crd.Parser{
+			Collector: &markers.Collector{Registry: reg},
+			Checker:   &loader.TypeChecker{},
+		}
+		crd.AddKnownTypes(parser)
+
+		By("requesting that the package be parsed")
+		parser.NeedPackage(cronJobPkg)
+
+		By("checking that there is no GroupVersion")
+		Expect(parser.GroupVersions).To(BeEmpty())
+
+		By("checking that there are no Types")
+		Expect(parser.Types).To(BeEmpty())
+
+		By("checking that no errors occurred along the way (expect for type errors)")
+		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
+
+	})
 })

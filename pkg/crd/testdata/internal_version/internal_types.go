@@ -19,7 +19,6 @@ limitations under the License.
 package internal_version
 
 import (
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -71,9 +70,9 @@ type CronJob struct {
 
 // CronJobList contains a list of CronJob
 type CronJobList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CronJob `json:"items"`
+	metav1.TypeMeta
+	metav1.ListMeta
+	Items []CronJob
 }
 
 func init() {

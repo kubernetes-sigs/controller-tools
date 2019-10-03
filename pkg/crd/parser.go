@@ -112,9 +112,7 @@ func (p *Parser) indexTypes(pkg *loader.Package) {
 		pkg.AddError(err)
 	} else {
 		if skipPkg := pkgMarkers.Get("kubebuilder:skip"); skipPkg != nil {
-			if skipPkg.(bool) {
-				return
-			}
+			return
 		}
 		if nameVal := pkgMarkers.Get("groupName"); nameVal != nil {
 			versionVal := pkg.Name // a reasonable guess
