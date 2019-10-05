@@ -73,7 +73,7 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 	must(markers.MakeDefinition("nullable", markers.DescribesField, Nullable{})).
 		WithHelp(Nullable{}.Help()),
 
-	must(markers.MakeAnyTypeDefinition("kubebuilder:validation:Default", markers.DescribesField, Default{})).
+	must(markers.MakeAnyTypeDefinition("kubebuilder:default", markers.DescribesField, Default{})).
 		WithHelp(Default{}.Help()),
 }
 

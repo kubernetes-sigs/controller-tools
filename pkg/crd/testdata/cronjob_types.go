@@ -95,15 +95,15 @@ type CronJobSpec struct {
 	TwoOfAKindPart1 LongerString `json:"twoOfAKindPart1"`
 
 	// This tests that primitive defaulting can be performed.
-	// +kubebuilder:validation:Default=forty-two
+	// +kubebuilder:default=forty-two
 	DefaultedString string `json:"defaultedString"`
 
 	// This tests that slice defaulting can be performed.
-	// +kubebuilder:validation:Default={a,b}
+	// +kubebuilder:default={a,b}
 	DefaultedSlice []string `json:"defaultedSlice"`
 
 	// This tests that object defaulting can be performed.
-	// +kubebuilder:validation:Default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
+	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
 	DefaultedObject []RootObject `json:"defaultedObject"`
 }
 
