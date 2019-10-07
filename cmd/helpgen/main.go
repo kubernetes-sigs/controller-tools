@@ -83,7 +83,7 @@ func godocToDetails(typeName string, doc string) (summary, details string) {
 
 	details = ""
 	if len(docParts) > 1 {
-		details = docParts[1]
+		details = strings.TrimSpace(docParts[1])
 	}
 	return summary, details
 }
