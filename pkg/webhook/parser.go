@@ -49,7 +49,7 @@ type Config struct {
 	// Mutating marks this as a mutating webhook (it's validating only if false)
 	//
 	// Mutating webhooks are allowed to change the object in their response,
-	// and are called *after* all validating webhooks.  Mutating webhooks may
+	// and are called *before* all validating webhooks.  Mutating webhooks may
 	// choose to reject an object, similarly to a validating webhook.
 	Mutating bool
 	// FailurePolicy specifies what should happen if the API server cannot reach the webhook.
