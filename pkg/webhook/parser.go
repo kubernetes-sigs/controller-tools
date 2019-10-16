@@ -242,8 +242,8 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 
 	}
 
-	if err := ctx.WriteYAML("manifests.yaml", objs...); err != nil {
-		return err
+	if len(objs) > 0 {
+		return ctx.WriteYAML("manifests.yaml", objs...)
 	}
 
 	return nil
