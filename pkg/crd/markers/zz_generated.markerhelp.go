@@ -29,7 +29,7 @@ func (Default) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "sets the default value for this field. ",
-			Details: " A default value will be accepted as any value valid for the field. Formatting for common types include: boolean: `true`, string: `Cluster`, numerical: `1.24`, array: `{1,2}`, object: `{policy: \"delete\"}`). Defaults should be defined in pruned form, and only best-effort validation will be performed. Full validation of a default requires submission of the containing CRD to an apiserver.",
+			Details: "A default value will be accepted as any value valid for the field. Formatting for common types include: boolean: `true`, string: `Cluster`, numerical: `1.24`, array: `{1,2}`, object: `{policy: \"delete\"}`). Defaults should be defined in pruned form, and only best-effort validation will be performed. Full validation of a default requires submission of the containing CRD to an apiserver.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Value": markers.DetailedHelp{

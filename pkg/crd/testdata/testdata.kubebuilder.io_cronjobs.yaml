@@ -4788,6 +4788,10 @@ spec:
               description: This flag is like suspend, but for when you really mean
                 it. It helps test the +kubebuilder:validation:Type marker.
               type: string
+            patternObject:
+              description: This tests that pattern validator is properly applied.
+              pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
+              type: string
             schedule:
               description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
               type: string
@@ -4830,6 +4834,7 @@ spec:
           - defaultedSlice
           - defaultedString
           - jobTemplate
+          - patternObject
           - schedule
           - twoOfAKindPart0
           - twoOfAKindPart1
