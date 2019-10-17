@@ -28,6 +28,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -112,6 +113,19 @@ type CronJobSpec struct {
 	// This tests that pattern validator is properly applied.
 	// +kubebuilder:validation:Pattern=`^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$`
 	PatternObject string `json:"patternObject"`
+
+	// +kubebuilder:validation:EmbeddedResource
+	// +kubebuilder:validation:nullable
+	EmbeddedResource runtime.RawExtension `json:"embeddedResource"`
+
+	// +kubebuilder:validation:nullable
+	// +kubebuilder:pruning:PreserveUnknownFields
+	UnprunedJSON NestedObject `json:"unprunedJSON"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:EmbeddedResource
+	// +kubebuilder:validation:nullable
+	UnprunedEmbeddedResource runtime.RawExtension `json:"unprunedEmbeddedResource"`
 }
 
 type NestedObject struct {
@@ -150,6 +164,7 @@ func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	default:
 		return fmt.Errorf("bad TotallyABool value %q", string(in))
 	}
+	return nil
 }
 
 // ConcurrencyPolicy describes how the job will be handled.
