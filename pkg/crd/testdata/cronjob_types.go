@@ -105,6 +105,10 @@ type CronJobSpec struct {
 	// This tests that object defaulting can be performed.
 	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
 	DefaultedObject []RootObject `json:"defaultedObject"`
+
+	// This tests that pattern validator is properly applied.
+	// +kubebuilder:validation:Pattern=`^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$`
+	PatternObject string `json:"patternObject"`
 }
 
 type NestedObject struct {
