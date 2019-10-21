@@ -126,6 +126,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:EmbeddedResource
 	// +kubebuilder:validation:nullable
 	UnprunedEmbeddedResource runtime.RawExtension `json:"unprunedEmbeddedResource"`
+
+	// This tests that associative lists work.
+	// +listType=map
+	// +listMapKey=name
+	// +listMapKey=secondary
+	AssociativeList []AssociativeType `json:"associativeList"`
 }
 
 type NestedObject struct {
@@ -135,6 +141,12 @@ type NestedObject struct {
 
 type RootObject struct {
 	Nested NestedObject `json:"nested"`
+}
+
+type AssociativeType struct {
+	Name      string `json:"name"`
+	Secondary int    `json:"secondary"`
+	Foo       string `json:"foo"`
 }
 
 // +kubebuilder:validation:MinLength=4
