@@ -145,6 +145,8 @@ func FindMetav1(roots []*loader.Package) *loader.Package {
 func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind {
 	// TODO(directxman12): technically, we should be finding metav1 per-package
 	var kubeKinds []schema.GroupKind
+	// there might be duplicates if some GroupKinds are present in multiple versions
+	found := map[schema.GroupKind]struct{}{}
 	for typeIdent, info := range parser.Types {
 		hasObjectMeta := false
 		hasTypeMeta := false
@@ -193,6 +195,12 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 			Group: parser.GroupVersions[pkg].Group,
 			Kind:  typeIdent.Name,
 		}
+		if _, alreadyFound := found[groupKind]; alreadyFound {
+			// a duplicate entry is already found
+			// it may happen if several versions of the same GroupKind exist
+			continue
+		}
+		found[groupKind] = struct{}{}
 		kubeKinds = append(kubeKinds, groupKind)
 	}
 
