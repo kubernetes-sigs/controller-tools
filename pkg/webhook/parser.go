@@ -70,9 +70,15 @@ type Config struct {
 	// Versions specifies the API versions that this webhook receives requests for.
 	Versions []string
 
-	// Name indicates the name of this webhook configuration.
+	// Name indicates the name of this webhook configuration. Should be a domain with at least three segments separated by dots
 	Name string
-	// Path specifies that path that the API server should connect to this webhook on.
+
+	// Path specifies that path that the API server should connect to this webhook on. Must be
+	// prefixed with a '/validate-' or '/mutate-' depending on the type, and followed by
+	// $GROUP-$VERSION-$KIND where all values are lower-cased and the periods in the group
+	// are substituted for hyphens. For example, a validating webhook path for type
+	// batch.tutorial.kubebuilder.io/v1,Kind=CronJob would be
+	// /validate-batch-tutorial-kubebuilder-io-v1-cronjob
 	Path string
 }
 
