@@ -187,7 +187,9 @@ func (p *Parser) NeedFlattenedSchemaFor(typ TypeIdent) {
 	partialFlattened := p.flattener.FlattenType(typ)
 	fullyFlattened := FlattenEmbedded(partialFlattened, typ.Package)
 
-	p.FlattenedSchemata[typ] = *fullyFlattened
+	if fullyFlattened != nil {
+		p.FlattenedSchemata[typ] = *fullyFlattened
+	}
 }
 
 // NeedCRDFor lives off in spec.go

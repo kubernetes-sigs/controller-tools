@@ -48,6 +48,9 @@ type schemaWalker struct {
 // visitor (this is as simple as passing a pointer in most cases,
 // but special care needs to be taken to persist with maps).
 func (w schemaWalker) walkSchema(schema *apiext.JSONSchemaProps) {
+	if schema == nil {
+		return
+	}
 	subVisitor := w.visitor.Visit(schema)
 	if subVisitor == nil {
 		return
