@@ -288,9 +288,9 @@ type Resource struct {
 	// The singular form is otherwise defaulted off the plural (path).
 	Singular string `marker:",optional"`
 
-	// Scope overrides the scope of the CRD (cluster vs namespaced).
+	// Scope overrides the scope of the CRD (Cluster vs Namespaced).
 	//
-	// Scope defaults to "namespaced".  Cluster-scoped ("cluster") resources
+	// Scope defaults to "Namespaced".  Cluster-scoped ("Cluster") resources
 	// don't exist in namespaces.
 	Scope string `marker:",optional"`
 }
