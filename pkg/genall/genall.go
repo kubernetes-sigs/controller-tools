@@ -90,7 +90,8 @@ type GenerationContext struct {
 }
 
 // WriteYAML writes the given objects out, serialized as YAML, using the
-// context's OutputRule.
+// context's OutputRule.  Objects are written as separate documents, separated
+// from each other by `---` (as per the YAML spec).
 func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error {
 	out, err := g.Open(nil, itemPath)
 	if err != nil {
@@ -161,10 +162,11 @@ func (r *Runtime) Run() bool {
 		return true
 	}
 
-	for _, gen := range r.Generators {
+	for i := range r.Generators {
+		gen := &r.Generators[i]    // don't take a reference to the loop variable
 		ctx := r.GenerationContext // make a shallow copy
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
-		if err := gen.Generate(&ctx); err != nil {
+		if err := (*gen).Generate(&ctx); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
