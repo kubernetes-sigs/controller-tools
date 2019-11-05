@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 
@@ -53,6 +53,9 @@ func packageErrors(pkg *loader.Package, filterKinds ...packages.ErrorKind) error
 
 var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func() {
 	It("should properly generate and flatten the rewritten CronJob schema", func() {
+		// TODO(directxman12): test generation across multiple versions (right
+		// now, we're trusting k/k's conversion code, though, which is probably
+		// fine for the time being)
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
 		Expect(err).NotTo(HaveOccurred())
@@ -94,6 +97,8 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("parsing the desired YAML")
 		var crd apiext.CustomResourceDefinition
 		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
+		// clear the annotations -- we don't care about the attribution annotation
+		crd.Annotations = nil
 
 		By("comparing the two")
 		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
