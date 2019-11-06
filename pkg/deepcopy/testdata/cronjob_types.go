@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//go:generate controller-gen object paths=.
+//go:generate ../../../.run-controller-gen.sh object paths=.
 
 // +kubebuilder:object:generate=true
 // +groupName=testdata.kubebuilder.io

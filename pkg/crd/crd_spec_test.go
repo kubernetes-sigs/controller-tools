@@ -19,7 +19,7 @@ package crd_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	"sigs.k8s.io/controller-tools/pkg/crd"
 )
@@ -28,17 +28,17 @@ var _ = Describe("CRD Generation", func() {
 	Describe("Utilities", func() {
 		Describe("MergeIdenticalVersionInfo", func() {
 			It("should replace per-version schemata with a top-level schema if only one version", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name:    "v1",
 								Storage: true,
-								Schema: &apiext.CustomResourceValidation{
-									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+								Schema: &apiextlegacy.CustomResourceValidation{
+									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 									},
 								},
 							},
@@ -46,39 +46,39 @@ var _ = Describe("CRD Generation", func() {
 					},
 				}
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.Validation).To(Equal(&apiext.CustomResourceValidation{
-					OpenAPIV3Schema: &apiext.JSONSchemaProps{
+				Expect(spec.Spec.Validation).To(Equal(&apiextlegacy.CustomResourceValidation{
+					OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 						Required:   []string{"foo"},
 						Type:       "object",
-						Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 					},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1", Storage: true},
 				}))
 			})
 			It("should replace per-version schemata with a top-level schema if all are identical", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								Schema: &apiext.CustomResourceValidation{
-									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+								Schema: &apiextlegacy.CustomResourceValidation{
+									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 									},
 								},
 							},
 							{
 								Name:    "v2",
 								Storage: true,
-								Schema: &apiext.CustomResourceValidation{
-									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+								Schema: &apiextlegacy.CustomResourceValidation{
+									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 									},
 								},
 							},
@@ -86,39 +86,39 @@ var _ = Describe("CRD Generation", func() {
 					},
 				}
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.Validation).To(Equal(&apiext.CustomResourceValidation{
-					OpenAPIV3Schema: &apiext.JSONSchemaProps{
+				Expect(spec.Spec.Validation).To(Equal(&apiextlegacy.CustomResourceValidation{
+					OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 						Required:   []string{"foo"},
 						Type:       "object",
-						Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 					},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1"}, {Name: "v2", Storage: true},
 				}))
 			})
 
 			It("shouldn't merge different schemata", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								Schema: &apiext.CustomResourceValidation{
-									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+								Schema: &apiextlegacy.CustomResourceValidation{
+									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Type:       "object",
-										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 									},
 								},
 							},
 							{
 								Name:    "v2",
 								Storage: true,
-								Schema: &apiext.CustomResourceValidation{
-									OpenAPIV3Schema: &apiext.JSONSchemaProps{
+								Schema: &apiextlegacy.CustomResourceValidation{
+									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiext.JSONSchemaProps{"foo": apiext.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
 									},
 								},
 							},
@@ -131,14 +131,14 @@ var _ = Describe("CRD Generation", func() {
 			})
 
 			It("should replace per-version subresources with top-level subresources if only one version", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name:    "v1",
 								Storage: true,
-								Subresources: &apiext.CustomResourceSubresources{
-									Status: &apiext.CustomResourceSubresourceStatus{},
+								Subresources: &apiextlegacy.CustomResourceSubresources{
+									Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 								},
 							},
 						},
@@ -146,29 +146,29 @@ var _ = Describe("CRD Generation", func() {
 				}
 
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.Subresources).To(Equal(&apiext.CustomResourceSubresources{
-					Status: &apiext.CustomResourceSubresourceStatus{},
+				Expect(spec.Spec.Subresources).To(Equal(&apiextlegacy.CustomResourceSubresources{
+					Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1", Storage: true},
 				}))
 			})
 
 			It("should replace per-version subresources with top-level subresources if all are identical", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								Subresources: &apiext.CustomResourceSubresources{
-									Status: &apiext.CustomResourceSubresourceStatus{},
+								Subresources: &apiextlegacy.CustomResourceSubresources{
+									Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 								},
 							},
 							{
 								Name:    "v2",
 								Storage: true,
-								Subresources: &apiext.CustomResourceSubresources{
-									Status: &apiext.CustomResourceSubresourceStatus{},
+								Subresources: &apiextlegacy.CustomResourceSubresources{
+									Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 								},
 							},
 						},
@@ -176,22 +176,22 @@ var _ = Describe("CRD Generation", func() {
 				}
 
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.Subresources).To(Equal(&apiext.CustomResourceSubresources{
-					Status: &apiext.CustomResourceSubresourceStatus{},
+				Expect(spec.Spec.Subresources).To(Equal(&apiextlegacy.CustomResourceSubresources{
+					Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1"}, {Name: "v2", Storage: true},
 				}))
 			})
 
 			It("shouldn't merge different subresources", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								Subresources: &apiext.CustomResourceSubresources{
-									Status: &apiext.CustomResourceSubresourceStatus{},
+								Subresources: &apiextlegacy.CustomResourceSubresources{
+									Status: &apiextlegacy.CustomResourceSubresourceStatus{},
 								},
 							},
 							{
@@ -207,13 +207,13 @@ var _ = Describe("CRD Generation", func() {
 			})
 
 			It("should replace per-version printer columns with top-level printer columns if only one version", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name:    "v1",
 								Storage: true,
-								AdditionalPrinterColumns: []apiext.CustomResourceColumnDefinition{
+								AdditionalPrinterColumns: []apiextlegacy.CustomResourceColumnDefinition{
 									{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 									{Name: "Parmesan", JSONPath: ".status.parmesan"},
 								},
@@ -223,22 +223,22 @@ var _ = Describe("CRD Generation", func() {
 				}
 
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.AdditionalPrinterColumns).To(Equal([]apiext.CustomResourceColumnDefinition{
+				Expect(spec.Spec.AdditionalPrinterColumns).To(Equal([]apiextlegacy.CustomResourceColumnDefinition{
 					{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 					{Name: "Parmesan", JSONPath: ".status.parmesan"},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1", Storage: true},
 				}))
 			})
 
 			It("should replace per-version printer columns with top-level printer columns if all are identical", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								AdditionalPrinterColumns: []apiext.CustomResourceColumnDefinition{
+								AdditionalPrinterColumns: []apiextlegacy.CustomResourceColumnDefinition{
 									{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 									{Name: "Parmesan", JSONPath: ".status.parmesan"},
 								},
@@ -246,7 +246,7 @@ var _ = Describe("CRD Generation", func() {
 							{
 								Name:    "v2",
 								Storage: true,
-								AdditionalPrinterColumns: []apiext.CustomResourceColumnDefinition{
+								AdditionalPrinterColumns: []apiextlegacy.CustomResourceColumnDefinition{
 									{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 									{Name: "Parmesan", JSONPath: ".status.parmesan"},
 								},
@@ -256,22 +256,22 @@ var _ = Describe("CRD Generation", func() {
 				}
 
 				crd.MergeIdenticalVersionInfo(spec)
-				Expect(spec.Spec.AdditionalPrinterColumns).To(Equal([]apiext.CustomResourceColumnDefinition{
+				Expect(spec.Spec.AdditionalPrinterColumns).To(Equal([]apiextlegacy.CustomResourceColumnDefinition{
 					{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 					{Name: "Parmesan", JSONPath: ".status.parmesan"},
 				}))
-				Expect(spec.Spec.Versions).To(Equal([]apiext.CustomResourceDefinitionVersion{
+				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
 					{Name: "v1"}, {Name: "v2", Storage: true},
 				}))
 			})
 
 			It("shouldn't merge different printer columns", func() {
-				spec := &apiext.CustomResourceDefinition{
-					Spec: apiext.CustomResourceDefinitionSpec{
-						Versions: []apiext.CustomResourceDefinitionVersion{
+				spec := &apiextlegacy.CustomResourceDefinition{
+					Spec: apiextlegacy.CustomResourceDefinitionSpec{
+						Versions: []apiextlegacy.CustomResourceDefinitionVersion{
 							{
 								Name: "v1",
-								AdditionalPrinterColumns: []apiext.CustomResourceColumnDefinition{
+								AdditionalPrinterColumns: []apiextlegacy.CustomResourceColumnDefinition{
 									{Name: "Cheddar", JSONPath: ".spec.cheddar"},
 									{Name: "Parmesan", JSONPath: ".status.parmesan"},
 								},

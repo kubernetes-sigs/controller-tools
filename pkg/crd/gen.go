@@ -20,7 +20,8 @@ import (
 	"fmt"
 	"go/types"
 
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
@@ -39,6 +40,8 @@ type Generator struct {
 	// Single "trivial-version" CRDs are compatible with older (pre 1.13)
 	// Kubernetes API servers.  The storage version's schema will be used as
 	// the CRD's schema.
+	//
+	// Only works with the v1beta1 CRD version.
 	TrivialVersions bool `marker:",optional"`
 
 	// MaxDescLen specifies the maximum description length for fields in CRD's OpenAPI schema.
@@ -47,6 +50,16 @@ type Generator struct {
 	// n indicates limit the description to at most n characters and truncate the description to
 	// closest sentence boundary if it exceeds n characters.
 	MaxDescLen *int `marker:",optional"`
+
+	// CRDVersions specifies the target API versions of the CRD type itself to
+	// generate.  Defaults to v1beta1.
+	//
+	// The first version listed will be assumed to be the "default" version and
+	// will not get a version suffix in the output filename.
+	//
+	// You'll need to use "v1" to get support for features like defaulting,
+	// along with an API server that supports it (Kubernetes 1.16+).
+	CRDVersions []string `marker:"crdVersions,optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -76,16 +89,44 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		return nil
 	}
 
+	crdVersions := g.CRDVersions
+
+	if len(crdVersions) == 0 {
+		crdVersions = []string{"v1beta1"}
+	}
+
 	for _, groupKind := range kubeKinds {
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
-		crd := parser.CustomResourceDefinitions[groupKind]
-		if g.TrivialVersions {
-			toTrivialVersions(&crd)
+		crdRaw := parser.CustomResourceDefinitions[groupKind]
+		addAttribution(&crdRaw)
+
+		versionedCRDs := make([]interface{}, len(crdVersions))
+		for i, ver := range crdVersions {
+			conv, err := AsVersion(crdRaw, schema.GroupVersion{Group: apiext.SchemeGroupVersion.Group, Version: ver})
+			if err != nil {
+				return err
+			}
+			versionedCRDs[i] = conv
 		}
-		addAttribution(&crd)
-		fileName := fmt.Sprintf("%s_%s.yaml", crd.Spec.Group, crd.Spec.Names.Plural)
-		if err := ctx.WriteYAML(fileName, crd); err != nil {
-			return err
+
+		if g.TrivialVersions {
+			for i, crd := range versionedCRDs {
+				if crdVersions[i] == "v1beta1" {
+					toTrivialVersions(crd.(*apiextlegacy.CustomResourceDefinition))
+				}
+			}
+		}
+
+		for i, crd := range versionedCRDs {
+			var fileName string
+			if i == 0 {
+				fileName = fmt.Sprintf("%s_%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural)
+			} else {
+				fileName = fmt.Sprintf("%s_%s.%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural, crdVersions[i])
+			}
+			if err := ctx.WriteYAML(fileName, crd); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -95,10 +136,10 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 // toTrivialVersions strips out all schemata except for the storage schema,
 // and moves that up into the root object.  This makes the CRD compatible
 // with pre 1.13 clusters.
-func toTrivialVersions(crd *apiext.CustomResourceDefinition) {
-	var canonicalSchema *apiext.CustomResourceValidation
-	var canonicalSubresources *apiext.CustomResourceSubresources
-	var canonicalColumns []apiext.CustomResourceColumnDefinition
+func toTrivialVersions(crd *apiextlegacy.CustomResourceDefinition) {
+	var canonicalSchema *apiextlegacy.CustomResourceValidation
+	var canonicalSubresources *apiextlegacy.CustomResourceSubresources
+	var canonicalColumns []apiextlegacy.CustomResourceColumnDefinition
 	for i, ver := range crd.Spec.Versions {
 		if ver.Storage == true {
 			canonicalSchema = ver.Schema
