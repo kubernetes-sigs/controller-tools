@@ -41,10 +41,10 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
 
 		By("loading the generation runtime")
-		crdSchemaGen := &Generator{
+		var crdSchemaGen genall.Generator = &Generator{
 			ManifestsPath: "./manifests",
 		}
-		rt, err := genall.Generators{crdSchemaGen}.ForRoots("./...")
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
 		Expect(err).NotTo(HaveOccurred())
 
 		outputDir, err := ioutil.TempDir("", "controller-tools-test")

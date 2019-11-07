@@ -30,13 +30,16 @@ import (
 )
 
 // Generators are a list of Generators.
-type Generators []Generator
+// NB(directxman12): this is a pointer so that we can uniquely identify each
+// instance of a generator, even if it's not hashable.  Different *instances*
+// of a generator are treated differently.
+type Generators []*Generator
 
 // RegisterMarkers registers all markers defined by each of the Generators in
 // this list into the given registry.
 func (g Generators) RegisterMarkers(reg *markers.Registry) error {
 	for _, gen := range g {
-		if err := gen.RegisterMarkers(reg); err != nil {
+		if err := (*gen).RegisterMarkers(reg); err != nil {
 			return err
 		}
 	}
@@ -162,8 +165,7 @@ func (r *Runtime) Run() bool {
 		return true
 	}
 
-	for i := range r.Generators {
-		gen := &r.Generators[i]    // don't take a reference to the loop variable
+	for _, gen := range r.Generators {
 		ctx := r.GenerationContext // make a shallow copy
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
 		if err := (*gen).Generate(&ctx); err != nil {
