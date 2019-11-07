@@ -133,7 +133,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 
 		switch val := val.(type) {
 		case Generator:
-			gens = append(gens, val)
+			gens = append(gens, &val)
 			gensByName[defn.Name] = &val
 		case OutputRule:
 			_, genName := splitOutputRuleOption(defn.Name)
