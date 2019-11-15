@@ -77,6 +77,7 @@ var KnownPackages = map[string]PackageOverride{
 
 	"k8s.io/apimachinery/pkg/util/intstr": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "IntOrString", Package: pkg}] = apiext.JSONSchemaProps{
+			XIntOrString: true,
 			AnyOf: []apiext.JSONSchemaProps{
 				{Type: "string"},
 				{Type: "integer"},
