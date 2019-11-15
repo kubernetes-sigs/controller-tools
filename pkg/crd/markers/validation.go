@@ -58,6 +58,8 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	Enum(nil),
 	Format(""),
 	Type(""),
+	XPreserveUnknownFields{},
+	XEmbeddedResource{},
 )
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
@@ -75,6 +77,11 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeAnyTypeDefinition("kubebuilder:default", markers.DescribesField, Default{})).
 		WithHelp(Default{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesField, XPreserveUnknownFields{})).
+		WithHelp(XPreserveUnknownFields{}.Help()),
+	must(markers.MakeDefinition("kubebuilder:validation:EmbeddedResource", markers.DescribesField, XEmbeddedResource{})).
+		WithHelp(XEmbeddedResource{}.Help()),
 }
 
 func init() {
@@ -174,6 +181,26 @@ type Nullable struct{}
 type Default struct {
 	Value interface{}
 }
+
+// +controllertools:marker:generateHelp:category="CRD processing"
+// PreserveUnknownFields stops the apiserver from pruning fields which are not specified.
+//
+// By default the apiserver drops unknown fields from the request payload
+// during the decoding step. This marker stops the API server from doing so.
+// It affects fields recursively, but switches back to normal pruning behaviour
+// if nested  properties or additionalProperties are specified in the schema.
+// This can either be true or undefined. False
+// is forbidden.
+type XPreserveUnknownFields struct{}
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// EmbeddedResource marks a fields as an embedded resource with apiVersion, kind and metadata fields.
+//
+// An embedded resource is a value that has apiVersion, kind and metadata fields.
+// They are validated implicitly according to the semantics of the currently
+// running apiserver. It is not necessary to add any additional schema for these
+// field, yet it is possible. This can be combined with PreserveUnknownFields.
+type XEmbeddedResource struct{}
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "integer" {
@@ -308,5 +335,16 @@ func (m Default) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		return err
 	}
 	schema.Default = &apiext.JSON{Raw: marshalledDefault}
+	return nil
+}
+
+func (m XPreserveUnknownFields) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	defTrue := true
+	schema.XPreserveUnknownFields = &defTrue
+	return nil
+}
+
+func (m XEmbeddedResource) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema.XEmbeddedResource = true
 	return nil
 }

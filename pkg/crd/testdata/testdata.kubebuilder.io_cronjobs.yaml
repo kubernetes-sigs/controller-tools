@@ -97,6 +97,9 @@ spec:
                 default: forty-two
                 description: This tests that primitive defaulting can be performed.
                 type: string
+              embeddedResource:
+                type: object
+                x-kubernetes-embedded-resource: true
               failedJobsHistoryLimit:
                 description: The number of failed finished jobs to retain. This is
                   a pointer to distinguish between explicit zero and not specified.
@@ -4983,17 +4986,35 @@ spec:
                   and types are applied to types
                 minLength: 4
                 type: string
+              unprunedEmbeddedResource:
+                type: object
+                x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
+              unprunedJSON:
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
             required:
             - binaryName
             - canBeNull
             - defaultedObject
             - defaultedSlice
             - defaultedString
+            - embeddedResource
             - jobTemplate
             - patternObject
             - schedule
             - twoOfAKindPart0
             - twoOfAKindPart1
+            - unprunedEmbeddedResource
+            - unprunedJSON
             type: object
           status:
             description: CronJobStatus defines the observed state of CronJob
