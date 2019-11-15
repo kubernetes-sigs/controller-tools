@@ -1255,8 +1255,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Name or number of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -1282,8 +1282,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Number or name of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -1372,8 +1372,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Name or number of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -1399,8 +1399,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Number or name of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -1482,8 +1482,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Name or number of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -1527,8 +1527,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Number or name of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -1671,8 +1671,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Name or number of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -1716,8 +1716,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Number or name of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -2448,8 +2448,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Name or number of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -2475,8 +2475,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Number or name of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -2565,8 +2565,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Name or number of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -2592,8 +2592,8 @@ spec:
                                                   type: string
                                                 port:
                                                   anyOf:
-                                                  - type: string
                                                   - type: integer
+                                                  - type: string
                                                   description: Number or name of the
                                                     port to access on the container.
                                                     Number must be in the range 1
@@ -2675,8 +2675,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Name or number of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -2720,8 +2720,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Number or name of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -2864,8 +2864,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Name or number of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
@@ -2909,8 +2909,8 @@ spec:
                                               type: string
                                             port:
                                               anyOf:
-                                              - type: string
                                               - type: integer
+                                              - type: string
                                               description: Number or name of the port
                                                 to access on the container. Number
                                                 must be in the range 1 to 65535. Name
