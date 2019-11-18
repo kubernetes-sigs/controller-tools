@@ -16,7 +16,7 @@ limitations under the License.
 package crd
 
 import (
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )

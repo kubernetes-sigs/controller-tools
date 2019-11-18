@@ -28,17 +28,29 @@ func init() {
 }
 
 // AsVersion converts a CRD from the canonical internal form (currently v1) to some external form.
-func AsVersion(original apiext.CustomResourceDefinition, gv schema.GroupVersion) (runtime.Object, error) {
+func AsVersion(original apiextv1beta1.CustomResourceDefinition, gv schema.GroupVersion) (runtime.Object, error) {
 	// We can use the internal versions an existing conversions from kubernetes, since they're not in k/k itself.
 	// This punts the problem of conversion down the road for a future maintainer (or future instance of @directxman12)
 	// when we have to support older versions that get removed, or when API machinery decides to yell at us for this
 	// questionable decision.
+	fmt.Printf("orig PreserveUnknownFields: %#v\n", original.Spec.PreserveUnknownFields)
+	fmt.Printf("orig apiversion: %#v\n", original.APIVersion)
+
 	intVer, err := conversionScheme.ConvertToVersion(&original, apiextinternal.SchemeGroupVersion)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert to internal CRD version: %v", err)
 	}
+	fmt.Printf("internal PreserveUnknownFields: %#v\n", intVer.(*apiextinternal.CustomResourceDefinition).Spec.PreserveUnknownFields)
 
-	return conversionScheme.ConvertToVersion(intVer, gv)
+	converted, err := conversionScheme.ConvertToVersion(intVer, gv)
+	if _, ok := converted.(*apiextv1beta1.CustomResourceDefinition); ok {
+		fmt.Printf("v1beta1 PreserveUnknownFields: %#v\n", converted.(*apiextv1beta1.CustomResourceDefinition).Spec.PreserveUnknownFields)
+		fmt.Printf("v1beta1 APIVersion: %#v\n", converted.(*apiextv1beta1.CustomResourceDefinition).APIVersion)
+	} else {
+		fmt.Printf("v1 PreserveUnknownFields: %#v\n", converted.(*apiext.CustomResourceDefinition).Spec.PreserveUnknownFields)
+		fmt.Printf("v1 APIVersion: %#v\n", converted.(*apiext.CustomResourceDefinition).APIVersion)
+	}
+	return converted, err
 }
 
 // mergeIdenticalSubresources checks to see if subresources are identical across

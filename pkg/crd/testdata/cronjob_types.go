@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:crdVersions=v1 paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:crdVersions=v1beta1;v1 paths=. output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1

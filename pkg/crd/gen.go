@@ -161,7 +161,7 @@ func toTrivialVersions(crd *apiextlegacy.CustomResourceDefinition) {
 
 // addAttribution adds attribution info to indicate controller-gen tool was used
 // to generate this CRD definition along with the version info.
-func addAttribution(crd *apiext.CustomResourceDefinition) {
+func addAttribution(crd *apiextlegacy.CustomResourceDefinition) {
 	if crd.ObjectMeta.Annotations == nil {
 		crd.ObjectMeta.Annotations = map[string]string{}
 	}
