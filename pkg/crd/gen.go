@@ -44,6 +44,15 @@ type Generator struct {
 	// Only works with the v1beta1 CRD version.
 	TrivialVersions bool `marker:",optional"`
 
+	// PreserveUnknownFields indicates whether or not we should turn off pruning.
+	//
+	// Left unspecified, it'll default to true when only a v1beta1 CRD is
+	// generated (to preserve compatibility with older versions of this tool),
+	// or false otherwise.
+	//
+	// It's required to be false for v1 CRDs.
+	PreserveUnknownFields *bool `marker:",optional"`
+
 	// MaxDescLen specifies the maximum description length for fields in CRD's OpenAPI schema.
 	//
 	// 0 indicates drop the description for all fields completely.
@@ -115,6 +124,20 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 					toTrivialVersions(crd.(*apiextlegacy.CustomResourceDefinition))
 				}
 			}
+		}
+
+		// *If* we're only generating v1beta1 CRDs, default to `preserveUnknownFields: (unset)`
+		// for compatibility purposes.  In any other case, default to false, since that's
+		// the sensible default and is required for v1.
+		v1beta1Only := len(crdVersions) == 1 && crdVersions[0] == "v1beta1"
+		switch {
+		case (g.PreserveUnknownFields == nil || *g.PreserveUnknownFields) && v1beta1Only:
+			crd := versionedCRDs[0].(*apiextlegacy.CustomResourceDefinition)
+			crd.Spec.PreserveUnknownFields = nil
+		case g.PreserveUnknownFields == nil, g.PreserveUnknownFields != nil && !*g.PreserveUnknownFields:
+			// it'll be false here (coming from v1) -- leave it as such
+		default:
+			return fmt.Errorf("you may only set PreserveUnknownFields to true with v1beta1 CRDs")
 		}
 
 		for i, crd := range versionedCRDs {
