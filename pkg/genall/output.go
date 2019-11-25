@@ -17,6 +17,7 @@ limitations under the License.
 package genall
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -93,6 +94,19 @@ type outputToNothing struct{}
 
 func (o outputToNothing) Open(_ *loader.Package, _ string) (io.WriteCloser, error) {
 	return nopCloser{ioutil.Discard}, nil
+}
+
+// OutputToBuffer writes the output to an underlying buffer.
+type OutputToBuffer struct {
+	*bytes.Buffer
+}
+
+func (o OutputToBuffer) Open(_ *loader.Package, _ string) (io.WriteCloser, error) {
+	return o, nil
+}
+
+func (o OutputToBuffer) Close() error {
+	return nil
 }
 
 // +controllertools:marker:generateHelp:category=""
