@@ -9,19 +9,9 @@ on the CronJob tutorial from the [KubeBuilder
 Book](https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html), but with added
 fields to test additional markers and generation behavior.
 
-If you add a new marker, re-generate the golden output file,
-`testdata.kubebuilder.io_cronjobs.yaml`, with (if you have the latest
-controller-gen on your path):
-
-```bash
-go generate
-```
-
-or, if you don't have the latest controller-gen on your path, use:
-
-```bash
-$ /path/to/current/build/of/controller-gen crd paths=. output:dir=.
-```
+It's *highly* unlikely that the generated expected manifests will
+ever change from these -- if they do, you've probably broken something.
+Nonetheless, you can regenerate output using `make`.
 
 Make sure you review the diff to ensure that it only contains the desired
 changes!
