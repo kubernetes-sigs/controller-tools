@@ -59,7 +59,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(os.Chdir("./testdata")).To(Succeed()) // go modules are directory-sensitive
+		Expect(os.Chdir("./testdata/cronjob/v1")).To(Succeed()) // go modules are directory-sensitive
 		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
 
 		By("loading the roots")
@@ -91,7 +91,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(parser.CustomResourceDefinitions).To(HaveKey(groupKind))
 
 		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("testdata.kubebuilder.io_cronjobs.yaml")
+		expectedFile, err := ioutil.ReadFile("cronjob_crdv1.yaml")
 		Expect(err).NotTo(HaveOccurred())
 
 		By("parsing the desired YAML")
