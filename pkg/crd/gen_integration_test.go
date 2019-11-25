@@ -118,7 +118,7 @@ var _ = Describe("CRD generation", func() {
 			})
 		})
 
-		Context("using crd v1 beta1", func() {
+		Context("using crd v1beta1", func() {
 			crdVersion := "v1beta1"
 			Context("with default options", func() {
 				testCrdGeneration(crdGenParams{
@@ -197,10 +197,6 @@ func testCrdGeneration(params crdGenParams) {
 		var gen genall.Generator = params.generator
 		rt, err := genall.Generators{&gen}.ForRoots(params.rootPaths)
 		Expect(err).NotTo(HaveOccurred())
-
-		outputDir, err := ioutil.TempDir("", "controller-tools-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
 		var buf bytes.Buffer
 		rt.OutputRules.Default = genall.OutputToBuffer{Buffer: &buf}
 
