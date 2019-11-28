@@ -6,7 +6,7 @@ specially.
 
 The `cronjob_types.go` file contains the input types, and is loosely based
 on the CronJob tutorial from the [KubeBuilder
-Book](https://book.kubebuilder.io/cronjob-tutorial.html), but with added
+Book](https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html), but with added
 fields to test additional DeepCopy cases.
 
 If you for some reason need to change deepcopy generation, you can
