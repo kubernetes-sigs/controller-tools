@@ -23,20 +23,22 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-// ToplogyMarkers list topology markers (i.e. markers that specify if a
-// list is an associative-list or a set, or if a map is atomic or not).
+// TopologyMarkers specify topology markers (i.e. markers that describe if a
+// list behaves as an associative-list or a set, if a map is atomic or not).
 var TopologyMarkers = []*definitionWithHelp{
 	must(markers.MakeDefinition("listMapKey", markers.DescribesField, ListMapKey(""))).
 		WithHelp(ListMapKey("").Help()),
 	must(markers.MakeDefinition("listType", markers.DescribesField, ListType(""))).
 		WithHelp(ListType("").Help()),
+	must(markers.MakeDefinition("mapType", markers.DescribesField, MapType(""))).
+		WithHelp(MapType("").Help()),
 }
 
 func init() {
 	AllDefinitions = append(AllDefinitions, TopologyMarkers...)
 }
 
-// +controllertools:marker:generateHelp:category="CRD topology"
+// +controllertools:marker:generateHelp:category="CRD processing"
 
 // ListType specifies the type of data-structure that the list
 // represents (map, set, atomic).
@@ -54,7 +56,7 @@ func init() {
 //   are typically manipulated together by the same actor.
 type ListType string
 
-// +controllertools:marker:generateHelp:category="CRD topology"
+// +controllertools:marker:generateHelp:category="CRD processing"
 
 // ListMapKey specifies the keys to map listTypes.
 //
@@ -62,6 +64,22 @@ type ListType string
 // must be used. It can only be used when ListType is set to map, and the keys
 // should be scalar types.
 type ListMapKey string
+
+// +controllertools:marker:generateHelp:category="CRD processing"
+
+// MapType specifies the level of atomicity of the map;
+// i.e. whether each item in the map is independent of the others,
+// or all fields are treated as a single unit.
+//
+// Possible values:
+//
+// - "granular": items in the map are independent of each other,
+//   and can be manipulated by different actors.
+//   This is the default behavior.
+//
+// - "atomic": all fields are treated as one unit.
+//   Any changes have to replace the entire map.
+type MapType string
 
 func (l ListType) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "array" {
@@ -85,5 +103,20 @@ func (l ListMapKey) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		return fmt.Errorf("must apply listMapKey to an associative-list")
 	}
 	schema.XListMapKeys = append(schema.XListMapKeys, string(l))
+	return nil
+}
+
+func (m MapType) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if schema.Type != "object" {
+		return fmt.Errorf("must apply mapType to an object")
+	}
+
+	if m != "atomic" && m != "granular" {
+		return fmt.Errorf(`MapType must be either "granular" or "atomic"`)
+	}
+
+	p := string(m)
+	schema.XMapType = &p
+
 	return nil
 }

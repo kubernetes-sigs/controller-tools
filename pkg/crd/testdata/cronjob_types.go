@@ -132,6 +132,10 @@ type CronJobSpec struct {
 	// +listMapKey=name
 	// +listMapKey=secondary
 	AssociativeList []AssociativeType `json:"associativeList"`
+
+	// A map that allows different actors to manage different fields
+	// +mapType=granular
+	MapOfInfo map[string][]byte `json:"mapOfInfo"`
 }
 
 type NestedObject struct {

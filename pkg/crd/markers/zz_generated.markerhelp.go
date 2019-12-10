@@ -86,7 +86,7 @@ func (Format) Help() *markers.DefinitionHelp {
 
 func (ListMapKey) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "CRD topology",
+		Category: "CRD processing",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the keys to map listTypes. ",
 			Details: "It indicates the index of a map list. They can be repeated if multiple keys must be used. It can only be used when ListType is set to map, and the keys should be scalar types.",
@@ -97,10 +97,21 @@ func (ListMapKey) Help() *markers.DefinitionHelp {
 
 func (ListType) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "CRD topology",
+		Category: "CRD processing",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the type of data-structure that the list represents (map, set, atomic). ",
 			Details: "Possible data-structure types of a list are: \n - \"map\": it needs to have a key field, which will be used to build an   associative list. A typical example is a the pod container list,   which is indexed by the container name. \n - \"set\": Fields need to be \"scalar\", and there can be only one   occurrence of each. \n - \"atomic\": All the fields in the list are treated as a single value,   are typically manipulated together by the same actor.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (MapType) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD processing",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "specifies the level of atomicity of the map; i.e. whether each item in the map is independent of the others, or all fields are treated as a single unit. ",
+			Details: "Possible values: \n - \"granular\": items in the map are independent of each other,   and can be manipulated by different actors.   This is the default behavior. \n - \"atomic\": all fields are treated as one unit.   Any changes have to replace the entire map.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
