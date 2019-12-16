@@ -306,6 +306,17 @@ func (StorageVersion) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (StructType) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD processing",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "specifies the level of atomicity of the struct; i.e. whether each field in the struct is independent of the others, or all fields are treated as a single unit. ",
+			Details: "Possible values: \n - \"granular\": fields in the struct are independent of each other,   and can be manipulated by different actors.   This is the default behavior. \n - \"atomic\": all fields are treated as one unit.   Any changes have to replace the entire struct.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (SubresourceScale) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD",

@@ -136,6 +136,10 @@ type CronJobSpec struct {
 	// A map that allows different actors to manage different fields
 	// +mapType=granular
 	MapOfInfo map[string][]byte `json:"mapOfInfo"`
+
+	// A struct that can only be entirely replaced
+	// +structType=atomic
+	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
 }
 
 type NestedObject struct {

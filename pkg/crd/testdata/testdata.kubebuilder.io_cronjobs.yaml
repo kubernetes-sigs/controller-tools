@@ -125,13 +125,6 @@ spec:
                   a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
-              mapOfInfo:
-                description: A map that allows different actors to manage different fields
-                type: object
-                x-kubernetes-map-type: granular
-                additionalProperties:
-                  format: byte
-                  type: string
               jobTemplate:
                 description: Specifies the job that will be created when executing
                   a CronJob.
@@ -4993,6 +4986,13 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                description: A map that allows different actors to manage different fields
+                type: object
+                x-kubernetes-map-type: granular
+                additionalProperties:
+                  format: byte
+                  type: string
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -5017,6 +5017,18 @@ spec:
                   type: array
                 description: This tests string slices are allowed as map values.
                 type: object
+              structWithSeveralFields:
+                description: A struct that can only be entirely replaced
+                type: object
+                x-kubernetes-map-type: atomic
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
               successfulJobsHistoryLimit:
                 description: The number of successful finished jobs to retain. This
                   is a pointer to distinguish between explicit zero and not specified.
@@ -5064,6 +5076,7 @@ spec:
             - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
