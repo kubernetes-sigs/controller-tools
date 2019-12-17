@@ -244,8 +244,8 @@ func (Resource) Help() *markers.DefinitionHelp {
 				Details: "The singular form is otherwise defaulted off the plural (path).",
 			},
 			"Scope": markers.DetailedHelp{
-				Summary: "overrides the scope of the CRD (cluster vs namespaced). ",
-				Details: "Scope defaults to \"namespaced\".  Cluster-scoped (\"cluster\") resources don't exist in namespaces.",
+				Summary: "overrides the scope of the CRD (Cluster vs Namespaced). ",
+				Details: "Scope defaults to \"Namespaced\".  Cluster-scoped (\"Cluster\") resources don't exist in namespaces.",
 			},
 		},
 	}
