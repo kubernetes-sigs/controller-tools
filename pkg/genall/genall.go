@@ -102,12 +102,21 @@ func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error
 	}
 	defer out.Close()
 
-	for _, obj := range objs {
+	for i, obj := range objs {
 		yamlContent, err := yaml.Marshal(obj)
 		if err != nil {
 			return err
 		}
-		n, err := out.Write(append([]byte("\n---\n"), yamlContent...))
+		if i != 0 {
+			n, err := out.Write([]byte("\n---\n"))
+			if err != nil {
+				return err
+			}
+			if n < 5 {
+				return io.ErrShortWrite
+			}
+		}
+		n, err := out.Write(yamlContent)
 		if err != nil {
 			return err
 		}
