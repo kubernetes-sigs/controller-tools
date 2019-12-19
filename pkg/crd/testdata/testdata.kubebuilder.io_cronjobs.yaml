@@ -36,6 +36,26 @@ spec:
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
+              associativeList:
+                description: This tests that associative lists work.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               binaryName:
                 description: This tests byte slice schema generation.
                 format: byte
@@ -1602,6 +1622,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -2795,6 +2819,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -4958,6 +4986,13 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                description: A map that allows different actors to manage different fields
+                type: object
+                x-kubernetes-map-type: granular
+                additionalProperties:
+                  format: byte
+                  type: string
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -4982,6 +5017,18 @@ spec:
                   type: array
                 description: This tests string slices are allowed as map values.
                 type: object
+              structWithSeveralFields:
+                description: A struct that can only be entirely replaced
+                type: object
+                x-kubernetes-map-type: atomic
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
               successfulJobsHistoryLimit:
                 description: The number of successful finished jobs to retain. This
                   is a pointer to distinguish between explicit zero and not specified.
@@ -5018,6 +5065,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
             required:
+            - associativeList
             - binaryName
             - canBeNull
             - defaultedObject
@@ -5025,8 +5073,10 @@ spec:
             - defaultedString
             - embeddedResource
             - jobTemplate
+            - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
