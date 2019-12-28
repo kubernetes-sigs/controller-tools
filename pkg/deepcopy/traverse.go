@@ -265,7 +265,7 @@ func (c *copyMethodMaker) GenerateMethodsFor(root *loader.Package, info *markers
 		// maybe also generate DeepCopyObject, if asked.
 		if genObjectInterface(info) {
 			// we always need runtime.Object for DeepCopyObject
-			runtimeAlias := c.NeedImport("k8s.io/apimachinery/pkg/runtime")
+			runtimeAlias := c.NeedImport(runtimePath)
 			if ptrReceiver {
 				c.Linef(ptrDeepCopyObj, info.Name, runtimeAlias)
 			} else {
