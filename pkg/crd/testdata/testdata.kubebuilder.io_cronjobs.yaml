@@ -1109,6 +1109,7 @@ spec:
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                                     x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
@@ -1773,6 +1774,7 @@ spec:
                                             anyOf:
                                             - type: integer
                                             - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
@@ -1783,6 +1785,7 @@ spec:
                                             anyOf:
                                             - type: integer
                                             - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
@@ -2315,6 +2318,7 @@ spec:
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                                     x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
@@ -2979,6 +2983,7 @@ spec:
                                             anyOf:
                                             - type: integer
                                             - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
@@ -2989,6 +2994,7 @@ spec:
                                             anyOf:
                                             - type: integer
                                             - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                             x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
@@ -3953,6 +3959,7 @@ spec:
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                                     x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
@@ -3992,6 +3999,7 @@ spec:
                                             a pod. The default is nil which means
                                             that the limit is undefined. More info:
                                             http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                           x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
@@ -4555,6 +4563,7 @@ spec:
                                                                 the output format
                                                                 of the exposed resources,
                                                                 defaults to "1"
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                                               x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required:
