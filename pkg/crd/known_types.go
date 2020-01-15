@@ -60,7 +60,7 @@ var KnownPackages = map[string]PackageOverride{
 				{Type: "integer"},
 				{Type: "string"},
 			},
-			Pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTIE]i)|[mkMGTPE]|((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$",
+			Pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$",
 		}
 		// No point in calling AddPackage, this is the sole inhabitant
 	},
