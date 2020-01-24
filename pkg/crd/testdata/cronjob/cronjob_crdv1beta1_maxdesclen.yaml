@@ -35,6 +35,26 @@ spec:
           spec:
             description: CronJobSpe
             properties:
+              associativeList:
+                description: This tests
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               binaryName:
                 description: This tests
                 format: byte
@@ -579,8 +599,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -891,6 +915,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -981,12 +1009,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -1257,8 +1293,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -1569,6 +1609,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -1659,12 +1703,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -2164,8 +2216,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -2184,8 +2240,12 @@ spec:
                                           description: 'What type '
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: Total amou
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represe
@@ -2494,8 +2554,12 @@ spec:
                                                               description: 'Container '
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: 'Specifies '
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required: '
                                                               type: string
@@ -2753,6 +2817,13 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that
+                type: object
+                x-kubernetes-map-type: granular
               noReallySuspend:
                 description: 'This flag '
                 type: string
@@ -2774,6 +2845,18 @@ spec:
                   type: array
                 description: This tests
                 type: object
+              structWithSeveralFields:
+                description: A struct t
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
               successfulJobsHistoryLimit:
                 description: The number
                 format: int32
@@ -2805,6 +2888,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
             required:
+            - associativeList
             - binaryName
             - canBeNull
             - defaultedObject
@@ -2812,8 +2896,10 @@ spec:
             - defaultedString
             - embeddedResource
             - jobTemplate
+            - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
@@ -3422,8 +3508,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -3734,6 +3824,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -3824,12 +3918,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -4100,8 +4202,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -4412,6 +4518,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -4502,12 +4612,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -5007,8 +5125,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -5027,8 +5149,12 @@ spec:
                                           description: 'What type '
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: Total amou
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represe
@@ -5337,8 +5463,12 @@ spec:
                                                               description: 'Container '
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: 'Specifies '
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required: '
                                                               type: string
@@ -5752,6 +5882,26 @@ spec:
           spec:
             description: CronJobSpe
             properties:
+              associativeList:
+                description: This tests
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               binaryName:
                 description: This tests
                 format: byte
@@ -6296,8 +6446,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -6608,6 +6762,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -6698,12 +6856,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -6974,8 +7140,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -7286,6 +7456,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -7376,12 +7550,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -7881,8 +8063,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -7901,8 +8087,12 @@ spec:
                                           description: 'What type '
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: Total amou
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represe
@@ -8211,8 +8401,12 @@ spec:
                                                               description: 'Container '
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: 'Specifies '
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required: '
                                                               type: string
@@ -8470,6 +8664,13 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that
+                type: object
+                x-kubernetes-map-type: granular
               noReallySuspend:
                 description: 'This flag '
                 type: string
@@ -8491,6 +8692,18 @@ spec:
                   type: array
                 description: This tests
                 type: object
+              structWithSeveralFields:
+                description: A struct t
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
               successfulJobsHistoryLimit:
                 description: The number
                 format: int32
@@ -8522,6 +8735,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
             required:
+            - associativeList
             - binaryName
             - canBeNull
             - defaultedObject
@@ -8529,8 +8743,10 @@ spec:
             - defaultedString
             - embeddedResource
             - jobTemplate
+            - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
@@ -9139,8 +9355,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -9451,6 +9671,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -9541,12 +9765,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -9817,8 +10049,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -10129,6 +10365,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: Periodic p
                                       properties:
@@ -10219,12 +10459,20 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Limits des
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: Requests d
                                           type: object
                                       type: object
@@ -10724,8 +10972,12 @@ spec:
                                                     description: 'Container '
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: 'Specifies '
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: '
                                                     type: string
@@ -10744,8 +10996,12 @@ spec:
                                           description: 'What type '
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: Total amou
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represe
@@ -11054,8 +11310,12 @@ spec:
                                                               description: 'Container '
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: 'Specifies '
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required: '
                                                               type: string

@@ -36,6 +36,26 @@ spec:
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
+              associativeList:
+                description: This tests that associative lists work.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               binaryName:
                 description: This tests byte slice schema generation.
                 format: byte
@@ -1083,10 +1103,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -1602,6 +1626,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -1743,14 +1771,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -2276,10 +2312,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -2795,6 +2835,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -2936,14 +2980,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -3901,10 +3953,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -3930,6 +3986,9 @@ spec:
                                             or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: 'Total amount of local storage
                                             required for this EmptyDir volume. The
                                             size limit is also applicable for memory
@@ -3940,7 +3999,8 @@ spec:
                                             a pod. The default is nil which means
                                             that the limit is undefined. More info:
                                             http://kubernetes.io/docs/user-guide/volumes#emptydir'
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represents a Fibre Channel resource
@@ -4496,11 +4556,15 @@ spec:
                                                                 for env vars'
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: Specifies
                                                                 the output format
                                                                 of the exposed resources,
                                                                 defaults to "1"
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required:
                                                                 resource to select'
@@ -4958,6 +5022,14 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that allows different actors to manage different
+                  fields
+                type: object
+                x-kubernetes-map-type: granular
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -4982,6 +5054,18 @@ spec:
                   type: array
                 description: This tests string slices are allowed as map values.
                 type: object
+              structWithSeveralFields:
+                description: A struct that can only be entirely replaced
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
               successfulJobsHistoryLimit:
                 description: The number of successful finished jobs to retain. This
                   is a pointer to distinguish between explicit zero and not specified.
@@ -5018,6 +5102,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
             required:
+            - associativeList
             - binaryName
             - canBeNull
             - defaultedObject
@@ -5025,8 +5110,10 @@ spec:
             - defaultedString
             - embeddedResource
             - jobTemplate
+            - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
@@ -6158,10 +6245,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -6677,6 +6768,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -6818,14 +6913,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -7351,10 +7454,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -7870,6 +7977,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -8011,14 +8122,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -8976,10 +9095,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -9005,6 +9128,9 @@ spec:
                                             or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: 'Total amount of local storage
                                             required for this EmptyDir volume. The
                                             size limit is also applicable for memory
@@ -9015,7 +9141,8 @@ spec:
                                             a pod. The default is nil which means
                                             that the limit is undefined. More info:
                                             http://kubernetes.io/docs/user-guide/volumes#emptydir'
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represents a Fibre Channel resource
@@ -9571,11 +9698,15 @@ spec:
                                                                 for env vars'
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: Specifies
                                                                 the output format
                                                                 of the exposed resources,
                                                                 defaults to "1"
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required:
                                                                 resource to select'
@@ -10214,6 +10345,26 @@ spec:
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
+              associativeList:
+                description: This tests that associative lists work.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               binaryName:
                 description: This tests byte slice schema generation.
                 format: byte
@@ -11261,10 +11412,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -11780,6 +11935,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -11921,14 +12080,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -12454,10 +12621,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -12973,6 +13144,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -13114,14 +13289,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -14079,10 +14262,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -14108,6 +14295,9 @@ spec:
                                             or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: 'Total amount of local storage
                                             required for this EmptyDir volume. The
                                             size limit is also applicable for memory
@@ -14118,7 +14308,8 @@ spec:
                                             a pod. The default is nil which means
                                             that the limit is undefined. More info:
                                             http://kubernetes.io/docs/user-guide/volumes#emptydir'
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represents a Fibre Channel resource
@@ -14674,11 +14865,15 @@ spec:
                                                                 for env vars'
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: Specifies
                                                                 the output format
                                                                 of the exposed resources,
                                                                 defaults to "1"
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required:
                                                                 resource to select'
@@ -15136,6 +15331,14 @@ spec:
                     - template
                     type: object
                 type: object
+              mapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that allows different actors to manage different
+                  fields
+                type: object
+                x-kubernetes-map-type: granular
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -15160,6 +15363,18 @@ spec:
                   type: array
                 description: This tests string slices are allowed as map values.
                 type: object
+              structWithSeveralFields:
+                description: A struct that can only be entirely replaced
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
               successfulJobsHistoryLimit:
                 description: The number of successful finished jobs to retain. This
                   is a pointer to distinguish between explicit zero and not specified.
@@ -15196,6 +15411,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
             required:
+            - associativeList
             - binaryName
             - canBeNull
             - defaultedObject
@@ -15203,8 +15419,10 @@ spec:
             - defaultedString
             - embeddedResource
             - jobTemplate
+            - mapOfInfo
             - patternObject
             - schedule
+            - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
@@ -16336,10 +16554,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -16855,6 +17077,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -16996,14 +17222,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -17529,10 +17763,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -18048,6 +18286,10 @@ spec:
                                         - containerPort
                                         type: object
                                       type: array
+                                      x-kubernetes-list-map-keys:
+                                      - containerPort
+                                      - protocol
+                                      x-kubernetes-list-type: map
                                     readinessProbe:
                                       description: 'Periodic probe of container service
                                         readiness. Container will be removed from
@@ -18189,14 +18431,22 @@ spec:
                                       properties:
                                         limits:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Limits describes the maximum
                                             amount of compute resources allowed. More
                                             info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                                           type: object
                                         requests:
                                           additionalProperties:
-                                            type: string
+                                            anyOf:
+                                            - type: integer
+                                            - type: string
+                                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                            x-kubernetes-int-or-string: true
                                           description: 'Requests describes the minimum
                                             amount of compute resources required.
                                             If Requests is omitted for a container,
@@ -19154,10 +19404,14 @@ spec:
                                                       for env vars'
                                                     type: string
                                                   divisor:
+                                                    anyOf:
+                                                    - type: integer
+                                                    - type: string
                                                     description: Specifies the output
                                                       format of the exposed resources,
                                                       defaults to "1"
-                                                    type: string
+                                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                    x-kubernetes-int-or-string: true
                                                   resource:
                                                     description: 'Required: resource
                                                       to select'
@@ -19183,6 +19437,9 @@ spec:
                                             or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                           type: string
                                         sizeLimit:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
                                           description: 'Total amount of local storage
                                             required for this EmptyDir volume. The
                                             size limit is also applicable for memory
@@ -19193,7 +19450,8 @@ spec:
                                             a pod. The default is nil which means
                                             that the limit is undefined. More info:
                                             http://kubernetes.io/docs/user-guide/volumes#emptydir'
-                                          type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
                                       type: object
                                     fc:
                                       description: FC represents a Fibre Channel resource
@@ -19749,11 +20007,15 @@ spec:
                                                                 for env vars'
                                                               type: string
                                                             divisor:
+                                                              anyOf:
+                                                              - type: integer
+                                                              - type: string
                                                               description: Specifies
                                                                 the output format
                                                                 of the exposed resources,
                                                                 defaults to "1"
-                                                              type: string
+                                                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                              x-kubernetes-int-or-string: true
                                                             resource:
                                                               description: 'Required:
                                                                 resource to select'
