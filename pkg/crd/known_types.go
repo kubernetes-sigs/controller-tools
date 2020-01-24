@@ -40,8 +40,14 @@ var KnownPackages = map[string]PackageOverride{
 			Format: "date-time",
 		}
 		p.Schemata[TypeIdent{Name: "Duration", Package: pkg}] = apiext.JSONSchemaProps{
-			// TODO(directxman12): regexp validation for this (or get kube to support it as a format value)
 			Type: "string",
+			// This differs slightly from the regex provided in the comments on Go's ParseDuration,
+			// but more accurately represents the behavior of the method. Note, this pattern does
+			// not catch potential overflow conditions in a specified duration that could still
+			// cause an error when ParseDuration is run.
+			// Note: there are intentionally two different unicode micro characters (U+00B5 and U+03BC)
+			//Pattern: `^[-+]?(0|([0-9]*(\\.[0-9]*)?(ns|us|µs|μs|ms|s|m|h))+)$`,
+			Pattern: `^(0|([0-9]+(ns|us|µs|μs|ms|s|m|h))+)$`,
 		}
 		p.Schemata[TypeIdent{Name: "Fields", Package: pkg}] = apiext.JSONSchemaProps{
 			// this is a recursive structure that can't be flattened or, for that matter, properly generated.
