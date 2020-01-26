@@ -108,6 +108,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
 		addAttribution(&crdRaw)
+		FixupMetadata(crdRaw)
 
 		versionedCRDs := make([]interface{}, len(crdVersions))
 		for i, ver := range crdVersions {
@@ -154,6 +155,18 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	return nil
+}
+
+// FixupMetadata resets the schema for the top-level metadata field which is need for CRD validation
+func FixupMetadata(crd apiext.CustomResourceDefinition) {
+	for _, v := range crd.Spec.Versions {
+		if v.Schema != nil && v.Schema.OpenAPIV3Schema != nil && v.Schema.OpenAPIV3Schema.Properties != nil {
+			schemaProperties := v.Schema.OpenAPIV3Schema.Properties
+			if _, ok := schemaProperties["metadata"]; ok {
+				schemaProperties["metadata"] = apiext.JSONSchemaProps{Type: "object"}
+			}
+		}
+	}
 }
 
 // toTrivialVersions strips out all schemata except for the storage schema,
