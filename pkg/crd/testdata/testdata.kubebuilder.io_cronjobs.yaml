@@ -5038,6 +5038,11 @@ spec:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
                 type: string
+              ptrData:
+                additionalProperties:
+                  type: string
+                description: This tests pointers are allowed as map values.
+                type: object
               schedule:
                 description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
                 type: string

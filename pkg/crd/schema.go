@@ -297,6 +297,8 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
 			return &apiext.JSONSchemaProps{}
 		}
+	case *ast.StarExpr:
+		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
 		return &apiext.JSONSchemaProps{}
