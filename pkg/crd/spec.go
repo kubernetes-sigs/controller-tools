@@ -138,17 +138,24 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		crd.Spec.Versions[0].Storage = true
 	}
 
-	hasStorage := false
+	storageCounter := 0
+
 	for _, ver := range crd.Spec.Versions {
 		if ver.Storage {
 			hasStorage = true
+			storageCounter++
 			break
 		}
 	}
-	if !hasStorage {
+	if storageCounter == 0 {
 		// just add the error to the first relevant package for this CRD,
 		// since there's no specific error location
 		packages[0].AddError(fmt.Errorf("CRD for %s has no storage version", groupKind))
+	}
+	if storageCounter > 1 {
+		// just add the error to the first relevant package for this CRD,
+		// since there's no specific error location
+		packages[0].AddError(fmt.Errorf("CRD for %s has more than one storage version", groupKind))
 	}
 
 	// NB(directxman12): CRD's status doesn't have omitempty markers, which means things
