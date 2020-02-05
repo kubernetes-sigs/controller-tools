@@ -143,7 +143,6 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	for _, ver := range crd.Spec.Versions {
 		if ver.Storage {
 			storageCounter++
-			break
 		}
 	}
 	if storageCounter == 0 {
