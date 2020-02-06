@@ -57,11 +57,11 @@ func (Config) Help() *markers.DefinitionHelp {
 				Details: "",
 			},
 			"Name": markers.DetailedHelp{
-				Summary: "indicates the name of this webhook configuration.",
+				Summary: "indicates the name of this webhook configuration. Should be a domain with at least three segments separated by dots",
 				Details: "",
 			},
 			"Path": markers.DetailedHelp{
-				Summary: "specifies that path that the API server should connect to this webhook on.",
+				Summary: "specifies that path that the API server should connect to this webhook on. Must be prefixed with a '/validate-' or '/mutate-' depending on the type, and followed by $GROUP-$VERSION-$KIND where all values are lower-cased and the periods in the group are substituted for hyphens. For example, a validating webhook path for type batch.tutorial.kubebuilder.io/v1,Kind=CronJob would be /validate-batch-tutorial-kubebuilder-io-v1-cronjob",
 				Details: "",
 			},
 		},

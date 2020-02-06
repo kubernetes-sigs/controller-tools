@@ -45,6 +45,9 @@ var CRDMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:skipversion", markers.DescribesType, SkipVersion{})).
 		WithHelp(SkipVersion{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:label", markers.DescribesType, Label{})).
+		WithHelp(Label{}.Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -59,10 +62,10 @@ func init() {
 // SubresourceStatus enables the "/status" subresource on a CRD.
 type SubresourceStatus struct{}
 
-func (s SubresourceStatus) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s SubresourceStatus) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	var subresources *apiext.CustomResourceSubresources
-	for i := range crd.Versions {
-		ver := &crd.Versions[i]
+	for i := range crd.Spec.Versions {
+		ver := &crd.Spec.Versions[i]
 		if ver.Name != version {
 			continue
 		}
@@ -98,10 +101,10 @@ type SubresourceScale struct {
 	SelectorPath *string `marker:"selectorpath"`
 }
 
-func (s SubresourceScale) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s SubresourceScale) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	var subresources *apiext.CustomResourceSubresources
-	for i := range crd.Versions {
-		ver := &crd.Versions[i]
+	for i := range crd.Spec.Versions {
+		ver := &crd.Spec.Versions[i]
 		if ver.Name != version {
 			continue
 		}
@@ -131,14 +134,14 @@ func (s SubresourceScale) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, v
 // other version will result in conversion to the storage version via a conversion webhook.
 type StorageVersion struct{}
 
-func (s StorageVersion) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s StorageVersion) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	if version == "" {
 		// single-version, do nothing
 		return nil
 	}
 	// multi-version
-	for i := range crd.Versions {
-		ver := &crd.Versions[i]
+	for i := range crd.Spec.Versions {
+		ver := &crd.Spec.Versions[i]
 		if ver.Name != version {
 			continue
 		}
@@ -157,22 +160,22 @@ func (s StorageVersion) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, ver
 // Kubernetes upstream conversion-gen tool.
 type SkipVersion struct{}
 
-func (s SkipVersion) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s SkipVersion) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	if version == "" {
 		// single-version, this is an invalid state
 		return fmt.Errorf("cannot skip a version if there is only a single version")
 	}
 	var versions []apiext.CustomResourceDefinitionVersion
 	// multi-version
-	for i := range crd.Versions {
-		ver := crd.Versions[i]
+	for i := range crd.Spec.Versions {
+		ver := crd.Spec.Versions[i]
 		if ver.Name == version {
 			// skip the skipped version
 			continue
 		}
 		versions = append(versions, ver)
 	}
-	crd.Versions = versions
+	crd.Spec.Versions = versions
 	return nil
 }
 
@@ -208,10 +211,10 @@ type PrintColumn struct {
 	Priority int32 `marker:",optional"`
 }
 
-func (s PrintColumn) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s PrintColumn) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	var columns *[]apiext.CustomResourceColumnDefinition
-	for i := range crd.Versions {
-		ver := &crd.Versions[i]
+	for i := range crd.Spec.Versions {
+		ver := &crd.Spec.Versions[i]
 		if ver.Name != version {
 			continue
 		}
@@ -273,20 +276,39 @@ type Resource struct {
 	Scope string `marker:",optional"`
 }
 
-func (s Resource) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+func (s Resource) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
 	if s.Path != "" {
-		crd.Names.Plural = s.Path
+		crd.Spec.Names.Plural = s.Path
 	}
-	crd.Names.ShortNames = s.ShortName
-	crd.Names.Categories = s.Categories
+	crd.Spec.Names.ShortNames = s.ShortName
+	crd.Spec.Names.Categories = s.Categories
 
 	switch s.Scope {
 	case "":
-		crd.Scope = apiext.NamespaceScoped
+		crd.Spec.Scope = apiext.NamespaceScoped
 	default:
-		crd.Scope = apiext.ResourceScope(s.Scope)
+		crd.Spec.Scope = apiext.ResourceScope(s.Scope)
 	}
 
+	return nil
+}
+
+// +controllertools:marker:generateHelp:category=CRD
+
+// Label configures a label to add to a CRD.
+type Label struct {
+	// Name specifies the name of the label.
+	Name string
+
+	// Value specifies the value of the label.
+	Value string
+}
+
+func (s Label) ApplyToCRD(crd *apiext.CustomResourceDefinition, version string) error {
+	if crd.Labels == nil {
+		crd.Labels = map[string]string{}
+	}
+	crd.Labels[s.Name] = s.Value
 	return nil
 }
 

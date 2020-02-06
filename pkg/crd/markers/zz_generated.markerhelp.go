@@ -84,6 +84,26 @@ func (Format) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Label) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "configures a label to add to a CRD.",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"Name": markers.DetailedHelp{
+				Summary: "specifies the name of the label.",
+				Details: "",
+			},
+			"Value": markers.DetailedHelp{
+				Summary: "specifies the value of the label.",
+				Details: "",
+			},
+		},
+	}
+}
+
 func (ListMapKey) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD processing",
