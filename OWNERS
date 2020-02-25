@@ -3,6 +3,7 @@
 approvers:
   - controller-tools-admins
   - controller-tools-approvers
+  - controller-tools-maintainers
 reviewers:
   - controller-tools-reviewers
   - controller-tools-admins
