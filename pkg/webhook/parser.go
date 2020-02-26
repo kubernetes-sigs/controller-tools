@@ -19,7 +19,7 @@ limitations under the License.
 //
 // The markers take the form:
 //
-//  +kubebuilder:webhook:failurePolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>
+//  +kubebuilder:webhook:failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>
 package webhook
 
 import (
@@ -57,6 +57,10 @@ type Config struct {
 	// It may be either "ignore" (to skip the webhook and continue on) or "fail" (to reject
 	// the object in question).
 	FailurePolicy string
+	// MatchPolicy defines how the "rules" list is used to match incoming requests.
+	// Allowed values are "Exact" (match only if it exactly matches the specified rule)
+	// or "Equivalent" (match a request if it modifies a resource listed in rules, even via another API group or version).
+	MatchPolicy string
 
 	// Groups specifies the API groups that this webhook receives requests for.
 	Groups []string
@@ -111,6 +115,7 @@ func (c Config) ToMutatingWebhook() (admissionreg.MutatingWebhook, error) {
 		Name:          c.Name,
 		Rules:         c.rules(),
 		FailurePolicy: c.failurePolicy(),
+		MatchPolicy:   c.matchPolicy(),
 		ClientConfig:  c.clientConfig(),
 	}, nil
 }
@@ -125,6 +130,7 @@ func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
 		Name:          c.Name,
 		Rules:         c.rules(),
 		FailurePolicy: c.failurePolicy(),
+		MatchPolicy:   c.matchPolicy(),
 		ClientConfig:  c.clientConfig(),
 	}, nil
 }
@@ -168,6 +174,21 @@ func (c Config) failurePolicy() *admissionreg.FailurePolicyType {
 		failurePolicy = admissionreg.FailurePolicyType(c.FailurePolicy)
 	}
 	return &failurePolicy
+}
+
+// matchPolicy converts the string value to the proper value for the API.
+// Unrecognized values are passed through.
+func (c Config) matchPolicy() *admissionreg.MatchPolicyType {
+	var matchPolicy admissionreg.MatchPolicyType
+	switch strings.ToLower(c.MatchPolicy) {
+	case strings.ToLower(string(admissionreg.Exact)):
+		matchPolicy = admissionreg.Exact
+	case strings.ToLower(string(admissionreg.Equivalent)):
+		matchPolicy = admissionreg.Equivalent
+	default:
+		matchPolicy = admissionreg.MatchPolicyType(c.MatchPolicy)
+	}
+	return &matchPolicy
 }
 
 // clientConfig returns the client config for a webhook.
