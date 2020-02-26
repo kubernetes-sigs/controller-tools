@@ -1,6 +1,6 @@
 module sigs.k8s.io/controller-tools
 
-go 1.12
+go 1.13
 
 require (
 	github.com/fatih/color v1.7.0
