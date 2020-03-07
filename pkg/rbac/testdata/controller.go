@@ -10,3 +10,4 @@ package controller
 // +kubebuilder:rbac:groups=cron;batch,resources=jobs/status,verbs=get;create
 // +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=watch;watch
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=park
+// +kubebuilder:rbac:groups=batch.io,resources=cronjobs,resourceNames=foo;bar;baz,verbs=get;watch
