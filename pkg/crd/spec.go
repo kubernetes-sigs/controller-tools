@@ -120,7 +120,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		}
 	}
 
-	// fix the name if the plural was changed (this is the form the name *has* to take, so no harm in chaning it).
+	// fix the name if the plural was changed (this is the form the name *has* to take, so no harm in changing it).
 	crd.Name = crd.Spec.Names.Plural + "." + groupKind.Group
 
 	// nothing to actually write

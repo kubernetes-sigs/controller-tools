@@ -13,7 +13,7 @@ spec:
     kind: CronJob
     listKind: CronJobList
     plural: cronjobs
-    singular: cronjob
+    singular: mycronjob
   scope: Namespaced
   versions:
   - name: v1
