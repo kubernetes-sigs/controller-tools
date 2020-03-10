@@ -248,7 +248,7 @@ func (f *Flattener) loadUnflattenedSchema(typ TypeIdent) (*apiext.JSONSchemaProp
 	if !found {
 		return nil, fmt.Errorf("unable to locate schema for type %s", typ)
 	}
-	return f.FlattenSchema(baseSchema, typ.Package), nil
+	return &baseSchema, nil
 }
 
 // FlattenType flattens the given pre-loaded type, removing any references from it.
