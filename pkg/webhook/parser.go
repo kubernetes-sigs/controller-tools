@@ -60,7 +60,7 @@ type Config struct {
 	// MatchPolicy defines how the "rules" list is used to match incoming requests.
 	// Allowed values are "Exact" (match only if it exactly matches the specified rule)
 	// or "Equivalent" (match a request if it modifies a resource listed in rules, even via another API group or version).
-	MatchPolicy string
+	MatchPolicy string `marker:",optional"`
 
 	// Groups specifies the API groups that this webhook receives requests for.
 	Groups []string
@@ -111,11 +111,16 @@ func (c Config) ToMutatingWebhook() (admissionreg.MutatingWebhook, error) {
 		return admissionreg.MutatingWebhook{}, fmt.Errorf("%s is a validating webhook", c.Name)
 	}
 
+	matchPolicy, err := c.matchPolicy()
+	if err != nil {
+		return admissionreg.MutatingWebhook{}, err
+	}
+
 	return admissionreg.MutatingWebhook{
 		Name:          c.Name,
 		Rules:         c.rules(),
 		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   c.matchPolicy(),
+		MatchPolicy:   matchPolicy,
 		ClientConfig:  c.clientConfig(),
 	}, nil
 }
@@ -126,11 +131,16 @@ func (c Config) ToValidatingWebhook() (admissionreg.ValidatingWebhook, error) {
 		return admissionreg.ValidatingWebhook{}, fmt.Errorf("%s is a mutating webhook", c.Name)
 	}
 
+	matchPolicy, err := c.matchPolicy()
+	if err != nil {
+		return admissionreg.ValidatingWebhook{}, err
+	}
+
 	return admissionreg.ValidatingWebhook{
 		Name:          c.Name,
 		Rules:         c.rules(),
 		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   c.matchPolicy(),
+		MatchPolicy:   matchPolicy,
 		ClientConfig:  c.clientConfig(),
 	}, nil
 }
@@ -177,8 +187,7 @@ func (c Config) failurePolicy() *admissionreg.FailurePolicyType {
 }
 
 // matchPolicy converts the string value to the proper value for the API.
-// Unrecognized values are passed through.
-func (c Config) matchPolicy() *admissionreg.MatchPolicyType {
+func (c Config) matchPolicy() (*admissionreg.MatchPolicyType, error) {
 	var matchPolicy admissionreg.MatchPolicyType
 	switch strings.ToLower(c.MatchPolicy) {
 	case strings.ToLower(string(admissionreg.Exact)):
@@ -186,9 +195,9 @@ func (c Config) matchPolicy() *admissionreg.MatchPolicyType {
 	case strings.ToLower(string(admissionreg.Equivalent)):
 		matchPolicy = admissionreg.Equivalent
 	default:
-		matchPolicy = admissionreg.MatchPolicyType(c.MatchPolicy)
+		return nil, fmt.Errorf("unknown value %q for matchPolicy", c.MatchPolicy)
 	}
-	return &matchPolicy
+	return &matchPolicy, nil
 }
 
 // clientConfig returns the client config for a webhook.
