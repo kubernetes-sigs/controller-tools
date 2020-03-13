@@ -151,6 +151,19 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		packages[0].AddError(fmt.Errorf("CRD for %s has no storage version", groupKind))
 	}
 
+	served := false
+	for _, ver := range crd.Spec.Versions {
+		if ver.Served {
+			served = true
+			break
+		}
+	}
+	if !served {
+		// just add the error to the first relevant package for this CRD,
+		// since there's no specific error location
+		packages[0].AddError(fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
+	}
+
 	// NB(directxman12): CRD's status doesn't have omitempty markers, which means things
 	// get serialized as null, which causes the validator to freak out.  Manually set
 	// these to empty till we get a better solution.
