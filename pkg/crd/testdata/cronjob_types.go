@@ -23,7 +23,9 @@ limitations under the License.
 package cronjob
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -190,6 +192,84 @@ func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	return nil
 }
 
+// +kubebuilder:validation:Type=string
+// URL wraps url.URL.
+// It has custom json marshal methods that enable it to be used in K8s CRDs
+// such that the CRD resource will have the URL but operator code can can work with url.URL struct
+type URL struct {
+	url.URL
+}
+
+func (u *URL) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("%q", u.String())), nil
+}
+
+func (u *URL) UnmarshalJSON(b []byte) error {
+	var ref string
+	if err := json.Unmarshal(b, &ref); err != nil {
+		return err
+	}
+	if ref == "" {
+		*u = URL{}
+		return nil
+	}
+
+	r, err := url.Parse(ref)
+	if err != nil {
+		return err
+	} else if r != nil {
+		*u = URL{*r}
+	} else {
+		*u = URL{}
+	}
+	return nil
+}
+
+func (u *URL) String() string {
+	if u == nil {
+		return ""
+	}
+	return u.URL.String()
+}
+
+// +kubebuilder:validation:Type=string
+// URL2 is an alias of url.URL.
+// It has custom json marshal methods that enable it to be used in K8s CRDs
+// such that the CRD resource will have the URL but operator code can can work with url.URL struct
+type URL2 url.URL
+
+func (u *URL2) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("%q", u.String())), nil
+}
+
+func (u *URL2) UnmarshalJSON(b []byte) error {
+	var ref string
+	if err := json.Unmarshal(b, &ref); err != nil {
+		return err
+	}
+	if ref == "" {
+		*u = URL2{}
+		return nil
+	}
+
+	r, err := url.Parse(ref)
+	if err != nil {
+		return err
+	} else if r != nil {
+		*u = *(*URL2)(r)
+	} else {
+		*u = URL2{}
+	}
+	return nil
+}
+
+func (u *URL2) String() string {
+	if u == nil {
+		return ""
+	}
+	return (*url.URL)(u).String()
+}
+
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.
 // If none of the following policies is specified, the default one
@@ -226,6 +306,14 @@ type CronJobStatus struct {
 	// with microsecond precision.
 	// +optional
 	LastScheduleMicroTime *metav1.MicroTime `json:"lastScheduleMicroTime,omitempty"`
+
+	// LastActiveLogURL specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL *URL `json:"lastActiveLogURL,omitempty"`
+
+	// LastActiveLogURL2 specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL2 *URL2 `json:"lastActiveLogURL2,omitempty"`
 }
 
 // +kubebuilder:object:root=true
