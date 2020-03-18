@@ -36,6 +36,17 @@ rules:
   - watch
 - apiGroups:
   - batch.io
+  resourceNames:
+  - bar
+  - baz
+  - foo
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - watch
+- apiGroups:
+  - batch.io
   resources:
   - cronjobs/status
   verbs:
