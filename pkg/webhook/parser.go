@@ -194,6 +194,8 @@ func (c Config) matchPolicy() (*admissionreg.MatchPolicyType, error) {
 		matchPolicy = admissionreg.Exact
 	case strings.ToLower(string(admissionreg.Equivalent)):
 		matchPolicy = admissionreg.Equivalent
+	case "":
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unknown value %q for matchPolicy", c.MatchPolicy)
 	}
