@@ -78,10 +78,18 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 	must(markers.MakeAnyTypeDefinition("kubebuilder:default", markers.DescribesField, Default{})).
 		WithHelp(Default{}.Help()),
 
-	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesField, XPreserveUnknownFields{})).
-		WithHelp(XPreserveUnknownFields{}.Help()),
 	must(markers.MakeDefinition("kubebuilder:validation:EmbeddedResource", markers.DescribesField, XEmbeddedResource{})).
 		WithHelp(XEmbeddedResource{}.Help()),
+}
+
+// ValidationIshMarkers are field-and-type markers that don't fall under the
+// :validation: prefix, and/or don't have a name that directly matches their
+// type.
+var ValidationIshMarkers = []*definitionWithHelp{
+	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesField, XPreserveUnknownFields{})).
+		WithHelp(XPreserveUnknownFields{}.Help()),
+	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesType, XPreserveUnknownFields{})).
+		WithHelp(XPreserveUnknownFields{}.Help()),
 }
 
 func init() {
@@ -99,6 +107,7 @@ func init() {
 	}
 
 	AllDefinitions = append(AllDefinitions, FieldOnlyMarkers...)
+	AllDefinitions = append(AllDefinitions, ValidationIshMarkers...)
 }
 
 // +controllertools:marker:generateHelp:category="CRD validation"
@@ -191,6 +200,10 @@ type Default struct {
 // if nested  properties or additionalProperties are specified in the schema.
 // This can either be true or undefined. False
 // is forbidden.
+//
+// NB: The kubebuilder:validation:XPreserveUnknownFields variant is deprecated
+// in favor of the kubebuilder:pruning:PreserveUnknownFields variant.  They function
+// identically.
 type XPreserveUnknownFields struct{}
 
 // +controllertools:marker:generateHelp:category="CRD validation"
