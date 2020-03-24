@@ -221,56 +221,83 @@ func FindMetav1(roots []*loader.Package) *loader.Package {
 func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) map[schema.GroupKind]struct{} {
 	// TODO(directxman12): technically, we should be finding metav1 per-package
 	kubeKinds := map[schema.GroupKind]struct{}{}
-	for typeIdent, info := range parser.Types {
-		hasObjectMeta := false
-		hasTypeMeta := false
-
-		pkg := typeIdent.Package
-		pkg.NeedTypesInfo()
-		typesInfo := pkg.TypesInfo
-
-		for _, field := range info.Fields {
-			if field.Name != "" {
-				// type and object meta are embedded,
-				// so they can't be this
-				continue
-			}
-
-			fieldType := typesInfo.TypeOf(field.RawField.Type)
-			namedField, isNamed := fieldType.(*types.Named)
-			if !isNamed {
-				// ObjectMeta and TypeMeta are named types
-				continue
-			}
-			if namedField.Obj().Pkg() == nil {
-				// Embedded non-builtin universe type (specifically, it's probably `error`),
-				// so it can't be ObjectMeta or TypeMeta
-				continue
-			}
-			fieldPkgPath := loader.NonVendorPath(namedField.Obj().Pkg().Path())
-			fieldPkg := pkg.Imports()[fieldPkgPath]
-			if fieldPkg != metav1Pkg {
-				continue
-			}
-
-			switch namedField.Obj().Name() {
-			case "ObjectMeta":
-				hasObjectMeta = true
-			case "TypeMeta":
-				hasTypeMeta = true
-			}
-		}
-
+	for typeIdent := range parser.Types {
+		hasObjectMeta, hasTypeMeta := checkTypeForMeta(parser, typeIdent, metav1Pkg)
 		if !hasObjectMeta || !hasTypeMeta {
 			continue
 		}
 
 		groupKind := schema.GroupKind{
-			Group: parser.GroupVersions[pkg].Group,
+			Group: parser.GroupVersions[typeIdent.Package].Group,
 			Kind:  typeIdent.Name,
 		}
 		kubeKinds[groupKind] = struct{}{}
 	}
 
 	return kubeKinds
+}
+
+func checkTypeForMeta(parser *Parser, typeIdent TypeIdent, metav1Pkg *loader.Package) (bool, bool) {
+
+	hasObjectMeta := false
+	hasTypeMeta := false
+
+	pkg := typeIdent.Package
+	pkg.NeedTypesInfo()
+	typesInfo := pkg.TypesInfo
+
+	info := parser.Types[typeIdent]
+
+	for _, field := range info.Fields {
+		if field.Name != "" {
+			// type and object meta are embedded,
+			// so they can't be this
+			continue
+		}
+
+		fieldType := typesInfo.TypeOf(field.RawField.Type)
+		namedField, isNamed := fieldType.(*types.Named)
+		if !isNamed {
+			// ObjectMeta and TypeMeta are named types
+			// or contained within named types.
+			continue
+		}
+		if namedField.Obj().Pkg() == nil {
+			// Embedded non-builtin universe type (specifically, it's probably `error`),
+			// so it can't be ObjectMeta or TypeMeta
+			continue
+		}
+		fieldPkgPath := loader.NonVendorPath(namedField.Obj().Pkg().Path())
+
+		// Field is a metav1 type.
+		if fieldPkgPath == metav1Pkg.PkgPath {
+			switch namedField.Obj().Name() {
+			case "ObjectMeta":
+				hasObjectMeta = true
+			case "TypeMeta":
+				hasTypeMeta = true
+			}
+
+			continue
+		}
+
+		// Field is not a metav1 type, so we recursively check
+		// its own fields to see if it imports them.
+		ident := TypeIdent{
+			Name: namedField.Obj().Name(),
+		}
+
+		if fieldPkgPath == pkg.PkgPath {
+			ident.Package = pkg
+		} else {
+			ident.Package = pkg.Imports()[fieldPkgPath]
+		}
+
+		checkObjectMeta, checkTypeMeta := checkTypeForMeta(parser, ident, metav1Pkg)
+
+		hasObjectMeta = hasObjectMeta || checkObjectMeta
+		hasTypeMeta = hasTypeMeta || checkTypeMeta
+	}
+
+	return hasObjectMeta, hasTypeMeta
 }
