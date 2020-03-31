@@ -5022,6 +5022,17 @@ spec:
                     - template
                     type: object
                 type: object
+              justNestedObject:
+                description: This tests that type references are properly flattened
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
               mapOfInfo:
                 additionalProperties:
                   format: byte
