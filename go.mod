@@ -7,8 +7,8 @@ require (
 	github.com/gobuffalo/flect v0.2.0
 	github.com/google/go-cmp v0.3.0
 	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/onsi/ginkgo v1.10.1
-	github.com/onsi/gomega v1.7.0
+	github.com/onsi/ginkgo v1.11.0
+	github.com/onsi/gomega v1.8.1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.0.0-20190920225731-5eefd052ad72
