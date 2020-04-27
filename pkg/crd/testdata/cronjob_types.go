@@ -91,6 +91,9 @@ type CronJobSpec struct {
 	// This tests string slices are allowed as map values.
 	StringSliceData map[string][]string `json:"stringSliceData,omitempty"`
 
+	// This tests pointers are allowed as map values.
+	PtrData map[string]*string `json:"ptrData,omitempty"`
+
 	// This tests that markers that are allowed on both fields and types are applied to fields
 	// +kubebuilder:validation:MinLength=4
 	TwoOfAKindPart0 string `json:"twoOfAKindPart0"`
