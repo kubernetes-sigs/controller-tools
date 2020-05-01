@@ -213,7 +213,7 @@ func (c markerComment) Text() string {
 	return strings.TrimSpace(c.Comment.Text[2:])
 }
 
-// markerVisistor visits AST nodes, recording markers associated with each node.
+// markerVisitor visits AST nodes, recording markers associated with each node.
 type markerVisitor struct {
 	allComments []*ast.CommentGroup
 	commentInd  int
@@ -238,7 +238,7 @@ func isMarkerComment(comment string) bool {
 	return true
 }
 
-// markersBetween grabs the markers between the given indicies in the list of all comments.
+// markersBetween grabs the markers between the given indices in the list of all comments.
 func (v *markerVisitor) markersBetween(fromGodoc bool, start, end int) []markerComment {
 	if start < 0 || end < 0 {
 		return nil
@@ -319,9 +319,10 @@ func (v markerSubVisitor) Visit(node ast.Node) ast.Visitor {
 		var docGroup *ast.CommentGroup
 		docGroup, v.lastLineCommentGroup = associatedCommentsFor(node)
 
-		// find the last comment group that's not godoc
+		// find the last comment group that's not godoc or contains marker comment
 		markerCommentInd := lastCommentInd
-		if docGroup != nil && v.allComments[markerCommentInd].Pos() == docGroup.Pos() {
+		hasMarkerInGroup := len(v.markersBetween(false, markerCommentInd, markerCommentInd+1)) > 0
+		if docGroup != nil && (v.allComments[markerCommentInd].Pos() == docGroup.Pos() || hasMarkerInGroup) {
 			markerCommentInd--
 		}
 
