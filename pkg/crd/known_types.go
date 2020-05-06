@@ -16,6 +16,8 @@ limitations under the License.
 package crd
 
 import (
+	"strconv"
+
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -100,6 +102,13 @@ var KnownPackages = map[string]PackageOverride{
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiext.JSONSchemaProps{
 			XPreserveUnknownFields: boolPtr(true),
+		}
+		p.AddPackage(pkg) // get the rest of the types
+	},
+	"k8s.io/api/core/v1": func(p *Parser, pkg *loader.Package) {
+		p.Schemata[TypeIdent{Name: "Protocol", Package: pkg}] = apiext.JSONSchemaProps{
+			Type:    "string",
+			Default: &apiext.JSON{Raw: []byte(strconv.Quote("TCP"))},
 		}
 		p.AddPackage(pkg) // get the rest of the types
 	},

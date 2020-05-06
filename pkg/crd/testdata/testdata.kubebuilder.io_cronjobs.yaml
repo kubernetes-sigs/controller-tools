@@ -88,6 +88,7 @@ spec:
                     foo: baz
                 - nested:
                     bar: false
+                    foo: baz
                 description: This tests that object defaulting can be performed.
                 items:
                   properties:
@@ -118,6 +119,14 @@ spec:
                 description: This tests that primitive defaulting can be performed.
                 type: string
               embeddedResource:
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
                 type: object
                 x-kubernetes-embedded-resource: true
               failedJobsHistoryLimit:
@@ -1619,6 +1628,7 @@ spec:
                                               can be referred to by services.
                                             type: string
                                           protocol:
+                                            default: TCP
                                             description: Protocol for port. Must be
                                               UDP, TCP, or SCTP. Defaults to "TCP".
                                             type: string
@@ -2828,6 +2838,7 @@ spec:
                                               can be referred to by services.
                                             type: string
                                           protocol:
+                                            default: TCP
                                             description: Protocol for port. Must be
                                               UDP, TCP, or SCTP. Defaults to "TCP".
                                             type: string

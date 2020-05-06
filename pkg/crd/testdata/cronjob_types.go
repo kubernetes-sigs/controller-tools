@@ -110,7 +110,7 @@ type CronJobSpec struct {
 	DefaultedSlice []string `json:"defaultedSlice"`
 
 	// This tests that object defaulting can be performed.
-	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
+	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {foo: "baz", bar: false}}}
 	DefaultedObject []RootObject `json:"defaultedObject"`
 
 	// This tests that pattern validator is properly applied.
@@ -119,7 +119,7 @@ type CronJobSpec struct {
 
 	// +kubebuilder:validation:EmbeddedResource
 	// +kubebuilder:validation:nullable
-	EmbeddedResource runtime.RawExtension `json:"embeddedResource"`
+	EmbeddedResource NestedObject `json:"embeddedResource"`
 
 	// +kubebuilder:validation:nullable
 	// +kubebuilder:pruning:PreserveUnknownFields
