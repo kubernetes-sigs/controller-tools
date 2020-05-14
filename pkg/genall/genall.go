@@ -173,6 +173,8 @@ func (r *Runtime) Run() bool {
 		}
 	}
 
+	loader.PrintWarnings(r.Roots)
+
 	// skip TypeErrors -- they're probably just from partial typechecking in crd-gen
 	return loader.PrintErrors(r.Roots, packages.TypeError)
 }

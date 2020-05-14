@@ -37,6 +37,15 @@ type ErrorRecorder interface {
 	AddError(error)
 }
 
+// WarningRecorder knows how to record errors. It wraps the part of
+// pkg/loader.Package that we need to record errors in places were it might not
+// make sense to have a loader.Package
+type WarningRecorder interface {
+	// AddWarning records that the given error occurred.
+	// See the documentation on loader.Package.AddWarning for more information.
+	AddWarning(error)
+}
+
 // isOrNil checks if val is nil if val is of a nillable type, otherwise,
 // it compares val to valInt (which should probably be the zero value).
 func isOrNil(val reflect.Value, valInt interface{}, zeroInt interface{}) bool {
