@@ -25,6 +25,7 @@ import (
 	"go/types"
 	"io/ioutil"
 	"os"
+	"sort"
 	"sync"
 
 	"golang.org/x/tools/go/packages"
@@ -40,17 +41,14 @@ import (
 // any errors of the kinds specified in filterKinds.  It will
 // return true if any errors were printed.
 func PrintErrors(pkgs []*Package, filterKinds ...packages.ErrorKind) bool {
-	pkgsRaw := make([]*packages.Package, len(pkgs))
-	for i, pkg := range pkgs {
-		pkgsRaw[i] = pkg.Package
-	}
+
 	toSkip := make(map[packages.ErrorKind]struct{})
 	for _, errKind := range filterKinds {
 		toSkip[errKind] = struct{}{}
 	}
 	hadErrors := false
-	packages.Visit(pkgsRaw, nil, func(pkgRaw *packages.Package) {
-		for _, err := range pkgRaw.Errors {
+	visit(pkgs, nil, func(pkg *Package) {
+		for _, err := range pkg.Errors {
 			if _, skip := toSkip[err.Kind]; skip {
 				continue
 			}
@@ -61,6 +59,52 @@ func PrintErrors(pkgs []*Package, filterKinds ...packages.ErrorKind) bool {
 	return hadErrors
 }
 
+// PrintWarnings print errors associated with all packages
+// in the given package graph, starting at the given root
+// packages and traversing through all imports.
+func PrintWarnings(pkgs []*Package) {
+	visit(pkgs, nil, func(pkg *Package) {
+		for _, err := range pkg.Warnings {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	})
+}
+
+// Visit visits all the packages in the import graph whose roots are
+// pkgs, calling the optional pre function the first time each package
+// is encountered (preorder), and the optional post function after a
+// package's dependencies have been visited (postorder).
+// The boolean result of pre(pkg) determines whether
+// the imports of package pkg are visited.
+func visit(pkgs []*Package, pre func(*Package) bool, post func(*Package)) {
+	seen := make(map[*Package]bool)
+	var visit func(*Package)
+	visit = func(pkg *Package) {
+		pkg.Imports()
+		if !seen[pkg] {
+			seen[pkg] = true
+
+			if pre == nil || pre(pkg) {
+				paths := make([]string, 0, len(pkg.imports))
+				for path := range pkg.Package.Imports {
+					paths = append(paths, path)
+				}
+				sort.Strings(paths) // Imports is a map, this makes visit stable
+				for _, path := range paths {
+					visit(pkg.imports[path])
+				}
+			}
+
+			if post != nil {
+				post(pkg)
+			}
+		}
+	}
+	for _, pkg := range pkgs {
+		visit(pkg)
+	}
+}
+
 // Package is a single, unique Go package that can be
 // lazily parsed and type-checked.  Packages should not
 // be constructed directly -- instead, use LoadRoots.
@@ -69,6 +113,10 @@ func PrintErrors(pkgs []*Package, filterKinds ...packages.ErrorKind) bool {
 // and for comparison.
 type Package struct {
 	*packages.Package
+
+	// Warnings contains any errors encountered querying the metadata
+	// of the package, or while parsing or type-checking its files.
+	Warnings []packages.Error
 
 	imports map[string]*Package
 
@@ -168,6 +216,25 @@ func (p *Package) AddError(err error) {
 	default:
 		// should only happen for external errors, like ref checking
 		p.Errors = append(p.Errors, packages.Error{
+			Pos:  p.ID + ":-",
+			Msg:  err.Error(),
+			Kind: packages.UnknownError,
+		})
+	}
+}
+
+// AddWarning adds an error to the warningss associated with the given package.
+func (p *Package) AddWarning(err error) {
+	switch typedErr := err.(type) {
+	case PositionedError:
+		p.Warnings = append(p.Warnings, packages.Error{
+			Pos:  p.loader.cfg.Fset.Position(typedErr.Pos).String(),
+			Msg:  typedErr.Error(),
+			Kind: packages.UnknownError,
+		})
+	default:
+		// should only happen for external errors, like ref checking
+		p.Warnings = append(p.Warnings, packages.Error{
 			Pos:  p.ID + ":-",
 			Msg:  err.Error(),
 			Kind: packages.UnknownError,
