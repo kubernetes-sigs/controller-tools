@@ -5167,6 +5167,14 @@ spec:
                       type: string
                   type: object
                 type: array
+              lastActiveLogURL:
+                description: LastActiveLogURL specifies the logging url for the last
+                  started job
+                type: string
+              lastActiveLogURL2:
+                description: LastActiveLogURL2 specifies the logging url for the last
+                  started job
+                type: string
               lastScheduleMicroTime:
                 description: Information about the last time the job was successfully
                   scheduled, with microsecond precision.
