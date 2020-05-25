@@ -115,6 +115,13 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			if err != nil {
 				return err
 			}
+			if ver == "v1beta1" {
+				obj := conv.(*apiextlegacy.CustomResourceDefinition)
+				if obj.Spec.Validation != nil &&
+					obj.Spec.Validation.OpenAPIV3Schema != nil {
+					removeDefaults(obj.Spec.Validation.OpenAPIV3Schema)
+				}
+			}
 			versionedCRDs[i] = conv
 		}
 
@@ -180,6 +187,59 @@ func toTrivialVersions(crd *apiextlegacy.CustomResourceDefinition) {
 	crd.Spec.Validation = canonicalSchema
 	crd.Spec.Subresources = canonicalSubresources
 	crd.Spec.AdditionalPrinterColumns = canonicalColumns
+}
+
+// removeDefaults removes defaults from apiextensions.k8s.io/v1beta1 CRD definition.
+// To use defaulting, CustomResourceDefinitions must use API version apiextensions.k8s.io/v1
+func removeDefaults(schema *apiextlegacy.JSONSchemaProps) {
+	if schema == nil {
+		return
+	}
+
+	schema.Default = nil
+
+	if schema.Items != nil {
+		removeDefaults(schema.Items.Schema)
+
+		for idx := range schema.Items.JSONSchemas {
+			removeDefaults(&schema.Items.JSONSchemas[idx])
+		}
+	}
+
+	for idx := range schema.AllOf {
+		removeDefaults(&schema.AllOf[idx])
+	}
+	for idx := range schema.OneOf {
+		removeDefaults(&schema.OneOf[idx])
+	}
+	for idx := range schema.AnyOf {
+		removeDefaults(&schema.AnyOf[idx])
+	}
+	if schema.Not != nil {
+		removeDefaults(schema.Not)
+	}
+	for key, prop := range schema.Properties {
+		removeDefaults(&prop)
+		schema.Properties[key] = prop
+	}
+	if schema.AdditionalProperties != nil {
+		removeDefaults(schema.AdditionalProperties.Schema)
+	}
+	for key, prop := range schema.PatternProperties {
+		removeDefaults(&prop)
+		schema.PatternProperties[key] = prop
+	}
+	for key, prop := range schema.Dependencies {
+		removeDefaults(prop.Schema)
+		schema.Dependencies[key] = prop
+	}
+	if schema.AdditionalItems != nil {
+		removeDefaults(schema.AdditionalItems.Schema)
+	}
+	for key, prop := range schema.Definitions {
+		removeDefaults(&prop)
+		schema.Definitions[key] = prop
+	}
 }
 
 // addAttribution adds attribution info to indicate controller-gen tool was used
