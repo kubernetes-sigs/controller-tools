@@ -145,12 +145,18 @@ type CronJobSpec struct {
 	// A struct that can only be entirely replaced
 	// +structType=atomic
 	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
+
+	// This tests that type references are properly flattened
+	// +kubebuilder:validation:optional
+	JustNestedObject *JustNestedObject `json:"justNestedObject,omitempty"`
 }
 
 type NestedObject struct {
 	Foo string `json:"foo"`
 	Bar bool   `json:"bar"`
 }
+
+type JustNestedObject NestedObject
 
 type RootObject struct {
 	Nested NestedObject `json:"nested"`
