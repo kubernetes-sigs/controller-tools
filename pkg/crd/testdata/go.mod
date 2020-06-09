@@ -1,6 +1,6 @@
 module testdata.kubebuilder.io/cronjob
 
-go 1.12
+go 1.13
 
 require (
 	k8s.io/api v0.0.0-20190615205754-1d1b8b084b30

@@ -19,6 +19,7 @@ package crd
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"strings"
 
@@ -104,6 +105,11 @@ func (c *schemaContext) requestSchema(pkgPath, typeName string) {
 
 // infoToSchema creates a schema for the type in the given set of type information.
 func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
+	if obj := ctx.pkg.Types.Scope().Lookup(ctx.info.Name); obj != nil && implementsJSONMarshaler(obj.Type()) {
+		schema := &apiext.JSONSchemaProps{Type: "Any"}
+		applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
+		return schema
+	}
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
 }
 
@@ -297,6 +303,8 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
 			return &apiext.JSONSchemaProps{}
 		}
+	case *ast.StarExpr:
+		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
 		return &apiext.JSONSchemaProps{}
@@ -416,4 +424,17 @@ func builtinToType(basic *types.Basic) (typ string, format string, err error) {
 	}
 
 	return typ, format, nil
+}
+
+// Open coded go/types representation of encoding/json.Marshaller
+var jsonMarshaler = types.NewInterfaceType([]*types.Func{
+	types.NewFunc(token.NoPos, nil, "MarshalJSON",
+		types.NewSignature(nil, nil,
+			types.NewTuple(
+				types.NewVar(token.NoPos, nil, "", types.NewSlice(types.Universe.Lookup("byte").Type())),
+				types.NewVar(token.NoPos, nil, "", types.Universe.Lookup("error").Type())), false)),
+}, nil).Complete()
+
+func implementsJSONMarshaler(typ types.Type) bool {
+	return types.Implements(typ, jsonMarshaler) || types.Implements(types.NewPointer(typ), jsonMarshaler)
 }

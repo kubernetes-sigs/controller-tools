@@ -120,7 +120,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		}
 	}
 
-	// fix the name if the plural was changed (this is the form the name *has* to take, so no harm in chaning it).
+	// fix the name if the plural was changed (this is the form the name *has* to take, so no harm in changing it).
 	crd.Name = crd.Spec.Names.Plural + "." + groupKind.Group
 
 	// nothing to actually write
@@ -157,11 +157,20 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		packages[0].AddError(fmt.Errorf("CRD for %s has more than one storage version", groupKind))
 	}
 
-	// NB(directxman12): CRD's status doesn't have omitempty markers, which means things
-	// get serialized as null, which causes the validator to freak out.  Manually set
-	// these to empty till we get a better solution.
-	crd.Status.Conditions = []apiext.CustomResourceDefinitionCondition{}
-	crd.Status.StoredVersions = []string{}
+	served := false
+	for _, ver := range crd.Spec.Versions {
+		if ver.Served {
+			served = true
+			break
+		}
+	}
+	if !served {
+		// just add the error to the first relevant package for this CRD,
+		// since there's no specific error location
+		packages[0].AddError(fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
+	}
+
+	crd.Status = apiext.CustomResourceDefinitionStatus{}
 
 	p.CustomResourceDefinitions[groupKind] = crd
 }
