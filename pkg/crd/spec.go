@@ -132,6 +132,20 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	// Otherwise, crd.Spec.Version may point to different CRD versions across different runs.
 	sort.Slice(crd.Spec.Versions, func(i, j int) bool { return crd.Spec.Versions[i].Name < crd.Spec.Versions[j].Name })
 
+	// just add the errors to the first relevant package for this CRD,
+	// since there's no specific error location
+	versionErrors := CheckVersions(crd, groupKind)
+	for _, err := range versionErrors {
+		packages[0].AddError(err)
+	}
+
+	crd.Status = apiext.CustomResourceDefinitionStatus{}
+
+	p.CustomResourceDefinitions[groupKind] = crd
+}
+
+func CheckVersions(crd apiext.CustomResourceDefinition, groupKind schema.GroupKind) []error {
+	errList := make([]error, 0)
 	// make sure we have *a* storage version
 	// (default it if we only have one, otherwise, bail)
 	if len(crd.Spec.Versions) == 1 {
@@ -139,23 +153,22 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	}
 
 	storageCounter := 0
-
 	for _, ver := range crd.Spec.Versions {
 		if ver.Storage {
 			storageCounter++
 		}
 	}
+
+	// there should be only one storage version
 	if storageCounter == 0 {
-		// just add the error to the first relevant package for this CRD,
-		// since there's no specific error location
-		packages[0].AddError(fmt.Errorf("CRD for %s has no storage version", groupKind))
-	}
-	if storageCounter > 1 {
-		// just add the error to the first relevant package for this CRD,
-		// since there's no specific error location
-		packages[0].AddError(fmt.Errorf("CRD for %s has more than one storage version", groupKind))
+		errList = append(errList, fmt.Errorf("CRD for %s has no storage version", groupKind))
 	}
 
+	if storageCounter > 1 {
+		errList = append(errList, fmt.Errorf("CRD for %s has more than one storage version", groupKind))
+	}
+
+	// check if the version is being served via REST APIs.
 	served := false
 	for _, ver := range crd.Spec.Versions {
 		if ver.Served {
@@ -164,12 +177,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		}
 	}
 	if !served {
-		// just add the error to the first relevant package for this CRD,
-		// since there's no specific error location
-		packages[0].AddError(fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
+		errList = append(errList, fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
 	}
-
-	crd.Status = apiext.CustomResourceDefinitionStatus{}
-
-	p.CustomResourceDefinitions[groupKind] = crd
+	return errList
 }
