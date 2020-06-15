@@ -17,9 +17,13 @@ limitations under the License.
 package crd_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"sigs.k8s.io/controller-tools/pkg/crd"
 )
@@ -286,6 +290,110 @@ var _ = Describe("CRD Generation", func() {
 				orig := spec.DeepCopy()
 				crd.MergeIdenticalVersionInfo(spec)
 				Expect(spec).To(Equal(orig))
+			})
+		})
+
+		Describe("check storage version", func() {
+
+			var (
+				groupKind schema.GroupKind
+			)
+
+			BeforeEach(func() {
+				groupKind = schema.GroupKind{
+					Group: "TestKind",
+					Kind:  "test.example.com",
+				}
+			})
+
+			It("should add error when multiple storage versions are present", func() {
+				obj := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: true,
+								Served:  true,
+							},
+							{
+								Name:    "v2",
+								Storage: true,
+							},
+						},
+					},
+				}
+				listOferrors := crd.CheckVersions(*obj, groupKind)
+				Expect(listOferrors).Should(ContainElement(fmt.Errorf("CRD for %s has more than one storage version", groupKind)))
+			})
+			It("should not add error when only one version is present", func() {
+				obj := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:   "v1",
+								Served: true,
+							},
+						},
+					},
+				}
+				listOferrors := crd.CheckVersions(*obj, groupKind)
+				Expect(len(listOferrors)).To(Equal(0))
+			})
+			It("should add error when no storage version is present", func() {
+				obj := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: false,
+								Served:  true,
+							},
+							{
+								Name:    "v2",
+								Storage: false,
+							},
+						},
+					},
+				}
+				listOferrors := crd.CheckVersions(*obj, groupKind)
+				Expect(listOferrors).Should(ContainElement(fmt.Errorf("CRD for %s has no storage version", groupKind)))
+			})
+			It("should add error when no crd versions are served", func() {
+				obj := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: true,
+							},
+							{
+								Name:    "v2",
+								Storage: false,
+							},
+						},
+					},
+				}
+				listOferrors := crd.CheckVersions(*obj, groupKind)
+				Expect(listOferrors).Should(ContainElement(fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, obj.Spec.Versions)))
+			})
+			It("should not add error when atleast one storage version which is served is present", func() {
+				obj := &apiext.CustomResourceDefinition{
+					Spec: apiext.CustomResourceDefinitionSpec{
+						Versions: []apiext.CustomResourceDefinitionVersion{
+							{
+								Name:    "v1",
+								Storage: false,
+							},
+							{
+								Name:    "v2",
+								Storage: true,
+								Served:  true,
+							},
+						},
+					},
+				}
+				listOferrors := crd.CheckVersions(*obj, groupKind)
+				Expect(len(listOferrors)).To(Equal(0))
 			})
 		})
 	})
