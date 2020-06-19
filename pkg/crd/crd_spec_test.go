@@ -339,7 +339,7 @@ var _ = Describe("CRD Generation", func() {
 				listOferrors := crd.CheckVersions(*obj, groupKind)
 				Expect(len(listOferrors)).To(Equal(0))
 			})
-			It("should add error when no storage version is present", func() {
+			It("should return an error when no storage version is present", func() {
 				obj := &apiext.CustomResourceDefinition{
 					Spec: apiext.CustomResourceDefinitionSpec{
 						Versions: []apiext.CustomResourceDefinitionVersion{
