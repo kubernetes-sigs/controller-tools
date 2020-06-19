@@ -325,7 +325,7 @@ var _ = Describe("CRD Generation", func() {
 				listOferrors := crd.CheckVersions(*obj, groupKind)
 				Expect(listOferrors).Should(ContainElement(fmt.Errorf("CRD for %s has more than one storage version", groupKind)))
 			})
-			It("should not add error when only one version is present", func() {
+			It("should not return any errors when only one version is present", func() {
 				obj := &apiext.CustomResourceDefinition{
 					Spec: apiext.CustomResourceDefinitionSpec{
 						Versions: []apiext.CustomResourceDefinitionVersion{
