@@ -144,7 +144,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	p.CustomResourceDefinitions[groupKind] = crd
 }
 
-func CheckVersions(crd apiext.CustomResourceDefinition, groupKind schema.GroupKind) []error {
+func CheckVersions(crd apiext.CustomResourceDefinition, groupKind schema.GroupKind) (errList []error) {
 	errList := make([]error, 0)
 	// make sure we have *a* storage version
 	// (default it if we only have one, otherwise, bail)
