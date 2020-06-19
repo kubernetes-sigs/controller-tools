@@ -306,7 +306,7 @@ var _ = Describe("CRD Generation", func() {
 				}
 			})
 
-			It("should add error when multiple storage versions are present", func() {
+			It("should return an error when multiple storage versions are present", func() {
 				obj := &apiext.CustomResourceDefinition{
 					Spec: apiext.CustomResourceDefinitionSpec{
 						Versions: []apiext.CustomResourceDefinitionVersion{
