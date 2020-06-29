@@ -48,6 +48,9 @@ var CRDMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:unservedversion", markers.DescribesType, UnservedVersion{})).
 		WithHelp(UnservedVersion{}.Help()),
+
+	must(markers.MakeDefinition("genclient:nonNamespaced", markers.DescribesType, ClusterScope{})).
+		WithHelp(ClusterScope{}.Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -176,6 +179,19 @@ func (s SkipVersion) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, versio
 		versions = append(versions, ver)
 	}
 	crd.Versions = versions
+	return nil
+}
+
+// +controllertools:marker:generateHelp:category=CRD
+
+// ClusterScope sets the CRD `Scope` to "Cluster" if genclient:nonNamespaced is present.
+//
+// This field is needed in case `genclient:nonNamespaced` is defined, meaning:
+// the CRD has Scope: Cluster.
+type ClusterScope struct{}
+
+func (s ClusterScope) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
+	crd.Scope = apiext.ClusterScoped
 	return nil
 }
 

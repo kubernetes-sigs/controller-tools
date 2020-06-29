@@ -24,6 +24,17 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
+func (ClusterScope) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "sets the CRD `Scope` to \"Cluster\" if genclient:nonNamespaced is present. ",
+			Details: "This field is needed in case `genclient:nonNamespaced` is defined, meaning: the CRD has Scope: Cluster.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Default) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
