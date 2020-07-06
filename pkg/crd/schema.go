@@ -327,8 +327,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 // and can be flattened later with a Flattener.
 func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSONSchemaProps {
 	props := &apiext.JSONSchemaProps{
-		Type:       "object",
-		Properties: make(map[string]apiext.JSONSchemaProps),
+		Type: "object",
 	}
 
 	if ctx.info.RawSpec.Type != structType {
@@ -336,6 +335,11 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		return props
 	}
 
+	if strings.HasPrefix(ctx.pkg.String(), "k8s.io/api/") {
+		return props
+	}
+
+	props.Properties = make(map[string]apiext.JSONSchemaProps)
 	for _, field := range ctx.info.Fields {
 		jsonTag, hasTag := field.Tag.Lookup("json")
 		if !hasTag {
