@@ -248,7 +248,12 @@ func (c Config) sideEffects() *admissionreg.SideEffectClass {
 // +controllertools:marker:generateHelp
 
 // Generator generates (partial) {Mutating,Validating}WebhookConfiguration objects.
-type Generator struct{}
+type Generator struct {
+	// MutatingName specifies the webhook mutating configuration name,if empty default is mutating-webhook-configuration.
+	MutatingName string `marker:",optional"`
+	// ValidatingName specifies the webhook mutating configuration name,if empty default is validating-webhook-configuration.
+	ValidatingName string `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := into.Register(ConfigDefinition); err != nil {
@@ -258,7 +263,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	var mutatingCfgs []admissionreg.MutatingWebhook
 	var validatingCfgs []admissionreg.ValidatingWebhook
 	for _, root := range ctx.Roots {
@@ -287,7 +292,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "mutating-webhook-configuration",
+				Name: g.generateMutateName(),
 			},
 			Webhooks: mutatingCfgs,
 		})
@@ -300,7 +305,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 				APIVersion: admissionreg.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "validating-webhook-configuration",
+				Name: g.generateValidateName(),
 			},
 			Webhooks: validatingCfgs,
 		})
@@ -312,4 +317,20 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	return nil
+}
+
+func (g Generator) generateMutateName() string {
+	name := g.MutatingName
+	if name == "" {
+		name = "mutating-webhook-configuration"
+	}
+	return name
+}
+
+func (g Generator) generateValidateName() string {
+	name := g.ValidatingName
+	if name == "" {
+		name = "validating-webhook-configuration"
+	}
+	return name
 }
