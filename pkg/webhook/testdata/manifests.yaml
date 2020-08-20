@@ -29,6 +29,7 @@ webhooks:
     resources:
     - cronjobs
   sideEffects: None
+  timeoutSeconds: 2
 
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -60,3 +61,4 @@ webhooks:
     resources:
     - cronjobs
   sideEffects: NoneOnDryRun
+  timeoutSeconds: 2

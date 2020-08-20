@@ -48,6 +48,10 @@ func (Config) Help() *markers.DefinitionHelp {
 				Summary: "specify whether calling the webhook will have side effects. This has an impact on dry runs and `kubectl diff`: if the sideEffect is \"Unknown\" (the default) or \"Some\", then the API server will not call the webhook on a dry-run request and fails instead. If the value is \"None\", then the webhook has no side effects and the API server will call it on dry-run. If the value is \"NoneOnDryRun\", then the webhook is responsible for inspecting the \"dryRun\" property of the AdmissionReview sent in the request, and avoiding side effects if that value is \"true.\"",
 				Details: "",
 			},
+			"TimeoutSeconds": markers.DetailedHelp{
+				Summary: "specifies the timeout for this webhook. After the timeout passes, the webhook call will be ignored or the API call will fail based on the failure policy. The timeout value must be between 1 and 30 seconds. Default to 10 seconds.",
+				Details: "",
+			},
 			"Groups": markers.DetailedHelp{
 				Summary: "specifies the API groups that this webhook receives requests for.",
 				Details: "",

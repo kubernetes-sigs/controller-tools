@@ -81,6 +81,11 @@ type Config struct {
 	// AdmissionReview sent in the request, and avoiding side effects if that value is "true."
 	SideEffects string `marker:",optional"`
 
+	// TimeoutSeconds specifies the timeout for this webhook. After the timeout passes,
+	// the webhook call will be ignored or the API call will fail based on the failure policy.
+	// The timeout value must be between 1 and 30 seconds. Default to 10 seconds.
+	TimeoutSeconds *int32 `marker:",optional"`
+
 	// Groups specifies the API groups that this webhook receives requests for.
 	Groups []string
 	// Resources specifies the API resources that this webhook receives requests for.
@@ -140,12 +145,13 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 	}
 
 	return admissionregv1.MutatingWebhook{
-		Name:          c.Name,
-		Rules:         c.rules(),
-		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   matchPolicy,
-		ClientConfig:  c.clientConfig(),
-		SideEffects:   c.sideEffects(),
+		Name:           c.Name,
+		Rules:          c.rules(),
+		FailurePolicy:  c.failurePolicy(),
+		MatchPolicy:    matchPolicy,
+		ClientConfig:   c.clientConfig(),
+		SideEffects:    c.sideEffects(),
+		TimeoutSeconds: c.TimeoutSeconds,
 		// TODO(jiachengxu): AdmissionReviewVersions becomes required in admissionregistration/v1, here we default it
 		// to `v1` and `v1beta1`, and we should support to config the `AdmissionReviewVersions` as a marker.
 		AdmissionReviewVersions: []string{defaultWebhookVersion, "v1beta1"},
@@ -164,12 +170,13 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 	}
 
 	return admissionregv1.ValidatingWebhook{
-		Name:          c.Name,
-		Rules:         c.rules(),
-		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   matchPolicy,
-		ClientConfig:  c.clientConfig(),
-		SideEffects:   c.sideEffects(),
+		Name:           c.Name,
+		Rules:          c.rules(),
+		FailurePolicy:  c.failurePolicy(),
+		MatchPolicy:    matchPolicy,
+		ClientConfig:   c.clientConfig(),
+		SideEffects:    c.sideEffects(),
+		TimeoutSeconds: c.TimeoutSeconds,
 		// TODO(jiachengxu): AdmissionReviewVersions becomes required in admissionregistration/v1, here we default it
 		// to `v1` and `v1beta1`, and we should support to config the `AdmissionReviewVersions` as a marker.
 		AdmissionReviewVersions: []string{defaultWebhookVersion, "v1beta1"},
