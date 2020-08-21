@@ -194,6 +194,17 @@ func (MultipleOf) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Nuked) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "removes all properties from an object. ",
+			Details: "A nuked object can be used to represent Any object. This is useful when an object does not conform to the Kubernetes schema constraints. Used in combination with XPreserveUnknownFields it allows using types that would not validate otherwise.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Nullable) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

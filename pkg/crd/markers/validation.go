@@ -53,6 +53,10 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	MinItems(0),
 	UniqueItems(false),
 
+	// Object markers
+
+	Nuked{},
+
 	// general markers
 
 	Enum(nil),
@@ -77,6 +81,9 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeAnyTypeDefinition("kubebuilder:default", markers.DescribesField, Default{})).
 		WithHelp(Default{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:pruning:Nuked", markers.DescribesField, Nuked{})).
+		WithHelp(Nuked{}.Help()),
 
 	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesField, XPreserveUnknownFields{})).
 		WithHelp(XPreserveUnknownFields{}.Help()),
@@ -201,6 +208,15 @@ type XPreserveUnknownFields struct{}
 // running apiserver. It is not necessary to add any additional schema for these
 // field, yet it is possible. This can be combined with PreserveUnknownFields.
 type XEmbeddedResource struct{}
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// Nuked removes all properties from an object.
+//
+// A nuked object can be used to represent Any object.
+// This is useful when an object does not conform to the Kubernetes schema constraints.
+// Used in combination with XPreserveUnknownFields it allows using types that would
+// not validate otherwise.
+type Nuked struct{}
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "integer" {
@@ -346,5 +362,11 @@ func (m XPreserveUnknownFields) ApplyToSchema(schema *apiext.JSONSchemaProps) er
 
 func (m XEmbeddedResource) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.XEmbeddedResource = true
+	return nil
+}
+
+func (m Nuked) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema.Properties = nil
+	schema.Ref = nil
 	return nil
 }
