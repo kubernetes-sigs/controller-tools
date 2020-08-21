@@ -19,7 +19,7 @@ limitations under the License.
 //
 // The markers take the form:
 //
-//  +kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>
+//  +kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,admissionReviewVersions=<[]string>
 package webhook
 
 import (
@@ -107,6 +107,12 @@ type Config struct {
 	// WebhookVersions specifies the target API versions of the {Mutating,Validating}WebhookConfiguration objects
 	// itself to generate.  Defaults to v1.
 	WebhookVersions []string `marker:"webhookVersions,optional"`
+
+	// AdmissionReviewVersions is an ordered list of preferred `AdmissionReview`
+	// versions the Webhook expects.
+	// For generating v1 {Mutating,Validating}WebhookConfiguration, this is mandatory.
+	// For generating v1beta1 {Mutating,Validating}WebhookConfiguration, this is optional, and default to v1beta1.
+	AdmissionReviewVersions []string `marker:"admissionReviewVersions,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -140,15 +146,13 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 	}
 
 	return admissionregv1.MutatingWebhook{
-		Name:          c.Name,
-		Rules:         c.rules(),
-		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   matchPolicy,
-		ClientConfig:  c.clientConfig(),
-		SideEffects:   c.sideEffects(),
-		// TODO(jiachengxu): AdmissionReviewVersions becomes required in admissionregistration/v1, here we default it
-		// to `v1` and `v1beta1`, and we should support to config the `AdmissionReviewVersions` as a marker.
-		AdmissionReviewVersions: []string{defaultWebhookVersion, "v1beta1"},
+		Name:                    c.Name,
+		Rules:                   c.rules(),
+		FailurePolicy:           c.failurePolicy(),
+		MatchPolicy:             matchPolicy,
+		ClientConfig:            c.clientConfig(),
+		SideEffects:             c.sideEffects(),
+		AdmissionReviewVersions: c.AdmissionReviewVersions,
 	}, nil
 }
 
@@ -164,15 +168,13 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 	}
 
 	return admissionregv1.ValidatingWebhook{
-		Name:          c.Name,
-		Rules:         c.rules(),
-		FailurePolicy: c.failurePolicy(),
-		MatchPolicy:   matchPolicy,
-		ClientConfig:  c.clientConfig(),
-		SideEffects:   c.sideEffects(),
-		// TODO(jiachengxu): AdmissionReviewVersions becomes required in admissionregistration/v1, here we default it
-		// to `v1` and `v1beta1`, and we should support to config the `AdmissionReviewVersions` as a marker.
-		AdmissionReviewVersions: []string{defaultWebhookVersion, "v1beta1"},
+		Name:                    c.Name,
+		Rules:                   c.rules(),
+		FailurePolicy:           c.failurePolicy(),
+		MatchPolicy:             matchPolicy,
+		ClientConfig:            c.clientConfig(),
+		SideEffects:             c.sideEffects(),
+		AdmissionReviewVersions: c.AdmissionReviewVersions,
 	}, nil
 }
 
@@ -285,7 +287,12 @@ func (c Config) webhookVersions() ([]string, error) {
 // +controllertools:marker:generateHelp
 
 // Generator generates (partial) {Mutating,Validating}WebhookConfiguration objects.
-type Generator struct{}
+type Generator struct {
+	// MutatingName specifies the webhook mutating configuration name,if empty default is mutating-webhook-configuration.
+	MutatingName string `marker:",optional"`
+	// ValidatingName specifies the webhook mutating configuration name,if empty default is validating-webhook-configuration.
+	ValidatingName string `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := into.Register(ConfigDefinition); err != nil {
@@ -295,7 +302,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
@@ -340,33 +347,30 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 					APIVersion: admissionregv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "mutating-webhook-configuration",
+					Name: g.generateMutateName(),
 				},
 				Webhooks: cfgs,
 			}
-			// SideEffects in required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
-			// we return an error
 			if version == defaultWebhookVersion {
 				for i := range objRaw.Webhooks {
+					// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
+					// we return an error
 					if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
 						return err
 					}
+					// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
+					// we return an error
+					if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
+						return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
+					}
 				}
-			}
-			// AdmissionReviewVersions is optional in admissionregistration/v1beta1, so let kubernetes to default it.
-			if version == "v1beta1" {
-				for i := range objRaw.Webhooks {
-					objRaw.Webhooks[i].AdmissionReviewVersions = nil
-				}
-			}
-			if version != defaultWebhookVersion {
+				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
+			} else {
 				conv, err := MutatingWebhookConfigurationAsVersion(objRaw, schema.GroupVersion{Group: admissionregv1.SchemeGroupVersion.Group, Version: version})
-				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
 				if err != nil {
 					return err
 				}
-			} else {
-				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
+				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
 			}
 		}
 
@@ -377,33 +381,30 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 					APIVersion: admissionregv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "validating-webhook-configuration",
+					Name: g.generateValidateName(),
 				},
 				Webhooks: cfgs,
 			}
-			// SideEffects in required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
-			// we return an error
 			if version == defaultWebhookVersion {
 				for i := range objRaw.Webhooks {
+					// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
+					// we return an error
 					if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
 						return err
 					}
+					// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
+					// we return an error
+					if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
+						return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
+					}
 				}
-			}
-			// AdmissionReviewVersions is optional in admissionregistration/v1beta1, so let kubernetes to default it.
-			if version == "v1beta1" {
-				for i := range objRaw.Webhooks {
-					objRaw.Webhooks[i].AdmissionReviewVersions = nil
-				}
-			}
-			if version != defaultWebhookVersion {
+				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
+			} else {
 				conv, err := ValidatingWebhookConfigurationAsVersion(objRaw, schema.GroupVersion{Group: admissionregv1.SchemeGroupVersion.Group, Version: version})
-				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
 				if err != nil {
 					return err
 				}
-			} else {
-				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
+				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
 			}
 		}
 	}
@@ -431,4 +432,20 @@ func checkSideEffectsForV1(sideEffects *admissionregv1.SideEffectClass) error {
 		return fmt.Errorf("SideEffects should not be set to `Some` or `Unknown` for v1 {Mutating,Validating}WebhookConfiguration")
 	}
 	return nil
+}
+
+func (g Generator) generateMutateName() string {
+	name := g.MutatingName
+	if name == "" {
+		name = "mutating-webhook-configuration"
+	}
+	return name
+}
+
+func (g Generator) generateValidateName() string {
+	name := g.ValidatingName
+	if name == "" {
+		name = "validating-webhook-configuration"
+	}
+	return name
 }
