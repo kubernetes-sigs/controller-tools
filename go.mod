@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.0.0-20200616195046-dc31b401abb5
 	gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966

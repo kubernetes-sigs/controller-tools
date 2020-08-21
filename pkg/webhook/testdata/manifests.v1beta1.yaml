@@ -1,15 +1,12 @@
 
 ---
-apiVersion: admissionregistration.k8s.io/v1
+apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
   name: mutating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
+- clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -31,16 +28,13 @@ webhooks:
   sideEffects: None
 
 ---
-apiVersion: admissionregistration.k8s.io/v1
+apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
+- clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -59,4 +53,4 @@ webhooks:
     - UPDATE
     resources:
     - cronjobs
-  sideEffects: NoneOnDryRun
+  sideEffects: Some
