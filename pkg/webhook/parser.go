@@ -300,7 +300,6 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-
 func (Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
@@ -337,7 +336,6 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 			}
 		}
 	}
-
 
 	versionedWebhooks := make(map[string][]interface{}, len(supportedWebhookVersions))
 	for _, version := range supportedWebhookVersions {
