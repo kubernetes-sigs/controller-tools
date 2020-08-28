@@ -287,7 +287,12 @@ func (c Config) webhookVersions() ([]string, error) {
 // +controllertools:marker:generateHelp
 
 // Generator generates (partial) {Mutating,Validating}WebhookConfiguration objects.
-type Generator struct{}
+type Generator struct {
+	// MutatingName specifies the webhook mutating configuration name,if empty default is mutating-webhook-configuration.
+	MutatingName string `marker:",optional"`
+	// ValidatingName specifies the webhook mutating configuration name,if empty default is validating-webhook-configuration.
+	ValidatingName string `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := into.Register(ConfigDefinition); err != nil {
@@ -297,7 +302,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
@@ -342,7 +347,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 					APIVersion: admissionregv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "mutating-webhook-configuration",
+					Name: g.generateMutateName(),
 				},
 				Webhooks: cfgs,
 			}
@@ -376,7 +381,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 					APIVersion: admissionregv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "validating-webhook-configuration",
+					Name: g.generateValidateName(),
 				},
 				Webhooks: cfgs,
 			}
@@ -427,4 +432,20 @@ func checkSideEffectsForV1(sideEffects *admissionregv1.SideEffectClass) error {
 		return fmt.Errorf("SideEffects should not be set to `Some` or `Unknown` for v1 {Mutating,Validating}WebhookConfiguration")
 	}
 	return nil
+}
+
+func (g Generator) generateMutateName() string {
+	name := g.MutatingName
+	if name == "" {
+		name = "mutating-webhook-configuration"
+	}
+	return name
+}
+
+func (g Generator) generateValidateName() string {
+	name := g.ValidatingName
+	if name == "" {
+		name = "validating-webhook-configuration"
+	}
+	return name
 }
