@@ -293,13 +293,18 @@ func (c *copyMethodMaker) genDeepCopyIntoBlock(actualName *namingInfo, typeInfo 
 
 	switch last := last.(type) {
 	case *types.Basic:
-		// basic types themselves can be "shallow" copied, so all we need
-		// to do is check if our *actual* type (not the underlying one) has
-		// a custom method implemented.
-		if hasMethod, _ := hasDeepCopyMethod(c.pkg, typeInfo); hasMethod {
-			c.Line("*out = in.DeepCopy()")
+		switch last.Kind() {
+		case types.Invalid, types.UnsafePointer:
+			c.pkg.AddError(fmt.Errorf("invalid type: %s", last))
+		default:
+			// basic types themselves can be "shallow" copied, so all we need
+			// to do is check if our *actual* type (not the underlying one) has
+			// a custom method implemented.
+			if hasMethod, _ := hasDeepCopyMethod(c.pkg, typeInfo); hasMethod {
+				c.Line("*out = in.DeepCopy()")
+			}
+			c.Line("*out = *in")
 		}
-		c.Line("*out = *in")
 	case *types.Map:
 		c.genMapDeepCopy(actualName, last)
 	case *types.Slice:
@@ -483,7 +488,13 @@ func (c *copyMethodMaker) genStructDeepCopy(_ *namingInfo, structType *types.Str
 		// otherwise...
 		switch underlyingField := underlyingField.(type) {
 		case *types.Basic:
-			// nothing to do, initial assignment copied this
+			switch underlyingField.Kind() {
+			case types.Invalid, types.UnsafePointer:
+				c.pkg.AddError(fmt.Errorf("invalid field type: %s", underlyingField))
+				return
+			default:
+				// nothing to do, initial assignment copied this
+			}
 		case *types.Struct:
 			if fineToShallowCopy(field.Type()) {
 				c.Linef("out.%[1]s = in.%[1]s", field.Name())
@@ -735,8 +746,14 @@ func eventualUnderlyingType(typeInfo types.Type) types.Type {
 func fineToShallowCopy(typeInfo types.Type) bool {
 	switch typeInfo := typeInfo.(type) {
 	case *types.Basic:
-		// basic types (int, string, etc) are always fine to shallow-copy
-		return true
+		// basic types (int, string, etc) are always fine to shallow-copy,
+		// except for Invalid and UnsafePointer, which can't be copied at all.
+		switch typeInfo.Kind() {
+		case types.Invalid, types.UnsafePointer:
+			return false
+		default:
+			return true
+		}
 	case *types.Named:
 		// aliases are fine to shallow-copy as long as they resolve to a shallow-copyable type
 		return fineToShallowCopy(typeInfo.Underlying())
