@@ -69,9 +69,8 @@ type HasHelp interface {
 type Runtime struct {
 	// Generators are the Generators to be run by this Runtime.
 	Generators Generators
-	// GenerationContext is the base generation context that's copied
-	// to produce the context for each Generator.
-	GenerationContext
+	// RootPaths are the paths of the base packages to be processed.
+	RootPaths []string
 	// OutputRules defines how to output artifacts for each Generator.
 	OutputRules OutputRules
 }
@@ -132,26 +131,32 @@ func (g GenerationContext) ReadFile(path string) ([]byte, error) {
 // ForRoots produces a Runtime to run the given generators against the
 // given packages.  It outputs to /dev/null by default.
 func (g Generators) ForRoots(rootPaths ...string) (*Runtime, error) {
-	roots, err := loader.LoadRoots(rootPaths...)
+	rt := &Runtime{
+		Generators:  g,
+		RootPaths:   rootPaths,
+		OutputRules: OutputRules{Default: OutputToNothing},
+	}
+	return rt, nil
+}
+
+func (r *Runtime) newGenerationContext(gen *Generator) (*GenerationContext, error) {
+	roots, err := loader.LoadRoots(r.RootPaths...)
 	if err != nil {
 		return nil, err
 	}
-	rt := &Runtime{
-		Generators: g,
-		GenerationContext: GenerationContext{
-			Collector: &markers.Collector{
-				Registry: &markers.Registry{},
-			},
-			Roots:     roots,
-			InputRule: InputFromFileSystem,
-			Checker:   &loader.TypeChecker{},
+	ctx := GenerationContext{
+		Collector: &markers.Collector{
+			Registry: &markers.Registry{},
 		},
-		OutputRules: OutputRules{Default: OutputToNothing},
+		Roots:      roots,
+		OutputRule: r.OutputRules.ForGenerator(gen),
+		InputRule:  InputFromFileSystem,
+		Checker:    &loader.TypeChecker{},
 	}
-	if err := rt.Generators.RegisterMarkers(rt.Collector.Registry); err != nil {
+	if err := r.Generators.RegisterMarkers(ctx.Collector.Registry); err != nil {
 		return nil, err
 	}
-	return rt, nil
+	return &ctx, nil
 }
 
 // Run runs the Generators in this Runtime against its packages, printing
@@ -166,15 +171,21 @@ func (r *Runtime) Run() bool {
 	}
 
 	hadErrs := false
+	var allRoots []*loader.Package
 	for _, gen := range r.Generators {
-		ctx := r.GenerationContext // make a shallow copy
-		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
-		if err := (*gen).Generate(&ctx); err != nil {
+		ctx, err := r.newGenerationContext(gen)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			hadErrs = true
+			continue
+		}
+		allRoots = append(allRoots, ctx.Roots...)
+		if err := (*gen).Generate(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			hadErrs = true
 		}
 	}
 
 	// skip TypeErrors -- they're probably just from partial typechecking in crd-gen
-	return loader.PrintErrors(r.Roots, packages.TypeError) || hadErrs
+	return loader.PrintErrors(allRoots, packages.TypeError) || hadErrs
 }
