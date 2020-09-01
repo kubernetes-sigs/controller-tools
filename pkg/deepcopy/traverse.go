@@ -197,7 +197,7 @@ func (n *namingInfo) Syntax(basePkg *loader.Package, imports *importsList) strin
 			(&namingInfo{typeInfo: typeInfo.Key()}).Syntax(basePkg, imports),
 			(&namingInfo{typeInfo: typeInfo.Elem()}).Syntax(basePkg, imports))
 	default:
-		basePkg.AddError(fmt.Errorf("name requested for invalid type %s", typeInfo))
+		basePkg.AddError(fmt.Errorf("name requested for invalid type: %s", typeInfo))
 		return typeInfo.String()
 	}
 }
@@ -215,7 +215,7 @@ type copyMethodMaker struct {
 func (c *copyMethodMaker) GenerateMethodsFor(root *loader.Package, info *markers.TypeInfo) {
 	typeInfo := root.TypesInfo.TypeOf(info.RawSpec.Name)
 	if typeInfo == types.Typ[types.Invalid] {
-		root.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %s", info.Name), info.RawSpec))
+		root.AddError(loader.ErrFromNode(fmt.Errorf("unknown type: %s", info.Name), info.RawSpec))
 	}
 
 	// figure out if we need to use a pointer receiver -- most types get a pointer receiver,
@@ -312,7 +312,7 @@ func (c *copyMethodMaker) genDeepCopyIntoBlock(actualName *namingInfo, typeInfo 
 		// handled via the above loop, should never happen
 		c.pkg.AddError(fmt.Errorf("interface type %s encountered directly, invalid condition", last))
 	default:
-		c.pkg.AddError(fmt.Errorf("invalid type %s", last))
+		c.pkg.AddError(fmt.Errorf("invalid type: %s", last))
 	}
 }
 
@@ -322,7 +322,7 @@ func (c *copyMethodMaker) genMapDeepCopy(actualName *namingInfo, mapType *types.
 	// maps *must* have shallow-copiable types, since we just iterate
 	// through the keys, only trying to deepcopy the values.
 	if !fineToShallowCopy(mapType.Key()) {
-		c.pkg.AddError(fmt.Errorf("invalid map key type %s", mapType.Key()))
+		c.pkg.AddError(fmt.Errorf("invalid map key type: %s", mapType.Key()))
 		return
 	}
 
@@ -383,7 +383,7 @@ func (c *copyMethodMaker) genMapDeepCopy(actualName *namingInfo, mapType *types.
 				// structs will have deepcopy generated for them, so use that
 				c.Line("(*out)[key] = *val.DeepCopy()")
 			default:
-				c.pkg.AddError(fmt.Errorf("invalid map value type %s", underlyingElem))
+				c.pkg.AddError(fmt.Errorf("invalid map value type: %s", underlyingElem))
 				return
 			}
 		}
@@ -425,7 +425,7 @@ func (c *copyMethodMaker) genSliceDeepCopy(actualName *namingInfo, sliceType *ty
 				// structs will always have deepcopy
 				c.Linef("(*in)[i].DeepCopyInto(&(*out)[i])")
 			default:
-				c.pkg.AddError(fmt.Errorf("invalid slice element type %s", underlyingElem))
+				c.pkg.AddError(fmt.Errorf("invalid slice element type: %s", underlyingElem))
 			}
 		})
 	}
@@ -491,7 +491,7 @@ func (c *copyMethodMaker) genStructDeepCopy(_ *namingInfo, structType *types.Str
 				c.Linef("in.%[1]s.DeepCopyInto(&out.%[1]s)", field.Name())
 			}
 		default:
-			c.pkg.AddError(fmt.Errorf("invalid field type %s", underlyingField))
+			c.pkg.AddError(fmt.Errorf("invalid field type: %s", underlyingField))
 			return
 		}
 	}
@@ -542,7 +542,7 @@ func (c *copyMethodMaker) genPointerDeepCopy(_ *namingInfo, pointerType *types.P
 		c.Linef("*out = new(%[1]s)", (&namingInfo{typeInfo: pointerType.Elem()}).Syntax(c.pkg, c.importsList))
 		c.Line("(*in).DeepCopyInto(*out)")
 	default:
-		c.pkg.AddError(fmt.Errorf("invalid pointer element type %s", underlyingElem))
+		c.pkg.AddError(fmt.Errorf("invalid pointer element type: %s", underlyingElem))
 		return
 	}
 }
@@ -602,7 +602,7 @@ func shouldBeCopied(pkg *loader.Package, info *markers.TypeInfo) bool {
 
 	typeInfo := pkg.TypesInfo.TypeOf(info.RawSpec.Name)
 	if typeInfo == types.Typ[types.Invalid] {
-		pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %s", info.Name), info.RawSpec))
+		pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type: %s", info.Name), info.RawSpec))
 		return false
 	}
 
