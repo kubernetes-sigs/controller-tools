@@ -21,6 +21,8 @@ limitations under the License.
 package cronjob
 
 import (
+	"encoding/json"
+
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -300,4 +302,22 @@ type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CronJob `json:"items"`
+}
+
+// UntypedBlob tests that the "crd" typechecking cache doesn't prevent
+// the "deepcopy" generator from properly handling types that the
+// "crd" generator doesn't check.  Nothing the "crd" generator checks
+// makes uses of anything from "encoding/json", so let's define some
+// silly type that makes use of a type from "encoding/json".
+type UntypedBlob struct {
+	raw json.RawMessage
+}
+
+func (u UntypedBlob) MarshalJSON() ([]byte, error) {
+	return u.raw.MarshalJSON()
+}
+
+func (u *UntypedBlob) UnmarshalJSON(data []byte) error {
+	*u = UntypedBlob{raw: json.RawMessage(data)}
+	return nil
 }
