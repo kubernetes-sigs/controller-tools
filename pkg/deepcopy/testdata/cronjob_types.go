@@ -91,58 +91,57 @@ type SpecificCases struct {
 	BuiltInField string `json:"builtInField"`
 
 	// non-quite deepcopies
-	BadDeepCopyHasParams `json:"badDeepCopyHasParams"`
-	BadDeepCopyNoReturn `json:"badDeepCopyNoReturn"`
-	BadDeepCopyPtrVal `json:"badDeepCopyPtrVal"`
-	BadDeepCopyNonPtrVal `json:"badDeepCopyNonPtrVal"`
+	BadDeepCopyHasParams   `json:"badDeepCopyHasParams"`
+	BadDeepCopyNoReturn    `json:"badDeepCopyNoReturn"`
+	BadDeepCopyPtrVal      `json:"badDeepCopyPtrVal"`
+	BadDeepCopyNonPtrVal   `json:"badDeepCopyNonPtrVal"`
 	BadDeepCopyPtrMismatch `json:"badDeepCopyPtrMismatch"`
 
 	// not-quite-deepcopyintos
-	BadDeepCopyIntoNoParams `json:"badDeepCopyIntoNoParams"`
+	BadDeepCopyIntoNoParams    `json:"badDeepCopyIntoNoParams"`
 	BadDeepCopyIntoNonPtrParam `json:"badDeepCopyIntoNonPtrParam"`
-	BadDeepCopyIntoHasResult `json:"badDeepCopyIntoHasResult"`
+	BadDeepCopyIntoHasResult   `json:"badDeepCopyIntoHasResult"`
 
 	// compound types in fields
 
 	// also tests maps/slices/etc of built-in types
-	MapInField map[string]string `json:"mapInField"`
-	SliceInField []string `json:"sliceInField"`
-	BuiltInPointer *string `json:"pointerInField"`
-	NamedTypeInField TotallyAString `json:"namedTypeInField"`
+	MapInField       map[string]string `json:"mapInField"`
+	SliceInField     []string          `json:"sliceInField"`
+	BuiltInPointer   *string           `json:"pointerInField"`
+	NamedTypeInField TotallyAString    `json:"namedTypeInField"`
 	// named types to struct are tested via the reference to this object
 	// named types to others are tested via the SomePointers/StringMap cases
 
 	// other map types
-	MapToDeepCopyPtr map[string]DeepCopyPtr `json:"mapToDeepCopyPtr"`
-	MapToDeepCopyNonPtr map[string]DeepCopyPtr `json:"mapToDeepCopyNonPtr"`
-	MapToDeepCopyIntoPtr map[string]DeepCopyIntoPtr `json:"mapToDeepCopyIntoPtr"`
-	MapToDeepCopyIntoNonPtr map[string]DeepCopyIntoNonPtr `json:"mapToDeepCopyIntoNonPtr"`
-	MapToShallowNamedType map[string]TotallyAString `json:"mapToShallowNamedType"`
-	MapToReferenceType map[string][]string `json:"mapToReferenceType"`
-	MapToStruct map[string]CronJobSpec `json:"mapToStruct"`
-	MapWithNamedKeys map[TotallyAString]int `json:"mapWithNamedKeys"`
-	MapToPtrToDeepCopyIntoRefType map[string]*DeepCopyIntoRef `json:"mapToPtrToDeepCopyIntoRefType"`
-	MapToDeepCopyIntoRefType map[string]DeepCopyIntoRef `json:"mapToDeepCopyIntoRefType"`
+	MapToDeepCopyPtr              map[string]DeepCopyPtr        `json:"mapToDeepCopyPtr"`
+	MapToDeepCopyNonPtr           map[string]DeepCopyPtr        `json:"mapToDeepCopyNonPtr"`
+	MapToDeepCopyIntoPtr          map[string]DeepCopyIntoPtr    `json:"mapToDeepCopyIntoPtr"`
+	MapToDeepCopyIntoNonPtr       map[string]DeepCopyIntoNonPtr `json:"mapToDeepCopyIntoNonPtr"`
+	MapToShallowNamedType         map[string]TotallyAString     `json:"mapToShallowNamedType"`
+	MapToReferenceType            map[string][]string           `json:"mapToReferenceType"`
+	MapToStruct                   map[string]CronJobSpec        `json:"mapToStruct"`
+	MapWithNamedKeys              map[TotallyAString]int        `json:"mapWithNamedKeys"`
+	MapToPtrToDeepCopyIntoRefType map[string]*DeepCopyIntoRef   `json:"mapToPtrToDeepCopyIntoRefType"`
+	MapToDeepCopyIntoRefType      map[string]DeepCopyIntoRef    `json:"mapToDeepCopyIntoRefType"`
 
 	// other slice types
-	SliceToDeepCopyPtr []DeepCopyPtr `json:"sliceToDeepCopyPtr"`
-	SliceToDeepCopyNonPtr []DeepCopyPtr `json:"sliceToDeepCopyNonPtr"`
-	SliceToDeepCopyIntoPtr []DeepCopyIntoPtr `json:"sliceToDeepCopyIntoPtr"`
+	SliceToDeepCopyPtr        []DeepCopyPtr        `json:"sliceToDeepCopyPtr"`
+	SliceToDeepCopyNonPtr     []DeepCopyPtr        `json:"sliceToDeepCopyNonPtr"`
+	SliceToDeepCopyIntoPtr    []DeepCopyIntoPtr    `json:"sliceToDeepCopyIntoPtr"`
 	SliceToDeepCopyIntoNonPtr []DeepCopyIntoNonPtr `json:"sliceToDeepCopyIntoNonPtr"`
-	SliceToShallowNamedType []TotallyAString `json:"sliceToShallowNamedType"`
-	SliceToReferenceType [][]string `json:"sliceToReferenceType"`
-	SliceToStruct []CronJobSpec `json:"sliceToStruct"`
+	SliceToShallowNamedType   []TotallyAString     `json:"sliceToShallowNamedType"`
+	SliceToReferenceType      [][]string           `json:"sliceToReferenceType"`
+	SliceToStruct             []CronJobSpec        `json:"sliceToStruct"`
 
 	// other pointer types
-	PtrToDeepCopyPtr *DeepCopyPtr `json:"ptrToDeepCopyPtr"`
-	PtrToDeepCopyNonPtr *DeepCopyPtr `json:"ptrToDeepCopyNonPtr"`
-	PtrToDeepCopyIntoPtr *DeepCopyIntoPtr `json:"ptrToDeepCopyIntoPtr"`
+	PtrToDeepCopyPtr        *DeepCopyPtr        `json:"ptrToDeepCopyPtr"`
+	PtrToDeepCopyNonPtr     *DeepCopyPtr        `json:"ptrToDeepCopyNonPtr"`
+	PtrToDeepCopyIntoPtr    *DeepCopyIntoPtr    `json:"ptrToDeepCopyIntoPtr"`
 	PtrToDeepCopyIntoNonPtr *DeepCopyIntoNonPtr `json:"ptrToDeepCopyIntoNonPtr"`
-	PtrToShallowNamedType *TotallyAString `json:"ptrToShallowNamedType"`
-	PtrToReferenceType *[]string `json:"ptrToReferenceType"`
-	PtrToStruct *CronJobSpec `json:"ptrToStruct"`
-	PtrToDeepCopyIntoRef *DeepCopyIntoRef `json:"ptrToDeepCopyIntoRef"`
-
+	PtrToShallowNamedType   *TotallyAString     `json:"ptrToShallowNamedType"`
+	PtrToReferenceType      *[]string           `json:"ptrToReferenceType"`
+	PtrToStruct             *CronJobSpec        `json:"ptrToStruct"`
+	PtrToDeepCopyIntoRef    *DeepCopyIntoRef    `json:"ptrToDeepCopyIntoRef"`
 
 	// Regression Tests:
 
@@ -157,31 +156,36 @@ type SpecificCases struct {
 type TotallyAString string
 
 // Tests manual DeepCopy with a pointer receiver
-type DeepCopyPtr struct {}
+type DeepCopyPtr struct{}
+
 func (d *DeepCopyPtr) DeepCopy() *DeepCopyPtr {
 	return &DeepCopyPtr{}
 }
 
 // Tests manual DeepCopy with a non-pointer receiver
-type DeepCopyNonPtr struct {}
+type DeepCopyNonPtr struct{}
+
 func (d DeepCopyNonPtr) DeepCopy() DeepCopyNonPtr {
 	return DeepCopyNonPtr{}
 }
 
 // Tests manual DeepCopyInto with a pointer receiver
-type DeepCopyIntoPtr struct {}
+type DeepCopyIntoPtr struct{}
+
 func (d *DeepCopyIntoPtr) DeepCopyInto(out *DeepCopyIntoPtr) {
 	*out = DeepCopyIntoPtr{}
 }
 
 // Tests manual DeepCopyInto with a non-pointer receiver
-type DeepCopyIntoNonPtr struct {}
+type DeepCopyIntoNonPtr struct{}
+
 func (d DeepCopyIntoNonPtr) DeepCopyInto(out *DeepCopyIntoNonPtr) {
 	*out = DeepCopyIntoNonPtr{}
 }
 
 // Tests manual DeepCopyInto with a reference type receiver
 type DeepCopyIntoRef map[string]string
+
 func (d DeepCopyIntoRef) DeepCopyInto(out *DeepCopyIntoRef) {
 	*out = make(DeepCopyIntoRef)
 }
@@ -200,35 +204,43 @@ type MapOfStrings map[string]string
 // tests bad deep copy methods
 
 type BadDeepCopyHasParams struct{}
+
 func (d *BadDeepCopyHasParams) DeepCopy(out string) *BadDeepCopyHasParams {
 	return nil
-} 
+}
 
 type BadDeepCopyNoReturn struct{}
+
 func (d *BadDeepCopyNoReturn) DeepCopy() {}
 
-type BadDeepCopyPtrVal struct {}
+type BadDeepCopyPtrVal struct{}
+
 func (d *BadDeepCopyPtrVal) DeepCopy() *BadDeepCopyNoReturn {
 	return nil
 }
 
-type BadDeepCopyNonPtrVal struct {}
+type BadDeepCopyNonPtrVal struct{}
+
 func (d BadDeepCopyNonPtrVal) DeepCopy() BadDeepCopyNoReturn {
 	return BadDeepCopyNoReturn{}
 }
 
-type BadDeepCopyPtrMismatch struct {}
+type BadDeepCopyPtrMismatch struct{}
+
 func (d BadDeepCopyPtrMismatch) DeepCopy() *BadDeepCopyPtrMismatch {
 	return nil
 }
 
-type BadDeepCopyIntoNoParams struct {}
+type BadDeepCopyIntoNoParams struct{}
+
 func (d BadDeepCopyIntoNoParams) DeepCopyInto() {}
 
-type BadDeepCopyIntoNonPtrParam struct {}
+type BadDeepCopyIntoNonPtrParam struct{}
+
 func (d BadDeepCopyIntoNonPtrParam) DeepCopyInto(out BadDeepCopyIntoNonPtrParam) {}
 
-type BadDeepCopyIntoHasResult struct {}
+type BadDeepCopyIntoHasResult struct{}
+
 func (d BadDeepCopyIntoHasResult) DeepCopyInto(out *BadDeepCopyIntoHasResult) error {
 	return nil
 }
