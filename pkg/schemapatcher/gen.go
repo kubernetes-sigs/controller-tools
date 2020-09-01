@@ -32,6 +32,7 @@ import (
 	crdgen "sigs.k8s.io/controller-tools/pkg/crd"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
+	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 	yamlop "sigs.k8s.io/controller-tools/pkg/schemapatcher/internal/yaml"
 )
@@ -94,7 +95,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 	parser := &crdgen.Parser{
 		Collector: ctx.Collector,
-		Checker:   ctx.Checker,
+		Checker:   loader.NewTypeChecker(crdgen.FilterTypesForCRDs),
 	}
 
 	crdgen.AddKnownTypes(parser)

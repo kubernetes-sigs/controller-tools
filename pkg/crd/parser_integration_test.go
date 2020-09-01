@@ -73,7 +73,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(crdmarkers.Register(reg)).To(Succeed())
 		parser := &crd.Parser{
 			Collector: &markers.Collector{Registry: reg},
-			Checker:   &loader.TypeChecker{},
+			Checker:   loader.NewTypeChecker(crd.FilterTypesForCRDs),
 		}
 		crd.AddKnownTypes(parser)
 
@@ -122,7 +122,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(crdmarkers.Register(reg)).To(Succeed())
 		parser := &crd.Parser{
 			Collector: &markers.Collector{Registry: reg},
-			Checker:   &loader.TypeChecker{},
+			Checker:   loader.NewTypeChecker(crd.FilterTypesForCRDs),
 		}
 		crd.AddKnownTypes(parser)
 

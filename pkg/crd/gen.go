@@ -90,7 +90,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	parser := &Parser{
 		Collector: ctx.Collector,
-		Checker:   ctx.Checker,
+		Checker:   loader.NewTypeChecker(FilterTypesForCRDs),
 		// Perform defaulting here to avoid ambiguity later
 		AllowDangerousTypes: g.AllowDangerousTypes != nil && *g.AllowDangerousTypes == true,
 	}

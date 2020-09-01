@@ -82,8 +82,6 @@ type GenerationContext struct {
 	Collector *markers.Collector
 	// Roots are the base packages to be processed.
 	Roots []*loader.Package
-	// Checker is the shared partial type-checker.
-	Checker *loader.TypeChecker
 	// OutputRule describes how to output artifacts.
 	OutputRule
 	// InputRule describes how to load associated boilerplate artifacts.
@@ -151,7 +149,6 @@ func (r *Runtime) newGenerationContext(gen *Generator) (*GenerationContext, erro
 		Roots:      roots,
 		OutputRule: r.OutputRules.ForGenerator(gen),
 		InputRule:  InputFromFileSystem,
-		Checker:    &loader.TypeChecker{},
 	}
 	if err := r.Generators.RegisterMarkers(ctx.Collector.Registry); err != nil {
 		return nil, err

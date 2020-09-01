@@ -138,8 +138,12 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 	headerText = strings.ReplaceAll(headerText, " YEAR", " "+d.Year)
 
 	objGenCtx := ObjectGenCtx{
-		Collector:  ctx.Collector,
-		Checker:    ctx.Checker,
+		Collector: ctx.Collector,
+		Checker: loader.NewTypeChecker(func(node ast.Node) bool {
+			// ignore interfaces
+			_, isIface := node.(*ast.InterfaceType)
+			return !isIface
+		}),
 		HeaderText: headerText,
 	}
 
@@ -196,11 +200,7 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) []byte {
 		return nil
 	}
 
-	ctx.Checker.Check(root, func(node ast.Node) bool {
-		// ignore interfaces
-		_, isIface := node.(*ast.InterfaceType)
-		return !isIface
-	})
+	ctx.Checker.Check(root)
 
 	root.NeedTypesInfo()
 

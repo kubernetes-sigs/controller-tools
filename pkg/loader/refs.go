@@ -190,38 +190,27 @@ type TypeChecker struct {
 	sync.Mutex
 }
 
-// Check type-checks the given package and all packages referenced
-// by types that pass through (have true returned by) filterNodes.
-func (c *TypeChecker) Check(root *Package, filterNodes NodeFilter) {
-	c.init()
-
+// NewTypeChecker returns a TypeChecker that only recurses to other
+// packages if the other package is referenced by a types that passes
+// through (has true returned by) filterNodes.
+func NewTypeChecker(filterNodes NodeFilter) *TypeChecker {
 	if filterNodes == nil {
-		filterNodes = c.filterNodes
-	}
-
-	// use a sub-checker with the appropriate settings
-	(&TypeChecker{
-		filterNodes:     filterNodes,
-		checkedPackages: c.checkedPackages,
-	}).check(root)
-}
-
-func (c *TypeChecker) init() {
-	if c.checkedPackages == nil {
-		c.checkedPackages = make(map[*Package]struct{})
-	}
-	if c.filterNodes == nil {
 		// check every type by default
-		c.filterNodes = func(_ ast.Node) bool {
+		filterNodes = func(_ ast.Node) bool {
 			return true
 		}
 	}
+
+	return &TypeChecker{
+		checkedPackages: make(map[*Package]struct{}),
+		filterNodes:     filterNodes,
+	}
 }
 
-// check recursively type-checks the given package, only loading packages that
-// are actually referenced by our types (it's the actual implementation of Check,
-// without initialization).
-func (c *TypeChecker) check(root *Package) {
+// Check recursively type-checks the given package, only loading packages that
+// are actually referenced by our types (where "our types" is determined by
+// the NodeFilter passed to NewTypeChecker).
+func (c *TypeChecker) Check(root *Package) {
 	root.Lock()
 	defer root.Unlock()
 
@@ -240,7 +229,7 @@ func (c *TypeChecker) check(root *Package) {
 		wg.Add(1)
 		go func(pkg *Package) {
 			defer wg.Done()
-			c.check(pkg)
+			c.Check(pkg)
 		}(pkg)
 	}
 	wg.Wait()

@@ -216,7 +216,7 @@ func (p *Parser) AddPackage(pkg *loader.Package) {
 		return
 	}
 	p.indexTypes(pkg)
-	p.Checker.Check(pkg, filterTypesForCRDs)
+	p.Checker.Check(pkg)
 	p.packages[pkg] = struct{}{}
 }
 
@@ -237,9 +237,9 @@ func (p *Parser) NeedPackage(pkg *loader.Package) {
 	p.AddPackage(pkg)
 }
 
-// filterTypesForCRDs filters out all nodes that aren't used in CRD generation,
+// FilterTypesForCRDs filters out all nodes that aren't used in CRD generation,
 // like interfaces and struct fields without JSON tag.
-func filterTypesForCRDs(node ast.Node) bool {
+func FilterTypesForCRDs(node ast.Node) bool {
 	switch node := node.(type) {
 	case *ast.InterfaceType:
 		// skip interfaces, we never care about references in them
