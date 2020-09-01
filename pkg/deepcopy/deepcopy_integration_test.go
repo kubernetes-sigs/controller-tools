@@ -84,6 +84,6 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(err).NotTo(HaveOccurred())
 
 		By("comparing the two")
-		Expect(outContents).To(Equal(expectedFile), "generated code not as expected, check pkg/deepcopy/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(outContents, expectedFile))
+		Expect(string(outContents)).To(Equal(string(expectedFile)), "generated code not as expected, check pkg/deepcopy/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(outContents, expectedFile))
 	})
 })
