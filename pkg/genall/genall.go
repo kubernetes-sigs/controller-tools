@@ -165,14 +165,16 @@ func (r *Runtime) Run() bool {
 		return true
 	}
 
+	hadErrs := false
 	for _, gen := range r.Generators {
 		ctx := r.GenerationContext // make a shallow copy
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
 		if err := (*gen).Generate(&ctx); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			hadErrs = true
 		}
 	}
 
 	// skip TypeErrors -- they're probably just from partial typechecking in crd-gen
-	return loader.PrintErrors(r.Roots, packages.TypeError)
+	return loader.PrintErrors(r.Roots, packages.TypeError) || hadErrs
 }
