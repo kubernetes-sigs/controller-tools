@@ -490,7 +490,7 @@ func (c *copyMethodMaker) genStructDeepCopy(_ *namingInfo, structType *types.Str
 		case *types.Basic:
 			switch underlyingField.Kind() {
 			case types.Invalid, types.UnsafePointer:
-				c.pkg.AddError(fmt.Errorf("invalid field type: %s", underlyingField))
+				c.pkg.AddError(loader.ErrFromNode(fmt.Errorf("invalid field type: %s", underlyingField), field))
 				return
 			default:
 				// nothing to do, initial assignment copied this
@@ -502,7 +502,7 @@ func (c *copyMethodMaker) genStructDeepCopy(_ *namingInfo, structType *types.Str
 				c.Linef("in.%[1]s.DeepCopyInto(&out.%[1]s)", field.Name())
 			}
 		default:
-			c.pkg.AddError(fmt.Errorf("invalid field type: %s", underlyingField))
+			c.pkg.AddError(loader.ErrFromNode(fmt.Errorf("invalid field type: %s", underlyingField), field))
 			return
 		}
 	}
