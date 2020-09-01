@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/deepcopy"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -76,8 +77,12 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		By("initializing the runtime")
 		optionsRegistry := &markers.Registry{}
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("crd", markers.DescribesPackage, crd.Generator{})))).To(Succeed())
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("object", markers.DescribesPackage, deepcopy.Generator{})))).To(Succeed())
-		rt, err := genall.FromOptions(optionsRegistry, []string{"object"})
+		rt, err := genall.FromOptions(optionsRegistry, []string{
+			"crd", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
+			"object",
+		})
 		Expect(err).NotTo(HaveOccurred())
 		rt.OutputRules = genall.OutputRules{Default: output}
 
