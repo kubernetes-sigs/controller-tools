@@ -144,7 +144,7 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	for _, root := range ctx.Roots {
-		outContents := objGenCtx.GenerateForPackage(root)
+		outContents := objGenCtx.generateForPackage(root)
 		if outContents == nil {
 			continue
 		}
@@ -186,10 +186,10 @@ import (
 
 }
 
-// GenerateForPackage generates DeepCopy and runtime.Object implementations for
+// generateForPackage generates DeepCopy and runtime.Object implementations for
 // types in the given package, writing the formatted result to given writer.
 // May return nil if source could not be generated.
-func (ctx *ObjectGenCtx) GenerateForPackage(root *loader.Package) []byte {
+func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) []byte {
 	allTypes, err := enabledOnPackage(ctx.Collector, root)
 	if err != nil {
 		root.AddError(err)
