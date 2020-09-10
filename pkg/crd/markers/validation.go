@@ -106,7 +106,7 @@ func init() {
 type Maximum int
 
 // +controllertools:marker:generateHelp:category="CRD validation"
-// Minimum specifies the minimum numeric value that this field can have.
+// Minimum specifies the minimum numeric value that this field can have. Negative integers are supported.
 type Minimum int
 
 // +controllertools:marker:generateHelp:category="CRD validation"
