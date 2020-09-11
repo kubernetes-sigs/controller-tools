@@ -5043,6 +5043,18 @@ spec:
                   fields
                 type: object
                 x-kubernetes-map-type: granular
+              minMaxProperties:
+                description: This tests that min/max properties work
+                maxProperties: 2
+                minProperties: 1
+                properties:
+                  bar:
+                    type: string
+                  baz:
+                    type: string
+                  foo:
+                    type: string
+                type: object
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.

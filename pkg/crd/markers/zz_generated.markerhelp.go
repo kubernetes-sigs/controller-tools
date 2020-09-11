@@ -139,6 +139,17 @@ func (MaxLength) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (MaxProperties) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "restricts the number of keys in an object",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Maximum) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
@@ -166,6 +177,17 @@ func (MinLength) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the minimum length for this string.",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (MinProperties) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "restricts the number of keys in an object",
 			Details: "",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},

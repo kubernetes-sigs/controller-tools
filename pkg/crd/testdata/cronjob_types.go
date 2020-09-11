@@ -149,6 +149,9 @@ type CronJobSpec struct {
 	// This tests that type references are properly flattened
 	// +kubebuilder:validation:optional
 	JustNestedObject *JustNestedObject `json:"justNestedObject,omitempty"`
+
+	// This tests that min/max properties work
+	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
 }
 
 type NestedObject struct {
@@ -157,6 +160,14 @@ type NestedObject struct {
 }
 
 type JustNestedObject NestedObject
+
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=2
+type MinMaxObject struct {
+	Foo string `json:"foo,omitempty"`
+	Bar string `json:"bar,omitempty"`
+	Baz string `json:"baz,omitempty"`
+}
 
 type RootObject struct {
 	Nested NestedObject `json:"nested"`

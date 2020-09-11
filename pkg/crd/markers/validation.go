@@ -40,6 +40,8 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	ExclusiveMaximum(false),
 	ExclusiveMinimum(false),
 	MultipleOf(0),
+	MinProperties(0),
+	MaxProperties(0),
 
 	// string markers
 
@@ -144,6 +146,14 @@ type MinItems int
 // +controllertools:marker:generateHelp:category="CRD validation"
 // UniqueItems specifies that all items in this list must be unique.
 type UniqueItems bool
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// MaxProperties restricts the number of keys in an object
+type MaxProperties int
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// MinProperties restricts the number of keys in an object
+type MinProperties int
 
 // +controllertools:marker:generateHelp:category="CRD validation"
 // Enum specifies that this (scalar) field is restricted to the *exact* values specified here.
@@ -286,6 +296,24 @@ func (m UniqueItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		return fmt.Errorf("must apply uniqueitems to an array")
 	}
 	schema.UniqueItems = bool(m)
+	return nil
+}
+
+func (m MinProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if schema.Type != "object" {
+		return fmt.Errorf("must apply minproperties to an object")
+	}
+	val := int64(m)
+	schema.MinProperties = &val
+	return nil
+}
+
+func (m MaxProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if schema.Type != "object" {
+		return fmt.Errorf("must apply maxproperties to an object")
+	}
+	val := int64(m)
+	schema.MaxProperties = &val
 	return nil
 }
 
