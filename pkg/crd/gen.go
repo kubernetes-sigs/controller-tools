@@ -18,6 +18,7 @@ package crd
 
 import (
 	"fmt"
+	"go/ast"
 	"go/types"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -84,6 +85,9 @@ type Generator struct {
 	CRDVersions []string `marker:"crdVersions,optional"`
 }
 
+func (Generator) CheckFilter() loader.NodeFilter {
+	return filterTypesForCRDs
+}
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return crdmarkers.Register(into)
 }
@@ -318,4 +322,23 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) map[schema.GroupKi
 	}
 
 	return kubeKinds
+}
+
+// filterTypesForCRDs filters out all nodes that aren't used in CRD generation,
+// like interfaces and struct fields without JSON tag.
+func filterTypesForCRDs(node ast.Node) bool {
+	switch node := node.(type) {
+	case *ast.InterfaceType:
+		// skip interfaces, we never care about references in them
+		return false
+	case *ast.StructType:
+		return true
+	case *ast.Field:
+		_, hasTag := loader.ParseAstTag(node.Tag).Lookup("json")
+		// fields without JSON tags mean we have custom serialization,
+		// so only visit fields with tags.
+		return hasTag
+	default:
+		return true
+	}
 }
