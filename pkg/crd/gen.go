@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"os"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -199,6 +200,10 @@ func removeDefaultsFromSchemas(crd *apiextlegacy.CustomResourceDefinition) {
 func removeDefaultsFromSchemaProps(v *apiextlegacy.JSONSchemaProps) {
 	if v == nil {
 		return
+	}
+
+	if v.Default != nil {
+		fmt.Fprintln(os.Stderr, "Warning: default unsupported in CRD version v1beta1, v1 required. Removing defaults.")
 	}
 
 	// nil-out the default field
