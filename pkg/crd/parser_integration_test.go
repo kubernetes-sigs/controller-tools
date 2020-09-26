@@ -84,6 +84,8 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		groupKind := schema.GroupKind{Kind: "CronJob", Group: "testdata.kubebuilder.io"}
 		parser.NeedCRDFor(groupKind, nil)
 
+		crd.FixupMetadata(parser.CustomResourceDefinitions[groupKind])
+
 		By("checking that no errors occurred along the way (expect for type errors)")
 		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
 

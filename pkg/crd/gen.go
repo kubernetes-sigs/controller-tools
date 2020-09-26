@@ -83,6 +83,9 @@ type Generator struct {
 	// You'll need to use "v1" to get support for features like defaulting,
 	// along with an API server that supports it (Kubernetes 1.16+).
 	CRDVersions []string `marker:"crdVersions,optional"`
+
+	// preserve object meta data
+	PreserveObjectMeta *bool `marker:",optional"`
 }
 
 func (Generator) CheckFilter() loader.NodeFilter {
@@ -127,6 +130,10 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
 		addAttribution(&crdRaw)
+
+		if *g.PreserveObjectMeta {
+			FixupMetadata(crdRaw)
+		}
 
 		versionedCRDs := make([]interface{}, len(crdVersions))
 		for i, ver := range crdVersions {
@@ -215,6 +222,20 @@ func removeDefaultsFromSchemaProps(v *apiextlegacy.JSONSchemaProps) {
 			v.Items.JSONSchemas[i] = props
 		}
 	}
+}
+
+// FixupMetadata resets the schema for the top-level metadata field which is need for CRD validation
+func FixupMetadata(crd apiext.CustomResourceDefinition) {
+	for _, v := range crd.Spec.Versions {
+		if v.Schema != nil && v.Schema.OpenAPIV3Schema != nil && v.Schema.OpenAPIV3Schema.Properties != nil {
+			schemaProperties := v.Schema.OpenAPIV3Schema.Properties
+			if _, ok := schemaProperties["metadata"]; ok {
+				schemaProperties["metadata"] = apiext.JSONSchemaProps{Type: "object"}
+			}
+		}
+
+	}
+
 }
 
 // toTrivialVersions strips out all schemata except for the storage schema,
