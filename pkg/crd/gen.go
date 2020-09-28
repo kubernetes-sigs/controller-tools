@@ -131,7 +131,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
 		addAttribution(&crdRaw)
 
-		if *g.PreserveObjectMeta {
+		if g.PreserveObjectMeta != nil && *g.PreserveObjectMeta {
 			FixupMetadata(crdRaw)
 		}
 

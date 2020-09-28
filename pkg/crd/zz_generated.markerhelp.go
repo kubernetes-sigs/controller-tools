@@ -53,7 +53,7 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Details: "The first version listed will be assumed to be the \"default\" version and will not get a version suffix in the output filename. \n You'll need to use \"v1\" to get support for features like defaulting, along with an API server that supports it (Kubernetes 1.16+).",
 			},
 			"PreserveObjectMeta": markers.DetailedHelp{
-				Summary: "preserve obkect meta data",
+				Summary: "preserve object meta data",
 				Details: "",
 			},
 		},
