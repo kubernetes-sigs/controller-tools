@@ -99,7 +99,11 @@ function setup_envs {
 
 header_text "using tools"
 
-which golangci-lint
+if ! type golangci-lint > /dev/null; then
+  header_text "installing golangci-lint"
+  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+  golangci-lint --version
+fi
 
 # fetch the testing binaries - e.g. apiserver and etcd
 fetch_kb_tools
@@ -107,13 +111,12 @@ fetch_kb_tools
 # setup testing env
 setup_envs
 
-header_text "running golangci-lint"
-
 header_text "generating marker help"
 pushd cmd/controller-gen > /dev/null
   go generate
 popd > /dev/null
 
+header_text "running golangci-lint"
 golangci-lint run --disable-all \
     --enable=misspell \
     --enable=golint \
