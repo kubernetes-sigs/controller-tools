@@ -13,6 +13,10 @@ This project uses Go modules to manage its dependencies, so feel free to work fr
 of your `GOPATH`. However, if you'd like to continue to work from within your `GOPATH`, please
 export `GO111MODULE=on`.
 
+## Releasing and Versioning
+
+See [VERSIONING.md](VERSIONING.md).
+
 ## Community, discussion, contribution, and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
