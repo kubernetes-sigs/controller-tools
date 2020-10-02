@@ -209,6 +209,8 @@ func removeDefaultsFromSchemaProps(v *apiextlegacy.JSONSchemaProps) {
 	// nil-out the default field
 	v.Default = nil
 	for name, prop := range v.Properties {
+		// iter var reference is fine -- we handle the persistence of the modfications on the line below
+		//nolint:gosec
 		removeDefaultsFromSchemaProps(&prop)
 		v.Properties[name] = prop
 	}
