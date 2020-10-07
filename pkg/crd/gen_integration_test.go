@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-tools/pkg/crd"
@@ -72,7 +73,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("comparing the two")
-		Expect(out.buf.Bytes()).To(Equal(expectedFile))
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 
 	})
 
@@ -88,8 +89,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("comparing the two")
-		Expect(out.buf.Bytes()).To(Equal(expectedFile))
-
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
 })
 
