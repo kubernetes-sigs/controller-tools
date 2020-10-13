@@ -63,8 +63,9 @@ type schemaRequester interface {
 
 // schemaContext stores and provides information across a hierarchy of schema generation.
 type schemaContext struct {
-	pkg  *loader.Package
-	info *markers.TypeInfo
+	pkg   *loader.Package
+	info  *markers.TypeInfo
+	field *markers.FieldInfo
 
 	schemaRequester schemaRequester
 	PackageMarkers  markers.MarkerValues
@@ -89,6 +90,17 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 	return &schemaContext{
 		pkg:                 c.pkg,
 		info:                info,
+		schemaRequester:     c.schemaRequester,
+		allowDangerousTypes: c.allowDangerousTypes,
+	}
+}
+
+// ForFiedInfo behaves same as ForInfo and additionally adds field info
+func (c *schemaContext) ForFieldInfo(info *markers.TypeInfo, field *markers.FieldInfo) *schemaContext {
+	return &schemaContext{
+		pkg:                 c.pkg,
+		info:                info,
+		field:               field,
 		schemaRequester:     c.schemaRequester,
 		allowDangerousTypes: c.allowDangerousTypes,
 	}
@@ -210,6 +222,19 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		return &apiext.JSONSchemaProps{}
 	}
 	if basicInfo, isBasic := typeInfo.(*types.Basic); isBasic {
+		if ctx.field != nil {
+			jsonTag, hasTag := ctx.field.Tag.Lookup("json")
+			if hasTag {
+				jsonOpts := strings.Split(jsonTag, ",")
+				for _, opt := range jsonOpts[1:] {
+					if opt == "string" {
+						return &apiext.JSONSchemaProps{
+							Type: "string",
+						}
+					}
+				}
+			}
+		}
 		typ, fmt, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
@@ -384,7 +409,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 			}
 		}
 
-		propSchema := typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
+		propSchema := typeToSchema(ctx.ForFieldInfo(&markers.TypeInfo{}, &field), field.RawField.Type)
 		propSchema.Description = field.Doc
 
 		applyMarkers(ctx, field.Markers, propSchema, field.RawField)
