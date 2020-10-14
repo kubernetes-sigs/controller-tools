@@ -5120,6 +5120,15 @@ spec:
                 type: object
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
+              unprunedFomType:
+                description: This tests that a type-level pruning maker works.
+                properties:
+                  concreteField:
+                    type: string
+                required:
+                - concreteField
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               unprunedJSON:
                 properties:
                   bar:
@@ -5147,6 +5156,7 @@ spec:
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
+            - unprunedFomType
             - unprunedJSON
             type: object
           status:
