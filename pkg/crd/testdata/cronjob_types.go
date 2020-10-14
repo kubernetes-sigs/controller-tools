@@ -23,6 +23,7 @@ limitations under the License.
 package cronjob
 
 import (
+	"encoding/json"
 	"fmt"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -127,6 +128,9 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:nullable
 	UnprunedEmbeddedResource runtime.RawExtension `json:"unprunedEmbeddedResource"`
 
+	// This tests that a type-level pruning maker works.
+	UnprunedFromType Preserved `json:"unprunedFomType"`
+
 	// This tests that associative lists work.
 	// +listType=map
 	// +listMapKey=name
@@ -140,6 +144,37 @@ type CronJobSpec struct {
 	// A struct that can only be entirely replaced
 	// +structType=atomic
 	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
+}
+
+// +kubebuilder:validation:Type=object
+// +kubebuilder:pruning:PreserveUnknownFields
+type Preserved struct {
+	ConcreteField string `json:"concreteField"`
+	Rest map[string]interface{} `json:"-"`
+}
+func (p *Preserved) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &p.Rest); err != nil {
+		return err
+	}
+	conc, found := p.Rest["concreteField"]
+	if !found {
+		return nil
+	}
+	concStr, isStr := conc.(string)
+	if !isStr {
+		return fmt.Errorf("concreteField was not string")
+	}
+	delete(p.Rest, "concreteField")
+	p.ConcreteField = concStr
+	return nil
+}
+func (p *Preserved) MarshalJSON() ([]byte, error) {
+	full := make(map[string]interface{}, len(p.Rest)+1)
+	for k, v := range p.Rest {
+		full[k] = v
+	}
+	full["concreteField"] = p.ConcreteField
+	return json.Marshal(full)
 }
 
 type NestedObject struct {
