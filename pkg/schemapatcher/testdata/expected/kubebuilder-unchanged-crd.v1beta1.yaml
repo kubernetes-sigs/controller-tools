@@ -30,6 +30,9 @@ spec:
           type: string
         metadata:
           type: object
+          properties:
+            name:
+              type: string
         spec:
           type: object
           required:

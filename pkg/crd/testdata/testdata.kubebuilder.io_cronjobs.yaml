@@ -33,6 +33,9 @@ spec:
             type: string
           metadata:
             type: object
+            properties:
+              name:
+                type: string
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
@@ -133,6 +136,9 @@ spec:
                     description: 'Standard object''s metadata of the jobs created
                       from this template. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
                     type: object
+                    properties:
+                      name:
+                        type: string
                   spec:
                     description: 'Specification of the desired behavior of the job.
                       More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
@@ -233,6 +239,9 @@ spec:
                             description: 'Standard object''s metadata. More info:
                               https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
                             type: object
+                            properties:
+                              name:
+                                type: string
                           spec:
                             description: 'Specification of the desired behavior of
                               the pod. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'

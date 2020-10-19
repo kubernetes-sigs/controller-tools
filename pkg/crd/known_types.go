@@ -38,6 +38,13 @@ var KnownPackages = map[string]PackageOverride{
 		// generate validation for it.
 		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiext.JSONSchemaProps{
 			Type: "object",
+			// The name property is an exception, it has a special role volumeClaimTemplates
+			// so it has to be kept, otherwise it won't be propagated.
+			Properties: map[string]apiext.JSONSchemaProps{
+				"name": {
+					Type: "string",
+				},
+			},
 		}
 		p.Schemata[TypeIdent{Name: "Time", Package: pkg}] = apiext.JSONSchemaProps{
 			Type:   "string",
