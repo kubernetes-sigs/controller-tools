@@ -1619,6 +1619,7 @@ spec:
                                               can be referred to by services.
                                             type: string
                                           protocol:
+                                            default: TCP
                                             description: Protocol for port. Must be
                                               UDP, TCP, or SCTP. Defaults to "TCP".
                                             type: string
@@ -2828,6 +2829,7 @@ spec:
                                               can be referred to by services.
                                             type: string
                                           protocol:
+                                            default: TCP
                                             description: Protocol for port. Must be
                                               UDP, TCP, or SCTP. Defaults to "TCP".
                                             type: string
@@ -5041,6 +5043,18 @@ spec:
                   fields
                 type: object
                 x-kubernetes-map-type: granular
+              minMaxProperties:
+                description: This tests that min/max properties work
+                maxProperties: 2
+                minProperties: 1
+                properties:
+                  bar:
+                    type: string
+                  baz:
+                    type: string
+                  foo:
+                    type: string
+                type: object
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -5106,6 +5120,15 @@ spec:
                 type: object
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
+              unprunedFomType:
+                description: This tests that a type-level pruning maker works.
+                properties:
+                  concreteField:
+                    type: string
+                required:
+                - concreteField
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               unprunedJSON:
                 properties:
                   bar:
@@ -5133,6 +5156,7 @@ spec:
             - twoOfAKindPart0
             - twoOfAKindPart1
             - unprunedEmbeddedResource
+            - unprunedFomType
             - unprunedJSON
             type: object
           status:
@@ -5178,14 +5202,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              lastActiveLogURL:
-                description: LastActiveLogURL specifies the logging url for the last
-                  started job
-                type: string
-              lastActiveLogURL2:
-                description: LastActiveLogURL2 specifies the logging url for the last
-                  started job
-                type: string
               lastScheduleMicroTime:
                 description: Information about the last time the job was successfully
                   scheduled, with microsecond precision.
@@ -5202,3 +5218,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

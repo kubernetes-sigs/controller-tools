@@ -174,7 +174,7 @@ var _ = Describe("Parsing", func() {
 		It("should support double-quoted strings", argParseTestCase{arg: Argument{Type: StringType}, raw: `"some; string, \nhere"`, output: "some; string, \nhere"}.Run)
 		It("should support raw strings", argParseTestCase{arg: Argument{Type: StringType}, raw: "`some; string, \\nhere`", output: `some; string, \nhere`}.Run)
 		It("should support integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "42", output: 42}.Run)
-		XIt("should support negative integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "-42", output: -42}.Run)
+		It("should support negative integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "-42", output: -42}.Run)
 		It("should support false booleans", argParseTestCase{arg: Argument{Type: BoolType}, raw: "false", output: false}.Run)
 		It("should support true booleans", argParseTestCase{arg: Argument{Type: BoolType}, raw: "true", output: true}.Run)
 
@@ -194,7 +194,7 @@ var _ = Describe("Parsing", func() {
 			It("should support double-quoted strings", argParseTestCase{arg: anyArg, raw: `"some; string, \nhere"`, output: "some; string, \nhere"}.Run)
 			It("should support raw strings", argParseTestCase{arg: anyArg, raw: "`some; string, \\nhere`", output: `some; string, \nhere`}.Run)
 			It("should support integers", argParseTestCase{arg: anyArg, raw: "42", output: 42}.Run)
-			XIt("should support negative integers", argParseTestCase{arg: anyArg, raw: "-42", output: -42}.Run)
+			It("should support negative integers", argParseTestCase{arg: anyArg, raw: "-42", output: -42}.Run)
 			It("should support false booleans", argParseTestCase{arg: anyArg, raw: "false", output: false}.Run)
 			It("should support true booleans", argParseTestCase{arg: anyArg, raw: "true", output: true}.Run)
 

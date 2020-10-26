@@ -66,7 +66,7 @@ type Ttest struct {
 }
 
 type TestBuiltins struct {
-	Byte byte
+	Byte    byte
 	Int8    int8
 	Int16   int16
 	Int32   int32
@@ -81,8 +81,8 @@ type TestBuiltins struct {
 }
 
 type TestMaps struct {
-	Byte map[string]byte
-	Int8    map[string]int8
+	Byte         map[string]byte
+	Int8         map[string]int8
 	Int16        map[string]int16
 	Int32        map[string]int32
 	Int64        map[string]int64
@@ -103,7 +103,6 @@ type TestMaps struct {
 	StructPtr    map[string]*Ttest
 }
 
-
 type TestPointers struct {
 	Builtin   *string
 	Ptr       **string
@@ -116,8 +115,8 @@ type TestPointers struct {
 }
 
 type TestSlices struct {
-	Byte []byte
-	Int8    []int8 //TODO: int8 becomes byte in SnippetWriter
+	Byte         []byte
+	Int8         []int8 //TODO: int8 becomes byte in SnippetWriter
 	Int16        []int16
 	Int32        []int32
 	Int64        []int64
@@ -139,7 +138,7 @@ type TestSlices struct {
 }
 
 type Inner struct {
-	Byte byte
+	Byte    byte
 	Int8    int8 //TODO: int8 becomes byte in SnippetWriter
 	Int16   int16
 	Int32   int32

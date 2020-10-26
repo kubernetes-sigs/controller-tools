@@ -7,6 +7,7 @@ aliases:
     - directxman12
     - droot
     - mengqiy
+    - pwittrock
 
   # non-admin folks who can approve any PRs in the repo
   controller-tools-maintainers:
@@ -22,5 +23,4 @@ aliases:
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
-  controller-tools-emeritus-maintainers:
-  - pwittrock
+  # controller-tools-emeritus-maintainers:

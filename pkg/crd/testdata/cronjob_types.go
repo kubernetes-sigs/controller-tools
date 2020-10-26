@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:crdVersions=v1 paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh paths=. output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -25,7 +25,6 @@ package cronjob
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -132,6 +131,9 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:nullable
 	UnprunedEmbeddedResource runtime.RawExtension `json:"unprunedEmbeddedResource"`
 
+	// This tests that a type-level pruning maker works.
+	UnprunedFromType Preserved `json:"unprunedFomType"`
+
 	// This tests that associative lists work.
 	// +listType=map
 	// +listMapKey=name
@@ -149,6 +151,40 @@ type CronJobSpec struct {
 	// This tests that type references are properly flattened
 	// +kubebuilder:validation:optional
 	JustNestedObject *JustNestedObject `json:"justNestedObject,omitempty"`
+
+	// This tests that min/max properties work
+	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
+}
+
+// +kubebuilder:validation:Type=object
+// +kubebuilder:pruning:PreserveUnknownFields
+type Preserved struct {
+	ConcreteField string `json:"concreteField"`
+	Rest map[string]interface{} `json:"-"`
+}
+func (p *Preserved) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &p.Rest); err != nil {
+		return err
+	}
+	conc, found := p.Rest["concreteField"]
+	if !found {
+		return nil
+	}
+	concStr, isStr := conc.(string)
+	if !isStr {
+		return fmt.Errorf("concreteField was not string")
+	}
+	delete(p.Rest, "concreteField")
+	p.ConcreteField = concStr
+	return nil
+}
+func (p *Preserved) MarshalJSON() ([]byte, error) {
+	full := make(map[string]interface{}, len(p.Rest)+1)
+	for k, v := range p.Rest {
+		full[k] = v
+	}
+	full["concreteField"] = p.ConcreteField
+	return json.Marshal(full)
 }
 
 type NestedObject struct {
@@ -157,6 +193,14 @@ type NestedObject struct {
 }
 
 type JustNestedObject NestedObject
+
+// +kubebuilder:validation:MinProperties=1
+// +kubebuilder:validation:MaxProperties=2
+type MinMaxObject struct {
+	Foo string `json:"foo,omitempty"`
+	Bar string `json:"bar,omitempty"`
+	Baz string `json:"baz,omitempty"`
+}
 
 type RootObject struct {
 	Nested NestedObject `json:"nested"`
@@ -198,84 +242,6 @@ func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	return nil
 }
 
-// +kubebuilder:validation:Type=string
-// URL wraps url.URL.
-// It has custom json marshal methods that enable it to be used in K8s CRDs
-// such that the CRD resource will have the URL but operator code can can work with url.URL struct
-type URL struct {
-	url.URL
-}
-
-func (u *URL) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("%q", u.String())), nil
-}
-
-func (u *URL) UnmarshalJSON(b []byte) error {
-	var ref string
-	if err := json.Unmarshal(b, &ref); err != nil {
-		return err
-	}
-	if ref == "" {
-		*u = URL{}
-		return nil
-	}
-
-	r, err := url.Parse(ref)
-	if err != nil {
-		return err
-	} else if r != nil {
-		*u = URL{*r}
-	} else {
-		*u = URL{}
-	}
-	return nil
-}
-
-func (u *URL) String() string {
-	if u == nil {
-		return ""
-	}
-	return u.URL.String()
-}
-
-// +kubebuilder:validation:Type=string
-// URL2 is an alias of url.URL.
-// It has custom json marshal methods that enable it to be used in K8s CRDs
-// such that the CRD resource will have the URL but operator code can can work with url.URL struct
-type URL2 url.URL
-
-func (u *URL2) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("%q", u.String())), nil
-}
-
-func (u *URL2) UnmarshalJSON(b []byte) error {
-	var ref string
-	if err := json.Unmarshal(b, &ref); err != nil {
-		return err
-	}
-	if ref == "" {
-		*u = URL2{}
-		return nil
-	}
-
-	r, err := url.Parse(ref)
-	if err != nil {
-		return err
-	} else if r != nil {
-		*u = *(*URL2)(r)
-	} else {
-		*u = URL2{}
-	}
-	return nil
-}
-
-func (u *URL2) String() string {
-	if u == nil {
-		return ""
-	}
-	return (*url.URL)(u).String()
-}
-
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.
 // If none of the following policies is specified, the default one
@@ -312,14 +278,6 @@ type CronJobStatus struct {
 	// with microsecond precision.
 	// +optional
 	LastScheduleMicroTime *metav1.MicroTime `json:"lastScheduleMicroTime,omitempty"`
-
-	// LastActiveLogURL specifies the logging url for the last started job
-	// +optional
-	LastActiveLogURL *URL `json:"lastActiveLogURL,omitempty"`
-
-	// LastActiveLogURL2 specifies the logging url for the last started job
-	// +optional
-	LastActiveLogURL2 *URL2 `json:"lastActiveLogURL2,omitempty"`
 }
 
 // +kubebuilder:object:root=true
