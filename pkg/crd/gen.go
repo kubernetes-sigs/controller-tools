@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"os"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -201,9 +202,15 @@ func removeDefaultsFromSchemaProps(v *apiextlegacy.JSONSchemaProps) {
 		return
 	}
 
+	if v.Default != nil {
+		fmt.Fprintln(os.Stderr, "Warning: default unsupported in CRD version v1beta1, v1 required. Removing defaults.")
+	}
+
 	// nil-out the default field
 	v.Default = nil
 	for name, prop := range v.Properties {
+		// iter var reference is fine -- we handle the persistence of the modfications on the line below
+		//nolint:gosec
 		removeDefaultsFromSchemaProps(&prop)
 		v.Properties[name] = prop
 	}
