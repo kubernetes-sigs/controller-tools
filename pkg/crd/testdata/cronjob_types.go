@@ -158,6 +158,12 @@ type CronJobSpec struct {
 	// This tests that the schemaless marker works
 	// +kubebuilder:validation:Schemaless
 	Schemaless []byte `json:"schemaless,omitempty"`
+
+	// Checks that nested maps work
+	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
+
+	// Checks that multiply-nested maps work
+	NestedNestedMap map[string]map[string]map[string]string `json:"nestedNestedMap,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object

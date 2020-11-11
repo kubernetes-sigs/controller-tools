@@ -3954,6 +3954,22 @@ spec:
                   foo:
                     type: string
                 type: object
+              nestedMap:
+                additionalProperties:
+                  additionalProperties:
+                    type: string
+                  type: object
+                description: Checks that nested maps work
+                type: object
+              nestedNestedMap:
+                additionalProperties:
+                  additionalProperties:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  type: object
+                description: Checks that multiply-nested maps work
+                type: object
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean it. It helps test the +kubebuilder:validation:Type marker.
                 type: string
