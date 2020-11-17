@@ -36,7 +36,7 @@ func Version() string {
 //
 // - "Version: v0.2.1" when the program has been compiled with:
 //
-//   $ go get github.com/controller-tools/cmd/controller-gen@v0.2.1
+//   $ go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.1
 //
 //   Note: go modules requires the usage of semver compatible tags starting with
 //        'v' to have nice human-readable versions.
