@@ -104,6 +104,49 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 	})
 
+	It("should generate plural words for Kind correctly", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/plural")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+		pkg := pkgs[0]
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		parser := &crd.Parser{
+			Collector: &markers.Collector{Registry: reg},
+			Checker:   &loader.TypeChecker{},
+		}
+		crd.AddKnownTypes(parser)
+
+		By("requesting that the package be parsed")
+		parser.NeedPackage(pkg)
+
+		By("requesting that the CRD be generated")
+		groupKind := schema.GroupKind{Kind: "TestQuota", Group: "plural.example.com"}
+		parser.NeedCRDFor(groupKind, nil)
+
+		By("loading the desired YAML")
+		expectedFile, err := ioutil.ReadFile("plural.example.com_testquotas.yaml")
+		Expect(err).NotTo(HaveOccurred())
+
+		By("parsing the desired YAML")
+		var crd apiext.CustomResourceDefinition
+		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
+		// clear the annotations -- we don't care about the attribution annotation
+		crd.Annotations = nil
+
+		By("comparing the two")
+		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+	})
+
 	It("should skip api internal package", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
