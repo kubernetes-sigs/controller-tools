@@ -331,6 +331,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 	}
 
 	for _, field := range ctx.info.Fields {
+		// Skip if the field is not exported and not an inline field
+		if field.Name != "" && !ast.IsExported(field.Name) {
+			continue
+		}
 		jsonTag, hasTag := field.Tag.Lookup("json")
 		if !hasTag {
 			// if the field doesn't have a JSON tag, it doesn't belong in output (and shouldn't exist in a serialized type)

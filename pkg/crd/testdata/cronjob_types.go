@@ -154,6 +154,9 @@ type CronJobSpec struct {
 
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
+
+	// This is a new field that is unexported and should be ignored
+	testing string
 }
 
 // +kubebuilder:validation:Type=object
@@ -161,6 +164,8 @@ type CronJobSpec struct {
 type Preserved struct {
 	ConcreteField string                 `json:"concreteField"`
 	Rest          map[string]interface{} `json:"-"`
+	// This is a unexported field that should be ignored
+	testing string
 }
 
 func (p *Preserved) UnmarshalJSON(data []byte) error {
