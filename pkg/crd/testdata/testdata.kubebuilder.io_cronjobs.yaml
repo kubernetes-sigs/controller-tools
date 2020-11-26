@@ -5071,6 +5071,8 @@ spec:
               schedule:
                 description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
                 type: string
+              schemaless:
+                description: This tests that the schemaless marker works
               startingDeadlineSeconds:
                 description: Optional deadline in seconds for starting the job if
                   it misses scheduled time for any reason.  Missed jobs executions

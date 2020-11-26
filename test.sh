@@ -107,12 +107,12 @@ fetch_kb_tools
 # setup testing env
 setup_envs
 
-header_text "running golangci-lint"
-
 header_text "generating marker help"
 pushd cmd/controller-gen > /dev/null
   go generate
 popd > /dev/null
+
+header_text "running golangci-lint"
 
 golangci-lint run --disable-all \
     --enable=misspell \

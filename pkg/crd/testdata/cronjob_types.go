@@ -154,14 +154,19 @@ type CronJobSpec struct {
 
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
+
+	// This tests that the schemaless marker works
+	// +kubebuilder:validation:Schemaless
+	Schemaless []byte `json:"schemaless,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object
 // +kubebuilder:pruning:PreserveUnknownFields
 type Preserved struct {
-	ConcreteField string `json:"concreteField"`
-	Rest map[string]interface{} `json:"-"`
+	ConcreteField string                 `json:"concreteField"`
+	Rest          map[string]interface{} `json:"-"`
 }
+
 func (p *Preserved) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &p.Rest); err != nil {
 		return err
