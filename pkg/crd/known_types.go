@@ -111,6 +111,14 @@ var KnownPackages = map[string]PackageOverride{
 		}
 		p.AddPackage(pkg) // get the rest of the types
 	},
+
+	"net": func(p *Parser, pkg *loader.Package) {
+		// Unlike normal []byte, net.IP has it's own Marshal/Unmarshal rules, it should be treated as a normal string
+		p.Schemata[TypeIdent{Name: "IP", Package: pkg}] = apiext.JSONSchemaProps{
+			Type: "string",
+		}
+		p.AddPackage(pkg)
+	},
 }
 
 func boolPtr(b bool) *bool {
