@@ -36,7 +36,8 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
-- clientConfig:
+- admissionReviewVersions: null
+  clientConfig:
     service:
       name: webhook-service
       namespace: system

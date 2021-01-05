@@ -21,7 +21,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-tools/pkg/crd"
@@ -32,13 +34,18 @@ import (
 )
 
 var _ = Describe("CRD Generation proper defaulting", func() {
-	var ctx *genall.GenerationContext
-	var out *outputRule
+	var (
+		ctx *genall.GenerationContext
+		out *outputRule
+
+		genDir = filepath.Join("testdata", "gen")
+	)
+
 	BeforeEach(func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(os.Chdir("./testdata/gen")).To(Succeed()) // go modules are directory-sensitive
+		Expect(os.Chdir(genDir)).To(Succeed()) // go modules are directory-sensitive
 		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
 
 		By("loading the roots")
@@ -68,11 +75,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
 		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("./testdata/gen/foo_crd_v1beta1.yaml")
+		expectedFile, err := ioutil.ReadFile(filepath.Join(genDir, "bar.example.com_foos.v1beta1.yaml"))
 		Expect(err).NotTo(HaveOccurred())
+		expectedFile = fixAnnotations(expectedFile)
 
 		By("comparing the two")
-		Expect(out.buf.Bytes()).To(Equal(expectedFile))
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 
 	})
 
@@ -84,14 +92,19 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
 		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("./testdata/gen/foo_crd_v1.yaml")
+		expectedFile, err := ioutil.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
+		expectedFile = fixAnnotations(expectedFile)
 
 		By("comparing the two")
-		Expect(out.buf.Bytes()).To(Equal(expectedFile))
-
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
 })
+
+// fixAnnotations fixes the attribution annotation for tests.
+func fixAnnotations(crdBytes []byte) []byte {
+	return bytes.Replace(crdBytes, []byte("(devel)"), []byte("(unknown)"), 1)
+}
 
 type outputRule struct {
 	buf *bytes.Buffer

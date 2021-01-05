@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd paths=. output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -159,9 +159,10 @@ type CronJobSpec struct {
 // +kubebuilder:validation:Type=object
 // +kubebuilder:pruning:PreserveUnknownFields
 type Preserved struct {
-	ConcreteField string `json:"concreteField"`
-	Rest map[string]interface{} `json:"-"`
+	ConcreteField string                 `json:"concreteField"`
+	Rest          map[string]interface{} `json:"-"`
 }
+
 func (p *Preserved) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &p.Rest); err != nil {
 		return err
@@ -302,8 +303,4 @@ type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CronJob `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }

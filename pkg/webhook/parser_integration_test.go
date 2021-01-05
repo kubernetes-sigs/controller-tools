@@ -67,7 +67,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
 			OutputRule: genall.OutputToDirectory(outputDir),
-		}))
+		})).To(Succeed())
 
 		By("loading the generated v1 YAML")
 		actualFile, err := ioutil.ReadFile(path.Join(outputDir, "manifests.yaml"))
