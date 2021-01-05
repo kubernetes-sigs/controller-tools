@@ -11,7 +11,9 @@ set -o pipefail
 readlink=$(command -v readlink)
 
 check_readlink() {
-    if ! ${readlink} -f &>/dev/null; then
+    local test_file="$(mktemp)"
+    trap "rm -f $test_file" EXIT
+    if ! ${readlink} -f "$test_file" &>/dev/null; then
         if [[ "${OSTYPE}" == "darwin"* ]]; then
             if command -v greadlink; then
                 readlink=$(command -v greadlink)

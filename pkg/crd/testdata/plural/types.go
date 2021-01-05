@@ -14,9 +14,9 @@ limitations under the License.
 */
 
 //go:generate ../../../../.run-controller-gen.sh crd:crdVersions=v1 paths=. output:dir=.
+
 // +groupName=plural.example.com
 // +versionName=v1
-
 package plural
 
 import (
