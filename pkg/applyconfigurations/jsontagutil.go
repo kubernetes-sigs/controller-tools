@@ -22,8 +22,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-// TODO: This implements the same functionality as https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apimachinery/pkg/runtime/converter.go#L236
-// but is based on the more efficient approach from https://golang.org/src/encoding/json/encode.go
+// TODO(jefftree): Import from k8s.io/code-generator/cmd/applyconfiguration-gen/generators/jsontagutil.go instead.
 
 type jsonTags struct {
 	name      string
@@ -46,7 +45,7 @@ func (t jsonTags) String() string {
 	return tag
 }
 
-func lookupJsonTags(field markers.FieldInfo) (jsonTags, bool) {
+func lookupJSONTags(field markers.FieldInfo) (jsonTags, bool) {
 	tag := field.Tag.Get("json")
 	if tag == "" || tag == "-" {
 		return jsonTags{}, false
