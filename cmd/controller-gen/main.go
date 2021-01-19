@@ -141,13 +141,18 @@ func main() {
 	controller-gen object paths=./apis/v1beta1/some_types.go
 
 	# Generate OpenAPI v3 schemas for API packages and merge them into existing CRD manifests
-	controller-gen schemapatch:manifests=./manifests output:dir=./manifests paths=./pkg/apis/... 
+	controller-gen schemapatch:manifests=./manifests output:dir=./manifests paths=./pkg/apis/...
 
 	# Run all the generators for a given project
 	controller-gen paths=./apis/...
 
 	# Explain the markers for generating CRDs, and their arguments
 	controller-gen crd -ww
+
+	# Generate applyconfigurations for CRDs for use with Server Side Apply. They will be placed
+	# into a "ac/" subdirectory
+
+	controller-gen apply paths=./apis/...
 `,
 		RunE: func(c *cobra.Command, rawOpts []string) error {
 			// print version if asked for it
