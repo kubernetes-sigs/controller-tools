@@ -13,16 +13,12 @@ This project uses Go modules to manage its dependencies, so feel free to work fr
 of your `GOPATH`. However, if you'd like to continue to work from within your `GOPATH`, please
 export `GO111MODULE=on`.
 
-!!! tip "Building controller-gen"
-    Some projects may not require all the libraries but just need the controller-gen binary
-    or a particular version of it.
-    The controller-gen can be built by running the following -
+If just the controller-gen binary is required then run-
 
-    `go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1`
+    go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
 
-     Note: `GO111MODULE=on` is required and the controller-gen binary would be installed
-     at `$GOPATH/bin`, see also
-     [`#520`](https://github.com/kubernetes-sigs/controller-tools/issues/520).
+Please export `GO111MODULE=on` and the binary would be installed at `$GOPATH/bin`, 
+ see also [`#520`](https://github.com/kubernetes-sigs/controller-tools/issues/520).
 
 
 ## Releasing and Versioning
