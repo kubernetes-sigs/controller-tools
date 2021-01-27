@@ -52,6 +52,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "specifies the target API versions of the CRD type itself to generate. Defaults to v1. ",
 				Details: "The first version listed will be assumed to be the \"default\" version and will not get a version suffix in the output filename. \n You'll need to use \"v1\" to get support for features like defaulting, along with an API server that supports it (Kubernetes 1.16+).",
 			},
+			"GenerateEmbeddedObjectMeta": markers.DetailedHelp{
+				Summary: "specifies if any embedded ObjectMeta in the CRD should be generated",
+				Details: "",
+			},
 		},
 	}
 }
