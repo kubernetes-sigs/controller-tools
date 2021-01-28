@@ -40,6 +40,22 @@ func (Default) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (DeprecatedVersion) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks this version as deprecated.",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"Warning": markers.DetailedHelp{
+				Summary: "message to be shown on the deprecated version",
+				Details: "",
+			},
+		},
+	}
+}
+
 func (Enum) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
