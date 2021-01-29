@@ -154,6 +154,10 @@ type CronJobSpec struct {
 
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
+
+	// This tests that the schemaless marker works
+	// +kubebuilder:validation:Schemaless
+	Schemaless []byte `json:"schemaless,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object
