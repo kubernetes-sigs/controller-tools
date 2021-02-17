@@ -197,7 +197,6 @@ func removeDescriptionFromMetadataProps(v *apiext.JSONSchemaProps) {
 	if m, ok := v.Properties["metadata"]; ok {
 		meta := &m
 		if meta.Description != "" {
-			fmt.Fprintf(os.Stderr, "Warning: metadata description unsupported. Removing description: %s\n", meta.Description)
 			meta.Description = ""
 			v.Properties["metadata"] = m
 
@@ -220,7 +219,6 @@ func removeDescriptionFromMetadataPropsLegacy(v *apiextlegacy.JSONSchemaProps) {
 	if m, ok := v.Properties["metadata"]; ok {
 		meta := &m
 		if meta.Description != "" {
-			fmt.Fprintf(os.Stderr, "Warning: metadata description unsupported. Removing description: %s\n", meta.Description)
 			meta.Description = ""
 			v.Properties["metadata"] = m
 
