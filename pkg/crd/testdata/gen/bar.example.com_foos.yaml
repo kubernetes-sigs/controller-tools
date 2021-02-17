@@ -29,6 +29,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: Spec comments SHOULD appear in the CRD spec
             properties:
               defaultedString:
                 default: fooDefaultString
@@ -38,6 +39,7 @@ spec:
             - defaultedString
             type: object
           status:
+            description: Status comments SHOULD appear in the CRD spec
             type: object
         type: object
     served: true

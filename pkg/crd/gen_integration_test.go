@@ -67,7 +67,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		}
 	})
 
-	It("should strip v1beta1 CRDs of default fields", func() {
+	It("should strip v1beta1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
 		gen := &crd.Generator{
 			CRDVersions: []string{"v1beta1"},
@@ -84,7 +84,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 	})
 
-	It("should not strip v1 CRDs of default fields", func() {
+	It("should not strip v1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
 		gen := &crd.Generator{
 			CRDVersions: []string{"v1"},
