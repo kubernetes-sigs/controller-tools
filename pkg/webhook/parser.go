@@ -282,7 +282,12 @@ func (c Config) webhookVersions() ([]string, error) {
 // +controllertools:marker:generateHelp
 
 // Generator generates (partial) {Mutating,Validating}WebhookConfiguration objects.
-type Generator struct{}
+type Generator struct {
+	// MutatingName specifies the webhook mutating configuration name,if empty default is mutating-webhook-configuration.
+	MutatingName string `marker:",optional"`
+	// ValidatingName specifies the webhook mutating configuration name,if empty default is validating-webhook-configuration.
+	ValidatingName string `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := into.Register(ConfigDefinition); err != nil {
@@ -291,8 +296,22 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	into.AddHelp(ConfigDefinition, Config{}.Help())
 	return nil
 }
+func (g Generator) generateMutateName() string {
+	name := g.MutatingName
+	if name == "" {
+		name = "mutating-webhook-configuration"
+	}
+	return name
+}
 
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) generateValidateName() string {
+	name := g.ValidatingName
+	if name == "" {
+		name = "validating-webhook-configuration"
+	}
+	return name
+}
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
@@ -340,7 +359,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 				Version: version,
 				Kind:    "MutatingWebhookConfiguration",
 			})
-			objRaw.SetName("mutating-webhook-configuration")
+			objRaw.SetName(g.generateMutateName())
 			objRaw.Webhooks = cfgs
 			switch version {
 			case admissionregv1.SchemeGroupVersion.Version:
@@ -370,7 +389,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 				Version: version,
 				Kind:    "ValidatingWebhookConfiguration",
 			})
-			objRaw.SetName("validating-webhook-configuration")
+			objRaw.SetName(g.generateValidateName())
 			objRaw.Webhooks = cfgs
 			switch version {
 			case admissionregv1.SchemeGroupVersion.Version:
