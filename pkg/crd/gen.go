@@ -286,9 +286,7 @@ func FixTopLevelMetadata(crd apiext.CustomResourceDefinition) {
 				schemaProperties["metadata"] = apiext.JSONSchemaProps{Type: "object"}
 			}
 		}
-
 	}
-
 }
 
 // toTrivialVersions strips out all schemata except for the storage schema,

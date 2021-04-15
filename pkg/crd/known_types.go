@@ -118,7 +118,8 @@ var ObjectMetaPackages = map[string]PackageOverride{
 		if f, ok := KnownPackages["k8s.io/apimachinery/pkg/apis/meta/v1"]; ok {
 			f(p, pkg)
 		}
-		// This is a allow-listed set of properties of ObjectMeta, other runtime properties are not part of this list
+		// This is an allow-listed set of properties of ObjectMeta, other runtime properties are not part of this list
+		// See more discussion: https://github.com/kubernetes-sigs/controller-tools/pull/395#issuecomment-691919433
 		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiext.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]apiext.JSONSchemaProps{
