@@ -165,12 +165,12 @@ type CronJobSpec struct {
 	// Checks that multiply-nested maps work
 	NestedNestedMap map[string]map[string]map[string]string `json:"nestedNestedMap,omitempty"`
 
-        // Checks that maps containing types that contain maps work
-        ContainsNestedMapMap map[string]ContainsNestedMap `json:"nestedMapInStruct,omitempty"`
+	// Checks that maps containing types that contain maps work
+	ContainsNestedMapMap map[string]ContainsNestedMap `json:"nestedMapInStruct,omitempty"`
 }
 
 type ContainsNestedMap struct {
-        InnerMap map[string]string `json:"innerMap,omitempty"`
+	InnerMap map[string]string `json:"innerMap,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object
