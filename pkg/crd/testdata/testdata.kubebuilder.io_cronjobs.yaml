@@ -3961,6 +3961,16 @@ spec:
                   type: object
                 description: Checks that nested maps work
                 type: object
+              nestedMapInStruct:
+                additionalProperties:
+                  properties:
+                    innerMap:
+                      additionalProperties:
+                        type: string
+                      type: object
+                  type: object
+                description: Checks that maps containing types that contain maps work
+                type: object
               nestedNestedMap:
                 additionalProperties:
                   additionalProperties:
