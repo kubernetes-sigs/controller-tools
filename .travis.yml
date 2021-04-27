@@ -5,7 +5,7 @@ os:
   - osx
 
 go:
-- "1.13"
+- "1.16"
 
 git:
   depth: 3
@@ -13,7 +13,7 @@ git:
 go_import_path: sigs.k8s.io/controller-tools
 
 install:
-- curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.6
+- curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.32.0
 
 script:
 - GO111MODULE=on TRACE=1 ./test.sh
