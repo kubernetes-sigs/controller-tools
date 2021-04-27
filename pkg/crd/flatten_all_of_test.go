@@ -49,7 +49,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("flattening a schema with at one branch set as Nullable")
 			original := &apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiNullable": apiext.JSONSchemaProps{
+					"multiNullable": {
 						AllOf: []apiext.JSONSchemaProps{
 							{Nullable: true}, {Nullable: false}, {Nullable: false},
 						},
@@ -62,7 +62,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("ensuring that the result has no branches and is nullable")
 			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiNullable": apiext.JSONSchemaProps{Nullable: true},
+					"multiNullable": {Nullable: true},
 				},
 			}))
 		})
@@ -71,7 +71,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("flattening a schema with at no branches set as Nullable")
 			original := &apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiNullable": apiext.JSONSchemaProps{
+					"multiNullable": {
 						AllOf: []apiext.JSONSchemaProps{
 							{Nullable: false}, {Nullable: false}, {Nullable: false},
 						},
@@ -84,7 +84,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("ensuring that the result has no branches and is not nullable")
 			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiNullable": apiext.JSONSchemaProps{Nullable: false},
+					"multiNullable": {Nullable: false},
 				},
 			}))
 		})
@@ -113,7 +113,7 @@ var _ = Describe("AllOf Flattening", func() {
 			defOne := int64(1)
 			original := &apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiAdditionalProps": apiext.JSONSchemaProps{
+					"multiAdditionalProps": {
 						AllOf: []apiext.JSONSchemaProps{
 							{
 								AdditionalProperties: &apiext.JSONSchemaPropsOrBool{Schema: &apiext.JSONSchemaProps{
@@ -145,7 +145,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("ensuring that the result has the minimal set of AllOf branches required, pushed inside AdditionalProperites")
 			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiAdditionalProps": apiext.JSONSchemaProps{
+					"multiAdditionalProps": {
 						AdditionalProperties: &apiext.JSONSchemaPropsOrBool{Schema: &apiext.JSONSchemaProps{
 							Nullable:  true,
 							MaxLength: &defSeven,
@@ -164,7 +164,7 @@ var _ = Describe("AllOf Flattening", func() {
 			By("flattening a schema with a single property with two different types")
 			crd.FlattenEmbedded(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"multiType": apiext.JSONSchemaProps{AllOf: []apiext.JSONSchemaProps{{Type: "string"}, {Type: "int"}}},
+					"multiType": {AllOf: []apiext.JSONSchemaProps{{Type: "string"}, {Type: "int"}}},
 				},
 			}, errRec)
 
@@ -202,21 +202,21 @@ var _ = Describe("AllOf Flattening", func() {
 				AllOf: []apiext.JSONSchemaProps{
 					{
 						Properties: map[string]apiext.JSONSchemaProps{
-							"nonConflicting":    apiext.JSONSchemaProps{Type: "string"},
-							"conflicting1":      apiext.JSONSchemaProps{Type: "string", Format: "date-time"},
-							"nonConflictingDup": apiext.JSONSchemaProps{Type: "bool"},
+							"nonConflicting":    {Type: "string"},
+							"conflicting1":      {Type: "string", Format: "date-time"},
+							"nonConflictingDup": {Type: "bool"},
 						},
 					},
 					{
 						Properties: map[string]apiext.JSONSchemaProps{
-							"conflicting1": apiext.JSONSchemaProps{Type: "string", MinLength: &defOne},
-							"conflicting2": apiext.JSONSchemaProps{Type: "int", MultipleOf: &defSeven},
+							"conflicting1": {Type: "string", MinLength: &defOne},
+							"conflicting2": {Type: "int", MultipleOf: &defSeven},
 						},
 					},
 					{
 						Properties: map[string]apiext.JSONSchemaProps{
-							"conflicting2":      apiext.JSONSchemaProps{Type: "int", MultipleOf: &defEight},
-							"nonConflictingDup": apiext.JSONSchemaProps{Type: "bool"},
+							"conflicting2":      {Type: "int", MultipleOf: &defEight},
+							"nonConflictingDup": {Type: "bool"},
 						},
 					},
 				},
@@ -227,14 +227,14 @@ var _ = Describe("AllOf Flattening", func() {
 			By("ensuring that the result has the minimal set of AllOf branches required, pushed inside Properties")
 			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"nonConflicting":    apiext.JSONSchemaProps{Type: "string"},
-					"nonConflictingDup": apiext.JSONSchemaProps{Type: "bool"},
-					"conflicting1": apiext.JSONSchemaProps{
+					"nonConflicting":    {Type: "string"},
+					"nonConflictingDup": {Type: "bool"},
+					"conflicting1": {
 						Type:      "string",
 						Format:    "date-time",
 						MinLength: &defOne,
 					},
-					"conflicting2": apiext.JSONSchemaProps{
+					"conflicting2": {
 						Type:  "int",
 						AllOf: []apiext.JSONSchemaProps{{MultipleOf: &defSeven}, {MultipleOf: &defEight}},
 					},
@@ -297,9 +297,9 @@ var _ = Describe("AllOf Flattening", func() {
 				AllOf: []apiext.JSONSchemaProps{
 					{
 						Properties: map[string]apiext.JSONSchemaProps{
-							"prop1": apiext.JSONSchemaProps{
+							"prop1": {
 								Properties: map[string]apiext.JSONSchemaProps{
-									"prop2": apiext.JSONSchemaProps{
+									"prop2": {
 										Type:    "string",
 										Pattern: "^[abc]+$",
 									},
@@ -309,9 +309,9 @@ var _ = Describe("AllOf Flattening", func() {
 					},
 					{
 						Properties: map[string]apiext.JSONSchemaProps{
-							"prop1": apiext.JSONSchemaProps{
+							"prop1": {
 								Properties: map[string]apiext.JSONSchemaProps{
-									"prop2": apiext.JSONSchemaProps{
+									"prop2": {
 										Pattern: "^(bc)+$",
 									},
 								},
@@ -326,9 +326,9 @@ var _ = Describe("AllOf Flattening", func() {
 			By("ensuring that the result has the minimal AllOf branches possible")
 			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"prop1": apiext.JSONSchemaProps{
+					"prop1": {
 						Properties: map[string]apiext.JSONSchemaProps{
-							"prop2": apiext.JSONSchemaProps{
+							"prop2": {
 								Type:  "string",
 								AllOf: []apiext.JSONSchemaProps{{Pattern: "^[abc]+$"}, {Pattern: "^(bc)+$"}},
 							},

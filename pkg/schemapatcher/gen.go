@@ -434,7 +434,7 @@ func crdsFromDirectory(ctx *genall.GenerationContext, dir string) (map[schema.Gr
 		groupKind := schema.GroupKind{Group: actualCRD.Spec.Group, Kind: actualCRD.Spec.Names.Kind}
 		var versions map[string]struct{}
 		if len(actualCRD.Spec.Versions) == 0 {
-			versions = map[string]struct{}{actualCRD.Spec.Version: struct{}{}}
+			versions = map[string]struct{}{actualCRD.Spec.Version: {}}
 		} else {
 			versions = make(map[string]struct{}, len(actualCRD.Spec.Versions))
 			for _, ver := range actualCRD.Spec.Versions {

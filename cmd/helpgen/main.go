@@ -105,7 +105,7 @@ func (Generator) RegisterMarkers(reg *markers.Registry) error {
 			Details: "Type-level godoc becomes general marker summary (first line) and details (other lines).  Field-level godoc similarly becomes marker field help.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
-			"Category": markers.DetailedHelp{
+			"Category": {
 				Summary: "indicates the general category to which this marker belongs",
 			},
 		},
@@ -197,8 +197,8 @@ func (Generator) Help() *markers.DefinitionHelp {
 			Summary: "generates marker help using godoc, based on the presence of a particular marker",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
-			"HeaderFile": markers.DetailedHelp{Summary: "the file containing the header to use for generated files"},
-			"Year":       markers.DetailedHelp{Summary: "replace \" YEAR\" in the header with this value."},
+			"HeaderFile": {Summary: "the file containing the header to use for generated files"},
+			"Year":       {Summary: "replace \" YEAR\" in the header with this value."},
 		},
 	}
 }
