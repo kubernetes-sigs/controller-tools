@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd paths=./;./deprecated;./unserved output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -288,6 +288,7 @@ type CronJobStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:singular=mycronjob
+// +kubebuilder:storageversion
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
