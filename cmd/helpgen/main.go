@@ -134,7 +134,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 
 			for _, field := range info.Fields {
 				summary, details := godocToDetails(field.Name, field.Doc)
-				fmt.Fprintf(outContent, "%[1]q: markers.DetailedHelp{\nSummary: %[2]q,\n Details: %[3]q,\n},\n", field.Name, summary, details)
+				fmt.Fprintf(outContent, "%[1]q: {\nSummary: %[2]q,\n Details: %[3]q,\n},\n", field.Name, summary, details)
 			}
 
 			summary, details := godocToDetails(info.Name, info.Doc)
