@@ -128,6 +128,7 @@ golangci-lint run --disable-all \
     --enable=misspell \
     --enable=gocyclo \
     --enable=gosec \
+    --enable=gofmt \
     --deadline=5m \
     ./pkg/... ./cmd/...
 

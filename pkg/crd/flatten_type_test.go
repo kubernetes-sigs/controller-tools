@@ -80,13 +80,13 @@ var _ = Describe("General Schema Flattening", func() {
 			toLeafAlias := crd.TypeRefLink("", leafAliasType.Name)
 			toLeaf := crd.TypeRefLink("other", leafType.Name)
 			fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-				rootType: apiext.JSONSchemaProps{
+				rootType: {
 					Properties: map[string]apiext.JSONSchemaProps{
-						"refProp": apiext.JSONSchemaProps{Ref: &toLeafAlias},
+						"refProp": {Ref: &toLeafAlias},
 					},
 				},
-				leafAliasType: apiext.JSONSchemaProps{Ref: &toLeaf},
-				leafType: apiext.JSONSchemaProps{
+				leafAliasType: {Ref: &toLeaf},
+				leafType: {
 					Type:    "string",
 					Pattern: "^[abc]$",
 				},
@@ -102,7 +102,7 @@ var _ = Describe("General Schema Flattening", func() {
 			By("verifying that it was flattened to have no references")
 			Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"refProp": apiext.JSONSchemaProps{
+					"refProp": {
 						Type: "string", Pattern: "^[abc]$",
 					},
 				},
@@ -114,13 +114,13 @@ var _ = Describe("General Schema Flattening", func() {
 			toLeafAlias := crd.TypeRefLink("", leafAliasType.Name)
 			toLeaf := crd.TypeRefLink("", inPkgLeafType.Name)
 			fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-				rootType: apiext.JSONSchemaProps{
+				rootType: {
 					Properties: map[string]apiext.JSONSchemaProps{
-						"refProp": apiext.JSONSchemaProps{Ref: &toLeafAlias},
+						"refProp": {Ref: &toLeafAlias},
 					},
 				},
-				leafAliasType: apiext.JSONSchemaProps{Ref: &toLeaf},
-				inPkgLeafType: apiext.JSONSchemaProps{Ref: &toLeafAlias},
+				leafAliasType: {Ref: &toLeaf},
+				inPkgLeafType: {Ref: &toLeafAlias},
 			}
 
 			By("flattening the type hierarchy")
@@ -136,7 +136,7 @@ var _ = Describe("General Schema Flattening", func() {
 			By("verifying that it was flattened to *something*")
 			Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 				Properties: map[string]apiext.JSONSchemaProps{
-					"refProp": apiext.JSONSchemaProps{
+					"refProp": {
 						Ref: &toLeafAlias,
 					},
 				},
@@ -149,19 +149,19 @@ var _ = Describe("General Schema Flattening", func() {
 		toSubtype := crd.TypeRefLink("", subtypeWithRefs.Name)
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
 		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-			rootType: apiext.JSONSchemaProps{
+			rootType: {
 				Properties: map[string]apiext.JSONSchemaProps{
-					"refProp": apiext.JSONSchemaProps{Ref: &toSubtype},
+					"refProp": {Ref: &toSubtype},
 				},
 			},
-			subtypeWithRefs: apiext.JSONSchemaProps{
+			subtypeWithRefs: {
 				AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
 					Schema: &apiext.JSONSchemaProps{
 						Ref: &toLeaf,
 					},
 				},
 			},
-			leafType: apiext.JSONSchemaProps{
+			leafType: {
 				Type:    "string",
 				Pattern: "^[abc]$",
 			},
@@ -175,7 +175,7 @@ var _ = Describe("General Schema Flattening", func() {
 		By("verifying that it was flattened to have no references")
 		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 			Properties: map[string]apiext.JSONSchemaProps{
-				"refProp": apiext.JSONSchemaProps{
+				"refProp": {
 					AllOf: []apiext.JSONSchemaProps{
 						{
 							AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
@@ -200,26 +200,26 @@ var _ = Describe("General Schema Flattening", func() {
 		defThree := int64(3)
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
 		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-			rootType: apiext.JSONSchemaProps{
+			rootType: {
 				Properties: map[string]apiext.JSONSchemaProps{
-					"useWithOtherPattern": apiext.JSONSchemaProps{
+					"useWithOtherPattern": {
 						Ref:         &toLeaf,
 						Pattern:     "^[cde]$",
 						Description: "has other pattern",
 					},
-					"useWithMinLen": apiext.JSONSchemaProps{
+					"useWithMinLen": {
 						Ref:         &toLeaf,
 						MinLength:   &defOne,
 						Description: "has min len",
 					},
-					"useWithMaxLen": apiext.JSONSchemaProps{
+					"useWithMaxLen": {
 						Ref:         &toLeaf,
 						MaxLength:   &defThree,
 						Description: "has max len",
 					},
 				},
 			},
-			leafType: apiext.JSONSchemaProps{
+			leafType: {
 				Type:    "string",
 				Pattern: "^[abc]$",
 			},
@@ -233,21 +233,21 @@ var _ = Describe("General Schema Flattening", func() {
 		By("verifying that each use has its own properties set in allof branches")
 		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 			Properties: map[string]apiext.JSONSchemaProps{
-				"useWithOtherPattern": apiext.JSONSchemaProps{
+				"useWithOtherPattern": {
 					AllOf: []apiext.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{Pattern: "^[cde]$"},
 					},
 					Description: "has other pattern",
 				},
-				"useWithMinLen": apiext.JSONSchemaProps{
+				"useWithMinLen": {
 					AllOf: []apiext.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{MinLength: &defOne},
 					},
 					Description: "has min len",
 				},
-				"useWithMaxLen": apiext.JSONSchemaProps{
+				"useWithMaxLen": {
 					AllOf: []apiext.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{MaxLength: &defThree},
@@ -262,19 +262,19 @@ var _ = Describe("General Schema Flattening", func() {
 		By("setting up a series of types RootType --> LeafType with 3 doc-only uses")
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
 		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-			rootType: apiext.JSONSchemaProps{
+			rootType: {
 				Properties: map[string]apiext.JSONSchemaProps{
-					"hasTitle": apiext.JSONSchemaProps{
+					"hasTitle": {
 						Ref:         &toLeaf,
 						Description: "has title",
 						Title:       "some title",
 					},
-					"hasExample": apiext.JSONSchemaProps{
+					"hasExample": {
 						Ref:         &toLeaf,
 						Description: "has example",
 						Example:     &apiext.JSON{Raw: []byte("[42]")},
 					},
-					"hasExternalDocs": apiext.JSONSchemaProps{
+					"hasExternalDocs": {
 						Ref:         &toLeaf,
 						Description: "has external docs",
 						ExternalDocs: &apiext.ExternalDocumentation{
@@ -284,7 +284,7 @@ var _ = Describe("General Schema Flattening", func() {
 					},
 				},
 			},
-			leafType: apiext.JSONSchemaProps{
+			leafType: {
 				Type:    "string",
 				Pattern: "^[abc]$",
 			},
@@ -298,17 +298,17 @@ var _ = Describe("General Schema Flattening", func() {
 		By("verifying that each use has its own properties set in allof branches")
 		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 			Properties: map[string]apiext.JSONSchemaProps{
-				"hasTitle": apiext.JSONSchemaProps{
+				"hasTitle": {
 					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has title",
 					Title:       "some title",
 				},
-				"hasExample": apiext.JSONSchemaProps{
+				"hasExample": {
 					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has example",
 					Example:     &apiext.JSON{Raw: []byte("[42]")},
 				},
-				"hasExternalDocs": apiext.JSONSchemaProps{
+				"hasExternalDocs": {
 					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has external docs",
 					ExternalDocs: &apiext.ExternalDocumentation{
@@ -325,27 +325,27 @@ var _ = Describe("General Schema Flattening", func() {
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
 		toSubtype := crd.TypeRefLink("", subtypeWithRefs.Name)
 		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
-			rootType: apiext.JSONSchemaProps{
+			rootType: {
 				Properties: map[string]apiext.JSONSchemaProps{
-					"isRef": apiext.JSONSchemaProps{
+					"isRef": {
 						Ref: &toSubtype,
 					},
-					"notRef": apiext.JSONSchemaProps{
+					"notRef": {
 						Type: "int",
 					},
 				},
 			},
-			subtypeWithRefs: apiext.JSONSchemaProps{
+			subtypeWithRefs: {
 				Properties: map[string]apiext.JSONSchemaProps{
-					"leafRef": apiext.JSONSchemaProps{
+					"leafRef": {
 						Ref: &toLeaf,
 					},
-					"alsoNotRef": apiext.JSONSchemaProps{
+					"alsoNotRef": {
 						Type: "bool",
 					},
 				},
 			},
-			leafType: apiext.JSONSchemaProps{
+			leafType: {
 				Type:    "string",
 				Pattern: "^[abc]$",
 			},
@@ -359,16 +359,16 @@ var _ = Describe("General Schema Flattening", func() {
 		By("verifying that each use has its own properties set in allof branches")
 		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
 			Properties: map[string]apiext.JSONSchemaProps{
-				"isRef": apiext.JSONSchemaProps{
+				"isRef": {
 					AllOf: []apiext.JSONSchemaProps{
 						{
 							Properties: map[string]apiext.JSONSchemaProps{
-								"leafRef": apiext.JSONSchemaProps{
+								"leafRef": {
 									AllOf: []apiext.JSONSchemaProps{
 										{Type: "string", Pattern: "^[abc]$"}, {},
 									},
 								},
-								"alsoNotRef": apiext.JSONSchemaProps{
+								"alsoNotRef": {
 									Type: "bool",
 								},
 							},
@@ -376,7 +376,7 @@ var _ = Describe("General Schema Flattening", func() {
 						{},
 					},
 				},
-				"notRef": apiext.JSONSchemaProps{
+				"notRef": {
 					Type: "int",
 				},
 			},

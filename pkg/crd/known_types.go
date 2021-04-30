@@ -123,13 +123,13 @@ var ObjectMetaPackages = map[string]PackageOverride{
 		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiext.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]apiext.JSONSchemaProps{
-				"name": apiext.JSONSchemaProps{
+				"name": {
 					Type: "string",
 				},
-				"namespace": apiext.JSONSchemaProps{
+				"namespace": {
 					Type: "string",
 				},
-				"annotations": apiext.JSONSchemaProps{
+				"annotations": {
 					Type: "object",
 					AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
 						Schema: &apiext.JSONSchemaProps{
@@ -137,7 +137,7 @@ var ObjectMetaPackages = map[string]PackageOverride{
 						},
 					},
 				},
-				"labels": apiext.JSONSchemaProps{
+				"labels": {
 					Type: "object",
 					AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
 						Schema: &apiext.JSONSchemaProps{
@@ -145,7 +145,7 @@ var ObjectMetaPackages = map[string]PackageOverride{
 						},
 					},
 				},
-				"finalizers": apiext.JSONSchemaProps{
+				"finalizers": {
 					Type: "array",
 					Items: &apiext.JSONSchemaPropsOrArray{
 						Schema: &apiext.JSONSchemaProps{

@@ -38,7 +38,7 @@ var _ = Describe("CRD Generation", func() {
 									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 									},
 								},
 							},
@@ -50,7 +50,7 @@ var _ = Describe("CRD Generation", func() {
 					OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 						Required:   []string{"foo"},
 						Type:       "object",
-						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 					},
 				}))
 				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
@@ -67,7 +67,7 @@ var _ = Describe("CRD Generation", func() {
 									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 									},
 								},
 							},
@@ -78,7 +78,7 @@ var _ = Describe("CRD Generation", func() {
 									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 									},
 								},
 							},
@@ -90,7 +90,7 @@ var _ = Describe("CRD Generation", func() {
 					OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 						Required:   []string{"foo"},
 						Type:       "object",
-						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+						Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 					},
 				}))
 				Expect(spec.Spec.Versions).To(Equal([]apiextlegacy.CustomResourceDefinitionVersion{
@@ -107,7 +107,7 @@ var _ = Describe("CRD Generation", func() {
 								Schema: &apiextlegacy.CustomResourceValidation{
 									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Type:       "object",
-										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 									},
 								},
 							},
@@ -118,7 +118,7 @@ var _ = Describe("CRD Generation", func() {
 									OpenAPIV3Schema: &apiextlegacy.JSONSchemaProps{
 										Required:   []string{"foo"},
 										Type:       "object",
-										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": apiextlegacy.JSONSchemaProps{Type: "string"}},
+										Properties: map[string]apiextlegacy.JSONSchemaProps{"foo": {Type: "string"}},
 									},
 								},
 							},
