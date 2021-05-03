@@ -427,6 +427,10 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 		format = "int32"
 	case types.Int64, types.Uint64:
 		format = "int64"
+	case types.Float32:
+		format = "float"
+	case types.Float64, types.UntypedFloat:
+		format = "double"
 	}
 
 	return typ, format, nil
