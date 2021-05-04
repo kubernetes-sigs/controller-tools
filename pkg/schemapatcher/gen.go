@@ -84,6 +84,9 @@ type Generator struct {
 	// n indicates limit the description to at most n characters and truncate the description to
 	// closest sentence boundary if it exceeds n characters.
 	MaxDescLen *int `marker:",optional"`
+
+	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta in the CRD should be generated
+	GenerateEmbeddedObjectMeta *bool `marker:",optional"`
 }
 
 var _ genall.Generator = &Generator{}
@@ -100,6 +103,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 	parser := &crdgen.Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
+		// Indicates the parser on whether to register the ObjectMeta type or not
+		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta == true,
 	}
 
 	crdgen.AddKnownTypes(parser)
@@ -142,6 +147,12 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 				fullSchema = *fullSchema.DeepCopy()
 				crdgen.TruncateDescription(&fullSchema, *g.MaxDescLen)
 			}
+
+			// Fix top level ObjectMeta regardless of the settings.
+			if _, ok := fullSchema.Properties["metadata"]; ok {
+				fullSchema.Properties["metadata"] = apiext.JSONSchemaProps{Type: "object"}
+			}
+
 			existingSet.NewSchemata[gv.Version] = fullSchema
 		}
 	}
