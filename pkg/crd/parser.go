@@ -73,7 +73,7 @@ type Parser struct {
 
 	flattener *Flattener
 
-	// AllowDangerousTypes controls the handling of non-recommended types such as float. If
+	// AllowDangerousTypes controls the handling of non-recommended types such as float, nested map. If
 	// false (the default), these types are not supported.
 	// There is a continuum here:
 	//    1. Types that are always supported.

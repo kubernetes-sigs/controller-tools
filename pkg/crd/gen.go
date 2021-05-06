@@ -64,6 +64,7 @@ type Generator struct {
 	// Currently the following additional types are allowed when this is true:
 	// float32
 	// float64
+	// nested maps: Ex: map[string]map[string]string . Also see crd/testdata/dangerous_types/types.go
 	//
 	// Left unspecified, the default is false
 	AllowDangerousTypes *bool `marker:",optional"`

@@ -299,13 +299,19 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 	case *ast.ArrayType:
 		valSchema = arrayToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 		if valSchema.Type == "array" && valSchema.Items.Schema.Type != "string" {
-			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("not a supported map value type: %T", mapType.Value), mapType.Value))
 			return &apiext.JSONSchemaProps{}
 		}
 	case *ast.StarExpr:
 		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
+	case *ast.MapType:
+		if ctx.allowDangerousTypes {
+			valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
+		} else {
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("nested maps are not supported by default. They are only supported with 'allowDangerousTypes' flag"), mapType.Value))
+		}
 	default:
-		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map values must be a named type, not %T", mapType.Value), mapType.Value))
+		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("not a supported map value type: %T", mapType.Value), mapType.Value))
 		return &apiext.JSONSchemaProps{}
 	}
 
