@@ -24,7 +24,9 @@ import (
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextlegacy "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/yaml"
 
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -32,6 +34,50 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 	"sigs.k8s.io/controller-tools/pkg/version"
 )
+
+type HackyCRD struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// spec describes how the user wants the resources to appear
+	Spec HackyCRDSpec `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+	// status indicates the actual state of the CustomResourceDefinition
+	// +optional
+	Status apiext.CustomResourceDefinitionStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+type HackyCRDSpec struct {
+	// group is the API group of the defined custom resource.
+	// The custom resources are served under `/apis/<group>/...`.
+	// Must match the name of the CustomResourceDefinition (in the form `<names.plural>.<group>`).
+	Group string `json:"group" protobuf:"bytes,1,opt,name=group"`
+	// names specify the resource and kind names for the custom resource.
+	Names apiext.CustomResourceDefinitionNames `json:"names" protobuf:"bytes,3,opt,name=names"`
+	// scope indicates whether the defined custom resource is cluster- or namespace-scoped.
+	// Allowed values are `Cluster` and `Namespaced`.
+	Scope apiext.ResourceScope `json:"scope" protobuf:"bytes,4,opt,name=scope,casttype=ResourceScope"`
+	// versions is the list of all API versions of the defined custom resource.
+	// Version names are used to compute the order in which served versions are listed in API discovery.
+	// If the version string is "kube-like", it will sort above non "kube-like" version strings, which are ordered
+	// lexicographically. "Kube-like" versions start with a "v", then are followed by a number (the major version),
+	// then optionally the string "alpha" or "beta" and another number (the minor version). These are sorted first
+	// by GA > beta > alpha (where GA is a version with no suffix such as beta or alpha), and then by comparing
+	// major version, then minor version. An example sorted list of versions:
+	// v10, v2, v1, v11beta2, v10beta3, v3beta1, v12alpha1, v11alpha2, foo1, foo10.
+	Versions []apiext.CustomResourceDefinitionVersion `json:"versions" protobuf:"bytes,7,rep,name=versions"`
+
+	// conversion defines conversion settings for the CRD.
+	// +optional
+	Conversion *apiext.CustomResourceConversion `json:"conversion,omitempty" protobuf:"bytes,9,opt,name=conversion"`
+
+	// preserveUnknownFields indicates that object fields which are not specified
+	// in the OpenAPI schema should be preserved when persisting to storage.
+	// apiVersion, kind, metadata and known fields inside metadata are always preserved.
+	// This field is deprecated in favor of setting `x-preserve-unknown-fields` to true in `spec.versions[*].schema.openAPIV3Schema`.
+	// See https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#pruning-versus-preserving-unknown-fields for details.
+	// +optional
+	PreserveUnknownFields bool `json:"preserveUnknownFields" protobuf:"varint,10,opt,name=preserveUnknownFields"`
+}
 
 // The default CustomResourceDefinition version to generate.
 const defaultVersion = "v1"
@@ -160,33 +206,58 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		v1beta1Only := len(crdVersions) == 1 && crdVersions[0] == "v1beta1"
 		switch {
 		case (g.PreserveUnknownFields == nil || *g.PreserveUnknownFields) && v1beta1Only:
+			fmt.Println("v1beta1Only")
 			crd := versionedCRDs[0].(*apiextlegacy.CustomResourceDefinition)
 			crd.Spec.PreserveUnknownFields = nil
 		case g.PreserveUnknownFields == nil, g.PreserveUnknownFields != nil && !*g.PreserveUnknownFields:
+			fmt.Println("v1 force true")
 			// it'll be false here (coming from v1) -- leave it as such
+			//crd := versionedCRDs[0].(*apiext.CustomResourceDefinition)
+			//crd.Spec.PreserveUnknownFields = true
 		default:
 			return fmt.Errorf("you may only set PreserveUnknownFields to true with v1beta1 CRDs")
 		}
 
 		for i, crd := range versionedCRDs {
-			// defaults are not allowed to be specified in v1beta1 CRDs and
-			// decriptions are not allowed on the metadata regardless of version
-			// strip them before writing to a file
-			if crdVersions[i] == "v1beta1" {
-				removeDefaultsFromSchemas(crd.(*apiextlegacy.CustomResourceDefinition))
-				removeDescriptionFromMetadataLegacy(crd.(*apiextlegacy.CustomResourceDefinition))
-			} else {
-				removeDescriptionFromMetadata(crd.(*apiext.CustomResourceDefinition))
-			}
 			var fileName string
 			if i == 0 {
 				fileName = fmt.Sprintf("%s_%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural)
 			} else {
 				fileName = fmt.Sprintf("%s_%s.%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural, crdVersions[i])
 			}
-			if err := ctx.WriteYAML(fileName, crd); err != nil {
-				return err
+			// defaults are not allowed to be specified in v1beta1 CRDs and
+			// decriptions are not allowed on the metadata regardless of version
+			// strip them before writing to a file
+			if crdVersions[i] == "v1beta1" {
+				removeDefaultsFromSchemas(crd.(*apiextlegacy.CustomResourceDefinition))
+				removeDescriptionFromMetadataLegacy(crd.(*apiextlegacy.CustomResourceDefinition))
+				//v1beta1crd := crd.(*apiextlegacy.CustomResourceDefinition)
+				//fmt.Printf("v1beta1crd = %+v\n", v1beta1crd)
+				if err := ctx.WriteYAML(fileName, crd); err != nil {
+					return err
+				}
+			} else {
+				removeDescriptionFromMetadata(crd.(*apiext.CustomResourceDefinition))
+				v1crd := crd.(*apiext.CustomResourceDefinition)
+				//v1crd.Spec.PreserveUnknownFields = true
+
+				newCRD := &HackyCRD{}
+				yamlContent, err := yaml.Marshal(v1crd)
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal crd: %v", err)
+				}
+				yaml.Unmarshal(yamlContent, newCRD)
+				fmt.Printf("gen yamlContent = %+v\n", string(yamlContent))
+				if err := ctx.WriteYAML(fileName, newCRD); err != nil {
+					return err
+				}
+
+				//fmt.Printf("v1crd = %+v\n", v1crd)
 			}
+			//fmt.Printf("crdRaw = %+v\n", crdRaw)
+			//if err := ctx.WriteYAML(fileName, crd); err != nil {
+			//	return err
+			//}
 		}
 	}
 

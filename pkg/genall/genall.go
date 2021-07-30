@@ -129,7 +129,9 @@ func (g GenerationContext) WriteYAML(itemPath string, objs ...interface{}) error
 	defer out.Close()
 
 	for _, obj := range objs {
+		fmt.Printf("obj = %+v\n", obj)
 		yamlContent, err := yaml.Marshal(obj)
+		fmt.Printf("yamlContent = %+v\n", string(yamlContent))
 		if err != nil {
 			return err
 		}

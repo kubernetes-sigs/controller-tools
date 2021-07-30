@@ -67,10 +67,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		}
 	})
 
-	It("should strip v1beta1 CRDs of default fields and metadata description", func() {
+	FIt("should strip v1beta1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
+		b := false
 		gen := &crd.Generator{
-			CRDVersions: []string{"v1beta1"},
+			CRDVersions:           []string{"v1beta1"},
+			PreserveUnknownFields: &b,
 		}
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
@@ -84,10 +86,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 	})
 
-	It("should not strip v1 CRDs of default fields and metadata description", func() {
+	FIt("should not strip v1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
+		b := false
 		gen := &crd.Generator{
-			CRDVersions: []string{"v1"},
+			CRDVersions:           []string{"v1"},
+			PreserveUnknownFields: &b,
 		}
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
