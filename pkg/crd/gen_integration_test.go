@@ -67,7 +67,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		}
 	})
 
-	FIt("should strip v1beta1 CRDs of default fields and metadata description", func() {
+	It("should strip v1beta1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
 		b := false
 		gen := &crd.Generator{
@@ -86,7 +86,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 	})
 
-	FIt("should not strip v1 CRDs of default fields and metadata description", func() {
+	It("should not strip v1 CRDs of default fields and metadata description", func() {
 		By("calling Generate")
 		b := false
 		gen := &crd.Generator{

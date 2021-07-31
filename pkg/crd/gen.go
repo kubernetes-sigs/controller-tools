@@ -161,14 +161,12 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		v1beta1Only := len(crdVersions) == 1 && crdVersions[0] == "v1beta1"
 		switch {
 		case (g.PreserveUnknownFields == nil || *g.PreserveUnknownFields) && v1beta1Only:
-			fmt.Println("v1beta1Only")
 			crd := versionedCRDs[0].(*apiextlegacy.CustomResourceDefinition)
 			crd.Spec.PreserveUnknownFields = nil
 		case g.PreserveUnknownFields == nil, g.PreserveUnknownFields != nil && !*g.PreserveUnknownFields:
-			fmt.Println("v1 force true")
 			// it'll be false here (coming from v1) -- leave it as such
-			//crd := versionedCRDs[0].(*apiext.CustomResourceDefinition)
-			//crd.Spec.PreserveUnknownFields = true
+			// we force every v1 to explicitly set preserveUnknownFields=false below
+			// before writing out the yaml
 		default:
 			return fmt.Errorf("you may only set PreserveUnknownFields to true with v1beta1 CRDs")
 		}
@@ -181,19 +179,12 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 				removeDefaultsFromSchemas(crd.(*apiextlegacy.CustomResourceDefinition))
 				removeDescriptionFromMetadataLegacy(crd.(*apiextlegacy.CustomResourceDefinition))
 			} else {
+				var err error
 				removeDescriptionFromMetadata(crd.(*apiext.CustomResourceDefinition))
-
-				// transform crd from type apiext.CustomResourceDefinition
-				// into a v1AliasCRD whose only difference is that it does not
-				// omit "preserveUnknownFields=false" from the final generated yaml.
-				v1crd := crd.(*apiext.CustomResourceDefinition)
-				newCRD := &v1AliasCRD{}
-				yamlContent, err := yaml.Marshal(v1crd)
-				if err != nil {
-					return fmt.Errorf("failed to unmarshal crd: %v", err)
+				if crd, err = convertToAliasedCRD(crd); err != nil {
+					return err
 				}
-				yaml.Unmarshal(yamlContent, newCRD)
-				crd = newCRD
+
 			}
 			var fileName string
 			if i == 0 {
@@ -208,6 +199,20 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	return nil
+}
+
+// convertToAliasedCRD transforms crd from type apiext.CustomResourceDefinition
+// into a v1AliasCRD whose only difference is that it does not
+// omit "preserveUnknownFields=false" from the final generated yaml.
+func convertToAliasedCRD(crd interface{}) (*v1AliasCRD, error) {
+	v1crd := crd.(*apiext.CustomResourceDefinition)
+	aliasedCRD := &v1AliasCRD{}
+	yamlContent, err := yaml.Marshal(v1crd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal crd: %v", err)
+	}
+	yaml.Unmarshal(yamlContent, aliasedCRD)
+	return aliasedCRD, nil
 }
 
 func removeDescriptionFromMetadata(crd *apiext.CustomResourceDefinition) {
