@@ -30,6 +30,29 @@ import (
 )
 
 var _ = Describe("CRD Patching From Parsing to Editing", func() {
+	It("should fail to load legacy CRDs", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the generation runtime")
+		var crdSchemaGen genall.Generator = &Generator{
+			ManifestsPath: "./invalid",
+		}
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
+		Expect(err).NotTo(HaveOccurred())
+
+		outputDir, err := ioutil.TempDir("", "controller-tools-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
+
+		By("running the generator")
+		Expect(rt.Run()).To(BeTrue(), "unexpectedly succeeded")
+	})
+
 	It("should properly generate and patch the test CRDs", func() {
 		// TODO(directxman12): I've ported these over from @sttts's tests,
 		// but they should really probably not be writing to an actual filesystem
@@ -42,7 +65,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 
 		By("loading the generation runtime")
 		var crdSchemaGen genall.Generator = &Generator{
-			ManifestsPath: "./manifests",
+			ManifestsPath: "./valid",
 		}
 		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
 		Expect(err).NotTo(HaveOccurred())
@@ -51,6 +74,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
+		rt.ErrorWriter = GinkgoWriter
 
 		By("running the generator")
 		Expect(rt.Run()).To(BeFalse(), "unexpectedly had errors")
