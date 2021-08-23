@@ -20,13 +20,12 @@ RUN for binary_folder in $(find cmd -maxdepth 1 -mindepth 1); do \
 ## Deploy
 ##
 
-FROM gcr.io/distroless/base-debian10
+FROM golang:1.16-alpine
 
-COPY --from=build /app/controller-gen /
-COPY --from=build /app/helpgen /
-COPY --from=build /app/type-scaffold /
+COPY --from=build /app/controller-gen /usr/local/bin
+COPY --from=build /app/helpgen /usr/local/bin
+COPY --from=build /app/type-scaffold /usr/local/bin
 
-USER nonroot:nonroot
 
-ENTRYPOINT ["/controller-gen"]
+ENTRYPOINT ["controller-gen"]
 
