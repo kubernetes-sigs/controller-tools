@@ -13,7 +13,7 @@ COPY cmd/ ./cmd
 
 # build all of the binaries and show they were built
 RUN for binary_folder in $(find cmd -maxdepth 1 -mindepth 1); do \
-		go build -o $(basename $binary_folder) $binary_folder/*; \
+		CGO_ENABLED=0 go build -o $(basename $binary_folder) $binary_folder/*; \
 	done ; \
 	find . -type f -executable
 ##
