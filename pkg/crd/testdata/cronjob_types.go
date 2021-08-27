@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -326,6 +327,20 @@ func (u *URL2) String() string {
 	return (*url.URL)(u).String()
 }
 
+// Duration has a custom Marshaler but no markers.
+// We want the CRD generation to infer type information
+// from the go types and ignore the presense of the Marshaler.
+type Duration struct {
+	Value time.Duration `json:"value"`
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	type durationWithoutUnmarshaler Duration
+	return json.Marshal(durationWithoutUnmarshaler(d))
+}
+
+var _ json.Marshaler = Duration{}
+
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.
 // If none of the following policies is specified, the default one
@@ -370,6 +385,8 @@ type CronJobStatus struct {
 	// LastActiveLogURL2 specifies the logging url for the last started job
 	// +optional
 	LastActiveLogURL2 *URL2 `json:"lastActiveLogURL2,omitempty"`
+
+	Runtime *Duration `json:"duration,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -110,10 +110,14 @@ func (c *schemaContext) requestSchema(pkgPath, typeName string) {
 
 // infoToSchema creates a schema for the type in the given set of type information.
 func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
+	// If the obj implements a JSON marshaler and has a marker, use the markers value and do not traverse as
+	// the marshaler could be doing anything. If there is no marker, fall back to traversing.
 	if obj := ctx.pkg.Types.Scope().Lookup(ctx.info.Name); obj != nil && implementsJSONMarshaler(obj.Type()) {
-		schema := &apiext.JSONSchemaProps{Type: "Any"}
+		schema := &apiext.JSONSchemaProps{}
 		applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
-		return schema
+		if schema.Type != "" {
+			return schema
+		}
 	}
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
 }

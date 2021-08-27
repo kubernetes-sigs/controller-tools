@@ -7353,6 +7353,20 @@ spec:
                       type: string
                   type: object
                 type: array
+              duration:
+                description: Duration has a custom Marshaler but no markers. We want
+                  the CRD generation to infer type information from the go types and
+                  ignore the presense of the Marshaler.
+                properties:
+                  value:
+                    description: A Duration represents the elapsed time between two
+                      instants as an int64 nanosecond count. The representation limits
+                      the largest representable duration to approximately 290 years.
+                    format: int64
+                    type: integer
+                required:
+                - value
+                type: object
               lastActiveLogURL:
                 description: LastActiveLogURL specifies the logging url for the last
                   started job
