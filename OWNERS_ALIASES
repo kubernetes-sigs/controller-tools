@@ -4,7 +4,6 @@ aliases:
   # active folks who can be contacted to perform admin-related
   # tasks on the repo, or otherwise approve any PRS.
   controller-tools-admins:
-    - directxman12
     - droot
     - mengqiy
     - pwittrock
@@ -23,4 +22,5 @@ aliases:
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
-  # controller-tools-emeritus-maintainers:
+  controller-tools-emeritus-maintainers:
+  - directxman12
