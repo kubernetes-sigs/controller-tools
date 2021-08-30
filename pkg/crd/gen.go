@@ -41,6 +41,11 @@ const defaultVersion = v1
 
 // Generator generates CustomResourceDefinition objects.
 type Generator struct {
+	// IgnoreUnexportedFields indicates that we should skip unexported fields.
+	//
+	// Left unspecified, the default is false.
+	IgnoreUnexportedFields *bool `marker:",optional"`
+
 	// AllowDangerousTypes allows types which are usually omitted from CRD generation
 	// because they are not recommended.
 	//
@@ -85,7 +90,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
 		// Perform defaulting here to avoid ambiguity later
-		AllowDangerousTypes: g.AllowDangerousTypes != nil && *g.AllowDangerousTypes == true,
+		IgnoreUnexportedFields: g.IgnoreUnexportedFields != nil && *g.IgnoreUnexportedFields == true,
+		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes == true,
 		// Indicates the parser on whether to register the ObjectMeta type or not
 		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta == true,
 	}
