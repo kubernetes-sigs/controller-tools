@@ -298,8 +298,11 @@ func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "string" {
-		return fmt.Errorf("must apply pattern to a string")
+	// Allow string types or IntOrStrings. An IntOrString will still
+	// apply the pattern validation when a string is detected, the pattern
+	// will not apply to ints though.
+	if schema.Type != "string" || schema.XIntOrString {
+		return fmt.Errorf("must apply pattern to a `string` or `IntOrString`")
 	}
 	schema.Pattern = string(m)
 	return nil
