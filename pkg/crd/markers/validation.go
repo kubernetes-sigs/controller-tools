@@ -301,7 +301,7 @@ func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	// Allow string types or IntOrStrings. An IntOrString will still
 	// apply the pattern validation when a string is detected, the pattern
 	// will not apply to ints though.
-	if schema.Type != "string" || schema.XIntOrString {
+	if schema.Type != "string" && !schema.XIntOrString {
 		return fmt.Errorf("must apply pattern to a `string` or `IntOrString`")
 	}
 	schema.Pattern = string(m)
