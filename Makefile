@@ -1,2 +1,2 @@
 test-all:
-	go test ./...
+	TRACE=1 ./test.sh
