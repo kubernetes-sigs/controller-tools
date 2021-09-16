@@ -384,6 +384,10 @@ func (m Type) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 
 func (m Type) ApplyFirst() {}
 
+func (m Type) ApplyBefore(v interface{}) bool {
+	return true
+}
+
 func (m Nullable) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.Nullable = true
 	return nil

@@ -113,6 +113,15 @@ func (l ListType) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 
 func (l ListType) ApplyFirst() {}
 
+func (l ListType) ApplyBefore(v interface{}) bool {
+	switch v.(type) {
+	case Type:
+		return false
+	default:
+		return true
+	}
+}
+
 func (l ListMapKey) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "array" {
 		return fmt.Errorf("must apply listMapKey to an array")

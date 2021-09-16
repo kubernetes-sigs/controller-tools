@@ -21,6 +21,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"sort"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -124,21 +125,24 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 
 // applyMarkers applies schema markers to the given schema, respecting "apply first" markers.
 func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
-	// apply "apply first" markers first...
+	var allMarkerValues []interface{}
 	for _, markerValues := range markerSet {
-		for _, markerValue := range markerValues {
-			if _, isApplyFirst := markerValue.(applyFirstMarker); !isApplyFirst {
-				continue
-			}
+		allMarkerValues = append(allMarkerValues, markerValues...)
+	}
+	allMarkerValues = sortByApplyBefore(allMarkerValues)
+	// apply "apply first" markers first...
+	for _, markerValue := range allMarkerValues {
+		if _, isApplyFirst := markerValue.(applyFirstMarker); !isApplyFirst {
+			continue
+		}
 
-			schemaMarker, isSchemaMarker := markerValue.(SchemaMarker)
-			if !isSchemaMarker {
-				continue
-			}
+		schemaMarker, isSchemaMarker := markerValue.(SchemaMarker)
+		if !isSchemaMarker {
+			continue
+		}
 
-			if err := schemaMarker.ApplyToSchema(props); err != nil {
-				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
-			}
+		if err := schemaMarker.ApplyToSchema(props); err != nil {
+			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
 
@@ -453,4 +457,35 @@ var jsonMarshaler = types.NewInterfaceType([]*types.Func{
 
 func implementsJSONMarshaler(typ types.Type) bool {
 	return types.Implements(typ, jsonMarshaler) || types.Implements(types.NewPointer(typ), jsonMarshaler)
+}
+
+type applyBeforeMarker interface {
+	applyFirstMarker
+	ApplyBefore(v interface{}) bool
+}
+
+type applyBeforeMarkers []applyBeforeMarker
+
+func (markers applyBeforeMarkers) Len() int { return len(markers) }
+
+func (markers applyBeforeMarkers) Less(i, j int) bool { return markers[j].ApplyBefore(markers[i]) }
+
+func (markers applyBeforeMarkers) Swap(i, j int) { markers[i], markers[j] = markers[j], markers[i] }
+
+func sortByApplyBefore(values []interface{}) []interface{} {
+	var sortableMarkers applyBeforeMarkers
+	var nonSortableMarkers []interface{}
+	for _, v := range values {
+		applyBefore, isApplyBefore := v.(applyBeforeMarker)
+		if isApplyBefore {
+			sortableMarkers = append(sortableMarkers, applyBefore)
+		} else {
+			nonSortableMarkers = append(nonSortableMarkers, v)
+		}
+	}
+	sort.Sort(sortableMarkers)
+	for _, marker := range sortableMarkers {
+		nonSortableMarkers = append([]interface{}{marker}, nonSortableMarkers...)
+	}
+	return nonSortableMarkers
 }
