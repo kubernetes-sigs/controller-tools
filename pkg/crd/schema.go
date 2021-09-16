@@ -39,12 +39,10 @@ const (
 	defPrefix = "#/definitions/"
 )
 
-var (
-	// byteType is the types.Type for byte (see the types documention
-	// for why we need to look this up in the Universe), saved
-	// for quick comparison.
-	byteType = types.Universe.Lookup("byte").Type()
-)
+// byteType is the types.Type for byte (see the types documention
+// for why we need to look this up in the Universe), saved
+// for quick comparison.
+var byteType = types.Universe.Lookup("byte").Type()
 
 // SchemaMarker is any marker that needs to modify the schema of the underlying type or field.
 type SchemaMarker interface {
@@ -309,10 +307,6 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 		valSchema = namedToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	case *ast.ArrayType:
 		valSchema = arrayToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
-		if valSchema.Type == "array" && valSchema.Items.Schema.Type != "string" {
-			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("not a supported map value type: %T", mapType.Value), mapType.Value))
-			return &apiext.JSONSchemaProps{}
-		}
 	case *ast.StarExpr:
 		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	case *ast.MapType:
