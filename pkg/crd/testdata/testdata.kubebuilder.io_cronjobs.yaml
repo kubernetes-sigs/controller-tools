@@ -125,6 +125,16 @@ spec:
                   a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
+              intOrStringWithAPattern:
+                anyOf:
+                - type: integer
+                - type: string
+                description: This tests that an IntOrString can also have a pattern
+                  attached to it. This can be useful if you want to limit the string
+                  to a perecentage or integer. The XIntOrString marker is a requirement
+                  for having a pattern on this type.
+                pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
+                x-kubernetes-int-or-string: true
               jobTemplate:
                 description: Specifies the job that will be created when executing
                   a CronJob.
