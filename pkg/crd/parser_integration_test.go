@@ -63,9 +63,9 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
 
 		By("loading the roots")
-		pkgs, err := loader.LoadRoots(".")
+		pkgs, err := loader.LoadRoots("./", "./unserved", "./deprecated")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(pkgs).To(HaveLen(1))
+		Expect(pkgs).To(HaveLen(3))
 		cronJobPkg := pkgs[0]
 
 		By("setting up the parser")
@@ -77,12 +77,17 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		}
 		crd.AddKnownTypes(parser)
 
-		By("requesting that the package be parsed")
-		parser.NeedPackage(cronJobPkg)
+		By("requesting that the packages be parsed")
+		for _, pkg := range pkgs {
+			parser.NeedPackage(pkg)
+		}
 
 		By("requesting that the CRD be generated")
 		groupKind := schema.GroupKind{Kind: "CronJob", Group: "testdata.kubebuilder.io"}
 		parser.NeedCRDFor(groupKind, nil)
+
+		By("fixing top level ObjectMeta on the CRD")
+		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
 
 		By("checking that no errors occurred along the way (expect for type errors)")
 		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
@@ -132,6 +137,9 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("requesting that the CRD be generated")
 		groupKind := schema.GroupKind{Kind: "TestQuota", Group: "plural.example.com"}
 		parser.NeedCRDFor(groupKind, nil)
+
+		By("fixing top level ObjectMeta on the CRD")
+		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
 
 		By("loading the desired YAML")
 		expectedFile, err := ioutil.ReadFile("plural.example.com_testquotas.yaml")
