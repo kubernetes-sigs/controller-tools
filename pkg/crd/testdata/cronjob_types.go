@@ -169,6 +169,19 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:XIntOrString
 	// +kubebuilder:validation:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
+
+	// Checks that nested maps work
+	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
+
+	// Checks that multiply-nested maps work
+	NestedNestedMap map[string]map[string]map[string]string `json:"nestedNestedMap,omitempty"`
+
+	// Checks that maps containing types that contain maps work
+	ContainsNestedMapMap map[string]ContainsNestedMap `json:"nestedMapInStruct,omitempty"`
+}
+
+type ContainsNestedMap struct {
+	InnerMap map[string]string `json:"innerMap,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object
@@ -194,6 +207,7 @@ func (p *Preserved) UnmarshalJSON(data []byte) error {
 	p.ConcreteField = concStr
 	return nil
 }
+
 func (p *Preserved) MarshalJSON() ([]byte, error) {
 	full := make(map[string]interface{}, len(p.Rest)+1)
 	for k, v := range p.Rest {
@@ -245,6 +259,7 @@ func (t TotallyABool) MarshalJSON() ([]byte, error) {
 		return []byte(`"false"`), nil
 	}
 }
+
 func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	switch string(in) {
 	case `"true"`:
