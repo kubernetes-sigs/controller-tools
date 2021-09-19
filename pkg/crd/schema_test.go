@@ -24,12 +24,12 @@ import (
 	"github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-func transform(t *testing.T, expr string) *v1.JSONSchemaProps {
+func transform(t *testing.T, expr string) *apiext.JSONSchemaProps {
 	// this is *very* hacky but I haven’t found a simple way
 	// to get an ast.Expr with all the associated metadata required
 	// to run typeToSchema upon it:
@@ -82,10 +82,10 @@ func failIfErrors(t *testing.T, errs []packages.Error) {
 	}
 }
 
-var arrayOfNumbersSchema *v1.JSONSchemaProps = &v1.JSONSchemaProps{
+var arrayOfNumbersSchema *apiext.JSONSchemaProps = &apiext.JSONSchemaProps{
 	Type: "array",
-	Items: &v1.JSONSchemaPropsOrArray{
-		Schema: &v1.JSONSchemaProps{
+	Items: &apiext.JSONSchemaPropsOrArray{
+		Schema: &apiext.JSONSchemaProps{
 			Type: "number",
 		},
 	},
@@ -102,9 +102,9 @@ func Test_Schema_MapOfStringToArrayOfFloat32(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	output := transform(t, "map[string][]float32")
-	g.Expect(output).To(gomega.Equal(&v1.JSONSchemaProps{
+	g.Expect(output).To(gomega.Equal(&apiext.JSONSchemaProps{
 		Type: "object",
-		AdditionalProperties: &v1.JSONSchemaPropsOrBool{
+		AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
 			Allows: true,
 			Schema: arrayOfNumbersSchema,
 		},
