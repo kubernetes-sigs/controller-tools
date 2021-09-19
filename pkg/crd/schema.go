@@ -17,6 +17,7 @@ limitations under the License.
 package crd
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -427,10 +428,13 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 		typ = "string"
 	case basicInfo&types.IsInteger != 0:
 		typ = "integer"
-	case basicInfo&types.IsFloat != 0 && allowDangerousTypes:
-		typ = "number"
+	case basicInfo&types.IsFloat != 0:
+		if allowDangerousTypes {
+			typ = "number"
+		} else {
+			return "", "", errors.New("found float, the usage of which is highly discouraged, as support for them varies across languages. Please consider serializing your float as string instead. If you are really sure you want to use them, re-run with crd:allowDangerousTypes=true")
+		}
 	default:
-		// NB(directxman12): floats are *NOT* allowed in kubernetes APIs
 		return "", "", fmt.Errorf("unsupported type %q", basic.String())
 	}
 
