@@ -125,6 +125,22 @@ spec:
                   a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
+              float64WithValidations:
+                maximum: 1.5
+                minimum: -0.5
+                multipleOf: 0.5
+                type: number
+              floatWithValidations:
+                maximum: 1.5
+                minimum: -0.5
+                multipleOf: 0.5
+                type: number
+              int32WithValidations:
+                format: int32
+                maximum: 2
+                minimum: -2
+                multipleOf: 2
+                type: integer
               intOrStringWithAPattern:
                 anyOf:
                 - type: integer
@@ -135,6 +151,11 @@ spec:
                   for having a pattern on this type.
                 pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                 x-kubernetes-int-or-string: true
+              intWithValidations:
+                maximum: 2
+                minimum: -2
+                multipleOf: 2
+                type: integer
               jobTemplate:
                 description: Specifies the job that will be created when executing
                   a CronJob.
@@ -7319,6 +7340,10 @@ spec:
             - defaultedSlice
             - defaultedString
             - embeddedResource
+            - float64WithValidations
+            - floatWithValidations
+            - int32WithValidations
+            - intWithValidations
             - jobTemplate
             - mapOfInfo
             - patternObject
