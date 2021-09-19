@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -53,7 +54,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(pkgs).To(HaveLen(1))
 
-		By("settup up the context")
+		By("setup up the context")
 		reg := &markers.Registry{}
 		Expect(crdmarkers.Register(reg)).To(Succeed())
 		out = &outputRule{
@@ -67,21 +68,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		}
 	})
 
-	It("should strip v1beta1 CRDs of default fields and metadata description", func() {
+	It("should fail to generate v1beta1 CRDs", func() {
 		By("calling Generate")
 		gen := &crd.Generator{
 			CRDVersions: []string{"v1beta1"},
 		}
-		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
-
-		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile(filepath.Join(genDir, "bar.example.com_foos.v1beta1.yaml"))
-		Expect(err).NotTo(HaveOccurred())
-		expectedFile = fixAnnotations(expectedFile)
-
-		By("comparing the two")
-		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
-
+		Expect(gen.Generate(ctx)).To(MatchError(`apiVersion "apiextensions.k8s.io/v1beta1" is not supported`))
 	})
 
 	It("should not strip v1 CRDs of default fields and metadata description", func() {

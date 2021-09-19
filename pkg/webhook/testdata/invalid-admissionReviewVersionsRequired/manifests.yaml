@@ -1,6 +1,6 @@
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
@@ -30,13 +30,15 @@ webhooks:
   sideEffects: None
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions: null
+- admissionReviewVersions:
+  - v1
+  - v1beta1
   clientConfig:
     service:
       name: webhook-service
@@ -55,4 +57,26 @@ webhooks:
     - UPDATE
     resources:
     - cronjobs
-  sideEffects: Some
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.cronjob.testdata.kubebuilder.io
+  rules:
+  - apiGroups:
+    - testdata.kubebuiler.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: NoneOnDryRun
