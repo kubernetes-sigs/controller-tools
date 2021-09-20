@@ -34,11 +34,9 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-var (
-	// RuleDefinition is a marker for defining RBAC rules.
-	// Call ToRule on the value to get a Kubernetes RBAC policy rule.
-	RuleDefinition = markers.Must(markers.MakeDefinition("kubebuilder:rbac", markers.DescribesPackage, Rule{}))
-)
+// RuleDefinition is a marker for defining RBAC rules.
+// Call ToRule on the value to get a Kubernetes RBAC policy rule.
+var RuleDefinition = markers.Must(markers.MakeDefinition("kubebuilder:rbac", markers.DescribesPackage, Rule{}))
 
 // +controllertools:marker:generateHelp:category=RBAC
 
@@ -75,8 +73,10 @@ func (key ruleKey) String() string {
 	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.Resources, key.ResourceNames, key.URLs)
 }
 
-// ruleKeys implements sort.Interface
 type ruleKeys []ruleKey
+
+// ruleKeys implements sort.Interface
+var _ sort.Interface = ruleKeys{}
 
 func (keys ruleKeys) Len() int           { return len(keys) }
 func (keys ruleKeys) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
@@ -111,10 +111,10 @@ func (r *Rule) normalize() {
 // removeDupAndSort removes duplicates in strs, sorts the items, and returns a
 // new slice of strings.
 func removeDupAndSort(strs []string) []string {
-	set := make(map[string]bool)
+	set := make(map[string]struct{})
 	for _, str := range strs {
 		if _, ok := set[str]; !ok {
-			set[str] = true
+			set[str] = struct{}{}
 		}
 	}
 
@@ -122,6 +122,7 @@ func removeDupAndSort(strs []string) []string {
 	for str := range set {
 		result = append(result, str)
 	}
+
 	sort.Strings(result)
 	return result
 }
@@ -134,6 +135,7 @@ func (r *Rule) ToRule() rbacv1.PolicyRule {
 			r.Groups[i] = ""
 		}
 	}
+
 	return rbacv1.PolicyRule{
 		APIGroups:       r.Groups,
 		Verbs:           r.Verbs,
@@ -162,52 +164,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
 func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{}, error) {
-	rulesByNS := make(map[string][]*Rule)
-	for _, root := range ctx.Roots {
-		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
-		if err != nil {
-			root.AddError(err)
-		}
-
-		// group RBAC markers by namespace
-		for _, markerValue := range markerSet[RuleDefinition.Name] {
-			rule := markerValue.(Rule)
-			namespace := rule.Namespace
-			if _, ok := rulesByNS[namespace]; !ok {
-				rules := make([]*Rule, 0)
-				rulesByNS[namespace] = rules
-			}
-			rulesByNS[namespace] = append(rulesByNS[namespace], &rule)
-		}
-	}
-
-	// NormalizeRules merge Rule with the same ruleKey and sort the Rules
-	NormalizeRules := func(rules []*Rule) []rbacv1.PolicyRule {
-		ruleMap := make(map[ruleKey]*Rule)
-		// all the Rules having the same ruleKey will be merged into the first Rule
-		for _, rule := range rules {
-			key := rule.key()
-			if _, ok := ruleMap[key]; !ok {
-				ruleMap[key] = rule
-				continue
-			}
-			ruleMap[key].addVerbs(rule.Verbs)
-		}
-
-		// sort the Rules in rules according to their ruleKeys
-		keys := make([]ruleKey, 0, len(ruleMap))
-		for key := range ruleMap {
-			keys = append(keys, key)
-		}
-		sort.Sort(ruleKeys(keys))
-
-		var policyRules []rbacv1.PolicyRule
-		for _, key := range keys {
-			policyRules = append(policyRules, ruleMap[key].ToRule())
-
-		}
-		return policyRules
-	}
+	rulesByNS := GroupRulesByNamespace(ctx)
 
 	// collect all the namespaces and sort them
 	var namespaces []string
@@ -251,6 +208,53 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	}
 
 	return objs, nil
+}
+
+func GroupRulesByNamespace(ctx *genall.GenerationContext) map[string][]*Rule {
+	rulesByNS := make(map[string][]*Rule)
+	for _, root := range ctx.Roots {
+		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
+		if err != nil {
+			root.AddError(err)
+		}
+
+		// group RBAC markers by namespace
+		for _, markerValue := range markerSet[RuleDefinition.Name] {
+			rule := markerValue.(Rule)
+			namespace := rule.Namespace
+			rulesByNS[namespace] = append(rulesByNS[namespace], &rule)
+		}
+	}
+
+	return rulesByNS
+}
+
+// NormalizeRules merges Rules with the same ruleKey and sorts the Rules
+func NormalizeRules(rules []*Rule) []rbacv1.PolicyRule {
+	ruleMap := make(map[ruleKey]*Rule)
+	// all the Rules having the same ruleKey will be merged into the first Rule
+	for _, rule := range rules {
+		key := rule.key()
+		if _, ok := ruleMap[key]; !ok {
+			ruleMap[key] = rule
+			continue
+		}
+		ruleMap[key].addVerbs(rule.Verbs)
+	}
+
+	// sort the Rules in rules according to their ruleKeys
+	keys := make([]ruleKey, 0, len(ruleMap))
+	for key := range ruleMap {
+		keys = append(keys, key)
+	}
+	sort.Sort(ruleKeys(keys))
+
+	var policyRules []rbacv1.PolicyRule
+	for _, key := range keys {
+		policyRules = append(policyRules, ruleMap[key].ToRule())
+	}
+
+	return policyRules
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
