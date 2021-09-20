@@ -1,5 +1,7 @@
 package controller
 
+//go:generate ../../../.run-controller-gen.sh rbac:roleName=manager-role paths=. output:dir=.
+
 // +kubebuilder:rbac:groups=batch.io,resources=cronjobs,verbs=get;watch;create
 // +kubebuilder:rbac:groups=batch.io,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get
