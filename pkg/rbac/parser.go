@@ -23,7 +23,6 @@ limitations under the License.
 package rbac
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -61,87 +60,70 @@ type Rule struct {
 	Namespace string `marker:",optional"`
 }
 
-// ruleKey represents the resources and non-resources a Rule applies.
-type ruleKey struct {
-	Groups        string
-	Resources     string
-	ResourceNames string
-	URLs          string
-}
-
-func (key ruleKey) String() string {
-	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.Resources, key.ResourceNames, key.URLs)
-}
-
-type ruleKeys []ruleKey
-
-// ruleKeys implements sort.Interface
-var _ sort.Interface = ruleKeys{}
-
-func (keys ruleKeys) Len() int           { return len(keys) }
-func (keys ruleKeys) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
-func (keys ruleKeys) Less(i, j int) bool { return keys[i].String() < keys[j].String() }
-
-// key normalizes the Rule and returns a ruleKey object.
-func (r *Rule) key() ruleKey {
-	r.normalize()
-	return ruleKey{
-		Groups:        strings.Join(r.Groups, "&"),
-		Resources:     strings.Join(r.Resources, "&"),
-		ResourceNames: strings.Join(r.ResourceNames, "&"),
-		URLs:          strings.Join(r.URLs, "&"),
-	}
-}
-
-// addVerbs adds new verbs into a Rule.
-// The duplicates in `r.Verbs` will be removed, and then `r.Verbs` will be sorted.
-func (r *Rule) addVerbs(verbs []string) {
-	r.Verbs = removeDupAndSort(append(r.Verbs, verbs...))
-}
-
-// normalize removes duplicates from each field of a Rule, and sorts each field.
-func (r *Rule) normalize() {
-	r.Groups = removeDupAndSort(r.Groups)
-	r.Resources = removeDupAndSort(r.Resources)
-	r.ResourceNames = removeDupAndSort(r.ResourceNames)
-	r.Verbs = removeDupAndSort(r.Verbs)
-	r.URLs = removeDupAndSort(r.URLs)
-}
-
-// removeDupAndSort removes duplicates in strs, sorts the items, and returns a
-// new slice of strings.
-func removeDupAndSort(strs []string) []string {
-	set := make(map[string]struct{})
-	for _, str := range strs {
-		if _, ok := set[str]; !ok {
-			set[str] = struct{}{}
-		}
+func (r *Rule) Normalize() *NormalizedRule {
+	result := &NormalizedRule{
+		Groups:        toSet(r.Groups),
+		Resources:     toSet(r.Resources),
+		ResourceNames: toSet(r.ResourceNames),
+		Verbs:         toSet(r.Verbs),
+		URLs:          toSet(r.URLs),
+		Namespace:     r.Namespace,
 	}
 
-	var result []string
-	for str := range set {
-		result = append(result, str)
+	// fix the group names, since letting people type "core" is nice
+	if _, ok := result.Groups["core"]; ok {
+		delete(result.Groups, "core")
+		result.Groups[""] = struct{}{}
 	}
 
-	sort.Strings(result)
+	result.GenerateSortKey()
+
 	return result
 }
 
-// ToRule converts this rule to its Kubernetes API form.
-func (r *Rule) ToRule() rbacv1.PolicyRule {
-	// fix the group names first, since letting people type "core" is nice
-	for i, group := range r.Groups {
-		if group == "core" {
-			r.Groups[i] = ""
-		}
-	}
+type NormalizedRule struct {
+	SortKey string
 
+	Namespace     string
+	Groups        stringSet
+	Resources     stringSet
+	ResourceNames stringSet
+	URLs          stringSet
+	Verbs         stringSet
+}
+
+func (nr *NormalizedRule) GenerateSortKey() {
+	nr.SortKey = strings.Join(
+		[]string{
+			strings.Join(nr.Groups.ToSorted(), "&"),
+			strings.Join(nr.Resources.ToSorted(), "&"),
+			strings.Join(nr.ResourceNames.ToSorted(), "&"),
+			strings.Join(nr.URLs.ToSorted(), "&"),
+		},
+		" + ")
+}
+
+// Subsumes indicates if one rule entirely determines another,
+// meaning that the other is unnecessary.
+// Remember that Kubernetes RBAC rules are purely additive, there
+// are no deny rules.
+func (nr *NormalizedRule) Subsumes(other *NormalizedRule) bool {
+	return nr.Namespace == other.Namespace &&
+		(nr.Groups.IsEmpty() || nr.Groups.IsSuperSetOf(other.Groups)) &&
+		(nr.Resources.IsEmpty() || nr.Resources.IsSuperSetOf(other.Resources)) &&
+		(nr.ResourceNames.IsEmpty() || nr.ResourceNames.IsSuperSetOf(other.ResourceNames)) &&
+		nr.URLs.IsSuperSetOf(other.URLs) && // TODO: check?
+		nr.Verbs.IsSuperSetOf(other.Verbs)
+}
+
+// ToRule converts this rule to its Kubernetes API form.
+func (nr *NormalizedRule) ToRule() rbacv1.PolicyRule {
 	return rbacv1.PolicyRule{
-		APIGroups:       r.Groups,
-		Verbs:           r.Verbs,
-		Resources:       r.Resources,
-		ResourceNames:   r.ResourceNames,
-		NonResourceURLs: r.URLs,
+		APIGroups:       nr.Groups.ToSorted(),
+		Verbs:           nr.Verbs.ToSorted(),
+		Resources:       nr.Resources.ToSorted(),
+		ResourceNames:   nr.ResourceNames.ToSorted(),
+		NonResourceURLs: nr.URLs.ToSorted(),
 	}
 }
 
@@ -229,32 +211,69 @@ func GroupRulesByNamespace(ctx *genall.GenerationContext) map[string][]*Rule {
 	return rulesByNS
 }
 
-// NormalizeRules merges Rules with the same ruleKey and sorts the Rules
-func NormalizeRules(rules []*Rule) []rbacv1.PolicyRule {
-	ruleMap := make(map[ruleKey]*Rule)
-	// all the Rules having the same ruleKey will be merged into the first Rule
-	for _, rule := range rules {
-		key := rule.key()
-		if _, ok := ruleMap[key]; !ok {
-			ruleMap[key] = rule
-			continue
+// insertRule inserts a rule into a destination slice, deduplicating via the
+// Subsumes function or merging verbs if appropriate
+func insertRule(dest []*NormalizedRule, it *NormalizedRule) []*NormalizedRule {
+	// this is not going to be very fast but the set of rules should always be small
+	mergeWith := -1
+	for ix, other := range dest {
+		if other.Subsumes(it) {
+			// not needed; another rule handles this case
+			return dest
 		}
-		ruleMap[key].addVerbs(rule.Verbs)
+
+		if it.Subsumes(other) {
+			// rebuild whole list
+			result := []*NormalizedRule{it}
+			for _, d := range dest {
+				result = insertRule(result, d)
+			}
+
+			return result
+		}
+
+		if it.SortKey == other.SortKey {
+			// match the same things, can merge their
+			// verbs (if no better match)
+			mergeWith = ix
+		}
 	}
 
-	// sort the Rules in rules according to their ruleKeys
-	keys := make([]ruleKey, 0, len(ruleMap))
-	for key := range ruleMap {
-		keys = append(keys, key)
-	}
-	sort.Sort(ruleKeys(keys))
-
-	var policyRules []rbacv1.PolicyRule
-	for _, key := range keys {
-		policyRules = append(policyRules, ruleMap[key].ToRule())
+	if mergeWith >= 0 {
+		// we found one to merge with
+		dest[mergeWith].Verbs.AddAll(it.Verbs)
+		return dest
 	}
 
-	return policyRules
+	// otherwise, insert it
+	return append(dest, it)
+}
+
+// Sorts the rules for deterministic output:
+type ruleSorter []*NormalizedRule
+
+// ruleSorter implements sort.Interface
+var _ sort.Interface = ruleSorter{}
+
+func (keys ruleSorter) Len() int           { return len(keys) }
+func (keys ruleSorter) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
+func (keys ruleSorter) Less(i, j int) bool { return keys[i].SortKey < keys[j].SortKey }
+
+// NormalizeRules merges Rules that can be merged, and sorts the Rules
+func NormalizeRules(rules []*Rule) []rbacv1.PolicyRule {
+	var simplified []*NormalizedRule
+	for _, rule := range rules {
+		simplified = insertRule(simplified, rule.Normalize())
+	}
+
+	sort.Sort(ruleSorter(simplified))
+
+	result := make([]rbacv1.PolicyRule, len(simplified))
+	for i := range simplified {
+		result[i] = simplified[i].ToRule()
+	}
+
+	return result
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {

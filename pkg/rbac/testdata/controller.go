@@ -12,4 +12,9 @@ package controller
 // +kubebuilder:rbac:groups=cron;batch,resources=jobs/status,verbs=get;create
 // +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=watch;watch
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=park
-// +kubebuilder:rbac:groups=batch.io,resources=cronjobs,resourceNames=foo;bar;baz,verbs=get;watch
+// +kubebuilder:rbac:groups=batch.io,resources=cronjobs2,resourceNames=foo;bar;baz,verbs=get;watch
+// ensure that "core" is translated to apiGroups="":
+// +kubebuilder:rbac:groups=core,resources=configmaps,resourceNames=my-configmap,verbs=update;get
+// check that the following merge:
+// +kubebuilder:rbac:groups=test,resources=foo,resourceNames=bar,verbs=get
+// +kubebuilder:rbac:groups=test,resources=foo,resourceNames=bar,verbs=watch

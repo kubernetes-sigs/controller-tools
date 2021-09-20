@@ -7,6 +7,15 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resourceNames:
+  - my-configmap
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+- apiGroups:
   - art
   resources:
   - jobs
@@ -36,23 +45,32 @@ rules:
   - watch
 - apiGroups:
   - batch.io
-  resourceNames:
-  - bar
-  - baz
-  - foo
-  resources:
-  - cronjobs
-  verbs:
-  - get
-  - watch
-- apiGroups:
-  - batch.io
   resources:
   - cronjobs/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - batch.io
+  resourceNames:
+  - bar
+  - baz
+  - foo
+  resources:
+  - cronjobs2
+  verbs:
+  - get
+  - watch
+- apiGroups:
+  - test
+  resourceNames:
+  - bar
+  resources:
+  - foo
+  verbs:
+  - get
+  - watch
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
