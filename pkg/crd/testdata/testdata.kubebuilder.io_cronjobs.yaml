@@ -7176,6 +7176,13 @@ spec:
                 - bar
                 - foo
                 type: object
+              mapOfArraysOfFloats:
+                additionalProperties:
+                  items:
+                    type: boolean
+                  type: array
+                description: Maps of arrays of things-that-aren’t-strings are permitted
+                type: object
               mapOfInfo:
                 additionalProperties:
                   format: byte

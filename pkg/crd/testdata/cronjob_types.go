@@ -178,6 +178,9 @@ type CronJobSpec struct {
 
 	// Checks that maps containing types that contain maps work
 	ContainsNestedMapMap map[string]ContainsNestedMap `json:"nestedMapInStruct,omitempty"`
+
+	// Maps of arrays of things-that-aren’t-strings are permitted
+	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
 }
 
 type ContainsNestedMap struct {
