@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v2"
 
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/deepcopy"
@@ -72,6 +73,7 @@ var (
 )
 
 func init() {
+	yaml.FutureLineWrap()
 	for genName, gen := range allGenerators {
 		// make the generator options marker itself
 		defn := markers.Must(markers.MakeDefinition(genName, markers.DescribesPackage, gen))
