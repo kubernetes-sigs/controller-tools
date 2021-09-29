@@ -128,6 +128,9 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 			}
 
 			typeIdent := crdgen.TypeIdent{Package: pkg, Name: groupKind.Kind}
+			if _, ok := parser.Types[typeIdent]; !ok {
+				continue
+			}
 			parser.NeedFlattenedSchemaFor(typeIdent)
 
 			fullSchema := parser.FlattenedSchemata[typeIdent]
