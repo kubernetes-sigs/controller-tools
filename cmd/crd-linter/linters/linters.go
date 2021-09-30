@@ -21,7 +21,10 @@ import (
 )
 
 var allLinters = []Linter{
-	// Add new linters to this list
+	SchemaProvided{},
+	PreserveUnknownFields{},
+	MaxLengthStrings{},
+	MaxItemsArrays{},
 }
 
 var namedLinters = make(map[string]Linter)
