@@ -41,7 +41,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		var crdSchemaGen genall.Generator = &Generator{
 			ManifestsPath: "./invalid",
 		}
-		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./apis/kubebuilder/...", "./apis/legacy/...")
 		Expect(err).NotTo(HaveOccurred())
 
 		outputDir, err := ioutil.TempDir("", "controller-tools-test")
@@ -67,7 +67,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		var crdSchemaGen genall.Generator = &Generator{
 			ManifestsPath: "./valid",
 		}
-		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./apis/kubebuilder/...", "./apis/legacy/...")
 		Expect(err).NotTo(HaveOccurred())
 
 		outputDir, err := ioutil.TempDir("", "controller-tools-test")
@@ -94,5 +94,53 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 			By("checking that the expected and actual files for " + expectedFile.Name() + " are identical")
 			Expect(actualContents).To(Equal(expectedContents), "contents not as expected, check pkg/schemapatcher/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(string(actualContents), string(expectedContents)))
 		}
+	})
+
+	It("should fail by default with a group used in multiple packages", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the generation runtime")
+		var crdSchemaGen genall.Generator = &Generator{
+			ManifestsPath: "./multipackagegroup",
+		}
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
+		Expect(err).NotTo(HaveOccurred())
+
+		outputDir, err := ioutil.TempDir("", "controller-tools-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
+
+		By("running the generator")
+		Expect(rt.Run()).To(BeTrue(), "unexpectedly succeeded")
+	})
+
+	It("should succeed with a group used in multiple packages when allowMultiPackageGroup is specified", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the generation runtime")
+		trueBool := true
+		var crdSchemaGen genall.Generator = &Generator{
+			ManifestsPath:           "./multipackagegroup",
+			AllowMultiPackageGroups: &trueBool,
+		}
+		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
+		Expect(err).NotTo(HaveOccurred())
+
+		outputDir, err := ioutil.TempDir("", "controller-tools-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
+
+		By("running the generator")
+		Expect(rt.Run()).To(BeFalse(), "unexpectedly had errors")
 	})
 })

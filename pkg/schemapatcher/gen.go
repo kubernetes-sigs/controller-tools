@@ -75,6 +75,10 @@ type Generator struct {
 
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta in the CRD should be generated
 	GenerateEmbeddedObjectMeta *bool `marker:",optional"`
+
+	// AllowMultiPackageGroups specifies whether cases where a group is used for multiple packages should be allowed,
+	// rather than the default behavior of failing.
+	AllowMultiPackageGroups *bool `marker:",optional"`
 }
 
 var _ genall.Generator = &Generator{}
@@ -129,7 +133,10 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 
 			typeIdent := crdgen.TypeIdent{Package: pkg, Name: groupKind.Kind}
 			if _, ok := parser.Types[typeIdent]; !ok {
-				continue
+				if g.AllowMultiPackageGroups != nil && *g.AllowMultiPackageGroups {
+					continue
+				}
+				return fmt.Errorf("failed to find type for kind %s in package %s", groupKind.Kind, pkg.PkgPath)
 			}
 			parser.NeedFlattenedSchemaFor(typeIdent)
 
