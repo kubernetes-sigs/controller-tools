@@ -19,7 +19,7 @@ package linters
 import (
 	"fmt"
 
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 func recurseAllSchemas(versions []v1.CustomResourceDefinitionVersion, fn func(props v1.JSONSchemaProps, path string) []string) []string {

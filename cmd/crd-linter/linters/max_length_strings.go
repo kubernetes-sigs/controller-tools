@@ -19,7 +19,7 @@ package linters
 import (
 	"fmt"
 
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // MaxLengthStrings checks all string type fields on a CRD to ensure they have
