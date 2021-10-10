@@ -27,7 +27,6 @@ import (
 	"strings"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -37,7 +36,8 @@ import (
 
 // The default {Mutating,Validating}WebhookConfiguration version to generate.
 const (
-	defaultWebhookVersion = "v1"
+	v1                    = "v1"
+	defaultWebhookVersion = v1
 )
 
 var (
@@ -48,7 +48,7 @@ var (
 
 // supportedWebhookVersions returns currently supported API version of {Mutating,Validating}WebhookConfiguration.
 func supportedWebhookVersions() []string {
-	return []string{defaultWebhookVersion, "v1beta1"}
+	return []string{defaultWebhookVersion}
 }
 
 // +controllertools:marker:generateHelp:category=Webhook
@@ -105,14 +105,12 @@ type Config struct {
 	Path string
 
 	// WebhookVersions specifies the target API versions of the {Mutating,Validating}WebhookConfiguration objects
-	// itself to generate.  Defaults to v1.
+	// itself to generate. The only supported value is v1. Defaults to v1.
 	WebhookVersions []string `marker:"webhookVersions,optional"`
 
 	// AdmissionReviewVersions is an ordered list of preferred `AdmissionReview`
 	// versions the Webhook expects.
-	// For generating v1 {Mutating,Validating}WebhookConfiguration, this is mandatory.
-	// For generating v1beta1 {Mutating,Validating}WebhookConfiguration, this is optional, and default to v1beta1.
-	AdmissionReviewVersions []string `marker:"admissionReviewVersions,optional"`
+	AdmissionReviewVersions []string `marker:"admissionReviewVersions"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -332,71 +330,55 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 	versionedWebhooks := make(map[string][]interface{}, len(supportedWebhookVersions))
 	for _, version := range supportedWebhookVersions {
 		if cfgs, ok := mutatingCfgs[version]; ok {
-			objRaw := &admissionregv1.MutatingWebhookConfiguration{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "MutatingWebhookConfiguration",
-					APIVersion: admissionregv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "mutating-webhook-configuration",
-				},
-				Webhooks: cfgs,
-			}
-			if version == defaultWebhookVersion {
-				for i := range objRaw.Webhooks {
-					// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
-					// we return an error
-					if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
-						return err
-					}
-					// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
-					// we return an error
-					if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
-						return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
-					}
-				}
-				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
-			} else {
-				conv, err := MutatingWebhookConfigurationAsVersion(objRaw, schema.GroupVersion{Group: admissionregv1.SchemeGroupVersion.Group, Version: version})
-				if err != nil {
+			// The only possible version in supportedWebhookVersions is v1,
+			// so use it for all versioned types in this context.
+			objRaw := &admissionregv1.MutatingWebhookConfiguration{}
+			objRaw.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   admissionregv1.SchemeGroupVersion.Group,
+				Version: version,
+				Kind:    "MutatingWebhookConfiguration",
+			})
+			objRaw.SetName("mutating-webhook-configuration")
+			objRaw.Webhooks = cfgs
+			for i := range objRaw.Webhooks {
+				// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
+				// return an error
+				if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
 					return err
 				}
-				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
+				// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
+				// return an error
+				if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
+					return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
+				}
 			}
+			versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
 		}
 
 		if cfgs, ok := validatingCfgs[version]; ok {
-			objRaw := &admissionregv1.ValidatingWebhookConfiguration{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ValidatingWebhookConfiguration",
-					APIVersion: admissionregv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "validating-webhook-configuration",
-				},
-				Webhooks: cfgs,
-			}
-			if version == defaultWebhookVersion {
-				for i := range objRaw.Webhooks {
-					// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
-					// we return an error
-					if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
-						return err
-					}
-					// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
-					// we return an error
-					if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
-						return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
-					}
-				}
-				versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
-			} else {
-				conv, err := ValidatingWebhookConfigurationAsVersion(objRaw, schema.GroupVersion{Group: admissionregv1.SchemeGroupVersion.Group, Version: version})
-				if err != nil {
+			// The only possible version in supportedWebhookVersions is v1,
+			// so use it for all versioned types in this context.
+			objRaw := &admissionregv1.ValidatingWebhookConfiguration{}
+			objRaw.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   admissionregv1.SchemeGroupVersion.Group,
+				Version: version,
+				Kind:    "ValidatingWebhookConfiguration",
+			})
+			objRaw.SetName("validating-webhook-configuration")
+			objRaw.Webhooks = cfgs
+			for i := range objRaw.Webhooks {
+				// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
+				// return an error
+				if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
 					return err
 				}
-				versionedWebhooks[version] = append(versionedWebhooks[version], conv)
+				// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
+				// return an error
+				if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
+					return fmt.Errorf("AdmissionReviewVersions is mandatory for v1 {Mutating,Validating}WebhookConfiguration")
+				}
 			}
+			versionedWebhooks[version] = append(versionedWebhooks[version], objRaw)
 		}
 	}
 

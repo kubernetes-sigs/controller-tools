@@ -13,7 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//go:generate ../../../../.run-controller-gen.sh paths=. output:dir=.
+//go:generate ../../../../.run-controller-gen.sh crd:crdVersions=v1beta1 paths=. output:dir=.
+//go:generate mv bar.example.com_foos.yaml bar.example.com_foos.v1beta1.yaml
+//go:generate ../../../../.run-controller-gen.sh crd:crdVersions=v1 paths=. output:dir=.
+
 // +groupName=bar.example.com
 package foo
 
@@ -30,9 +33,13 @@ type FooSpec struct {
 type FooStatus struct{}
 
 type Foo struct {
-	metav1.TypeMeta   `json:",inline"`
+	// TypeMeta comments should NOT appear in the CRD spec
+	metav1.TypeMeta `json:",inline"`
+	// ObjectMeta comments should NOT appear in the CRD spec
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FooSpec   `json:"spec,omitempty"`
+	// Spec comments SHOULD appear in the CRD spec
+	Spec FooSpec `json:"spec,omitempty"`
+	// Status comments SHOULD appear in the CRD spec
 	Status FooStatus `json:"status,omitempty"`
 }

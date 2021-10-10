@@ -1,26 +1,21 @@
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: example.legacy.schemapatcher.controller-tools.sigs.k8s.io
-  # ensure that comments and annotations are left in place
   annotations:
-    firstkey: firstval
-    secondkey: secondval
+    controller-gen.kubebuilder.io/version: (devel)
+  creationTimestamp: null
+  name: foos.bar.example.com
 spec:
-  group: legacy.schemapatcher.controller-tools.sigs.k8s.io
-  scope: Cluster
+  group: bar.example.com
   names:
-    kind: Example
-    singular: example
-    plural: examples
-    listKind: ExampleList
-  version: v1
+    kind: Foo
+    listKind: FooList
+    plural: foos
+    singular: foo
+  scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: Example is a kind with schema changes.
-      type: object
-      required:
-      - spec
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -35,14 +30,27 @@ spec:
         metadata:
           type: object
         spec:
-          type: object
-          required:
-          - bar
-          - foo
+          description: Spec comments SHOULD appear in the CRD spec
           properties:
-            bar:
-              description: foo contains foo.
+            defaultedString:
+              description: This tests that defaulted fields are stripped for v1beta1,
+                but not for v1
               type: string
-            foo:
-              description: foo contains foo.
-              type: string
+          required:
+          - defaultedString
+          type: object
+        status:
+          description: Status comments SHOULD appear in the CRD spec
+          type: object
+      type: object
+  version: foo
+  versions:
+  - name: foo
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

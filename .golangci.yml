@@ -1,6 +1,5 @@
 run:
   modules-download-mode: readonly
-
   # Increase the default deadline from 1m as some module operations can take a
   # while if uncached!
   deadline: 5m

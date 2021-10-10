@@ -31,7 +31,7 @@ var _ = Describe("TruncateDescription", func() {
 		schema := &apiext.JSONSchemaProps{
 			Description: "top level description",
 			Properties: map[string]apiext.JSONSchemaProps{
-				"Spec": apiext.JSONSchemaProps{
+				"Spec": {
 					Description: "specification for the API type",
 				},
 			},
@@ -39,7 +39,7 @@ var _ = Describe("TruncateDescription", func() {
 		crd.TruncateDescription(schema, 0)
 		Expect(schema).To(Equal(&apiext.JSONSchemaProps{
 			Properties: map[string]apiext.JSONSchemaProps{
-				"Spec": apiext.JSONSchemaProps{},
+				"Spec": {},
 			},
 		}))
 
@@ -49,7 +49,7 @@ var _ = Describe("TruncateDescription", func() {
 		schema := &apiext.JSONSchemaProps{
 			Description: "top level description of the root object.",
 			Properties: map[string]apiext.JSONSchemaProps{
-				"Spec": apiext.JSONSchemaProps{
+				"Spec": {
 					Description: "specification of a field",
 				},
 			},

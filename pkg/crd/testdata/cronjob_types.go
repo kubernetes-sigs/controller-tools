@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd paths=./;./deprecated;./unserved output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -25,11 +25,14 @@ package cronjob
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"time"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -154,14 +157,43 @@ type CronJobSpec struct {
 
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
+
+	// This tests that the schemaless marker works
+	// +kubebuilder:validation:Schemaless
+	Schemaless []byte `json:"schemaless,omitempty"`
+
+	// This tests that an IntOrString can also have a pattern attached
+	// to it.
+	// This can be useful if you want to limit the string to a perecentage or integer.
+	// The XIntOrString marker is a requirement for having a pattern on this type.
+	// +kubebuilder:validation:XIntOrString
+	// +kubebuilder:validation:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
+	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
+
+	// Checks that nested maps work
+	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
+
+	// Checks that multiply-nested maps work
+	NestedNestedMap map[string]map[string]map[string]string `json:"nestedNestedMap,omitempty"`
+
+	// Checks that maps containing types that contain maps work
+	ContainsNestedMapMap map[string]ContainsNestedMap `json:"nestedMapInStruct,omitempty"`
+
+	// Maps of arrays of things-that-aren’t-strings are permitted
+	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
+}
+
+type ContainsNestedMap struct {
+	InnerMap map[string]string `json:"innerMap,omitempty"`
 }
 
 // +kubebuilder:validation:Type=object
 // +kubebuilder:pruning:PreserveUnknownFields
 type Preserved struct {
-	ConcreteField string `json:"concreteField"`
-	Rest map[string]interface{} `json:"-"`
+	ConcreteField string                 `json:"concreteField"`
+	Rest          map[string]interface{} `json:"-"`
 }
+
 func (p *Preserved) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &p.Rest); err != nil {
 		return err
@@ -178,6 +210,7 @@ func (p *Preserved) UnmarshalJSON(data []byte) error {
 	p.ConcreteField = concStr
 	return nil
 }
+
 func (p *Preserved) MarshalJSON() ([]byte, error) {
 	full := make(map[string]interface{}, len(p.Rest)+1)
 	for k, v := range p.Rest {
@@ -229,6 +262,7 @@ func (t TotallyABool) MarshalJSON() ([]byte, error) {
 		return []byte(`"false"`), nil
 	}
 }
+
 func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	switch string(in) {
 	case `"true"`:
@@ -241,6 +275,98 @@ func (t *TotallyABool) UnmarshalJSON(in []byte) error {
 	}
 	return nil
 }
+
+// +kubebuilder:validation:Type=string
+// URL wraps url.URL.
+// It has custom json marshal methods that enable it to be used in K8s CRDs
+// such that the CRD resource will have the URL but operator code can can work with url.URL struct
+type URL struct {
+	url.URL
+}
+
+func (u *URL) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("%q", u.String())), nil
+}
+
+func (u *URL) UnmarshalJSON(b []byte) error {
+	var ref string
+	if err := json.Unmarshal(b, &ref); err != nil {
+		return err
+	}
+	if ref == "" {
+		*u = URL{}
+		return nil
+	}
+
+	r, err := url.Parse(ref)
+	if err != nil {
+		return err
+	} else if r != nil {
+		*u = URL{*r}
+	} else {
+		*u = URL{}
+	}
+	return nil
+}
+
+func (u *URL) String() string {
+	if u == nil {
+		return ""
+	}
+	return u.URL.String()
+}
+
+// +kubebuilder:validation:Type=string
+// URL2 is an alias of url.URL.
+// It has custom json marshal methods that enable it to be used in K8s CRDs
+// such that the CRD resource will have the URL but operator code can can work with url.URL struct
+type URL2 url.URL
+
+func (u *URL2) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("%q", u.String())), nil
+}
+
+func (u *URL2) UnmarshalJSON(b []byte) error {
+	var ref string
+	if err := json.Unmarshal(b, &ref); err != nil {
+		return err
+	}
+	if ref == "" {
+		*u = URL2{}
+		return nil
+	}
+
+	r, err := url.Parse(ref)
+	if err != nil {
+		return err
+	} else if r != nil {
+		*u = *(*URL2)(r)
+	} else {
+		*u = URL2{}
+	}
+	return nil
+}
+
+func (u *URL2) String() string {
+	if u == nil {
+		return ""
+	}
+	return (*url.URL)(u).String()
+}
+
+// Duration has a custom Marshaler but no markers.
+// We want the CRD generation to infer type information
+// from the go types and ignore the presense of the Marshaler.
+type Duration struct {
+	Value time.Duration `json:"value"`
+}
+
+func (d Duration) MarshalJSON() ([]byte, error) {
+	type durationWithoutUnmarshaler Duration
+	return json.Marshal(durationWithoutUnmarshaler(d))
+}
+
+var _ json.Marshaler = Duration{}
 
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.
@@ -278,11 +404,22 @@ type CronJobStatus struct {
 	// with microsecond precision.
 	// +optional
 	LastScheduleMicroTime *metav1.MicroTime `json:"lastScheduleMicroTime,omitempty"`
+
+	// LastActiveLogURL specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL *URL `json:"lastActiveLogURL,omitempty"`
+
+	// LastActiveLogURL2 specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL2 *URL2 `json:"lastActiveLogURL2,omitempty"`
+
+	Runtime *Duration `json:"duration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:singular=mycronjob
+// +kubebuilder:storageversion
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
@@ -302,8 +439,4 @@ type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CronJob `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
