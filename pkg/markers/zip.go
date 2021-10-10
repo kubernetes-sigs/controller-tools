@@ -72,7 +72,7 @@ func extractDoc(node ast.Node, decl *ast.GenDecl) string {
 		// Trim any extranous whitespace,
 		// for handling /*…*/-style comments,
 		// which have whitespace preserved in go/ast:
-		line = strings.Trim(line, " \t")
+		line = strings.TrimSpace(line)
 
 		// Respect that double-newline means
 		// actual newline:
