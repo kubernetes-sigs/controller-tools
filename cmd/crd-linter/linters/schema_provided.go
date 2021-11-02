@@ -37,11 +37,11 @@ func (p SchemaProvided) Description() string {
 		"data can be stored in objects, leading to potential API server instability."
 }
 
-func (p SchemaProvided) Execute(crd *v1.CustomResourceDefinition) []string {
-	var errs []string
+func (p SchemaProvided) Execute(crd *v1.CustomResourceDefinition) WarningList {
+	var errs []Warning
 	for i, vers := range crd.Spec.Versions {
 		if vers.Schema == nil || vers.Schema.OpenAPIV3Schema == nil {
-			errs = append(errs, fmt.Sprintf("spec.versions[%d] (%s) does not provide a schema", i, vers.Name))
+			errs = append(errs, Warning{Message: fmt.Sprintf("spec.versions[%d] (%s) does not provide a schema", i, vers.Name)})
 		}
 	}
 	return errs

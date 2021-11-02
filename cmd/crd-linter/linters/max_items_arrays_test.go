@@ -55,16 +55,16 @@ func TestMaxItemsArrays_Execute(t *testing.T) {
 		},
 	}
 
-	expectedErrors := []string{
+	expectedErrors := newWarningList(
 		"spec.versions[0].schema.openAPIV3Schema.properties.any-of-field.anyOf[2].maxItems is not specified on a field of type 'array'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.test-field-without-max-items.maxItems is not specified on a field of type 'array'",
-	}
+	)
 
 	fieldEvaluator := MaxItemsArrays{}
 	errs := fieldEvaluator.Execute(crd)
 	// sort strings to allow for consistent comparison
-	sort.Strings(expectedErrors)
-	sort.Strings(errs)
+	sort.Sort(expectedErrors)
+	sort.Sort(errs)
 
 	if !reflect.DeepEqual(errs, expectedErrors) {
 		t.Errorf("returned errors were not as expected: %s", diff.ObjectGoPrintSideBySide(errs, expectedErrors))

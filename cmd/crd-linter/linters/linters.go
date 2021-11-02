@@ -22,7 +22,7 @@ import (
 
 var allLinters = []Linter{
 	SchemaProvided{},
-	PreserveUnknownFields{},
+	NoPreserveUnknownFields{},
 	MaxLengthStrings{},
 	MaxItemsArrays{},
 }

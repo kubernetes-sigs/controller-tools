@@ -30,10 +30,10 @@ func (m MaxItemsArrays) Name() string {
 	return "MaxItemsArrays"
 }
 
-func (m MaxItemsArrays) Execute(crd *v1.CustomResourceDefinition) []string {
-	return recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []string {
+func (m MaxItemsArrays) Execute(crd *v1.CustomResourceDefinition) WarningList {
+	return recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []Warning {
 		if props.Type == "array" && props.MaxItems == nil {
-			return []string{fmt.Sprintf("%s.maxItems is not specified on a field of type 'array'", path)}
+			return newWarningList(fmt.Sprintf("%s.maxItems is not specified on a field of type 'array'", path))
 		}
 		return nil
 	})

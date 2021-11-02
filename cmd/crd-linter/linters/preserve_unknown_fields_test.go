@@ -25,7 +25,7 @@ import (
 	"k8s.io/utils/diff"
 )
 
-func TestPreserveUnknownFields_Execute_WithPreserveUnknownFields(t *testing.T) {
+func TestNoPreserveUnknownFields_Execute_WithNoPreserveUnknownFields(t *testing.T) {
 	trueVal := true
 	falseVal := false
 	crd := &v1.CustomResourceDefinition{
@@ -60,25 +60,25 @@ func TestPreserveUnknownFields_Execute_WithPreserveUnknownFields(t *testing.T) {
 		},
 	}
 
-	expectedErrors := []string{
+	expectedErrors := newWarningList(
 		"spec.preserveUnknownFields is set to 'true'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.array-type-field.items.x-kubernetes-preserve-unknown-fields is set to 'true'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.test-field-with-nested-preserve-fields.properties.nested-field.x-kubernetes-preserve-unknown-fields is set to 'true'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.test-field-with-preserve-fields.x-kubernetes-preserve-unknown-fields is set to 'true'",
-	}
+	)
 
-	fieldEvaluator := PreserveUnknownFields{}
+	fieldEvaluator := NoPreserveUnknownFields{}
 	errs := fieldEvaluator.Execute(crd)
 	// sort strings to allow for consistent comparison
-	sort.Strings(expectedErrors)
-	sort.Strings(errs)
+	sort.Sort(expectedErrors)
+	sort.Sort(errs)
 
 	if !reflect.DeepEqual(errs, expectedErrors) {
 		t.Errorf("returned errors were not as expected: %s", diff.ObjectGoPrintSideBySide(errs, expectedErrors))
 	}
 }
 
-func TestPreserveUnknownFields_Execute_WithNoPreserveUnknownFields(t *testing.T) {
+func TestNoPreserveUnknownFields_Execute_WithNoNoPreserveUnknownFields(t *testing.T) {
 	falseVal := false
 	crd := &v1.CustomResourceDefinition{
 		Spec: v1.CustomResourceDefinitionSpec{
@@ -97,10 +97,8 @@ func TestPreserveUnknownFields_Execute_WithNoPreserveUnknownFields(t *testing.T)
 		},
 	}
 
-	fieldEvaluator := PreserveUnknownFields{}
+	fieldEvaluator := NoPreserveUnknownFields{}
 	errs := fieldEvaluator.Execute(crd)
-	// sort strings to allow for consistent comparison
-	sort.Strings(errs)
 
 	if errs != nil {
 		t.Errorf("returned errors were not as expected: %s", diff.ObjectGoPrintSideBySide(errs, nil))

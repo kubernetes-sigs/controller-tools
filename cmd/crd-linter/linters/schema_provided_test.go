@@ -46,16 +46,16 @@ func TestSchemaProvided_Execute_WithNoSchema(t *testing.T) {
 		},
 	}
 
-	expectedErrors := []string{
+	expectedErrors := newWarningList(
 		"spec.versions[0] (v1alpha1) does not provide a schema",
 		"spec.versions[1] (v1alpha2) does not provide a schema",
-	}
+	)
 
 	fieldEvaluator := SchemaProvided{}
 	errs := fieldEvaluator.Execute(crd)
 	// sort strings to allow for consistent comparison
-	sort.Strings(expectedErrors)
-	sort.Strings(errs)
+	sort.Sort(expectedErrors)
+	sort.Sort(errs)
 
 	if !reflect.DeepEqual(errs, expectedErrors) {
 		t.Errorf("returned errors were not as expected: %s", diff.ObjectGoPrintSideBySide(errs, expectedErrors))

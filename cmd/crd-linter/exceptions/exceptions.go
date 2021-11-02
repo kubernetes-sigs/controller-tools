@@ -74,10 +74,11 @@ func (l *ExceptionList) Size() int {
 }
 
 func (l *ExceptionList) WriteToFile(path string) error {
+	// #nosec G306
 	return ioutil.WriteFile(path, []byte(l.String()), 0644)
 }
 
-func New() *ExceptionList {
+func NewExceptionList() *ExceptionList {
 	return &ExceptionList{Exceptions: make([]Exception, 0)}
 }
 
@@ -89,7 +90,7 @@ func LoadFromFile(path string) (*ExceptionList, error) {
 		return nil, err
 	}
 
-	list := New()
+	list := NewExceptionList()
 	entries := strings.Split(string(data), "\n")
 	for lineNo, e := range entries {
 		// skip empty lines

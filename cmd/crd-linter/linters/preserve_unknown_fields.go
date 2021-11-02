@@ -22,30 +22,30 @@ import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
-// PreserveUnknownFields checks if a CRD contains a 'preserveUnknownFields' marker
+// NoPreserveUnknownFields checks if a CRD contains a 'preserveUnknownFields' marker
 // either at the top level, or on any specific sub-field of the resource.
-type PreserveUnknownFields struct{}
+type NoPreserveUnknownFields struct{}
 
-var _ Linter = PreserveUnknownFields{}
+var _ Linter = NoPreserveUnknownFields{}
 
-func (p PreserveUnknownFields) Name() string {
-	return "PreserveUnknownFields"
+func (p NoPreserveUnknownFields) Name() string {
+	return "NoPreserveUnknownFields"
 }
 
-func (p PreserveUnknownFields) Description() string {
+func (p NoPreserveUnknownFields) Description() string {
 	return "Fields should avoid using 'preserveUnknownFields' as it means any data can be persisted into the Kubernetes apiserver " +
 		"without any guards on the size and type of data. Setting this to true is no longer permitted in the 'v1' API version of " +
 		"CustomResourceDefinitions, and as such, it should not be used: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#field-pruning"
 }
 
-func (p PreserveUnknownFields) Execute(crd *v1.CustomResourceDefinition) []string {
-	var errs []string
+func (p NoPreserveUnknownFields) Execute(crd *v1.CustomResourceDefinition) WarningList {
+	var errs []Warning
 	if crd.Spec.PreserveUnknownFields {
-		errs = append(errs, "spec.preserveUnknownFields is set to 'true'")
+		errs = append(errs, Warning{Message: "spec.preserveUnknownFields is set to 'true'"})
 	}
-	return append(errs, recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []string {
+	return append(errs, recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []Warning {
 		if props.XPreserveUnknownFields != nil && *props.XPreserveUnknownFields == true {
-			return []string{fmt.Sprintf("%s.x-kubernetes-preserve-unknown-fields is set to 'true'", path)}
+			return newWarningList(fmt.Sprintf("%s.x-kubernetes-preserve-unknown-fields is set to 'true'", path))
 		}
 		return nil
 	})...)

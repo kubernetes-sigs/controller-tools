@@ -63,17 +63,17 @@ func TestMaxLengthString_Execute(t *testing.T) {
 		},
 	}
 
-	expectedErrors := []string{
+	expectedErrors := newWarningList(
 		"spec.versions[0].schema.openAPIV3Schema.properties.any-of-field.anyOf[0].maxLength is not specified on a field of type 'string'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.test-array-fields.items.properties.string-field.maxLength is not specified on a field of type 'string'",
 		"spec.versions[0].schema.openAPIV3Schema.properties.test-field-without-max-length.maxLength is not specified on a field of type 'string'",
-	}
+	)
 
 	fieldEvaluator := MaxLengthStrings{}
 	errs := fieldEvaluator.Execute(crd)
 	// sort strings to allow for consistent comparison
-	sort.Strings(expectedErrors)
-	sort.Strings(errs)
+	sort.Sort(expectedErrors)
+	sort.Sort(errs)
 
 	if !reflect.DeepEqual(errs, expectedErrors) {
 		t.Errorf("returned errors were not as expected: %s", diff.ObjectGoPrintSideBySide(errs, expectedErrors))

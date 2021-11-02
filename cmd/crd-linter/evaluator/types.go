@@ -57,7 +57,7 @@ func (r *Results) ViolatedLinters() []ViolationList {
 type ResultsList []Results
 
 func (results ResultsList) ToExceptionList() *exceptions.ExceptionList {
-	list := exceptions.New()
+	list := exceptions.NewExceptionList()
 	for _, r := range results {
 		if !r.HasViolations() {
 			continue

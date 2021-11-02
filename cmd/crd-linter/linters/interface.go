@@ -24,9 +24,30 @@ type Linter interface {
 	Name() string
 
 	// Execute runs the linter against the given custom resource definition
-	Execute(*v1.CustomResourceDefinition) []string
+	Execute(*v1.CustomResourceDefinition) WarningList
 
 	// Description prints human-readable, actionable information and references about
 	// what the linter does.
 	Description() string
+}
+
+type Warning struct {
+	Message string
+}
+
+type WarningList []Warning
+
+func (w WarningList) Len() int           { return len(w) }
+func (w WarningList) Swap(i, j int)      { w[i], w[j] = w[j], w[i] }
+func (w WarningList) Less(i, j int) bool { return w[i].Message < w[j].Message }
+
+// Used internally to construct a warning list from a set of strings.
+// This function is not exported because as the Warning struct grows, the arguments
+// to the function is likely to change in backward-incompatible ways.
+func newWarningList(messages ...string) WarningList {
+	var w WarningList
+	for _, msg := range messages {
+		w = append(w, Warning{Message: msg})
+	}
+	return w
 }

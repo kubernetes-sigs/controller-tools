@@ -22,8 +22,8 @@ import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
-func recurseAllSchemas(versions []v1.CustomResourceDefinitionVersion, fn func(props v1.JSONSchemaProps, path string) []string) []string {
-	var errs []string
+func recurseAllSchemas(versions []v1.CustomResourceDefinitionVersion, fn func(props v1.JSONSchemaProps, path string) []Warning) []Warning {
+	var errs []Warning
 	for i, vers := range versions {
 		// Skip versions that do not specify a schema
 		if vers.Schema == nil || vers.Schema.OpenAPIV3Schema == nil {
@@ -35,8 +35,8 @@ func recurseAllSchemas(versions []v1.CustomResourceDefinitionVersion, fn func(pr
 	return errs
 }
 
-func recurseAllProps(props v1.JSONSchemaProps, path string, fn func(props v1.JSONSchemaProps, path string) []string) []string {
-	var errs []string
+func recurseAllProps(props v1.JSONSchemaProps, path string, fn func(props v1.JSONSchemaProps, path string) []Warning) []Warning {
+	var errs []Warning
 	errs = append(errs, fn(props, path)...)
 	for i, val := range props.AnyOf {
 		errs = append(errs, recurseAllProps(val, fmt.Sprintf("%s.anyOf[%d]", path, i), fn)...)

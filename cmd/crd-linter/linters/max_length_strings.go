@@ -30,10 +30,10 @@ func (m MaxLengthStrings) Name() string {
 	return "MaxLengthStrings"
 }
 
-func (m MaxLengthStrings) Execute(crd *v1.CustomResourceDefinition) []string {
-	return recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []string {
+func (m MaxLengthStrings) Execute(crd *v1.CustomResourceDefinition) WarningList {
+	return recurseAllSchemas(crd.Spec.Versions, func(props v1.JSONSchemaProps, path string) []Warning {
 		if props.Type == "string" && props.MaxLength == nil {
-			return []string{fmt.Sprintf("%s.maxLength is not specified on a field of type 'string'", path)}
+			return newWarningList(fmt.Sprintf("%s.maxLength is not specified on a field of type 'string'", path))
 		}
 		return nil
 	})
