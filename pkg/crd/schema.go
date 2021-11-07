@@ -126,6 +126,10 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	// apply "apply first" markers first...
 	for _, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
+			if _, isPostFlatten := markerValue.(PostFlattenMarker); isPostFlatten {
+				continue
+			}
+
 			if _, isApplyFirst := markerValue.(applyFirstMarker); !isApplyFirst {
 				continue
 			}
@@ -144,6 +148,10 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	// ...then the rest of the markers
 	for _, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
+			if _, isPostFlatten := markerValue.(PostFlattenMarker); isPostFlatten {
+				continue
+			}
+
 			if _, isApplyFirst := markerValue.(applyFirstMarker); isApplyFirst {
 				// skip apply-first markers, which were already applied
 				continue

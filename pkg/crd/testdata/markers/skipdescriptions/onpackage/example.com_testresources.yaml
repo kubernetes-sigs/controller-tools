@@ -1,0 +1,61 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  creationTimestamp: null
+  name: testresources.example.com
+spec:
+  group: example.com
+  names:
+    kind: TestResource
+    listKind: TestResourceList
+    plural: testresources
+    singular: testresource
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          havingDescription:
+            properties:
+              foo:
+                type: string
+            required:
+            - foo
+            type: object
+          kind:
+            type: string
+          metadata:
+            type: object
+          notHavingDescription:
+            properties:
+              bar:
+                type: string
+              notHavingDescriptionEmbedded:
+                properties:
+                  baz:
+                    type: string
+                required:
+                - baz
+                type: object
+            required:
+            - bar
+            - notHavingDescriptionEmbedded
+            type: object
+        required:
+        - havingDescription
+        - notHavingDescription
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -169,23 +169,13 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 		return
 	}
 
-	info, knownInfo := p.Types[typ]
-	if !knownInfo {
-		typ.Package.AddError(fmt.Errorf("unknown type %s", typ))
-		return
-	}
-
 	// avoid tripping recursive schemata, like ManagedFields, by adding an empty WIP schema
 	p.Schemata[typ] = apiext.JSONSchemaProps{}
 
-	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes)
-	ctxForInfo := schemaCtx.ForInfo(info)
-
-	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)
+	ctxForInfo, err := p.initSchemaContext(typ)
 	if err != nil {
 		typ.Package.AddError(err)
 	}
-	ctxForInfo.PackageMarkers = pkgMarkers
 
 	schema := infoToSchema(ctxForInfo)
 
@@ -203,7 +193,31 @@ func (p *Parser) NeedFlattenedSchemaFor(typ TypeIdent) {
 	partialFlattened := p.flattener.FlattenType(typ)
 	fullyFlattened := FlattenEmbedded(partialFlattened, typ.Package)
 
+	ctxForInfo, err := p.initSchemaContext(typ)
+	if err != nil {
+		typ.Package.AddError(err)
+	}
+
+	postFlattenSchema(ctxForInfo, fullyFlattened)
+
 	p.FlattenedSchemata[typ] = *fullyFlattened
+}
+
+func (p *Parser) initSchemaContext(typ TypeIdent) (*schemaContext, error) {
+	info, knownInfo := p.Types[typ]
+	if !knownInfo {
+		return nil, fmt.Errorf("unknown type %s", typ)
+	}
+
+	ctxForInfo := newSchemaContext(typ.Package, p, p.AllowDangerousTypes).ForInfo(info)
+
+	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)
+	if err != nil {
+		return nil, err
+	}
+	ctxForInfo.PackageMarkers = pkgMarkers
+
+	return ctxForInfo, nil
 }
 
 // NeedCRDFor lives off in spec.go
