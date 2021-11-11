@@ -153,6 +153,9 @@ var ObjectMetaPackages = map[string]PackageOverride{
 						},
 					},
 				},
+				"generateName": {
+					Type: "string",
+				},
 			},
 		}
 	},
