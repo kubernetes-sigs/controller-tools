@@ -35,6 +35,17 @@ spec:
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
+              array:
+                description: Checks that fixed-length arrays work
+                items:
+                  type: integer
+                type: array
+              arrayUsingCompositeLiteral:
+                description: Checks that arrays work when the type contains a composite
+                  literal
+                items:
+                  type: string
+                type: array
               associativeList:
                 description: This tests that associative lists work.
                 items:

@@ -193,6 +193,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",message="must have even length"
 	// +kubebuilder:validation:XValidation:rule="true"
 	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
+
+	// Checks that fixed-length arrays work
+	Array [3]int `json:"array,omitempty"`
+
+	// Checks that arrays work when the type contains a composite literal
+	ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
 }
 
 type ContainsNestedMap struct {
