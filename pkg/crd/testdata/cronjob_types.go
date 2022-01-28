@@ -187,7 +187,12 @@ type CronJobSpec struct {
 
 	// This tests that both unexported and exported inline fields are not skipped in the schema generation
 	unexportedStruct `json:",inline"`
-	ExportedStruct `json:",inline"`
+	ExportedStruct   `json:",inline"`
+
+	// Test of the expression-based validation rule marker, with optional message.
+	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",message="must have even length"
+	// +kubebuilder:validation:XValidation:rule="true"
+	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
 }
 
 type ContainsNestedMap struct {
