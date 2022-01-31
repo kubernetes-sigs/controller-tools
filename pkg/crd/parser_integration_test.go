@@ -72,8 +72,9 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		reg := &markers.Registry{}
 		Expect(crdmarkers.Register(reg)).To(Succeed())
 		parser := &crd.Parser{
-			Collector: &markers.Collector{Registry: reg},
-			Checker:   &loader.TypeChecker{},
+			Collector:              &markers.Collector{Registry: reg},
+			Checker:                &loader.TypeChecker{},
+			IgnoreUnexportedFields: true,
 		}
 		crd.AddKnownTypes(parser)
 

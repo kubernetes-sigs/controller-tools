@@ -181,6 +181,13 @@ type CronJobSpec struct {
 
 	// Maps of arrays of things-that-aren’t-strings are permitted
 	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	unexportedField string
+
+	// This tests that both unexported and exported inline fields are not skipped in the schema generation
+	unexportedStruct `json:",inline"`
+	ExportedStruct `json:",inline"`
 }
 
 type ContainsNestedMap struct {
@@ -233,6 +240,22 @@ type MinMaxObject struct {
 	Foo string `json:"foo,omitempty"`
 	Bar string `json:"bar,omitempty"`
 	Baz string `json:"baz,omitempty"`
+}
+
+type unexportedStruct struct {
+	// This tests that exported fields are not skipped in the schema generation
+	Foo string `json:"foo"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	bar string
+}
+
+type ExportedStruct struct {
+	// This tests that exported fields are not skipped in the schema generation
+	Baz string `json:"baz"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	qux string
 }
 
 type RootObject struct {
