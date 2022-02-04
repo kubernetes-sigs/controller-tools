@@ -56,7 +56,8 @@ spec:
                 - secondary
                 x-kubernetes-list-type: map
               baz:
-                description: This tests that exported fields are not skipped in the schema generation
+                description: This tests that exported fields are not skipped in the
+                  schema generation
                 type: string
               binaryName:
                 description: This tests byte slice schema generation.
@@ -127,6 +128,10 @@ spec:
                   a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
+              foo:
+                description: This tests that exported fields are not skipped in the
+                  schema generation
+                type: string
               intOrStringWithAPattern:
                 anyOf:
                 - type: integer
@@ -137,9 +142,6 @@ spec:
                   for having a pattern on this type.
                 pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                 x-kubernetes-int-or-string: true
-              foo:
-                description: This tests that exported fields are not skipped in the schema generation
-                type: string
               jobTemplate:
                 description: Specifies the job that will be created when executing
                   a CronJob.
