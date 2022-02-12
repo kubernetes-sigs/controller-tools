@@ -7267,6 +7267,14 @@ spec:
                   type: array
                 description: This tests string slices are allowed as map values.
                 type: object
+              stringWithEvenLength:
+                description: Test of the expression-based validation rule marker,
+                  with optional message.
+                type: string
+                x-kubernetes-validations:
+                - message: must have even length
+                  rule: self.size() % 2 == 0
+                - rule: "true"
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:
