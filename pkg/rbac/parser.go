@@ -28,6 +28,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	sets "k8s.io/apimachinery/pkg/util/sets"
 
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -60,13 +61,21 @@ type Rule struct {
 	Namespace string `marker:",optional"`
 }
 
+func newSet(strings []string) sets.String {
+	if strings == nil { // preserve nils for back-compat with existing code
+		return nil
+	}
+
+	return sets.NewString(strings...)
+}
+
 func (r *Rule) Normalize() *NormalizedRule {
 	result := &NormalizedRule{
-		Groups:        toSet(r.Groups),
-		Resources:     toSet(r.Resources),
-		ResourceNames: toSet(r.ResourceNames),
-		Verbs:         toSet(r.Verbs),
-		URLs:          toSet(r.URLs),
+		Groups:        newSet(r.Groups),
+		Resources:     newSet(r.Resources),
+		ResourceNames: newSet(r.ResourceNames),
+		Verbs:         newSet(r.Verbs),
+		URLs:          newSet(r.URLs),
 		Namespace:     r.Namespace,
 	}
 
@@ -85,20 +94,30 @@ type NormalizedRule struct {
 	SortKey string
 
 	Namespace     string
-	Groups        stringSet
-	Resources     stringSet
-	ResourceNames stringSet
-	URLs          stringSet
-	Verbs         stringSet
+	Groups        sets.String
+	Resources     sets.String
+	ResourceNames sets.String
+	URLs          sets.String
+	Verbs         sets.String
+}
+
+func setToSorted(set sets.String) []string {
+	if set == nil { // preserve nils
+		return nil
+	}
+
+	result := set.UnsortedList()
+	sort.Strings(result)
+	return result
 }
 
 func (nr *NormalizedRule) GenerateSortKey() {
 	nr.SortKey = strings.Join(
 		[]string{
-			strings.Join(nr.Groups.ToSorted(), "&"),
-			strings.Join(nr.Resources.ToSorted(), "&"),
-			strings.Join(nr.ResourceNames.ToSorted(), "&"),
-			strings.Join(nr.URLs.ToSorted(), "&"),
+			strings.Join(setToSorted(nr.Groups), "&"),
+			strings.Join(setToSorted(nr.Resources), "&"),
+			strings.Join(setToSorted(nr.ResourceNames), "&"),
+			strings.Join(setToSorted(nr.URLs), "&"),
 		},
 		" + ")
 }
@@ -109,21 +128,21 @@ func (nr *NormalizedRule) GenerateSortKey() {
 // are no deny rules.
 func (nr *NormalizedRule) Subsumes(other *NormalizedRule) bool {
 	return nr.Namespace == other.Namespace &&
-		(nr.Groups.IsEmpty() || nr.Groups.IsSuperSetOf(other.Groups)) &&
-		(nr.Resources.IsEmpty() || nr.Resources.IsSuperSetOf(other.Resources)) &&
-		(nr.ResourceNames.IsEmpty() || nr.ResourceNames.IsSuperSetOf(other.ResourceNames)) &&
-		nr.URLs.IsSuperSetOf(other.URLs) && // TODO: check?
-		nr.Verbs.IsSuperSetOf(other.Verbs)
+		(nr.Groups.Len() == 0 || nr.Groups.IsSuperset(other.Groups)) &&
+		(nr.Resources.Len() == 0 || nr.Resources.IsSuperset(other.Resources)) &&
+		(nr.ResourceNames.Len() == 0 || nr.ResourceNames.IsSuperset(other.ResourceNames)) &&
+		nr.URLs.IsSuperset(other.URLs) && // TODO: check?
+		nr.Verbs.IsSuperset(other.Verbs)
 }
 
 // ToRule converts this rule to its Kubernetes API form.
 func (nr *NormalizedRule) ToRule() rbacv1.PolicyRule {
 	return rbacv1.PolicyRule{
-		APIGroups:       nr.Groups.ToSorted(),
-		Verbs:           nr.Verbs.ToSorted(),
-		Resources:       nr.Resources.ToSorted(),
-		ResourceNames:   nr.ResourceNames.ToSorted(),
-		NonResourceURLs: nr.URLs.ToSorted(),
+		APIGroups:       setToSorted(nr.Groups),
+		Verbs:           setToSorted(nr.Verbs),
+		Resources:       setToSorted(nr.Resources),
+		ResourceNames:   setToSorted(nr.ResourceNames),
+		NonResourceURLs: setToSorted(nr.URLs),
 	}
 }
 
@@ -241,12 +260,18 @@ func insertRule(dest []*NormalizedRule, it *NormalizedRule) []*NormalizedRule {
 
 	if mergeWith >= 0 {
 		// we found one to merge with
-		dest[mergeWith].Verbs.AddAll(it.Verbs)
+		insertAll(dest[mergeWith].Verbs, it.Verbs)
 		return dest
 	}
 
 	// otherwise, insert it
 	return append(dest, it)
+}
+
+func insertAll(set sets.String, other sets.String) {
+	for value := range other {
+		set.Insert(value)
+	}
 }
 
 // Sorts the rules for deterministic output:

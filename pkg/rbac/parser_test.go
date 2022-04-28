@@ -51,9 +51,9 @@ var rules = []*Rule{
 	},
 }
 
-var nrules = normalize_rules(rules)
+var nrules = normalizeRules(rules)
 
-func normalize_rules(rules []*Rule) []*NormalizedRule {
+func normalizeRules(rules []*Rule) []*NormalizedRule {
 	result := make([]*NormalizedRule, len(rules))
 	for ix := range rules {
 		result[ix] = rules[ix].Normalize()
