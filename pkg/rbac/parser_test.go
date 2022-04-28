@@ -51,12 +51,15 @@ var rules = []*Rule{
 	},
 }
 
-var nrules = []*NormalizedRule{}
+var nrules = normalize_rules(rules)
 
-func init() {
-	for _, rule := range rules {
-		nrules = append(nrules, rule.Normalize())
+func normalize_rules(rules []*Rule) []*NormalizedRule {
+	result := make([]*NormalizedRule, len(rules))
+	for ix := range rules {
+		result[ix] = rules[ix].Normalize()
 	}
+
+	return result
 }
 
 func Test_Subsume_Simple(t *testing.T) {
