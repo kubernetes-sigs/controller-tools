@@ -31,7 +31,10 @@ type fieldPath struct {
 var _ = Describe("Collecting", func() {
 	var col *Collector
 	var markersByType map[string]MarkerValues
+	var docsByType map[string]string
+
 	var markersByField map[fieldPath]MarkerValues
+	var docsByField map[fieldPath]string
 
 	JustBeforeEach(func() {
 		By("setting up the registry and collector")
@@ -45,15 +48,23 @@ var _ = Describe("Collecting", func() {
 
 		col = &Collector{Registry: reg}
 
-		By("gathering markers by type name")
+		By("gathering markers/docs by type/field name")
 		markersByType = make(map[string]MarkerValues)
+		docsByType = make(map[string]string)
 		markersByField = make(map[fieldPath]MarkerValues)
+		docsByField = make(map[fieldPath]string)
+
 		err := EachType(col, fakePkg, func(info *TypeInfo) {
 			markersByType[info.Name] = info.Markers
+			docsByType[info.Name] = info.Doc
+
 			for _, field := range info.Fields {
-				markersByField[fieldPath{typ: info.Name, field: field.Name}] = field.Markers
+				fieldPath := fieldPath{typ: info.Name, field: field.Name}
+				markersByField[fieldPath] = field.Markers
+				docsByField[fieldPath] = field.Doc
 			}
 		})
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fakePkg.Errors).To(HaveLen(0))
 	})
@@ -94,6 +105,10 @@ var _ = Describe("Collecting", func() {
 					HaveKeyWithValue("testing:typelvl", ContainElement("here on type"))))
 			})
 
+			It("should have docs without markers", func() {
+				Expect(docsByType).To(HaveKeyWithValue("Foo", "normal godoc normal godoc"))
+			})
+
 			It("should associate markers in the closest non-godoc block", func() {
 				Expect(markersByType).To(HaveKeyWithValue("Foo",
 					HaveKeyWithValue("testing:typelvl", ContainElement("here before type"))))
@@ -109,6 +124,19 @@ var _ = Describe("Collecting", func() {
 				Expect(pkgMarkers).To(HaveKeyWithValue("testing:pkglvl", ContainElement("here reassociated")))
 			})
 		})
+
+		Context("types with /*…*/-style comments", func() {
+			It("should have doc without extraneous spaces", func() {
+				Expect(docsByType).To(HaveKeyWithValue("HasDocsWithSpaces",
+					"This type of doc has spaces preserved in go-ast, but we'd like to trim them."))
+			})
+
+			It("should have doc without extraneous spaces, even over multiple lines", func() {
+				Expect(docsByType).To(HaveKeyWithValue("HasDocsWithSpaces2",
+					"This type of doc has spaces preserved in go-ast, but we'd like to trim them, especially when formatted like this."))
+			})
+		})
+
 		Context("without godoc", func() {
 			It("should associate markers in the closest block", func() {
 				Expect(markersByType).To(HaveKeyWithValue("Quux",

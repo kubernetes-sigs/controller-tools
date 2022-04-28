@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:allowDangerousTypes=true paths=./;./deprecated;./unserved output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true crd:allowDangerousTypes=true paths=./;./deprecated;./unserved output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -201,6 +201,24 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:Maximum=2
 	// +kubebuilder:validation:MultipleOf=2
 	Int32WithValidations int32 `json:"int32WithValidations"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	unexportedField string
+
+	// This tests that both unexported and exported inline fields are not skipped in the schema generation
+	unexportedStruct `json:",inline"`
+	ExportedStruct   `json:",inline"`
+
+	// Test of the expression-based validation rule marker, with optional message.
+	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",message="must have even length"
+	// +kubebuilder:validation:XValidation:rule="true"
+	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
+
+	// Checks that fixed-length arrays work
+	Array [3]int `json:"array,omitempty"`
+
+	// Checks that arrays work when the type contains a composite literal
+	ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
 }
 
 type ContainsNestedMap struct {
@@ -253,6 +271,22 @@ type MinMaxObject struct {
 	Foo string `json:"foo,omitempty"`
 	Bar string `json:"bar,omitempty"`
 	Baz string `json:"baz,omitempty"`
+}
+
+type unexportedStruct struct {
+	// This tests that exported fields are not skipped in the schema generation
+	Foo string `json:"foo"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	bar string
+}
+
+type ExportedStruct struct {
+	// This tests that exported fields are not skipped in the schema generation
+	Baz string `json:"baz"`
+
+	// This tests that unexported fields are skipped in the schema generation
+	qux string
 }
 
 type RootObject struct {

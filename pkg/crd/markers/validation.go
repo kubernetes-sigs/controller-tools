@@ -67,6 +67,7 @@ var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.
 	XPreserveUnknownFields{},
 	XEmbeddedResource{},
 	XIntOrString{},
+	XValidation{},
 )
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
@@ -271,6 +272,17 @@ func isIntegral(value float64) bool {
 	return value == math.Trunc(value) && !math.IsNaN(value) && !math.IsInf(value, 0)
 }
 
+// +controllertools:marker:generateHelp:category="CRD validation"
+// XValidation marks a field as requiring a value for which a given
+// expression evaluates to true.
+//
+// This marker may be repeated to specify multiple expressions, all of
+// which must evaluate to true.
+type XValidation struct {
+	Rule    string
+	Message string `marker:",optional"`
+}
+
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
@@ -473,3 +485,11 @@ func (m XIntOrString) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m XIntOrString) ApplyFirst() {}
+
+func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
+		Rule:    m.Rule,
+		Message: m.Message,
+	})
+	return nil
+}
