@@ -18,3 +18,9 @@ package controller
 // check that the following merge:
 // +kubebuilder:rbac:groups=test,resources=foo,resourceNames=bar,verbs=get
 // +kubebuilder:rbac:groups=test,resources=foo,resourceNames=bar,verbs=watch
+// make sure that differing URLs are not merged:
+// +kubebuilder:rbac:groups=test,resources=diffurl,resourceNames=same,verbs=get,urls="https://example.com/1"
+// +kubebuilder:rbac:groups=test,resources=diffurl,resourceNames=same,verbs=watch,urls="https://example.com/2"
+// make sure that same URLs are merged:
+// +kubebuilder:rbac:groups=test,resources=sameurl,resourceNames=same,verbs=get,urls="https://example.com/x"
+// +kubebuilder:rbac:groups=test,resources=sameurl,resourceNames=same,verbs=watch,urls="https://example.com/x"
