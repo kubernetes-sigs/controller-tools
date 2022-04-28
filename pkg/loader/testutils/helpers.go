@@ -34,9 +34,84 @@ import (
 
 // fakeT wraps Ginkgo's fake testing.T with a real testing.T
 // to get the few missing methods.
+// NOTE: Go 1.17 doesn't allow ambiguous embedded funcs anymore.
+// We have to proxy ginkgo.GinkgoTInterface instead of testing.T
+// because we have to embed testing.T's private() func.
 type fakeT struct {
-	ginkgo.GinkgoTInterface
+	g ginkgo.GinkgoTInterface
 	*testing.T
+}
+
+func (t fakeT) Cleanup(f func()) {
+	t.g.Cleanup(f)
+}
+
+func (t fakeT) Error(args ...interface{}) {
+	t.g.Error(args)
+}
+
+func (t fakeT) Errorf(format string, args ...interface{}) {
+	t.g.Errorf(format, args)
+}
+
+func (t fakeT) Fail() {
+	t.g.Fail()
+}
+
+func (t fakeT) FailNow() {
+	t.g.FailNow()
+}
+
+func (t fakeT) Failed() bool {
+	return t.g.Failed()
+}
+
+func (t fakeT) Fatal(args ...interface{}) {
+	t.g.Fatal(args)
+}
+
+func (t fakeT) Fatalf(format string, args ...interface{}) {
+	t.g.Fatalf(format, args)
+}
+
+func (t fakeT) Helper() {
+	t.g.Helper()
+}
+
+func (t fakeT) Log(args ...interface{}) {
+	t.g.Log(args)
+}
+
+func (t fakeT) Logf(format string, args ...interface{}) {
+	t.g.Logf(format, args)
+}
+
+func (t fakeT) Name() string {
+	return t.g.Name()
+}
+
+func (t fakeT) Setenv(key, value string) {
+	t.g.Setenv(key, value)
+}
+
+func (t fakeT) Skip(args ...interface{}) {
+	t.g.Skip(args)
+}
+
+func (t fakeT) SkipNow() {
+	t.g.SkipNow()
+}
+
+func (t fakeT) Skipf(format string, args ...interface{}) {
+	t.g.Skipf(format, args)
+}
+
+func (t fakeT) Skipped() bool {
+	return t.g.Skipped()
+}
+
+func (t fakeT) TempDir() string {
+	return t.g.TempDir()
 }
 
 // LoadFakeRoots loads the given "root" packages by fake module,

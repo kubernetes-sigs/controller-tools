@@ -178,7 +178,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 })
 
 func unmarshalBothV1(in []byte) (mutating admissionregv1.MutatingWebhookConfiguration, validating admissionregv1.ValidatingWebhookConfiguration) {
-	documents := bytes.Split(in, []byte("\n---\n"))[1:]
+	documents := bytes.Split(in, []byte("\n---\n"))
 	ExpectWithOffset(1, documents).To(HaveLen(2), "expected two documents in file, found %d", len(documents))
 
 	ExpectWithOffset(1, yaml.UnmarshalStrict(documents[0], &mutating)).To(Succeed(), "expected the first document in the file to be a mutating webhook configuration")

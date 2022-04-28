@@ -63,7 +63,7 @@ func transform(t *testing.T, expr string) *apiext.JSONSchemaProps {
 	pkg.NeedTypesInfo()
 	failIfErrors(t, pkg.Errors)
 
-	schemaContext := newSchemaContext(pkg, nil, true).ForInfo(&markers.TypeInfo{})
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
 	// yick: grab the only type definition
 	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
 	result := typeToSchema(schemaContext, definedType)

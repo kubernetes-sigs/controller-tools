@@ -88,6 +88,17 @@ var _ = BeforeSuite(func() {
 						Bar = "foo"
 					)
 
+					/* This type of doc has spaces preserved in go-ast, but we'd like to trim them. */
+					type HasDocsWithSpaces struct {
+					}
+
+					/*
+					This type of doc has spaces preserved in go-ast, but we'd like to trim them,
+					especially when formatted like this.
+					*/
+					type HasDocsWithSpaces2 struct {
+					}
+
 					type Baz interface {
 						// +testing:pkglvl="not here in interface"
 					}
