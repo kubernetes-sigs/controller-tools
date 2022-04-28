@@ -85,20 +85,36 @@ func (r *Rule) Normalize() *NormalizedRule {
 		result.Groups[""] = struct{}{}
 	}
 
-	result.GenerateSortKey()
+	result.GenerateComparisonKey()
 
 	return result
 }
 
 type NormalizedRule struct {
-	SortKey string
+	// if two different rules have the same comparison key then they can have their verbs merged
+	// this key should comprise all the fields below except Verbs and Namespace (since rules
+	// are partitioned by namespace before merging)
+	ComparisonKey string
 
 	Namespace     string
 	Groups        sets.String
 	Resources     sets.String
 	ResourceNames sets.String
 	URLs          sets.String
-	Verbs         sets.String
+
+	Verbs sets.String
+}
+
+// GenerateComparisonKey generates the ComparisonKey
+func (nr *NormalizedRule) GenerateComparisonKey() {
+	nr.ComparisonKey = strings.Join(
+		[]string{
+			strings.Join(setToSorted(nr.Groups), "&"),
+			strings.Join(setToSorted(nr.Resources), "&"),
+			strings.Join(setToSorted(nr.ResourceNames), "&"),
+			strings.Join(setToSorted(nr.URLs), "&"),
+		},
+		" + ")
 }
 
 func setToSorted(set sets.String) []string {
@@ -109,17 +125,6 @@ func setToSorted(set sets.String) []string {
 	result := set.UnsortedList()
 	sort.Strings(result)
 	return result
-}
-
-func (nr *NormalizedRule) GenerateSortKey() {
-	nr.SortKey = strings.Join(
-		[]string{
-			strings.Join(setToSorted(nr.Groups), "&"),
-			strings.Join(setToSorted(nr.Resources), "&"),
-			strings.Join(setToSorted(nr.ResourceNames), "&"),
-			strings.Join(setToSorted(nr.URLs), "&"),
-		},
-		" + ")
 }
 
 // Subsumes indicates if one rule entirely determines another,
@@ -251,7 +256,7 @@ func insertRule(dest []*NormalizedRule, it *NormalizedRule) []*NormalizedRule {
 			return result
 		}
 
-		if it.SortKey == other.SortKey {
+		if it.ComparisonKey == other.ComparisonKey {
 			// match the same things, can merge their
 			// verbs (if no better match)
 			mergeWith = ix
@@ -282,7 +287,7 @@ var _ sort.Interface = ruleSorter{}
 
 func (keys ruleSorter) Len() int           { return len(keys) }
 func (keys ruleSorter) Swap(i, j int)      { keys[i], keys[j] = keys[j], keys[i] }
-func (keys ruleSorter) Less(i, j int) bool { return keys[i].SortKey < keys[j].SortKey }
+func (keys ruleSorter) Less(i, j int) bool { return keys[i].ComparisonKey < keys[j].ComparisonKey }
 
 // NormalizeRules merges Rules that can be merged, and sorts the Rules
 func NormalizeRules(rules []*Rule) []rbacv1.PolicyRule {
