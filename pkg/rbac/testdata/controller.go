@@ -24,3 +24,8 @@ package controller
 // make sure that same URLs are merged:
 // +kubebuilder:rbac:groups=test,resources=sameurl,resourceNames=same,verbs=get,urls="https://example.com/x"
 // +kubebuilder:rbac:groups=test,resources=sameurl,resourceNames=same,verbs=watch,urls="https://example.com/x"
+// examples from: https://github.com/kubernetes-sigs/controller-tools/issues/612
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinedeployments;machinedeployments/status;machinedeployments/finalizers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinedeployments;machinedeployments/finalizers,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinedeployments,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinedeployments,verbs=get;list;watch;create;update;patch;delete

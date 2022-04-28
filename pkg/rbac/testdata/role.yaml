@@ -62,6 +62,20 @@ rules:
   - get
   - watch
 - apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machinedeployments
+  - machinedeployments/finalizers
+  - machinedeployments/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - test
   nonResourceURLs:
   - https://example.com/1
