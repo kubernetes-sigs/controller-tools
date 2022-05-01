@@ -794,7 +794,7 @@ func (d *Definition) loadFields() error {
 func parserScanner(raw string, err func(*sc.Scanner, string)) *sc.Scanner {
 	scanner := &sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(raw))
-	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments | sc.ScanFloats
+	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
 	scanner.Error = err
 
 	return scanner
