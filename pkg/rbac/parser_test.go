@@ -18,6 +18,7 @@ package rbac
 
 import (
 	"testing"
+	"testing/quick"
 
 	"github.com/onsi/gomega"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -78,7 +79,7 @@ func Test_Subsume_Simple(t *testing.T) {
 	g.Expect(nrules[2].Subsumes(nrules[3])).To(gomega.BeFalse())
 }
 
-func Test_SubsumesIsReflexive(t *testing.T) {
+func Test_SubsumesIsReflexive_CannedExamples(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	for _, nr := range nrules {
@@ -86,7 +87,24 @@ func Test_SubsumesIsReflexive(t *testing.T) {
 	}
 }
 
+func Test_SubsumesIsReflexive_PropertyTest(t *testing.T) {
+	f := func(groups, verbs, resources, resourceNames []string) bool {
+		rule := Rule{Groups: groups, Verbs: verbs, Resources: resources, ResourceNames: resourceNames}
+		normed := rule.Normalize()
+
+		return normed.Subsumes(normed)
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
 func Test_SubsumesIsOneWay(t *testing.T) {
+	// note that this does not hold for any arbitrary rules
+	// given that Subsumes is Reflexive (as asserted by previous test)
+	// but it holds for all the examples we have listed above:
+
 	g := gomega.NewWithT(t)
 
 	for i := range nrules {
@@ -266,4 +284,67 @@ func Test_StarInResourceNamesDoesNotSimplify(t *testing.T) {
 
 	normalized := rule.Normalize()
 	g.Expect(normalized.ResourceNames).To(gomega.Equal(sets.NewString("some", "*", "things")))
+}
+
+func Test_EmptyResourceNameListMatchesAnything(t *testing.T) {
+	f := func(groups, verbs, resources, resourceNames []string) bool {
+		rule := Rule{Groups: groups, Verbs: verbs, Resources: resources, ResourceNames: resourceNames}
+
+		biggerRule := rule
+		biggerRule.ResourceNames = nil
+
+		return biggerRule.Normalize().Subsumes(rule.Normalize())
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_EmptyGroupListDoesNotMatchEverything(t *testing.T) {
+	f := func(groups, verbs, resources, resourceNames []string) bool {
+		rule := Rule{Groups: groups, Verbs: verbs, Resources: resources, ResourceNames: resourceNames}
+
+		biggerRule := rule
+		biggerRule.Groups = nil
+
+		// subsumes only if the groups list was originally empty
+		return biggerRule.Normalize().Subsumes(rule.Normalize()) == (len(rule.Groups) == 0)
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_EmptyResourcesListDoesNotMatchEverything(t *testing.T) {
+	f := func(groups, verbs, resources, resourceNames []string) bool {
+		rule := Rule{Groups: groups, Verbs: verbs, Resources: resources, ResourceNames: resourceNames}
+
+		biggerRule := rule
+		biggerRule.Resources = nil
+
+		// subsumes only if the resources list was originally empty
+		return biggerRule.Normalize().Subsumes(rule.Normalize()) == (len(rule.Resources) == 0)
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_EmptyVerbsourcesListDoesNotMatchEverything(t *testing.T) {
+	f := func(groups, verbs, resources, resourceNames []string) bool {
+		rule := Rule{Groups: groups, Verbs: verbs, Resources: resources, ResourceNames: resourceNames}
+
+		biggerRule := rule
+		biggerRule.Verbs = nil
+
+		// subsumes only if the verbs list was originally empty
+		return biggerRule.Normalize().Subsumes(rule.Normalize()) == (len(rule.Verbs) == 0)
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Error(err)
+	}
 }
