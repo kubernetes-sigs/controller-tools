@@ -262,7 +262,7 @@ func insertRule(dest []*NormalizedRule, it *NormalizedRule) []*NormalizedRule {
 
 		if it.Subsumes(other) {
 			// rebuild whole list:
-			// the 'other' rule subsumes the 'it' rule;
+			// the 'it' rule subsumes the 'other' rule;
 			// but it might also subsume other rules in the list, so we
 			// need to go through and check them as well.
 			//
