@@ -21,6 +21,7 @@ import (
 
 	"github.com/onsi/gomega"
 	rbacv1 "k8s.io/api/rbac/v1"
+	sets "k8s.io/apimachinery/pkg/util/sets"
 )
 
 //From: https://github.com/kubernetes-sigs/controller-tools/issues/612, but altered slightly (#3 & #4 made distinct)
@@ -213,4 +214,56 @@ func Test_StarInVerbsMatchesAnything(t *testing.T) {
 	rule2.Verbs = []string{"*"}
 
 	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeTrue())
+}
+
+func Test_StarInResourcesSimplifies(t *testing.T) {
+	// star is special in Resources
+
+	g := gomega.NewWithT(t)
+
+	rule := Rule{
+		Resources: []string{"some", "*", "names"},
+	}
+
+	normalized := rule.Normalize()
+	g.Expect(normalized.Resources).To(gomega.Equal(sets.NewString("*")))
+}
+
+func Test_StarInVerbsSimplifies(t *testing.T) {
+	// star is special in Verbs
+
+	g := gomega.NewWithT(t)
+
+	rule := Rule{
+		Verbs: []string{"some", "*", "names"},
+	}
+
+	normalized := rule.Normalize()
+	g.Expect(normalized.Verbs).To(gomega.Equal(sets.NewString("*")))
+}
+
+func Test_StarInGroupsDoesNotSimplify(t *testing.T) {
+	// star is not special in Groups
+
+	g := gomega.NewWithT(t)
+
+	rule := Rule{
+		Groups: []string{"some", "*", "things"},
+	}
+
+	normalized := rule.Normalize()
+	g.Expect(normalized.Groups).To(gomega.Equal(sets.NewString("some", "*", "things")))
+}
+
+func Test_StarInResourceNamesDoesNotSimplify(t *testing.T) {
+	// star is not special in Resource Names
+
+	g := gomega.NewWithT(t)
+
+	rule := Rule{
+		ResourceNames: []string{"some", "*", "things"},
+	}
+
+	normalized := rule.Normalize()
+	g.Expect(normalized.ResourceNames).To(gomega.Equal(sets.NewString("some", "*", "things")))
 }

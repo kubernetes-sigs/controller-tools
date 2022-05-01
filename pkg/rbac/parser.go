@@ -79,10 +79,20 @@ func (r *Rule) Normalize() *NormalizedRule {
 		Namespace:     r.Namespace,
 	}
 
+	// simplify Resources and Verbs which both support special "*" to mean 'any'
+	// if this is specified, remove all other names
+	if result.Resources.Has("*") {
+		result.Resources = sets.NewString("*")
+	}
+
+	if result.Verbs.Has("*") {
+		result.Verbs = sets.NewString("*")
+	}
+
 	// fix the group names, since letting people type "core" is nice
-	if _, ok := result.Groups["core"]; ok {
-		delete(result.Groups, "core")
-		result.Groups[""] = struct{}{}
+	if result.Groups.Has("core") {
+		result.Groups.Delete("core")
+		result.Groups.Insert("")
 	}
 
 	result.GenerateComparisonKey()
