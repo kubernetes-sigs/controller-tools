@@ -357,7 +357,8 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 
 		if nextTok == sc.Int {
 			return &Argument{Type: IntType}
-		} else if nextTok == sc.Float {
+		}
+		if nextTok == sc.Float {
 			return &Argument{Type: NumberType}
 		}
 	}
