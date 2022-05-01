@@ -133,11 +133,15 @@ func setToSorted(set sets.String) []string {
 // are no deny rules.
 func (nr *NormalizedRule) Subsumes(other *NormalizedRule) bool {
 	return nr.Namespace == other.Namespace &&
-		(nr.Groups.Len() == 0 || nr.Groups.IsSuperset(other.Groups)) &&
-		(nr.Resources.Len() == 0 || nr.Resources.IsSuperset(other.Resources)) &&
-		(nr.ResourceNames.Len() == 0 || nr.ResourceNames.IsSuperset(other.ResourceNames)) &&
+		(matchesAll(nr.Groups) || nr.Groups.IsSuperset(other.Groups)) &&
+		(matchesAll(nr.Resources) || nr.Resources.IsSuperset(other.Resources)) &&
+		(matchesAll(nr.ResourceNames) || nr.ResourceNames.IsSuperset(other.ResourceNames)) &&
 		nr.URLs.IsSuperset(other.URLs) && // TODO: check?
 		nr.Verbs.IsSuperset(other.Verbs)
+}
+
+func matchesAll(set sets.String) bool {
+	return set.Has("*")
 }
 
 // ToRule converts this rule to its Kubernetes API form.
@@ -247,7 +251,12 @@ func insertRule(dest []*NormalizedRule, it *NormalizedRule) []*NormalizedRule {
 		}
 
 		if it.Subsumes(other) {
-			// rebuild whole list
+			// rebuild whole list:
+			// the 'other' rule subsumes the 'it' rule;
+			// but it might also subsume other rules in the list, so we
+			// need to go through and check them as well.
+			//
+			// redoing the insertion with `it` first handles this:
 			result := []*NormalizedRule{it}
 			for _, d := range dest {
 				result = insertRule(result, d)
