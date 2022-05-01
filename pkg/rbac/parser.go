@@ -132,16 +132,16 @@ func setToSorted(set sets.String) []string {
 // Remember that Kubernetes RBAC rules are purely additive, there
 // are no deny rules.
 func (nr *NormalizedRule) Subsumes(other *NormalizedRule) bool {
+	// See the code for documentation of these fields: https://github.com/kubernetes/api/blob/v0.23.6/rbac/v1/types.go#L49
 	return nr.Namespace == other.Namespace &&
-		(matchesAll(nr.Groups) || nr.Groups.IsSuperset(other.Groups)) &&
-		(matchesAll(nr.Resources) || nr.Resources.IsSuperset(other.Resources)) &&
-		(matchesAll(nr.ResourceNames) || nr.ResourceNames.IsSuperset(other.ResourceNames)) &&
-		nr.URLs.IsSuperset(other.URLs) && // TODO: check?
-		nr.Verbs.IsSuperset(other.Verbs)
-}
-
-func matchesAll(set sets.String) bool {
-	return set.Has("*")
+		(nr.Groups.IsSuperset(other.Groups)) &&
+		// Resources supports special "*" to mean "any"
+		(nr.Resources.Has("*") || nr.Resources.IsSuperset(other.Resources)) &&
+		// Empty ResourceNames means "any"
+		(len(nr.ResourceNames) == 0 || nr.ResourceNames.IsSuperset(other.ResourceNames)) &&
+		nr.URLs.IsSuperset(other.URLs) && // TODO: check? also URLs can have "*" at specific locations
+		// Verbs support special "*" to mean "any"
+		(nr.Verbs.Has("*") || nr.Verbs.IsSuperset(other.Verbs))
 }
 
 // ToRule converts this rule to its Kubernetes API form.

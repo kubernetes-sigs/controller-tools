@@ -153,7 +153,7 @@ func Test_Simplification_Merge(t *testing.T) {
 	}))
 }
 
-func Test_StarInGroupsMeansAnything(t *testing.T) {
+func Test_StarInGroupsDoesNotHaveMeaning(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	rule1 := Rule{
@@ -165,10 +165,10 @@ func Test_StarInGroupsMeansAnything(t *testing.T) {
 	rule2 := rule1
 	rule2.Groups = []string{"*"}
 
-	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeTrue())
+	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeFalse())
 }
 
-func Test_StarInResourcesMeansAnything(t *testing.T) {
+func Test_StarInResourcesMatchesAnything(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	rule1 := Rule{
@@ -183,7 +183,7 @@ func Test_StarInResourcesMeansAnything(t *testing.T) {
 	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeTrue())
 }
 
-func Test_StarInResourceNamesMeansAnything(t *testing.T) {
+func Test_StarInResourceNamesDoesNotHaveMeaning(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	rule1 := Rule{
@@ -195,6 +195,22 @@ func Test_StarInResourceNamesMeansAnything(t *testing.T) {
 
 	rule2 := rule1
 	rule2.ResourceNames = []string{"*"}
+
+	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeFalse())
+}
+
+func Test_StarInVerbsMatchesAnything(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	rule1 := Rule{
+		Groups:        []string{"cluster.x-k8s.io"},
+		Resources:     []string{"machinedeployments"},
+		ResourceNames: []string{"resourcename"},
+		Verbs:         []string{"update", "patch"},
+	}
+
+	rule2 := rule1
+	rule2.Verbs = []string{"*"}
 
 	g.Expect(rule2.Normalize().Subsumes(rule1.Normalize())).To(gomega.BeTrue())
 }
