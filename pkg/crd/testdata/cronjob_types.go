@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true paths=./;./deprecated;./unserved output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -181,6 +181,26 @@ type CronJobSpec struct {
 
 	// Maps of arrays of things-that-aren’t-strings are permitted
 	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
+
+	// +kubebuilder:validation:Minimum=-0.5
+	// +kubebuilder:validation:Maximum=1.5
+	// +kubebuilder:validation:MultipleOf=0.5
+	FloatWithValidations float64 `json:"floatWithValidations"`
+
+	// +kubebuilder:validation:Minimum=-0.5
+	// +kubebuilder:validation:Maximum=1.5
+	// +kubebuilder:validation:MultipleOf=0.5
+	Float64WithValidations float64 `json:"float64WithValidations"`
+
+	// +kubebuilder:validation:Minimum=-2
+	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:MultipleOf=2
+	IntWithValidations int `json:"intWithValidations"`
+
+	// +kubebuilder:validation:Minimum=-2
+	// +kubebuilder:validation:Maximum=2
+	// +kubebuilder:validation:MultipleOf=2
+	Int32WithValidations int32 `json:"int32WithValidations"`
 
 	// This tests that unexported fields are skipped in the schema generation
 	unexportedField string

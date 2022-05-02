@@ -17,9 +17,9 @@ limitations under the License.
 package markers
 
 import (
-	"fmt"
-
 	"encoding/json"
+	"fmt"
+	"math"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -37,7 +37,7 @@ const (
 // reusable and writing complex validations on slice items.
 var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.DescribesField,
 
-	// integer markers
+	// numeric markers
 
 	Maximum(0),
 	Minimum(0),
@@ -123,11 +123,19 @@ func init() {
 
 // +controllertools:marker:generateHelp:category="CRD validation"
 // Maximum specifies the maximum numeric value that this field can have.
-type Maximum int
+type Maximum float64
+
+func (m Maximum) Value() float64 {
+	return float64(m)
+}
 
 // +controllertools:marker:generateHelp:category="CRD validation"
-// Minimum specifies the minimum numeric value that this field can have. Negative integers are supported.
-type Minimum int
+// Minimum specifies the minimum numeric value that this field can have. Negative numbers are supported.
+type Minimum float64
+
+func (m Minimum) Value() float64 {
+	return float64(m)
+}
 
 // +controllertools:marker:generateHelp:category="CRD validation"
 // ExclusiveMinimum indicates that the minimum is "up to" but not including that value.
@@ -139,7 +147,11 @@ type ExclusiveMaximum bool
 
 // +controllertools:marker:generateHelp:category="CRD validation"
 // MultipleOf specifies that this field must have a numeric value that's a multiple of this one.
-type MultipleOf int
+type MultipleOf float64
+
+func (m MultipleOf) Value() float64 {
+	return float64(m)
+}
 
 // +controllertools:marker:generateHelp:category="CRD validation"
 // MaxLength specifies the maximum length for this string.
@@ -252,6 +264,14 @@ type XIntOrString struct{}
 // to be used only as a last resort.
 type Schemaless struct{}
 
+func hasNumericType(schema *apiext.JSONSchemaProps) bool {
+	return schema.Type == "integer" || schema.Type == "number"
+}
+
+func isIntegral(value float64) bool {
+	return value == math.Trunc(value) && !math.IsNaN(value) && !math.IsInf(value, 0)
+}
+
 // +controllertools:marker:generateHelp:category="CRD validation"
 // XValidation marks a field as requiring a value for which a given
 // expression evaluates to true.
@@ -264,40 +284,60 @@ type XValidation struct {
 }
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "integer" {
-		return fmt.Errorf("must apply maximum to an integer")
+	if !hasNumericType(schema) {
+		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
 	}
-	val := float64(m)
+
+	if schema.Type == "integer" && !isIntegral(m.Value()) {
+		return fmt.Errorf("cannot apply non-integral maximum validation (%v) to integer value", m.Value())
+	}
+
+	val := m.Value()
 	schema.Maximum = &val
 	return nil
 }
+
 func (m Minimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "integer" {
-		return fmt.Errorf("must apply minimum to an integer")
+	if !hasNumericType(schema) {
+		return fmt.Errorf("must apply minimum to a numeric value, found %s", schema.Type)
 	}
-	val := float64(m)
+
+	if schema.Type == "integer" && !isIntegral(m.Value()) {
+		return fmt.Errorf("cannot apply non-integral minimum validation (%v) to integer value", m.Value())
+	}
+
+	val := m.Value()
 	schema.Minimum = &val
 	return nil
 }
+
 func (m ExclusiveMaximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "integer" {
-		return fmt.Errorf("must apply exclusivemaximum to an integer")
+	if !hasNumericType(schema) {
+		return fmt.Errorf("must apply exclusivemaximum to a numeric value, found %s", schema.Type)
 	}
 	schema.ExclusiveMaximum = bool(m)
 	return nil
 }
+
 func (m ExclusiveMinimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "integer" {
-		return fmt.Errorf("must apply exclusiveminimum to an integer")
+	if !hasNumericType(schema) {
+		return fmt.Errorf("must apply exclusiveminimum to a numeric value, found %s", schema.Type)
 	}
+
 	schema.ExclusiveMinimum = bool(m)
 	return nil
 }
+
 func (m MultipleOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "integer" {
-		return fmt.Errorf("must apply multipleof to an integer")
+	if !hasNumericType(schema) {
+		return fmt.Errorf("must apply multipleof to a numeric value, found %s", schema.Type)
 	}
-	val := float64(m)
+
+	if schema.Type == "integer" && !isIntegral(m.Value()) {
+		return fmt.Errorf("cannot apply non-integral multipleof validation (%v) to integer value", m.Value())
+	}
+
+	val := m.Value()
 	schema.MultipleOf = &val
 	return nil
 }
@@ -310,6 +350,7 @@ func (m MaxLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.MaxLength = &val
 	return nil
 }
+
 func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "string" {
 		return fmt.Errorf("must apply minlength to a string")
@@ -318,6 +359,7 @@ func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.MinLength = &val
 	return nil
 }
+
 func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	// Allow string types or IntOrStrings. An IntOrString will still
 	// apply the pattern validation when a string is detected, the pattern
@@ -337,6 +379,7 @@ func (m MaxItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.MaxItems = &val
 	return nil
 }
+
 func (m MinItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "array" {
 		return fmt.Errorf("must apply minitems to an array")
@@ -345,6 +388,7 @@ func (m MinItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.MinItems = &val
 	return nil
 }
+
 func (m UniqueItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type != "array" {
 		return fmt.Errorf("must apply uniqueitems to an array")
@@ -388,6 +432,7 @@ func (m Enum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.Enum = vals
 	return nil
 }
+
 func (m Format) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.Format = string(m)
 	return nil

@@ -75,6 +75,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			Collector:              &markers.Collector{Registry: reg},
 			Checker:                &loader.TypeChecker{},
 			IgnoreUnexportedFields: true,
+			AllowDangerousTypes:    true, // need to allow “dangerous types” in this file for testing
 		}
 		crd.AddKnownTypes(parser)
 
@@ -189,6 +190,5 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		By("checking that no errors occurred along the way (expect for type errors)")
 		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
-
 	})
 })
