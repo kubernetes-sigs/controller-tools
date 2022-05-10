@@ -1,6 +1,6 @@
 module sigs.k8s.io/controller-tools/pkg/loader/testmod
 
-go 1.17
+go 1.18
 
 replace sigs.k8s.io/controller-tools/pkg/loader/testmod/submod1 => ./submod1
 
