@@ -247,7 +247,12 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) map[schema.GroupKi
 			}
 			fieldPkgPath := loader.NonVendorPath(namedField.Obj().Pkg().Path())
 			fieldPkg := pkg.Imports()[fieldPkgPath]
-			if fieldPkg != metav1Pkg {
+
+			// Compare the metav1 package by ID and not by the actual instance
+			// of the object. The objects in memory could be different due to
+			// loading from different root paths, even when they both refer to
+			// the same metav1 package.
+			if fieldPkg == nil || fieldPkg.ID != metav1Pkg.ID {
 				continue
 			}
 
