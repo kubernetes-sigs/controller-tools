@@ -134,6 +134,7 @@ spec:
               embeddedResource:
                 type: object
                 x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
               failedJobsHistoryLimit:
                 description: The number of failed finished jobs to retain. This is
                   a pointer to distinguish between explicit zero and not specified.
@@ -7340,9 +7341,11 @@ spec:
                 minLength: 4
                 type: string
               unprunedEmbeddedResource:
+                allOf:
+                - x-kubernetes-preserve-unknown-fields: true
+                - x-kubernetes-preserve-unknown-fields: true
                 type: object
                 x-kubernetes-embedded-resource: true
-                x-kubernetes-preserve-unknown-fields: true
               unprunedFomType:
                 description: This tests that a type-level pruning maker works.
                 type: object
