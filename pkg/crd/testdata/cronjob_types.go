@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved;./job/... output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1

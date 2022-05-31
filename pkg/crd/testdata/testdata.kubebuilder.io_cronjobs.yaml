@@ -7504,6 +7504,24 @@ spec:
             type: string
           metadata:
             type: object
+          spec:
+            description: CronJobSpec defines the desired state of CronJob
+            properties:
+              int32WithValidations:
+                format: int32
+                maximum: 2
+                minimum: -2
+                multipleOf: 2
+                type: integer
+              twoOfAKindPart0:
+                description: This tests that markers that are allowed on both fields
+                  and types are applied to fields
+                minLength: 4
+                type: string
+            required:
+            - int32WithValidations
+            - twoOfAKindPart0
+            type: object
         type: object
     served: false
     storage: false
