@@ -1,0 +1,75 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  creationTimestamp: null
+  name: jobs.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: Job
+    listKind: JobList
+    plural: jobs
+    singular: job
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Job is the Schema for the jobs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: JobSpec is the spec for the jobs API.
+            properties:
+              count:
+                description: Count is the number of times a job may be executed.
+                format: int32
+                maximum: 10
+                minimum: 0
+                type: integer
+              crongJob:
+                description: CronJob is the spec for the related CrongJob.
+                properties:
+                  int32WithValidations:
+                    format: int32
+                    maximum: 2
+                    minimum: -2
+                    multipleOf: 2
+                    type: integer
+                  twoOfAKindPart0:
+                    description: This tests that markers that are allowed on both
+                      fields and types are applied to fields
+                    minLength: 4
+                    type: string
+                required:
+                - int32WithValidations
+                - twoOfAKindPart0
+                type: object
+              friendlyName:
+                description: FriendlyName is the friendly name for the job.
+                minLength: 5
+                type: string
+            required:
+            - count
+            - crongJob
+            - friendlyName
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true

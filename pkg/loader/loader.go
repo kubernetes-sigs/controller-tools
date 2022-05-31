@@ -366,15 +366,27 @@ func LoadRoots(roots ...string) ([]*Package, error) {
 //
 //     5. Load the filesystem path roots and return the load packages for the
 //        package/module roots AND the filesystem path roots.
-func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, error) {
+//
+//nolint:gocyclo
+func LoadRootsWithConfig(cfg *packages.Config, roots ...string) (result []*Package, retErr error) {
+	defer func() {
+		if retErr != nil {
+			return
+		}
+		for i := range result {
+			visitImports(result, result[i], nil)
+		}
+	}()
+
 	newLoader := func(cfg *packages.Config, cfgDir string) *loader {
 		if cfg == nil {
-			cfg = &packages.Config{}
-			cfg.Dir = cfgDir
+			cfg = &packages.Config{
+				Dir: cfgDir,
+			}
 		}
 		l := &loader{
 			cfg:      cfg,
-			packages: make(map[*packages.Package]*Package),
+			packages: map[*packages.Package]*Package{},
 		}
 		l.cfg.Mode |= packages.LoadImports | packages.NeedTypesSizes
 		if l.cfg.Fset == nil {
@@ -431,7 +443,6 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	// please refer to this function's godoc comments for more information on
 	// how these two types of roots are distinguished from one another
 	var (
-		result    []*Package
 		pkgRoots  []string
 		fspRoots  []string
 		fspRootRx = regexp.MustCompile(`^\.{1,2}`)
@@ -606,6 +617,27 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	}
 
 	return result, nil
+}
+
+// visitImports walks a dependency graph, replacing imported package
+// references with those from the rootPkgs list. This ensures the
+// kubebuilder marker generation is handled correctly. For more info,
+// please see issue 680.
+func visitImports(rootPkgs []*Package, pkg *Package, seen sets.String) {
+	if seen == nil {
+		seen = sets.String{}
+	}
+	for importedPkgID, importedPkg := range pkg.Imports() {
+		for i := range rootPkgs {
+			if importedPkgID == rootPkgs[i].ID {
+				pkg.imports[importedPkgID] = rootPkgs[i]
+			}
+		}
+		if !seen.Has(importedPkgID) {
+			visitImports(rootPkgs, importedPkg, seen)
+			seen.Insert(importedPkgID)
+		}
+	}
 }
 
 // importFunc is an implementation of the single-method
