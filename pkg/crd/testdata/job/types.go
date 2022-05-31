@@ -15,44 +15,50 @@ limitations under the License.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1beta1
-package unserved
+package job
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"testdata.kubebuilder.io/cronjob/unserved"
 )
-
-// CronJobSpec defines the desired state of CronJob
-type CronJobSpec struct {
-	// This tests that markers that are allowed on both fields and types are applied to fields
-	// +kubebuilder:validation:MinLength=4
-	TwoOfAKindPart0 string `json:"twoOfAKindPart0"`
-
-	// +kubebuilder:validation:Minimum=-2
-	// +kubebuilder:validation:Maximum=2
-	// +kubebuilder:validation:MultipleOf=2
-	Int32WithValidations int32 `json:"int32WithValidations"`
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:singular=mycronjob
-// +kubebuilder:unservedversion
+// +kubebuilder:resource:singular=job
 
-// CronJob is the Schema for the cronjobs API
-type CronJob struct {
+// JobSpec is the spec for the jobs API.
+type JobSpec struct {
+	// FriendlyName is the friendly name for the job.
+	//
+	// +kubebuilder:validation:MinLength=5
+	FriendlyName string `json:"friendlyName"`
+
+	// Count is the number of times a job may be executed.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=10
+	Count int32 `json:"count"`
+
+	// CronJob is the spec for the related CrongJob.
+	CronnJob unserved.CronJobSpec `json:"crongJob"`
+}
+
+// Job is the Schema for the jobs API
+type Job struct {
 	/*
 	 */
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec CronJobSpec `json:"spec,omitempty"`
+	Spec JobSpec `json:"spec"`
 }
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
-type CronJobList struct {
+// JobList contains a list of Job
+type JobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CronJob `json:"items"`
+	Items           []Job `json:"items"`
 }
