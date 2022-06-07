@@ -36,8 +36,8 @@ import (
 
 var _ = Describe("CRD Generation proper defaulting", func() {
 	var (
-		ctx *genall.GenerationContext
-		out *outputRule
+		ctx, ctx2 *genall.GenerationContext
+		out       *outputRule
 
 		genDir = filepath.Join("testdata", "gen")
 	)
@@ -53,6 +53,9 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		pkgs, err := loader.LoadRoots(".")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(pkgs).To(HaveLen(1))
+		pkgs2, err := loader.LoadRoots("./...")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs2).To(HaveLen(2))
 
 		By("setup up the context")
 		reg := &markers.Registry{}
@@ -63,6 +66,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		ctx = &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+		ctx2 = &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs2,
 			Checker:    &loader.TypeChecker{},
 			OutputRule: out,
 		}
@@ -90,6 +99,26 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
+	})
+
+	It("should have deterministic output", func() {
+		By("calling Generate on multple packages")
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx2)).NotTo(HaveOccurred())
+
+		By("loading the desired YAMLs")
+		expectedFileFoos, err := ioutil.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileFoos = fixAnnotations(expectedFileFoos)
+		expectedFileZoos, err := ioutil.ReadFile(filepath.Join(genDir, "zoo", "bar.example.com_zooes.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		expectedFileZoos = fixAnnotations(expectedFileZoos)
+
+		By("comparing the two, output must be deterministic because groupKinds are sorted")
+		expectedOut := string(expectedFileFoos) + string(expectedFileZoos)
+		Expect(out.buf.String()).To(Equal(expectedOut), cmp.Diff(out.buf.String(), expectedOut))
 	})
 })
 
