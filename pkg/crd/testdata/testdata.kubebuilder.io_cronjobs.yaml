@@ -7344,7 +7344,12 @@ spec:
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
               unprunedFomType:
-                description: This tests that a type-level pruning maker works.
+                description: This tests that a type-level pruning marker works.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              unprunedFomTypeAndField:
+                description: This tests that a type-level pruning marker combined
+                  with a field-level pruning marker works.
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               unprunedJSON:
@@ -7381,6 +7386,7 @@ spec:
             - twoOfAKindPart1
             - unprunedEmbeddedResource
             - unprunedFomType
+            - unprunedFomTypeAndField
             - unprunedJSON
             type: object
           status:

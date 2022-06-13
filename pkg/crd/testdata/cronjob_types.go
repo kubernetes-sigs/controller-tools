@@ -134,8 +134,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:nullable
 	UnprunedEmbeddedResource runtime.RawExtension `json:"unprunedEmbeddedResource"`
 
-	// This tests that a type-level pruning maker works.
+	// This tests that a type-level pruning marker works.
 	UnprunedFromType Preserved `json:"unprunedFomType"`
+
+	// This tests that a type-level pruning marker combined with a field-level pruning marker works.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	UnprunedFromTypeAndField Preserved `json:"unprunedFomTypeAndField"`
 
 	// This tests that associative lists work.
 	// +listType=map
