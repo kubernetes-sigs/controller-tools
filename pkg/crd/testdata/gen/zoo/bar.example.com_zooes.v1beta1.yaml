@@ -1,0 +1,50 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  creationTimestamp: null
+  name: zoos.bar.example.com
+spec:
+  group: bar.example.com
+  names:
+    kind: Zoo
+    listKind: ZooList
+    plural: zooes
+    singular: zoo
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: Spec comments SHOULD appear in the CRD spec
+          properties:
+            defaultedString:
+              description: This tests that defaulted fields are stripped for v1beta1,
+                but not for v1
+              type: string
+          required:
+          - defaultedString
+          type: object
+        status:
+          description: Status comments SHOULD appear in the CRD spec
+          type: object
+      type: object
+  version: zoo
+  versions:
+  - name: zoo
+    served: true
+    storage: true
