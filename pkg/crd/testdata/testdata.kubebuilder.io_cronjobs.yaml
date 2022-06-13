@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/controller-tools
+    cert-manager.io/inject-ca-from-secret: cert-manager/cert-manager-webhook-ca
   creationTimestamp: null
   name: cronjobs.testdata.kubebuilder.io
 spec:

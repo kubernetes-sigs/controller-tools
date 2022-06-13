@@ -499,6 +499,7 @@ type CronJobStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:singular=mycronjob
 // +kubebuilder:storageversion
+// +kubebuilder:metadata:annotations="api-approved.kubernetes.io=https://github.com/kubernetes-sigs/controller-tools";"cert-manager.io/inject-ca-from-secret=cert-manager/cert-manager-webhook-ca"
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
