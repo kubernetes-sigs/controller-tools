@@ -147,13 +147,23 @@ type CronJobSpec struct {
 	// +listMapKey=secondary
 	AssociativeList []AssociativeType `json:"associativeList"`
 
+	// This tests that associative lists work via a nested type.
+	NestedAssociativeList NestedAssociativeList `json:"nestedassociativeList"`
+
 	// A map that allows different actors to manage different fields
 	// +mapType=granular
 	MapOfInfo map[string][]byte `json:"mapOfInfo"`
 
+	// A map that allows different actors to manage different fields via a nested type.
+	NestedMapOfInfo NestedMapOfInfo `json:"nestedMapOfInfo"`
+
 	// A struct that can only be entirely replaced
 	// +structType=atomic
 	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
+
+	// A struct that can only be entirely replaced via a nested type.
+	// +structType=atomic
+	NestedStructWithSeveralFields NestedStructWithSeveralFields `json:"nestedStructWithSeveralFields"`
 
 	// This tests that type references are properly flattened
 	// +kubebuilder:validation:optional
@@ -267,6 +277,9 @@ type NestedObject struct {
 	Bar bool   `json:"bar"`
 }
 
+// +structType=atomic
+type NestedStructWithSeveralFields NestedObject
+
 type JustNestedObject NestedObject
 
 // +kubebuilder:validation:MinProperties=1
@@ -302,6 +315,14 @@ type AssociativeType struct {
 	Secondary int    `json:"secondary"`
 	Foo       string `json:"foo"`
 }
+
+// +listType=map
+// +listMapKey=name
+// +listMapKey=secondary
+type NestedAssociativeList []AssociativeType
+
+// +mapType=granular
+type NestedMapOfInfo map[string][]byte
 
 // +kubebuilder:validation:MinLength=4
 // This tests that markers that are allowed on both fields and types are applied to types
