@@ -7260,6 +7260,14 @@ spec:
                   type: object
                 description: Checks that maps containing types that contain maps work
                 type: object
+              nestedMapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that allows different actors to manage different
+                  fields via a nested type.
+                type: object
+                x-kubernetes-map-type: granular
               nestedNestedMap:
                 additionalProperties:
                   additionalProperties:
@@ -7269,6 +7277,41 @@ spec:
                   type: object
                 description: Checks that multiply-nested maps work
                 type: object
+              nestedStructWithSeveralFields:
+                allOf:
+                - x-kubernetes-map-type: atomic
+                - x-kubernetes-map-type: atomic
+                description: A struct that can only be entirely replaced via a nested
+                  type.
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+              nestedassociativeList:
+                description: This tests that associative lists work via a nested type.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -7380,6 +7423,9 @@ spec:
             - intWithValidations
             - jobTemplate
             - mapOfInfo
+            - nestedMapOfInfo
+            - nestedStructWithSeveralFields
+            - nestedassociativeList
             - patternObject
             - schedule
             - structWithSeveralFields
