@@ -7278,9 +7278,6 @@ spec:
                 description: Checks that multiply-nested maps work
                 type: object
               nestedStructWithSeveralFields:
-                allOf:
-                - x-kubernetes-map-type: atomic
-                - x-kubernetes-map-type: atomic
                 description: A struct that can only be entirely replaced via a nested
                   type.
                 properties:
@@ -7292,6 +7289,7 @@ spec:
                 - bar
                 - foo
                 type: object
+                x-kubernetes-map-type: atomic
               nestedassociativeList:
                 description: This tests that associative lists work via a nested type.
                 items:
