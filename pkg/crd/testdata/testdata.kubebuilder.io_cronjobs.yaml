@@ -134,6 +134,7 @@ spec:
               embeddedResource:
                 type: object
                 x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
               failedJobsHistoryLimit:
                 description: The number of failed finished jobs to retain. This is
                   a pointer to distinguish between explicit zero and not specified.
@@ -7259,6 +7260,14 @@ spec:
                   type: object
                 description: Checks that maps containing types that contain maps work
                 type: object
+              nestedMapOfInfo:
+                additionalProperties:
+                  format: byte
+                  type: string
+                description: A map that allows different actors to manage different
+                  fields via a nested type.
+                type: object
+                x-kubernetes-map-type: granular
               nestedNestedMap:
                 additionalProperties:
                   additionalProperties:
@@ -7268,6 +7277,39 @@ spec:
                   type: object
                 description: Checks that multiply-nested maps work
                 type: object
+              nestedStructWithSeveralFields:
+                description: A struct that can only be entirely replaced via a nested
+                  type.
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
+              nestedassociativeList:
+                description: This tests that associative lists work via a nested type.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               noReallySuspend:
                 description: This flag is like suspend, but for when you really mean
                   it. It helps test the +kubebuilder:validation:Type marker.
@@ -7379,6 +7421,9 @@ spec:
             - intWithValidations
             - jobTemplate
             - mapOfInfo
+            - nestedMapOfInfo
+            - nestedStructWithSeveralFields
+            - nestedassociativeList
             - patternObject
             - schedule
             - structWithSeveralFields
@@ -7509,6 +7554,24 @@ spec:
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
+            type: object
+          spec:
+            description: CronJobSpec defines the desired state of CronJob
+            properties:
+              int32WithValidations:
+                format: int32
+                maximum: 2
+                minimum: -2
+                multipleOf: 2
+                type: integer
+              twoOfAKindPart0:
+                description: This tests that markers that are allowed on both fields
+                  and types are applied to fields
+                minLength: 4
+                type: string
+            required:
+            - int32WithValidations
+            - twoOfAKindPart0
             type: object
         type: object
     served: false
