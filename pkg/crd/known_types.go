@@ -74,7 +74,8 @@ var KnownPackages = map[string]PackageOverride{
 	"k8s.io/apimachinery/pkg/runtime": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "RawExtension", Package: pkg}] = apiext.JSONSchemaProps{
 			// TODO(directxman12): regexp validation for this (or get kube to support it as a format value)
-			Type: "object",
+			Type:                   "object",
+			XPreserveUnknownFields: boolPtr(true),
 		}
 		p.AddPackage(pkg) // get the rest of the types
 	},
