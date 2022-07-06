@@ -162,7 +162,6 @@ type CronJobSpec struct {
 	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
 
 	// A struct that can only be entirely replaced via a nested type.
-	// +structType=atomic
 	NestedStructWithSeveralFields NestedStructWithSeveralFields `json:"nestedStructWithSeveralFields"`
 
 	// This tests that type references are properly flattened
