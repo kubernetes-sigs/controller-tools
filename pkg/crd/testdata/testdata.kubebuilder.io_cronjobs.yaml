@@ -7290,6 +7290,19 @@ spec:
                 - foo
                 type: object
                 x-kubernetes-map-type: atomic
+              nestedStructWithSeveralFieldsDoubleMarked:
+                description: A struct that can only be entirely replaced via a nested
+                  type and field markers.
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+                x-kubernetes-map-type: atomic
               nestedassociativeList:
                 description: This tests that associative lists work via a nested type.
                 items:
@@ -7423,6 +7436,7 @@ spec:
             - mapOfInfo
             - nestedMapOfInfo
             - nestedStructWithSeveralFields
+            - nestedStructWithSeveralFieldsDoubleMarked
             - nestedassociativeList
             - patternObject
             - schedule
