@@ -25,8 +25,8 @@ limitations under the License.
 // (crd.SchemaMarker).  Any marker implementing this will automatically
 // be run after the rest of a given schema node has been generated.
 // Markers that need to be run before any other markers can also
-// implement ApplyFirst, but this is discouraged and may change
-// in the future.
+// implement ApplyFirst or markers.ApplyPriority, but this is discouraged
+// and may change in the future.
 //
 // All validation markers start with "+kubebuilder:validation", and
 // have the same name as their type name.

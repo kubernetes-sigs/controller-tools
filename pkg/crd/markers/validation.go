@@ -448,7 +448,9 @@ func (m Type) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Type) ApplyFirst() {}
+func (m Type) ApplyPriority() ApplyPriority {
+	return ApplyPriorityDefault - 1
+}
 
 func (m Nullable) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.Nullable = true
@@ -484,7 +486,9 @@ func (m XIntOrString) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m XIntOrString) ApplyFirst() {}
+func (m XIntOrString) ApplyPriority() ApplyPriority {
+	return ApplyPriorityDefault - 1
+}
 
 func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
