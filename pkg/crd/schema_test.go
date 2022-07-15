@@ -25,6 +25,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -109,4 +110,60 @@ func Test_Schema_MapOfStringToArrayOfFloat32(t *testing.T) {
 			Schema: arrayOfNumbersSchema,
 		},
 	}))
+}
+
+func Test_Schema_ApplyMarkers(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	props := &apiext.JSONSchemaProps{}
+	ctx := &schemaContext{}
+
+	var invocations []string
+
+	applyMarkers(ctx, markers.MarkerValues{
+		"blah": []interface{}{
+			&testPriorityMarker{
+				priority: 0, callback: func() {
+					invocations = append(invocations, "0")
+				},
+			},
+			&testPriorityMarker{priority: 1, callback: func() {
+				invocations = append(invocations, "1")
+
+			}},
+			&testapplyFirstMarker{callback: func() {
+				invocations = append(invocations, "applyFirst")
+			}},
+			&testPriorityMarker{priority: crdmarkers.ApplyPriorityDefault, callback: func() {
+				invocations = append(invocations, "default")
+
+			}},
+		}}, props, nil)
+
+	g.Expect(invocations).To(gomega.Equal([]string{"0", "1", "applyFirst", "default"}))
+}
+
+type testPriorityMarker struct {
+	priority crdmarkers.ApplyPriority
+	callback func()
+}
+
+func (m *testPriorityMarker) ApplyPriority() crdmarkers.ApplyPriority {
+	return m.priority
+}
+
+func (m *testPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
+}
+
+type testapplyFirstMarker struct {
+	priority crdmarkers.ApplyPriority
+	callback func()
+}
+
+func (m *testapplyFirstMarker) ApplyFirst() {}
+func (m *testapplyFirstMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
 }
