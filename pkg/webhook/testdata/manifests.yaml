@@ -16,6 +16,7 @@ webhooks:
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.cronjob.testdata.kubebuilder.io
+  reinvocationPolicy: Never
   rules:
   - apiGroups:
     - testdata.kubebuiler.io
