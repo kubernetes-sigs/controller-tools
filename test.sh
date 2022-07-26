@@ -120,7 +120,7 @@ header_text "running golangci-lint"
 
 golangci-lint run --disable-all \
     --enable=misspell \
-    --enable=golint \
+    --enable=revive \
     --enable=govet \
     --enable=deadcode \
     --enable=goimports \
