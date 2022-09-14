@@ -122,10 +122,9 @@ golangci-lint run --disable-all \
     --enable=misspell \
     --enable=revive \
     --enable=govet \
-    --enable=deadcode \
+    --enable=unused \
     --enable=goimports \
     --enable=errcheck \
-    --enable=varcheck \
     --enable=unparam \
     --enable=ineffassign \
     --enable=nakedret \
