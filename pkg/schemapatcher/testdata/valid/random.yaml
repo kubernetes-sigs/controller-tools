@@ -1,0 +1,1 @@
+name: This is a random YAML file to ensure the generator doesn't error with non-kube YAML files.
