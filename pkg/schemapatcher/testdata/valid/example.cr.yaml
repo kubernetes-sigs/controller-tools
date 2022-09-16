@@ -1,0 +1,3 @@
+# This is an example of the resource defined in this package.
+apiVersion: kubebuilder.schemapatcher.controller-tools.sigs.k8s.io/v1
+kind: Example
