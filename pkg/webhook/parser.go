@@ -330,7 +330,12 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			root.AddError(err)
 		}
 
-		for _, cfg := range markerSet[ConfigDefinition.Name] {
+		cfgs := markerSet[ConfigDefinition.Name]
+		sort.SliceStable(cfgs, func(i, j int) bool {
+			return cfgs[i].(Config).Name < cfgs[j].(Config).Name
+		})
+
+		for _, cfg := range cfgs {
 			cfg := cfg.(Config)
 			webhookVersions, err := cfg.webhookVersions()
 			if err != nil {
