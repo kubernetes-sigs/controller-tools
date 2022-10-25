@@ -17,12 +17,10 @@ package cronjob
 
 import (
 	"context"
-	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func (c *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -33,45 +31,54 @@ func (c *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=cronjobs,versions=v1,name=cronjob.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
-type cronjobValidator struct {
-	client  client.Client
-	decoder *admission.Decoder
+type cronJobValidator struct {
+	client client.Client
 }
 
-func NewCronjobValidator(c client.Client, dec *admission.Decoder) http.Handler {
-	return &webhook.Admission{Handler: &cronjobValidator{c, dec}}
+func (v cronJobValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
 
-func (v *cronjobValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	return admission.Allowed("ok")
+func (v cronJobValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	return nil
+}
+
+func (v cronJobValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
 
 // +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjoblist,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=cronjoblist,versions=v1,name=cronjoblist.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
 type cronjobListValidator struct {
-	client  client.Client
-	decoder *admission.Decoder
+	client client.Client
 }
 
-func NewCronjobListValidator(c client.Client, dec *admission.Decoder) http.Handler {
-	return &webhook.Admission{Handler: &cronjobListValidator{c, dec}}
+func (v cronJobListValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
 
-func (v *cronjobListValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	return admission.Allowed("ok")
+func (v cronJobListValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	return nil
+}
+
+func (v cronJobListValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
 
 // +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-deployments,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=deployments,versions=v1,name=deployment.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
 type deploymentValidator struct {
-	client  client.Client
-	decoder *admission.Decoder
+	client client.Client
 }
 
-func NewDeploymentValidator(c client.Client, dec *admission.Decoder) http.Handler {
-	return &webhook.Admission{Handler: &deploymentValidator{c, dec}}
+func (v deploymentValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
 
-func (v *deploymentValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	return admission.Allowed("ok")
+func (v deploymentValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	return nil
+}
+
+func (v deploymentValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return nil
 }
