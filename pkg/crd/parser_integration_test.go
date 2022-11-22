@@ -122,8 +122,11 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			By(fmt.Sprintf("parsing the desired %s YAML", kind))
 			var crd apiext.CustomResourceDefinition
 			ExpectWithOffset(1, yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
-			// clear the annotations -- we don't care about the attribution annotation
-			crd.Annotations = nil
+			// clear the version annotation -- we don't care about the attribution annotation
+			delete(crd.Annotations, "controller-gen.kubebuilder.io/version")
+			if len(crd.Annotations) == 0 {
+				crd.Annotations = nil
+			}
 
 			By(fmt.Sprintf("comparing the two %s CRDs", kind))
 			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
