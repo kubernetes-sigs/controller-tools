@@ -23,5 +23,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ":seedling:"
     labels:
       - "ok-to-test"
+    # Ignore K8 packages as these are done manually
+    ignore:
+      - dependency-name: "k8s.io/api"
+      - dependency-name: "k8s.io/apiextensions-apiserver"
+      - dependency-name: "k8s.io/apimachinery"
