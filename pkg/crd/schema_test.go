@@ -158,7 +158,6 @@ func (m *testPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
 }
 
 type testapplyFirstMarker struct {
-	priority crdmarkers.ApplyPriority
 	callback func()
 }
 
