@@ -31,15 +31,15 @@ limitations under the License.
 // ApplyPriorityFirst constants. Following is an example of how to
 // implement such a marker:
 //
-//  type MyCustomMarker string
+//	type MyCustomMarker string
 //
-//  func (m MyCustomMarker) ApplyPriority() ApplyPriority {
-//  	return ApplyPriorityFirst
-//  }
+//	func (m MyCustomMarker) ApplyPriority() ApplyPriority {
+//		return ApplyPriorityFirst
+//	}
 //
-//  func (m MyCustomMarker) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-//    ...
-//  }
+//	func (m MyCustomMarker) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+//	  ...
+//	}
 //
 // All validation markers start with "+kubebuilder:validation", and
 // have the same name as their type name.
