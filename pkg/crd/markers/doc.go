@@ -19,7 +19,7 @@ limitations under the License.
 //
 // All markers related to CRD generation live in AllDefinitions.
 //
-// Validation Markers
+// # Validation Markers
 //
 // Validation markers have values that implement ApplyToSchema
 // (crd.SchemaMarker).  Any marker implementing this will automatically
@@ -28,7 +28,8 @@ limitations under the License.
 // implement ApplyFirst, but this is discouraged and may change
 // in the future. It is recommended to implement the ApplyPriority
 // interface in combination with ApplyPriorityDefault and
-// ApplyPriorityFirst constants.
+// ApplyPriorityFirst constants. Following is an example of how to
+// implement such a marker:
 //
 //  type MyCustomMarker string
 //
@@ -39,7 +40,7 @@ limitations under the License.
 //  func (m MyCustomMarker) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 //    ...
 //  }
-
+//
 // All validation markers start with "+kubebuilder:validation", and
 // have the same name as their type name.
 //
