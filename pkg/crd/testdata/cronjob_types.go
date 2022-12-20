@@ -233,6 +233,11 @@ type CronJobSpec struct {
 
 	// Checks that arrays work when the type contains a composite literal
 	ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
+
+	// Tests the generation of a set list type
+	// +listType=set
+	// +optional
+	Set []string `json:"set,omitempty"`
 }
 
 type ContainsNestedMap struct {
