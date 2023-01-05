@@ -304,7 +304,13 @@ func (c Config) webhookVersions() ([]string, error) {
 // +controllertools:marker:generateHelp
 
 // Generator generates (partial) {Mutating,Validating}WebhookConfiguration objects.
-type Generator struct{}
+type Generator struct {
+	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
+	HeaderFile string `marker:",optional"`
+
+	// Year specifies the year to substitute for " YEAR" in the header file.
+	Year string `marker:",optional"`
+}
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := into.Register(ConfigDefinition); err != nil {
@@ -314,7 +320,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-func (Generator) Generate(ctx *genall.GenerationContext) error {
+func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
@@ -405,6 +411,16 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
+	var headerText string
+	if g.HeaderFile != "" {
+		headerBytes, err := ctx.ReadFile(g.HeaderFile)
+		if err != nil {
+			return err
+		}
+		headerText = string(headerBytes)
+	}
+	headerText = strings.ReplaceAll(headerText, " YEAR", " "+g.Year)
+
 	for k, v := range versionedWebhooks {
 		var fileName string
 		if k == defaultWebhookVersion {
@@ -412,7 +428,7 @@ func (Generator) Generate(ctx *genall.GenerationContext) error {
 		} else {
 			fileName = fmt.Sprintf("manifests.%s.yaml", k)
 		}
-		if err := ctx.WriteYAML(fileName, v); err != nil {
+		if err := ctx.WriteYAML(fileName, headerText, v); err != nil {
 			return err
 		}
 	}
