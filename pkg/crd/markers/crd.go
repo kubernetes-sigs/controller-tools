@@ -369,6 +369,9 @@ func (s Metadata) ApplyToCRD(crd *apiext.CustomResourceDefinition, version strin
 		}
 		for _, str := range s.Annotations {
 			kv := strings.SplitN(str, "=", 2)
+			if len(kv) < 2 {
+				return fmt.Errorf("annotation %s is not in 'xxx=xxx' format", str)
+			}
 			crd.Annotations[kv[0]] = kv[1]
 		}
 	}
