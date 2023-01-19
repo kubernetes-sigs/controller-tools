@@ -378,20 +378,32 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 			defaultMode = "optional"
 		}
 
+		fieldMarkedOptional := (field.Markers.Get("kubebuilder:validation:Optional") != nil || field.Markers.Get("optional") != nil)
+		fieldMarkedRequired := (field.Markers.Get("kubebuilder:validation:Required") != nil)
+		fieldMarkedOneOf := (field.Markers.Get("kubebuilder:validation:OneOf") != nil)
+
 		switch defaultMode {
 		// if this package isn't set to optional default...
 		case "required":
-			// ...everything that's not inline, omitempty, or explicitly optional is required
-			if !inline && !omitEmpty && field.Markers.Get("kubebuilder:validation:Optional") == nil && field.Markers.Get("optional") == nil {
+			// ...everything that's not inline, not omitempty, not part of a oneOf group, and not explicitly optional is required
+			if !inline && !omitEmpty && !fieldMarkedOneOf && !fieldMarkedOptional {
 				props.Required = append(props.Required, fieldName)
 			}
 
 		// if this package isn't set to required default...
 		case "optional":
-			// ...everything that isn't explicitly required is optional
-			if field.Markers.Get("kubebuilder:validation:Required") != nil {
+			// ...everything that's part of a oneOf group, or not explicitly required is optional
+			if !fieldMarkedOneOf && fieldMarkedRequired {
 				props.Required = append(props.Required, fieldName)
 			}
+		}
+
+		// process oneOf groups
+		if field.Markers.Get("kubebuilder:validation:OneOf") != nil {
+			props.OneOf = append(props.OneOf, apiext.JSONSchemaProps{
+				Properties: map[string]apiext.JSONSchemaProps{fieldName: {}},
+				Required:   []string{fieldName},
+			})
 		}
 
 		var propSchema *apiext.JSONSchemaProps
