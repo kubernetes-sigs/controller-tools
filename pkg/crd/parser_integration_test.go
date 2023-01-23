@@ -132,6 +132,18 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 		}
 
+		assertError := func(pkg *loader.Package, kind, errorMsg string) {
+			By(fmt.Sprintf("requesting that the %s CRD be generated", kind))
+			groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+			parser.NeedCRDFor(groupKind, nil)
+
+			By(fmt.Sprintf("fixing top level ObjectMeta on the %s CRD", kind))
+			crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
+
+			By("checking that specific errors occurred along the way")
+			Expect(packageErrors(pkg)).To(MatchError(ContainSubstring(errorMsg)))
+		}
+
 		Context("CronJob API", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./", "./unserved", "./deprecated"}
@@ -160,6 +172,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			It("should successfully generate the CronJob and Job CRDs", func() {
 				assertCRD(pkgs[0], "CronJob", "testdata.kubebuilder.io_cronjobs.yaml")
 				assertCRD(pkgs[3], "Job", "testdata.kubebuilder.io_jobs.yaml")
+			})
+		})
+
+		Context("CronJob API with Wrong Annotation Format", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./wrong_annotation_format"}
+				expPkgLen = 1
+			})
+			It("can not successfully generate the CronJob CRD", func() {
+				assertError(pkgs[0], "CronJob", "is not in 'xxx=xxx' format")
 			})
 		})
 	})
