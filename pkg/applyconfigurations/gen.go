@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	generatorargs "k8s.io/code-generator/cmd/applyconfiguration-gen/args"
 	applygenerator "k8s.io/code-generator/cmd/applyconfiguration-gen/generators"
 	"k8s.io/gengo/generator"
@@ -216,6 +217,33 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 
 	c, err := generator.NewContext(b, applygenerator.NameSystems(), applygenerator.DefaultNameSystem())
 	if err != nil {
+		return err
+	}
+
+	pkg, ok := c.Universe[root.PkgPath]
+	if !ok {
+		return fmt.Errorf("package %q not found in universe", root.Name)
+	}
+
+	// For each type we think should be generated, make sure it has a genclient
+	// marker else the apply generator will not generate it.
+	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
+		if !enabledOnType(info) {
+			return
+		}
+
+		typ, ok := pkg.Types[info.Name]
+		if !ok {
+			return
+		}
+
+		comments := sets.NewString(typ.CommentLines...)
+		comments.Insert(typ.SecondClosestCommentLines...)
+
+		if !comments.Has("// +genclient") {
+			typ.CommentLines = append(typ.CommentLines, "+genclient")
+		}
+	}); err != nil {
 		return err
 	}
 
