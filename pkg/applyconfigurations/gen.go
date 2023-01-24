@@ -17,21 +17,23 @@ limitations under the License.
 package applyconfigurations
 
 import (
-	"bytes"
+	"fmt"
 	"go/ast"
-	"go/format"
 	"go/types"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
+	generatorargs "k8s.io/code-generator/cmd/applyconfiguration-gen/args"
+	applygenerator "k8s.io/code-generator/cmd/applyconfiguration-gen/generators"
+	"k8s.io/gengo/generator"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
-	"sigs.k8s.io/controller-tools/pkg/util"
 )
 
 // Based on deepcopy gen but with legacy marker support removed.
@@ -136,61 +138,30 @@ func createApplyConfigPackage(pkg *loader.Package) *loader.Package {
 }
 
 func (d Generator) Generate(ctx *genall.GenerationContext) error {
-	var headerText string
+	headerFilePath := d.HeaderFile
 
-	if d.HeaderFile != "" {
-		headerBytes, err := ctx.ReadFile(d.HeaderFile)
+	if headerFilePath == "" {
+		tmpFile, err := os.CreateTemp("", "applyconfig-header-*.txt")
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create temporary file: %w", err)
 		}
-		headerText = string(headerBytes)
+		tmpFile.Close()
+
+		defer os.Remove(tmpFile.Name())
+
+		headerFilePath = tmpFile.Name()
 	}
-	headerText = strings.ReplaceAll(headerText, " YEAR", " "+d.Year)
 
 	objGenCtx := ObjectGenCtx{
-		Collector:  ctx.Collector,
-		Checker:    ctx.Checker,
-		HeaderText: headerText,
+		Collector:      ctx.Collector,
+		Checker:        ctx.Checker,
+		HeaderFilePath: headerFilePath,
 	}
 
-	var pkgList []*loader.Package
-	visited := make(map[string]*loader.Package)
-
-	for _, root := range ctx.Roots {
-		visited[root.PkgPath] = root
-		pkgList = append(pkgList, root)
-	}
-
-	for _, pkg := range pkgList {
-		for _, imp := range pkg.Imports() {
-			if _, ok := visited[imp.PkgPath]; ok {
-				continue
-			}
-			visited[imp.PkgPath] = imp
+	for _, pkg := range ctx.Roots {
+		if err := objGenCtx.generateForPackage(pkg); err != nil {
+			return err
 		}
-	}
-
-	universe := &Universe{typeMetadata: make(map[types.Type]*typeMetadata)}
-
-	// Multiple traverses are required so that cross package imports are able
-	// to be resolved.
-	// generateEligibleTypes creates the universe for generateUsedTypes to perform a
-	// breadth first search across all CRDs that need ac generation.
-	// generateForPackage is final step and performs the code generation.
-	for _, pkg := range visited {
-		objGenCtx.generateEligibleTypes(pkg, universe)
-	}
-	for _, pkg := range visited {
-		objGenCtx.generateUsedTypes(pkg, universe)
-	}
-
-	for _, pkg := range pkgList {
-		outContents := objGenCtx.generateForPackage(universe, pkg)
-		if outContents == nil {
-			continue
-		}
-		newPkg := createApplyConfigPackage(pkg)
-		writeOut(ctx, newPkg, outContents)
 	}
 	return nil
 }
@@ -199,9 +170,9 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 // It mostly exists so that generating for a package can be easily tested without
 // requiring a full set of output rules, etc.
 type ObjectGenCtx struct {
-	Collector  *markers.Collector
-	Checker    *loader.TypeChecker
-	HeaderText string
+	Collector      *markers.Collector
+	Checker        *loader.TypeChecker
+	HeaderFilePath string
 }
 
 // generateEligibleTypes generates a universe of all possible ApplyConfiguration types.
@@ -331,99 +302,37 @@ func (u *Universe) GetApplyConfigPath(typeInfo *types.Named, pkgPath string) (st
 // generateForPackage generates apply configuration implementations for
 // types in the given package, writing the formatted result to given writer.
 // May return nil if source could not be generated.
-func (ctx *ObjectGenCtx) generateForPackage(universe *Universe, root *loader.Package) []byte {
-	pkgMarkers, err := markers.PackageMarkers(ctx.Collector, root)
-	if err != nil {
-		root.AddError(err)
-	}
-	group := ""
-	if val := pkgMarkers.Get("groupName"); val != nil {
-		group = val.(string)
-	}
-
-	version := root.Name
-	if val := pkgMarkers.Get("versionName"); val != nil {
-		version = val.(string)
-	}
-
-	byType := make(map[string][]byte)
-	imports := util.NewImportsList(root)
-
+func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	enabled, _ := enabledOnPackage(ctx.Collector, root)
 	if !enabled {
 		return nil
 	}
 
-	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
-		outContent := new(bytes.Buffer)
+	genericArgs, _ := generatorargs.NewDefaults()
+	genericArgs.InputDirs = []string{root.PkgPath}
+	genericArgs.OutputPackagePath = filepath.Join(root.PkgPath, importPathSuffix)
+	genericArgs.GoHeaderFilePath = ctx.HeaderFilePath
 
-		if t, ok := universe.typeMetadata[root.TypesInfo.TypeOf(info.RawSpec.Name)]; ok {
-			if !t.used {
-				return
-			}
-		}
-
-		if !shouldBeApplyConfiguration(root, info) {
-			return
-		}
-
-		copyCtx := &applyConfigurationMaker{
-			pkg:         root,
-			ImportsList: imports,
-			codeWriter:  &codeWriter{out: outContent},
-		}
-
-		copyCtx.GenerateTypesFor(universe, root, info)
-		for _, field := range info.Fields {
-			if field.Name != "" {
-				switch root.TypesInfo.TypeOf(field.RawField.Type).(type) {
-				case *types.Slice:
-					copyCtx.GenerateMemberSetForSlice(universe, field, root, info)
-				case *types.Map:
-					copyCtx.GenerateMemberSetForMap(universe, field, root, info)
-				default:
-					copyCtx.GenerateMemberSet(universe, field, root, info)
-				}
-			}
-		}
-
-		if enabledOnType(info) {
-			copyCtx.GenerateRootStructConstructor(root, info, isCRDClusterScope(info), group, version)
-		} else {
-			copyCtx.GenerateStructConstructor(root, info)
-		}
-
-		if enabledOnType(info) {
-			copyCtx.GenerateRootFunctions(universe, root, info)
-		}
-
-		outBytes := outContent.Bytes()
-		if len(outBytes) > 0 {
-			byType[info.Name] = outBytes
-		}
-	}); err != nil {
-		root.AddError(err)
-		return nil
+	if err := generatorargs.Validate(genericArgs); err != nil {
+		return err
 	}
 
-	if len(byType) == 0 {
-		return nil
-	}
-
-	outContent := new(bytes.Buffer)
-	util.WriteHeader(root, outContent, root.Name, imports, ctx.HeaderText)
-	writeTypes(root, outContent, byType)
-
-	outBytes := outContent.Bytes()
-	formattedBytes, err := format.Source(outBytes)
+	b, err := genericArgs.NewBuilder()
 	if err != nil {
-		root.AddError(err)
-		// we still write the invalid source to disk to figure out what went wrong
-	} else {
-		outBytes = formattedBytes
+		return err
 	}
 
-	return outBytes
+	c, err := generator.NewContext(b, applygenerator.NameSystems(), applygenerator.DefaultNameSystem())
+	if err != nil {
+		return err
+	}
+
+	packages := applygenerator.Packages(c, genericArgs)
+	if err := c.ExecutePackages(genericArgs.OutputBase, packages); err != nil {
+		return fmt.Errorf("error executing packages: %w", err)
+	}
+
+	return nil
 }
 
 // writeTypes writes each method to the file, sorted by type name.
