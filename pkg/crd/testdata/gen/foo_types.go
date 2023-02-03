@@ -28,6 +28,7 @@ type FooSpec struct {
 	// This tests that defaulted fields are stripped for v1beta1,
 	// but not for v1
 	// +kubebuilder:default=fooDefaultString
+	// +kubebuilder:example=fooExampleString
 	DefaultedString string `json:"defaultedString"`
 }
 type FooStatus struct{}
