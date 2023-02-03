@@ -105,6 +105,12 @@ spec:
                 - nested:
                     bar: false
                 description: This tests that object defaulting can be performed.
+                example:
+                - nested:
+                    bar: true
+                    foo: baz
+                - nested:
+                    bar: false
                 items:
                   properties:
                     nested:
@@ -126,12 +132,16 @@ spec:
                 - a
                 - b
                 description: This tests that slice defaulting can be performed.
+                example:
+                - a
+                - b
                 items:
                   type: string
                 type: array
               defaultedString:
                 default: forty-two
                 description: This tests that primitive defaulting can be performed.
+                example: forty-two
                 type: string
               embeddedResource:
                 type: object

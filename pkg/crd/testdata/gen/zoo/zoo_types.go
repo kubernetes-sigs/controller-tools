@@ -28,6 +28,7 @@ type ZooSpec struct {
 	// This tests that defaulted fields are stripped for v1beta1,
 	// but not for v1
 	// +kubebuilder:default=zooDefaultString
+	// +kubebuilder:example=zooExampleString
 	DefaultedString string `json:"defaultedString"`
 }
 type ZooStatus struct{}
