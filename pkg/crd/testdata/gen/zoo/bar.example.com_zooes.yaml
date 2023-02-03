@@ -38,6 +38,7 @@ spec:
                 default: zooDefaultString
                 description: This tests that defaulted fields are stripped for v1beta1,
                   but not for v1
+                example: zooExampleString
                 type: string
             required:
             - defaultedString

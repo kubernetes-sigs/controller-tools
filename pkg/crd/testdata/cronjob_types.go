@@ -107,14 +107,17 @@ type CronJobSpec struct {
 
 	// This tests that primitive defaulting can be performed.
 	// +kubebuilder:default=forty-two
+	// +kubebuilder:example=forty-two
 	DefaultedString string `json:"defaultedString"`
 
 	// This tests that slice defaulting can be performed.
 	// +kubebuilder:default={a,b}
+	// +kubebuilder:example={a,b}
 	DefaultedSlice []string `json:"defaultedSlice"`
 
 	// This tests that object defaulting can be performed.
 	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
+	// +kubebuilder:example={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
 	DefaultedObject []RootObject `json:"defaultedObject"`
 
 	// This tests that pattern validator is properly applied.
