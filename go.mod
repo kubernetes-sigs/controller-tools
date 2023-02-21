@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/fatih/color v1.14.1
-	github.com/gobuffalo/flect v0.3.0
+	github.com/gobuffalo/flect v1.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.1
