@@ -27,8 +27,7 @@ webhooks:
     resources:
     - cronjobs
   sideEffects: None
-  timeoutSeconds: 10
-  reinvocationPolicy: IfNeeded
+  timeoutSeconds: 40
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -80,5 +79,5 @@ webhooks:
     - UPDATE
     resources:
     - cronjobs
-  sideEffects: NoneOnDryRun
-  timeoutSeconds: 10
+  sideEffects: None
+  timeoutSeconds: -1

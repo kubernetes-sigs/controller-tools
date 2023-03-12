@@ -131,6 +131,35 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(err).To(MatchError("SideEffects should not be set to `Some` or `Unknown` for v1 {Mutating,Validating}WebhookConfiguration"))
 	})
 
+	It("should fail with invalid timeout seconds", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/invalid-timeoutSeconds")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		err = webhook.Generator{}.Generate(genCtx)
+		Expect(err).To(MatchError("TimeoutSeconds must be between 1 and 30 seconds"))
+	})
+
 	It("should properly generate the webhook definition", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
