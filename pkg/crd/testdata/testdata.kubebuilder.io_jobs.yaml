@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
-  creationTimestamp: null
   name: jobs.testdata.kubebuilder.io
 spec:
   group: testdata.kubebuilder.io
