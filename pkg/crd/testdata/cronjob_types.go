@@ -165,8 +165,12 @@ type CronJobSpec struct {
 	StructWithSeveralFields NestedObject `json:"structWithSeveralFields"`
 
 	// A struct that can only be entirely replaced via a nested type.
-	// +structType=atomic
 	NestedStructWithSeveralFields NestedStructWithSeveralFields `json:"nestedStructWithSeveralFields"`
+
+	// A struct that can only be entirely replaced via a nested type and
+	// field markers.
+	// +structType=atomic
+	NestedStructWithSeveralFieldsDoubleMarked NestedStructWithSeveralFields `json:"nestedStructWithSeveralFieldsDoubleMarked"`
 
 	// This tests that type references are properly flattened
 	// +kubebuilder:validation:optional
