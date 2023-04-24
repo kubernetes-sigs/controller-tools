@@ -268,7 +268,11 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		subScanner := parserScanner(subRaw, scanner.Error)
 
 		var tok rune
-		for tok = subScanner.Scan(); tok != ',' && tok != sc.EOF && tok != ';'; tok = subScanner.Scan() {
+		for {
+			tok = subScanner.Scan()
+			if tok == ',' || tok == sc.EOF || tok == ';' {
+				break
+			}
 			// wait till we get something interesting
 		}
 
@@ -495,7 +499,12 @@ func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inS
 		// raw consumes everything else
 		castAndSet(out, reflect.ValueOf(raw[scanner.Pos().Offset:]))
 		// consume everything else
-		for tok := scanner.Scan(); tok != sc.EOF; tok = scanner.Scan() {
+		var tok rune
+		for {
+			tok = scanner.Scan()
+			if tok == sc.EOF {
+				break
+			}
 		}
 	case NumberType:
 		nextChar := scanner.Peek()
