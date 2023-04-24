@@ -100,7 +100,7 @@ function setup_envs {
 header_text "using tools"
 
 if ! which golangci-lint 2>&1 >/dev/null; then
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.49.0
+  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
   export PATH=$PATH:$(go env GOPATH)/bin
 fi
 

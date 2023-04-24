@@ -92,11 +92,8 @@ type ScaffoldOptions struct {
 
 // Validate validates the options, returning an error if anything is invalid.
 func (o *ScaffoldOptions) Validate() error {
-	if err := o.Resource.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	err := o.Resource.Validate()
+	return err
 }
 
 // Scaffold prints the Kubernetes object scaffolding to the given output.

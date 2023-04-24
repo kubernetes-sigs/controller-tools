@@ -131,7 +131,7 @@ type outputRule struct {
 	buf *bytes.Buffer
 }
 
-func (o *outputRule) Open(_ *loader.Package, itemPath string) (io.WriteCloser, error) {
+func (o *outputRule) Open(_ *loader.Package, _ string) (io.WriteCloser, error) {
 	return nopCloser{o.buf}, nil
 }
 
