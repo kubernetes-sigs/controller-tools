@@ -10,7 +10,7 @@ spec:
   names:
     kind: Zoo
     listKind: ZooList
-    plural: zooes
+    plural: zoos
     singular: zoo
   scope: Namespaced
   validation:
