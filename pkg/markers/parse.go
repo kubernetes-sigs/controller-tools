@@ -373,6 +373,14 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 
 // parseString parses either of the two accepted string forms (quoted, or bare tokens).
 func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Value) {
+	// we need to temporarily disable the scanner's int/float parsing, since we want to
+	// prevent number parsing errors.
+	oldMode := scanner.Mode
+	scanner.Mode = oldMode &^ sc.ScanInts &^ sc.ScanFloats
+	defer func() {
+		scanner.Mode = oldMode
+	}()
+
 	// strings are a bit weird -- the "easy" case is quoted strings (tokenized as strings),
 	// the "hard" case (present for backwards compat) is a bare sequence of tokens that aren't
 	// a comma.

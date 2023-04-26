@@ -171,6 +171,9 @@ var _ = Describe("Parsing", func() {
 
 	Context("of individual arguments", func() {
 		It("should support bare strings", argParseTestCase{arg: Argument{Type: StringType}, raw: `some string here!`, output: "some string here!"}.Run)
+		It("should support bare strings containing number-ish values 1", argParseTestCase{arg: Argument{Type: StringType}, raw: `aa 0Baaa aaa`, output: "aa 0Baaa aaa"}.Run)
+		It("should support bare strings containing number-ish values 2", argParseTestCase{arg: Argument{Type: StringType}, raw: `/tmp/tmp-CHECKCRD-0B7LDeoZta`, output: "/tmp/tmp-CHECKCRD-0B7LDeoZta"}.Run)
+		It("should support bare strings containing number-ish values 3", argParseTestCase{arg: Argument{Type: StringType}, raw: `.0B7LDeoZt`, output: ".0B7LDeoZt"}.Run)
 		It("should support double-quoted strings", argParseTestCase{arg: Argument{Type: StringType}, raw: `"some; string, \nhere"`, output: "some; string, \nhere"}.Run)
 		It("should support raw strings", argParseTestCase{arg: Argument{Type: StringType}, raw: "`some; string, \\nhere`", output: `some; string, \nhere`}.Run)
 		It("should support integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "42", output: 42}.Run)
