@@ -112,7 +112,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		expectedFileFoos, err := ioutil.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 		expectedFileFoos = fixAnnotations(expectedFileFoos)
-		expectedFileZoos, err := ioutil.ReadFile(filepath.Join(genDir, "zoo", "bar.example.com_zooes.yaml"))
+		expectedFileZoos, err := ioutil.ReadFile(filepath.Join(genDir, "zoo", "bar.example.com_zoos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 		expectedFileZoos = fixAnnotations(expectedFileZoos)
 
