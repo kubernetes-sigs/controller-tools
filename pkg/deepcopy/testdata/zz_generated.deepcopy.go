@@ -644,7 +644,8 @@ func (in *SpecificCases) DeepCopyInto(out *SpecificCases) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = make([]string, len(*in))
 				copy(*out, *in)
 			}
@@ -680,6 +681,24 @@ func (in *SpecificCases) DeepCopyInto(out *SpecificCases) {
 		*out = make(map[string]DeepCopyIntoRef, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
+		}
+	}
+	if in.MapNested != nil {
+		in, out := &in.MapNested, &out.MapNested
+		*out = make(map[string]map[string]string, len(*in))
+		for key, val := range *in {
+			var outVal map[string]string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
+				*out = make(map[string]string, len(*in))
+				for key, val := range *in {
+					(*out)[key] = val
+				}
+			}
+			(*out)[key] = outVal
 		}
 	}
 	if in.SliceToDeepCopyPtr != nil {
@@ -1519,7 +1538,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = new(string)
 				**out = **in
 			}
@@ -1534,7 +1554,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = new(*string)
 				if **in != nil {
 					in, out := *in, *out
@@ -1553,7 +1574,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = make(map[string]string, len(*in))
 				for key, val := range *in {
 					(*out)[key] = val
@@ -1570,7 +1592,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = new(map[string]string)
 				if **in != nil {
 					in, out := *in, *out
@@ -1591,7 +1614,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = make([]string, len(*in))
 				copy(*out, *in)
 			}
@@ -1606,7 +1630,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = new([]string)
 				if **in != nil {
 					in, out := *in, *out
@@ -1632,7 +1657,8 @@ func (in *TestMaps) DeepCopyInto(out *TestMaps) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = new(Ttest)
 				(*in).DeepCopyInto(*out)
 			}
@@ -1962,7 +1988,8 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				in, out := &val, &outVal
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
 				*out = make(Slice, len(*in))
 				copy(*out, *in)
 			}
