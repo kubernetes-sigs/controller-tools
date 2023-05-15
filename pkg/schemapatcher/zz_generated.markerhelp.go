@@ -41,6 +41,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "specifies the maximum description length for fields in CRD's OpenAPI schema. ",
 				Details: "0 indicates drop the description for all fields completely. n indicates limit the description to at most n characters and truncate the description to closest sentence boundary if it exceeds n characters.",
 			},
+			"AllowDangerousTypes": {
+				Summary: "allows types which are usually omitted from CRD generation because they are not recommended. ",
+				Details: "Currently the following additional types are allowed when this is true: float32 float64 \n Left unspecified, the default is false",
+			},
 			"GenerateEmbeddedObjectMeta": {
 				Summary: "specifies if any embedded ObjectMeta in the CRD should be generated",
 				Details: "",

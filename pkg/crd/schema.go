@@ -434,7 +434,7 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 		if allowDangerousTypes {
 			typ = "number"
 		} else {
-			return "", "", errors.New("found float, the usage of which is highly discouraged, as support for them varies across languages. Please consider serializing your float as string instead. If you are really sure you want to use them, re-run with crd:allowDangerousTypes=true")
+			return "", "", errors.New("found float, the usage of which is highly discouraged, as support for them varies across languages. Please consider serializing your float as string instead. If you are really sure you want to use them, re-run with crd:allowDangerousTypes=true or schemapatch:allowDangerousTypes=true")
 		}
 	default:
 		return "", "", fmt.Errorf("unsupported type %q", basic.String())
