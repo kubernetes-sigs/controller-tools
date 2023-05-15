@@ -19,7 +19,7 @@ limitations under the License.
 //
 // The markers take the form:
 //
-//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>
+//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,timeoutSeconds=<int>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>
 package webhook
 
 import (
@@ -81,6 +81,11 @@ type Config struct {
 	// If the value is "NoneOnDryRun", then the webhook is responsible for inspecting the "dryRun" property of the
 	// AdmissionReview sent in the request, and avoiding side effects if that value is "true."
 	SideEffects string `marker:",optional"`
+	// TimeoutSeconds allows configuring how long the API server should wait for a webhook to respond before treating the call as a failure.
+	// If the timeout expires before the webhook responds, the webhook call will be ignored or the API call will be rejected based on the failure policy.
+	// The timeout value must be between 1 and 30 seconds.
+	// The timeout for an admission webhook defaults to 10 seconds.
+	TimeoutSeconds int `marker:",optional"`
 
 	// Groups specifies the API groups that this webhook receives requests for.
 	Groups []string
@@ -159,6 +164,7 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		MatchPolicy:             matchPolicy,
 		ClientConfig:            c.clientConfig(),
 		SideEffects:             c.sideEffects(),
+		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
 		ReinvocationPolicy:      c.reinvocationPolicy(),
 	}, nil
@@ -182,6 +188,7 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		MatchPolicy:             matchPolicy,
 		ClientConfig:            c.clientConfig(),
 		SideEffects:             c.sideEffects(),
+		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
 	}, nil
 }
@@ -271,6 +278,15 @@ func (c Config) sideEffects() *admissionregv1.SideEffectClass {
 		return nil
 	}
 	return &sideEffects
+}
+
+// timeoutSeconds returns the timeoutSeconds config for a webhook.
+func (c Config) timeoutSeconds() *int32 {
+	if c.TimeoutSeconds != 0 {
+		timeoutSeconds := int32(c.TimeoutSeconds)
+		return &timeoutSeconds
+	}
+	return nil
 }
 
 // reinvocationPolicy returns the reinvocationPolicy config for a mutating webhook.
@@ -381,6 +397,11 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 				if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
 					return err
 				}
+				// TimeoutSeconds must be nil or between 1 and 30 seconds, otherwise,
+				// return an error
+				if err := checkTimeoutSeconds(objRaw.Webhooks[i].TimeoutSeconds); err != nil {
+					return err
+				}
 				// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
 				// return an error
 				if len(objRaw.Webhooks[i].AdmissionReviewVersions) == 0 {
@@ -405,6 +426,11 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 				// SideEffects is required in admissionregistration/v1, if this is not set or set to `Some` or `Known`,
 				// return an error
 				if err := checkSideEffectsForV1(objRaw.Webhooks[i].SideEffects); err != nil {
+					return err
+				}
+				// TimeoutSeconds must be nil or between 1 and 30 seconds, otherwise,
+				// return an error
+				if err := checkTimeoutSeconds(objRaw.Webhooks[i].TimeoutSeconds); err != nil {
 					return err
 				}
 				// AdmissionReviewVersions is required in admissionregistration/v1, if this is not set,
@@ -448,6 +474,13 @@ func checkSideEffectsForV1(sideEffects *admissionregv1.SideEffectClass) error {
 	if *sideEffects == admissionregv1.SideEffectClassUnknown ||
 		*sideEffects == admissionregv1.SideEffectClassSome {
 		return fmt.Errorf("SideEffects should not be set to `Some` or `Unknown` for v1 {Mutating,Validating}WebhookConfiguration")
+	}
+	return nil
+}
+
+func checkTimeoutSeconds(timeoutSeconds *int32) error {
+	if timeoutSeconds != nil && (*timeoutSeconds < 1 || *timeoutSeconds > 30) {
+		return fmt.Errorf("TimeoutSeconds must be between 1 and 30 seconds")
 	}
 	return nil
 }
