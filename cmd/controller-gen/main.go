@@ -151,7 +151,7 @@ func main() {
 	controller-gen crd -ww
 
 	# Generate applyconfigurations for CRDs for use with Server Side Apply. They will be placed
-	# into a "ac/" subdirectory
+	# into a "applyconfiguration/" subdirectory
 
 	controller-gen apply paths=./apis/...
 `,
