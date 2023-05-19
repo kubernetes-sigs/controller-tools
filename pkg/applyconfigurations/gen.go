@@ -20,13 +20,10 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
-	"golang.org/x/tools/go/packages"
 	generatorargs "k8s.io/code-generator/cmd/applyconfiguration-gen/args"
 	applygenerator "k8s.io/code-generator/cmd/applyconfiguration-gen/generators"
 	"k8s.io/gengo/generator"
@@ -51,8 +48,7 @@ var importMapping = map[string]string{
 	"k8s.io/api/":                   "k8s.io/client-go/applyconfigurations/",
 }
 
-const importPathSuffix = "ac"
-const packageFileName = "zz_generated.applyconfigurations.go"
+const importPathSuffix = "applyconfiguration"
 
 // +controllertools:marker:generateHelp
 
@@ -60,8 +56,6 @@ const packageFileName = "zz_generated.applyconfigurations.go"
 type Generator struct {
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
 	HeaderFile string `marker:",optional"`
-	// Year specifies the year to substitute for " YEAR" in the header file.
-	Year string `marker:",optional"`
 }
 
 func (Generator) CheckFilter() loader.NodeFilter {
@@ -116,25 +110,7 @@ func enabledOnType(info *markers.TypeInfo) bool {
 // isCRD marks whether the type is a CRD based on the +kubebuilder:resource marker.
 func isCRD(info *markers.TypeInfo) bool {
 	objectEnabled := info.Markers.Get(isCRDMarker.Name)
-	if objectEnabled != nil {
-		return true
-	}
-	return false
-}
-
-func isCRDClusterScope(info *markers.TypeInfo) bool {
-	if o := info.Markers.Get(isCRDMarker.Name); o != nil {
-		crd := o.(crdmarkers.Resource)
-		return crd.Scope == "Cluster"
-	}
-	return false
-}
-
-func createApplyConfigPackage(pkg *loader.Package) *loader.Package {
-	newPkg := &loader.Package{Package: &packages.Package{}}
-	dir := filepath.Dir(pkg.CompiledGoFiles[0])
-	newPkg.CompiledGoFiles = append(newPkg.CompiledGoFiles, dir+"/"+importPathSuffix+"/")
-	return newPkg
+	return objectEnabled != nil
 }
 
 func (d Generator) Generate(ctx *genall.GenerationContext) error {
@@ -175,96 +151,12 @@ type ObjectGenCtx struct {
 	HeaderFilePath string
 }
 
-// generateEligibleTypes generates a universe of all possible ApplyConfiguration types.
-// The function also scans all imported packages for types that are eligible to be ApplyConfigurations.
-// This first pass is necessary because the loader package is not able to follow references between packages
-// and this universe constructs the necessary references.
-func (ctx *ObjectGenCtx) generateEligibleTypes(root *loader.Package, universe *Universe) {
-	ctx.Checker.Check(root)
-	root.NeedTypesInfo()
-
-	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
-		// not all types required a generate apply configuration. For example, no apply configuration
-		// type is needed for Quantity, IntOrString, RawExtension or Unknown.
-
-		if shouldBeApplyConfiguration(root, info) {
-			typeInfo := root.TypesInfo.TypeOf(info.RawSpec.Name)
-			universe.typeMetadata[typeInfo] = &typeMetadata{
-				info:     info,
-				root:     root,
-				eligible: true,
-				used:     false,
-			}
-		}
-
-	}); err != nil {
-		root.AddError(err)
-		return
-	}
-	return
-}
-
-// generateUsedTypes does a breadth first search from each top level root object
-// to find all ApplyConfiguration types that must be generated based on the fields
-// that the object references.
-func (ctx *ObjectGenCtx) generateUsedTypes(root *loader.Package, universe *Universe) {
-	ctx.Checker.Check(root)
-	root.NeedTypesInfo()
-
-	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
-		if !enabledOnType(info) {
-			return
-		}
-
-		var q []types.Type
-		q = append(q, root.TypesInfo.TypeOf(info.RawSpec.Name))
-
-		for len(q) > 0 {
-			node := universe.typeMetadata[q[0]]
-			q = q[1:]
-			if node.used {
-				continue
-			}
-			node.used = true
-			if len(node.info.Fields) > 0 {
-				for _, field := range node.info.Fields {
-					fieldType := node.root.TypesInfo.TypeOf(field.RawField.Type)
-					resolved := false
-					// TODO: Are these all the types that need to be resolved?
-					for !resolved {
-						resolved = true
-						switch typeInfo := fieldType.(type) {
-						case *types.Pointer:
-							fieldType = typeInfo.Elem()
-							resolved = false
-						case *types.Slice:
-							fieldType = typeInfo.Elem()
-							resolved = false
-						}
-					}
-
-					if _, ok := universe.typeMetadata[fieldType]; ok {
-						q = append(q, fieldType)
-					}
-				}
-			}
-		}
-	}); err != nil {
-		root.AddError(err)
-		return
-	}
-	return
-}
-
 type Universe struct {
 	typeMetadata map[types.Type]*typeMetadata
 }
 
 type typeMetadata struct {
-	info     *markers.TypeInfo
-	root     *loader.Package
-	eligible bool
-	used     bool
+	used bool
 }
 
 func (u *Universe) existingApplyConfigPath(_ *types.Named, pkgPath string) (string, bool) {
@@ -333,39 +225,4 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	}
 
 	return nil
-}
-
-// writeTypes writes each method to the file, sorted by type name.
-func writeTypes(pkg *loader.Package, out io.Writer, byType map[string][]byte) {
-	sortedNames := make([]string, 0, len(byType))
-	for name := range byType {
-		sortedNames = append(sortedNames, name)
-	}
-	sort.Strings(sortedNames)
-
-	for _, name := range sortedNames {
-		_, err := out.Write(byType[name])
-		if err != nil {
-			pkg.AddError(err)
-		}
-	}
-}
-
-// writeFormatted outputs the given code, after gofmt-ing it.  If we couldn't gofmt,
-// we write the unformatted code for debugging purposes.
-func writeOut(ctx *genall.GenerationContext, root *loader.Package, outBytes []byte) {
-	outputFile, err := ctx.Open(root, packageFileName)
-	if err != nil {
-		root.AddError(err)
-		return
-	}
-	defer outputFile.Close()
-	n, err := outputFile.Write(outBytes)
-	if err != nil {
-		root.AddError(err)
-		return
-	}
-	if n < len(outBytes) {
-		root.AddError(io.ErrShortWrite)
-	}
 }
