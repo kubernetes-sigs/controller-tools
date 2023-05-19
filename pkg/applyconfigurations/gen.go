@@ -37,11 +37,9 @@ import (
 // Based on deepcopy gen but with legacy marker support removed.
 
 var (
-	groupNameMarker   = markers.Must(markers.MakeDefinition("groupName", markers.DescribesPackage, ""))
-	versionNameMarker = markers.Must(markers.MakeDefinition("versionName", markers.DescribesPackage, ""))
-	isCRDMarker       = markers.Must(markers.MakeDefinition("kubebuilder:resource", markers.DescribesType, crdmarkers.Resource{}))
-	enablePkgMarker   = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesPackage, false))
-	enableTypeMarker  = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesType, false))
+	isCRDMarker      = markers.Must(markers.MakeDefinition("kubebuilder:resource", markers.DescribesType, crdmarkers.Resource{}))
+	enablePkgMarker  = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesPackage, false))
+	enableTypeMarker = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesType, false))
 )
 
 var importMapping = map[string]string{
@@ -69,14 +67,10 @@ func (Generator) CheckFilter() loader.NodeFilter {
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := markers.RegisterAll(into,
-		groupNameMarker, versionNameMarker, isCRDMarker, enablePkgMarker, enableTypeMarker); err != nil {
+		isCRDMarker, enablePkgMarker, enableTypeMarker); err != nil {
 		return err
 	}
-	into.AddHelp(groupNameMarker,
-		markers.SimpleHelp("apply", "specifies the API group name for this package."))
 
-	into.AddHelp(versionNameMarker,
-		markers.SimpleHelp("apply", "overrides the API group version for this package (defaults to the package name)."))
 	into.AddHelp(isCRDMarker,
 		markers.SimpleHelp("apply", "enables apply configuration generation for this type"))
 	into.AddHelp(
@@ -219,6 +213,9 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	if err != nil {
 		return err
 	}
+
+	// This allows the correct output location when GOPATH is unset.
+	c.TrimPathPrefix = root.PkgPath + "/"
 
 	pkg, ok := c.Universe[root.PkgPath]
 	if !ok {
