@@ -142,6 +142,15 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	// Otherwise, crd.Spec.Version may point to different CRD versions across different runs.
 	sort.Slice(crd.Spec.Versions, func(i, j int) bool { return crd.Spec.Versions[i].Name < crd.Spec.Versions[j].Name })
 
+	for _, err := range ValidateStorageVersionAndServe(crd, groupKind) {
+		packages[0].AddError(err)
+	}
+
+	p.CustomResourceDefinitions[groupKind] = crd
+}
+
+func ValidateStorageVersionAndServe(crd apiext.CustomResourceDefinition, groupKind schema.GroupKind) []error {
+	errs := []error{}
 	// make sure we have *a* storage version
 	// (default it if we only have one, otherwise, bail)
 	if len(crd.Spec.Versions) == 1 {
@@ -151,14 +160,18 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	hasStorage := false
 	for _, ver := range crd.Spec.Versions {
 		if ver.Storage {
+			// more than one storage, already set it true on previous iteration
+			if hasStorage {
+				errs = append(errs, fmt.Errorf("CRD for %s has more than one storage version", groupKind))
+				break
+			}
 			hasStorage = true
-			break
 		}
 	}
 	if !hasStorage {
 		// just add the error to the first relevant package for this CRD,
 		// since there's no specific error location
-		packages[0].AddError(fmt.Errorf("CRD for %s has no storage version", groupKind))
+		errs = append(errs, fmt.Errorf("CRD for %s has no storage version", groupKind))
 	}
 
 	served := false
@@ -171,8 +184,8 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	if !served {
 		// just add the error to the first relevant package for this CRD,
 		// since there's no specific error location
-		packages[0].AddError(fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
+		errs = append(errs, fmt.Errorf("CRD for %s with version(s) %v does not serve any version", groupKind, crd.Spec.Versions))
 	}
 
-	p.CustomResourceDefinitions[groupKind] = crd
+	return errs
 }
