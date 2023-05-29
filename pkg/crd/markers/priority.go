@@ -16,6 +16,8 @@ limitations under the License.
 
 package markers
 
+// ApplyPriority designates the order markers should be applied.
+// Lower priority indicates it should be applied first
 type ApplyPriority int64
 
 const (
