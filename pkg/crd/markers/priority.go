@@ -16,18 +16,16 @@ limitations under the License.
 
 package markers
 
-import "math"
-
 type ApplyPriority int64
 
 const (
 	// ApplyPriorityDefault is the default priority for markers
 	// that don't implement ApplyPriorityMarker
-	ApplyPriorityDefault ApplyPriority = math.MaxInt64 >> 2
+	ApplyPriorityDefault ApplyPriority = 10
 
 	// ApplyPriorityFirst is the priority value assigned to markers
 	// that implement the ApplyFirst() method
-	ApplyPriorityFirst ApplyPriority = ApplyPriorityDefault - 10
+	ApplyPriorityFirst ApplyPriority = 1
 )
 
 // ApplyPriorityMarker designates the order markers should be applied.
