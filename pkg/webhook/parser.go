@@ -125,6 +125,13 @@ type Config struct {
 	// an object, and mutating webhooks can specify a reinvocationPolicy to control
 	// whether they are reinvoked as well.
 	ReinvocationPolicy string `marker:"reinvocationPolicy,optional"`
+
+	// URL allows mutating webhooks configuration to specify an external URL when generating
+	// the manifests, instead of using the internal service communication. Should be in format of
+	// https://address:port/ and will have the path specified on Path field appended to it.
+	// When this option is specified, the serviceConfig.Service is removed from webhook the manifest.
+	// The URL configuration should be between quotes
+	URL string `marker:"url,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -253,6 +260,16 @@ func (c Config) matchPolicy() (*admissionregv1.MatchPolicyType, error) {
 // clientConfig returns the client config for a webhook.
 func (c Config) clientConfig() admissionregv1.WebhookClientConfig {
 	path := c.Path
+
+	if c.URL != "" {
+		var url string
+		path = strings.TrimPrefix(c.Path, "/")
+		url = fmt.Sprintf("%s/%s", c.URL, path)
+		return admissionregv1.WebhookClientConfig{
+			URL: &url,
+		}
+	}
+
 	return admissionregv1.WebhookClientConfig{
 		Service: &admissionregv1.ServiceReference{
 			Name:      "webhook-service",
