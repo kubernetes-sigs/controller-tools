@@ -266,4 +266,52 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("checking that no errors occurred along the way (expect for type errors)")
 		Expect(packageErrors(cronJobPkg, packages.TypeError)).NotTo(HaveOccurred())
 	})
+
+	It("should generate markers properly among several package versions", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/multiple_versions")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots("./v1beta1", "./v1beta2")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(2))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		parser := &crd.Parser{
+			Collector: &markers.Collector{Registry: reg},
+			Checker:   &loader.TypeChecker{},
+		}
+		crd.AddKnownTypes(parser)
+
+		By("requesting that the package be parsed")
+		for _, pkg := range pkgs {
+			parser.NeedPackage(pkg)
+		}
+
+		By("requesting that the CRD be generated")
+		groupKind := schema.GroupKind{Kind: "VersionedResource", Group: "testdata.kubebuilder.io"}
+		parser.NeedCRDFor(groupKind, nil)
+
+		By("fixing top level ObjectMeta on the CRD")
+		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
+
+		By("loading the desired YAML")
+		expectedFile, err := ioutil.ReadFile("testdata.kubebuilder.io_versionedresources.yaml")
+		Expect(err).NotTo(HaveOccurred())
+
+		By("parsing the desired YAML")
+		var crd apiext.CustomResourceDefinition
+		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
+		// clear the annotations -- we don't care about the attribution annotation
+		crd.Annotations = nil
+
+		By("comparing the two")
+		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+	})
+
 })
