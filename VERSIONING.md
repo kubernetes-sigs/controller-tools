@@ -13,7 +13,7 @@ as a "library project", but otherwise follows the guidelines closely.
 For release branches, we generally do not support older branches.  This
 may change in the future.
 
-Compability-wise, remember that changes to generation defaults are
+Compatibility-wise, remember that changes to generation defaults are
 breaking changes.
 
 ## Updates to Other Projects on Release
