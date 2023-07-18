@@ -298,6 +298,35 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		assertSame(actualMutating, expectedMutating)
 		assertSame(actualValidating, expectedValidating)
 	})
+
+	It("should fail to generate when both path and url are set", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/invalid-path-and-url")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		err = webhook.Generator{}.Generate(genCtx)
+		Expect(err).To(HaveOccurred())
+	})
 })
 
 func unmarshalBothV1(in []byte) (mutating admissionregv1.MutatingWebhookConfiguration, validating admissionregv1.ValidatingWebhookConfiguration) {
