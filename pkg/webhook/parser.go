@@ -108,7 +108,7 @@ type Config struct {
 	// are substituted for hyphens. For example, a validating webhook path for type
 	// batch.tutorial.kubebuilder.io/v1,Kind=CronJob would be
 	// /validate-batch-tutorial-kubebuilder-io-v1-cronjob
-	Path string
+	Path string `marker:"path,optional"`
 
 	// WebhookVersions specifies the target API versions of the {Mutating,Validating}WebhookConfiguration objects
 	// itself to generate. The only supported value is v1. Defaults to v1.
@@ -125,6 +125,14 @@ type Config struct {
 	// an object, and mutating webhooks can specify a reinvocationPolicy to control
 	// whether they are reinvoked as well.
 	ReinvocationPolicy string `marker:"reinvocationPolicy,optional"`
+
+	// URL allows mutating webhooks configuration to specify an external URL when generating
+	// the manifests, instead of using the internal service communication. Should be in format of
+	// https://address:port/path
+	// When this option is specified, the serviceConfig.Service is removed from webhook the manifest.
+	// The URL configuration should be between quotes.
+	// `url` cannot be specified when `path` is specified.
+	URL string `marker:"url,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -157,12 +165,17 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		return admissionregv1.MutatingWebhook{}, err
 	}
 
+	clientConfig, err := c.clientConfig()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, err
+	}
+
 	return admissionregv1.MutatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
 		FailurePolicy:           c.failurePolicy(),
 		MatchPolicy:             matchPolicy,
-		ClientConfig:            c.clientConfig(),
+		ClientConfig:            clientConfig,
 		SideEffects:             c.sideEffects(),
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
@@ -181,12 +194,17 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		return admissionregv1.ValidatingWebhook{}, err
 	}
 
+	clientConfig, err := c.clientConfig()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, err
+	}
+
 	return admissionregv1.ValidatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
 		FailurePolicy:           c.failurePolicy(),
 		MatchPolicy:             matchPolicy,
-		ClientConfig:            c.clientConfig(),
+		ClientConfig:            clientConfig,
 		SideEffects:             c.sideEffects(),
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
@@ -251,15 +269,27 @@ func (c Config) matchPolicy() (*admissionregv1.MatchPolicyType, error) {
 }
 
 // clientConfig returns the client config for a webhook.
-func (c Config) clientConfig() admissionregv1.WebhookClientConfig {
-	path := c.Path
-	return admissionregv1.WebhookClientConfig{
-		Service: &admissionregv1.ServiceReference{
-			Name:      "webhook-service",
-			Namespace: "system",
-			Path:      &path,
-		},
+func (c Config) clientConfig() (admissionregv1.WebhookClientConfig, error) {
+	if (c.Path != "" && c.URL != "") || (c.Path == "" && c.URL == "") {
+		return admissionregv1.WebhookClientConfig{}, fmt.Errorf("`url` or `path` markers are required and mutually exclusive")
 	}
+
+	path := c.Path
+	if path != "" {
+		return admissionregv1.WebhookClientConfig{
+			Service: &admissionregv1.ServiceReference{
+				Name:      "webhook-service",
+				Namespace: "system",
+				Path:      &path,
+			},
+		}, nil
+	}
+
+	url := c.URL
+	return admissionregv1.WebhookClientConfig{
+		URL: &url,
+	}, nil
+
 }
 
 // sideEffects returns the sideEffects config for a webhook.

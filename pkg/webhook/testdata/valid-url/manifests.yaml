@@ -1,0 +1,76 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: default.cronjob.testdata.kubebuilder.io
+  rules:
+  - apiGroups:
+    - testdata.kubebuiler.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+  timeoutSeconds: 10
+  reinvocationPolicy: IfNeeded
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    url: https://somewebhook:9443/validate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.cronjob.testdata.kubebuilder.io
+  rules:
+  - apiGroups:
+    - testdata.kubebuiler.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+  timeoutSeconds: 10
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    url: https://anothersomewebhook:9443/validate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.cronjob.testdata.kubebuilder.io
+  rules:
+  - apiGroups:
+    - testdata.kubebuiler.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: NoneOnDryRun
+  timeoutSeconds: 10
