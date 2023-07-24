@@ -7,7 +7,7 @@ require (
 	github.com/gobuffalo/flect v1.0.2
 	github.com/google/go-cmp v0.5.9
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.8
+	github.com/onsi/gomega v1.27.9
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.11.0
