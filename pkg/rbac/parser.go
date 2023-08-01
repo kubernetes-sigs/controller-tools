@@ -259,13 +259,88 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	return objs, nil
 }
 
+// GenerateRoleBindings generate a slice of objs representing either a ClusterRoleBinding or a RoleBinding object
+// according to the given roles
+func GenerateRoleBindings(roles []interface{}, roleName string) ([]interface{}, error) {
+	var objs []interface{}
+	for _, role := range roles {
+		if role, ok := role.(rbacv1.ClusterRole); ok {
+			objs = append(objs, rbacv1.ClusterRoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterRoleBinding",
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: fmt.Sprintf("%sbinding", roleName),
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						// keep consistent with kubebuilder's default
+						Kind:      rbacv1.ServiceAccountKind,
+						Name:      "controller-manager",
+						Namespace: "system",
+					},
+				},
+				RoleRef: rbacv1.RoleRef{
+					Kind:     role.Kind,
+					Name:     role.Name,
+					APIGroup: rbacv1.SchemeGroupVersion.Group,
+				},
+			})
+		}
+
+		if role, ok := role.(rbacv1.Role); ok {
+			objs = append(objs, rbacv1.RoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "RoleBinding",
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%sbinding", roleName),
+					Namespace: role.Namespace,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						// keep consistent with kubebuilder's default
+						Kind:      rbacv1.ServiceAccountKind,
+						Name:      "controller-manager",
+						Namespace: "system",
+					},
+				},
+				RoleRef: rbacv1.RoleRef{
+					Kind:     role.Kind,
+					Name:     role.Name,
+					APIGroup: rbacv1.SchemeGroupVersion.Group,
+				},
+			})
+		}
+	}
+	return objs, nil
+}
+
+// Generate generates RBAC manifests.
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
-	objs, err := GenerateRoles(ctx, g.RoleName)
+	roles, err := GenerateRoles(ctx, g.RoleName)
 	if err != nil {
 		return err
 	}
 
-	if len(objs) == 0 {
+	err = g.writeRoles(ctx, roles)
+	if err != nil {
+		return err
+	}
+
+	roleBindings, err := GenerateRoleBindings(roles, g.RoleName)
+	if err != nil {
+		return err
+	}
+
+	return g.writeRoleBindings(ctx, roleBindings)
+}
+
+// writeRoles writes the given roles to the file "role.yaml".
+func (g Generator) writeRoles(ctx *genall.GenerationContext, roles []interface{}) error {
+	if len(roles) == 0 {
 		return nil
 	}
 
@@ -279,5 +354,24 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 	headerText = strings.ReplaceAll(headerText, " YEAR", " "+g.Year)
 
-	return ctx.WriteYAML("role.yaml", headerText, objs, genall.WithTransform(genall.TransformRemoveCreationTimestamp))
+	return ctx.WriteYAML("role.yaml", headerText, roles, genall.WithTransform(genall.TransformRemoveCreationTimestamp))
+}
+
+// writeRoleBindings writes the given roleBindings to the file "role_binding.yaml".
+func (g Generator) writeRoleBindings(ctx *genall.GenerationContext, roleBindings []interface{}) error {
+	if len(roleBindings) == 0 {
+		return nil
+	}
+
+	var headerText string
+	if g.HeaderFile != "" {
+		headerBytes, err := ctx.ReadFile(g.HeaderFile)
+		if err != nil {
+			return err
+		}
+		headerText = string(headerBytes)
+	}
+	headerText = strings.ReplaceAll(headerText, " YEAR", " "+g.Year)
+
+	return ctx.WriteYAML("role_binding.yaml", headerText, roleBindings, genall.WithTransform(genall.TransformRemoveCreationTimestamp))
 }
