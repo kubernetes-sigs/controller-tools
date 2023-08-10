@@ -125,6 +125,7 @@ type SpecificCases struct {
 	MapWithNamedKeys              map[TotallyAString]int        `json:"mapWithNamedKeys"`
 	MapToPtrToDeepCopyIntoRefType map[string]*DeepCopyIntoRef   `json:"mapToPtrToDeepCopyIntoRefType"`
 	MapToDeepCopyIntoRefType      map[string]DeepCopyIntoRef    `json:"mapToDeepCopyIntoRefType"`
+	MapNested                     map[string]map[string]string  `json:"mapNested,omitempty"`
 
 	// other slice types
 	SliceToDeepCopyPtr        []DeepCopyPtr        `json:"sliceToDeepCopyPtr"`
