@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -57,6 +58,13 @@ func (o *outputFile) Close() error {
 }
 
 var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func() {
+	outputPath := "testapplyconfiguration"
+	masterPath := "applyconfiguration"
+	By("resetting the test directory")
+	// not using after each to allow for inspection of failed tests
+	BeforeEach(func() {
+		Expect(os.RemoveAll(filepath.Join(".", outputPath))).To(Succeed())
+	})
 	It("should be able to verify generated ApplyConfiguration types for the CronJob schema", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
@@ -79,6 +87,8 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(err).NotTo(HaveOccurred())
 		rt.OutputRules = genall.OutputRules{Default: output}
 
+		cronJobFS := os.DirFS(".")
+
 		By("running the generator and checking for errors")
 		hadErrs := rt.Run()
 
@@ -87,8 +97,6 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		filesInMaster := make(map[string][]byte)
 		masterFileNames := sets.New[string]()
-		cronJobFS := os.DirFS(".")
-		masterPath := "applyconfiguration-master"
 		Expect(fs.WalkDir(cronJobFS, masterPath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -112,7 +120,6 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		filesInOutput := make(map[string][]byte)
 		outputFileNames := sets.New[string]()
-		outputPath := "applyconfiguration"
 		Expect(fs.WalkDir(cronJobFS, outputPath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
