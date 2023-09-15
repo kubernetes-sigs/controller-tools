@@ -19,10 +19,8 @@ package applyconfigurations
 import (
 	"fmt"
 	"go/ast"
-	"go/types"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	generatorargs "k8s.io/code-generator/cmd/applyconfiguration-gen/args"
@@ -39,13 +37,9 @@ import (
 var (
 	isCRDMarker      = markers.Must(markers.MakeDefinition("kubebuilder:resource", markers.DescribesType, crdmarkers.Resource{}))
 	enablePkgMarker  = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesPackage, false))
+	outputPkgMarker  = markers.Must(markers.MakeDefinition("kubebuilder:ac:output:package", markers.DescribesPackage, ""))
 	enableTypeMarker = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesType, false))
 )
-
-var importMapping = map[string]string{
-	"k8s.io/apimachinery/pkg/apis/": "k8s.io/client-go/applyconfigurations/",
-	"k8s.io/api/":                   "k8s.io/client-go/applyconfigurations/",
-}
 
 const importPathSuffix = "applyconfiguration"
 
@@ -67,7 +61,7 @@ func (Generator) CheckFilter() loader.NodeFilter {
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
 	if err := markers.RegisterAll(into,
-		isCRDMarker, enablePkgMarker, enableTypeMarker); err != nil {
+		isCRDMarker, enablePkgMarker, enableTypeMarker, outputPkgMarker); err != nil {
 		return err
 	}
 
@@ -75,9 +69,10 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 		markers.SimpleHelp("apply", "enables apply configuration generation for this type"))
 	into.AddHelp(
 		enableTypeMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfigurations generation for the type"))
-
 	into.AddHelp(
 		enablePkgMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfigurations generation for the package"))
+	into.AddHelp(
+		outputPkgMarker, markers.SimpleHelp("apply", "overrides the default output package for the applyconfigurations generation"))
 	return nil
 
 }
@@ -100,6 +95,18 @@ func enabledOnType(info *markers.TypeInfo) bool {
 		return typeMarker.(bool)
 	}
 	return isCRD(info)
+}
+
+func outputPkg(col *markers.Collector, pkg *loader.Package) (string, error) {
+	pkgMarkers, err := markers.PackageMarkers(col, pkg)
+	if err != nil {
+		return "", err
+	}
+	pkgMarker := pkgMarkers.Get(outputPkgMarker.Name)
+	if pkgMarker != nil {
+		return pkgMarker.(string), nil
+	}
+	return "", nil
 }
 
 // isCRD marks whether the type is a CRD based on the +kubebuilder:resource marker.
@@ -146,46 +153,6 @@ type ObjectGenCtx struct {
 	HeaderFilePath string
 }
 
-type Universe struct {
-	typeMetadata map[types.Type]*typeMetadata
-}
-
-type typeMetadata struct {
-	used bool
-}
-
-func (u *Universe) existingApplyConfigPath(_ *types.Named, pkgPath string) (string, bool) {
-	for prefix, replacePath := range importMapping {
-		if strings.HasPrefix(pkgPath, prefix) {
-			path := replacePath + strings.TrimPrefix(pkgPath, prefix)
-			return path, true
-		}
-	}
-	return "", false
-}
-
-func (u *Universe) IsApplyConfigGenerated(typeInfo *types.Named) bool {
-	if t, ok := u.typeMetadata[typeInfo]; ok {
-		return t.used
-	}
-	return false
-}
-
-func (u *Universe) GetApplyConfigPath(typeInfo *types.Named, pkgPath string) (string, bool) {
-	isApplyConfigGenerated := u.IsApplyConfigGenerated(typeInfo)
-	if path, ok := u.existingApplyConfigPath(typeInfo, pkgPath); ok {
-		if isApplyConfigGenerated {
-			return path, true
-		}
-		return pkgPath, false
-	}
-	// ApplyConfig is necessary but location is not explicitly specified. Assume the ApplyConfig exists at the below directory
-	if isApplyConfigGenerated {
-		return pkgPath + "/" + importPathSuffix, true
-	}
-	return pkgPath, false
-}
-
 // generateForPackage generates apply configuration implementations for
 // types in the given package, writing the formatted result to given writer.
 // May return nil if source could not be generated.
@@ -194,11 +161,26 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	if !enabled {
 		return nil
 	}
+	if len(root.GoFiles) == 0 {
+		return nil
+	}
 
 	genericArgs, _ := generatorargs.NewDefaults()
 	genericArgs.InputDirs = []string{root.PkgPath}
-	genericArgs.OutputPackagePath = filepath.Join(root.PkgPath, importPathSuffix)
 	genericArgs.GoHeaderFilePath = ctx.HeaderFilePath
+
+	outpkg, _ := outputPkg(ctx.Collector, root)
+	if outpkg == "" {
+		outpkg = importPathSuffix
+	}
+	genericArgs.OutputPackagePath = filepath.Join(root.PkgPath, outpkg)
+
+	// attempts to retrieve the correct base directory to output apply configurations to by
+	// looking into the package and retrieving the first go file it finds, and using that as the output base.
+	// this is because we cannot rely on gogen calculating the correct output base.
+	// if we leave this empty, gogen will attempt to use GOPATH to write the files which is not wanted
+	genericArgs.OutputBase = filepath.Dir(root.GoFiles[0])
+	trimPathPrefix := filepath.Join(genericArgs.OutputBase, root.PkgPath) + "/"
 
 	// Make the generated header static so that it doesn't rely on the compiled binary name.
 	genericArgs.GeneratedByCommentTemplate = "// Code generated by applyconfiguration-gen. DO NOT EDIT.\n"
@@ -216,9 +198,9 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	if err != nil {
 		return err
 	}
-
-	// This allows the correct output location when GOPATH is unset.
-	c.TrimPathPrefix = root.PkgPath + "/"
+	// The output package path is fully qualified. It contains the OutputBase (which is the module directory)
+	// that means we will have to trim the fully qualified pkg down again.
+	c.TrimPathPrefix = trimPathPrefix
 
 	pkg, ok := c.Universe[root.PkgPath]
 	if !ok {
