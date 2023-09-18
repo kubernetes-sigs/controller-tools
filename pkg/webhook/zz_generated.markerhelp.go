@@ -88,6 +88,10 @@ func (Config) Help() *markers.DefinitionHelp {
 				Summary: "allows mutating webhooks to request reinvocation after other mutations ",
 				Details: "To allow mutating admission plugins to observe changes made by other plugins, built-in mutating admission plugins are re-run if a mutating webhook modifies an object, and mutating webhooks can specify a reinvocationPolicy to control whether they are reinvoked as well.",
 			},
+			"URL": {
+				Summary: "allows mutating webhooks configuration to specify an external URL when generating the manifests, instead of using the internal service communication. Should be in format of https://address:port/path When this option is specified, the serviceConfig.Service is removed from webhook the manifest. The URL configuration should be between quotes. `url` cannot be specified when `path` is specified.",
+				Details: "",
+			},
 		},
 	}
 }
