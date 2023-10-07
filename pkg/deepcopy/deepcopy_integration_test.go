@@ -18,7 +18,6 @@ package deepcopy_test
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"sort"
 
@@ -97,7 +96,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(outContents).NotTo(BeNil())
 
 		By("loading the desired code")
-		expectedFile, err := ioutil.ReadFile("zz_generated.deepcopy.go")
+		expectedFile, err := os.ReadFile("zz_generated.deepcopy.go")
 		Expect(err).NotTo(HaveOccurred())
 
 		By("comparing the two")
