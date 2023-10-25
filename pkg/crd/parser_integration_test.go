@@ -18,7 +18,6 @@ package crd_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/google/go-cmp/cmp"
@@ -116,7 +115,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			ExpectWithOffset(1, parser.CustomResourceDefinitions).To(HaveKey(groupKind))
 
 			By(fmt.Sprintf("loading the desired %s YAML", kind))
-			expectedFile, err := ioutil.ReadFile(fileName)
+			expectedFile, err := os.ReadFile(fileName)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 			By(fmt.Sprintf("parsing the desired %s YAML", kind))
@@ -219,7 +218,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
 
 		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("plural.example.com_testquotas.yaml")
+		expectedFile, err := os.ReadFile("plural.example.com_testquotas.yaml")
 		Expect(err).NotTo(HaveOccurred())
 
 		By("parsing the desired YAML")
@@ -301,7 +300,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
 
 		By("loading the desired YAML")
-		expectedFile, err := ioutil.ReadFile("testdata.kubebuilder.io_versionedresources.yaml")
+		expectedFile, err := os.ReadFile("testdata.kubebuilder.io_versionedresources.yaml")
 		Expect(err).NotTo(HaveOccurred())
 
 		By("parsing the desired YAML")

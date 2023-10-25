@@ -18,7 +18,6 @@ package webhook_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -59,7 +58,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -88,7 +87,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -119,7 +118,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -148,7 +147,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -177,7 +176,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -191,12 +190,12 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		}
 
 		By("loading the generated v1 YAML")
-		actualFile, err := ioutil.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 		actualMutating, actualValidating := unmarshalBothV1(actualFile)
 
 		By("loading the desired v1 YAML")
-		expectedFile, err := ioutil.ReadFile("manifests.yaml")
+		expectedFile, err := os.ReadFile("manifests.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		expectedMutating, expectedValidating := unmarshalBothV1(expectedFile)
 
@@ -222,7 +221,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 
@@ -238,13 +237,13 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 			}
 
 			By("loading the generated v1 YAML")
-			actualFile, err := ioutil.ReadFile(path.Join(outputDir, "manifests.yaml"))
+			actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
 			Expect(err).NotTo(HaveOccurred())
 			actualManifest := &admissionregv1.ValidatingWebhookConfiguration{}
 			Expect(yaml.UnmarshalStrict(actualFile, actualManifest)).To(Succeed())
 
 			By("loading the desired v1 YAML")
-			expectedFile, err := ioutil.ReadFile("manifests.yaml")
+			expectedFile, err := os.ReadFile("manifests.yaml")
 			Expect(err).NotTo(HaveOccurred())
 			expectedManifest := &admissionregv1.ValidatingWebhookConfiguration{}
 			Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
@@ -271,7 +270,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
@@ -285,12 +284,12 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		}
 
 		By("loading the generated v1 YAML")
-		actualFile, err := ioutil.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 		actualMutating, actualValidating := unmarshalBothV1(actualFile)
 
 		By("loading the desired v1 YAML")
-		expectedFile, err := ioutil.ReadFile("manifests.yaml")
+		expectedFile, err := os.ReadFile("manifests.yaml")
 		Expect(err).NotTo(HaveOccurred())
 		expectedMutating, expectedValidating := unmarshalBothV1(expectedFile)
 
@@ -316,7 +315,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := ioutil.TempDir("", "webhook-integration-test")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 		genCtx := &genall.GenerationContext{
