@@ -120,6 +120,18 @@ type CronJobSpec struct {
 	// +kubebuilder:example={{nested: {foo: "baz", bar: true}},{nested: {bar: false}}}
 	DefaultedObject []RootObject `json:"defaultedObject"`
 
+	// This tests that empty slice defaulting can be performed.
+	// +kubebuilder:default={}
+	DefaultedEmptySlice []string `json:"defaultedEmptySlice"`
+
+	// This tests that an empty object defaulting can be performed on a map.
+	// +kubebuilder:default={}
+	DefaultedEmptyMap map[string]string `json:"defaultedEmptyMap"`
+
+	// This tests that an empty object defaulting can be performed on an object.
+	// +kubebuilder:default={}
+	DefaultedEmptyObject EmpiableObject `json:"defaultedEmptyObject"`
+
 	// This tests that pattern validator is properly applied.
 	// +kubebuilder:validation:Pattern=`^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$`
 	PatternObject string `json:"patternObject"`
@@ -295,6 +307,13 @@ type MinMaxObject struct {
 	Foo string `json:"foo,omitempty"`
 	Bar string `json:"bar,omitempty"`
 	Baz string `json:"baz,omitempty"`
+}
+
+type EmpiableObject struct {
+
+	// +kubebuilder:default=forty-two
+	Foo string `json:"foo,omitempty"`
+	Bar string `json:"bar,omitempty"`
 }
 
 type unexportedStruct struct {

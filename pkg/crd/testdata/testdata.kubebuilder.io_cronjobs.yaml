@@ -96,6 +96,28 @@ spec:
                 - Forbid
                 - Replace
                 type: string
+              defaultedEmptyMap:
+                default: {}
+                description: This tests that an empty object defaulting can be performed on a map.
+                type: object
+                additionalProperties:
+                  type: string
+              defaultedEmptyObject:
+                default: {}
+                description: This tests that an empty object defaulting can be performed on an object.
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    type: string
+                    default: forty-two
+                type: object
+              defaultedEmptySlice:
+                default: []
+                description: This tests that empty slice defaulting can be performed.
+                items:
+                  type: string
+                type: array
               defaultedObject:
                 default:
                 - nested:
@@ -7434,6 +7456,9 @@ spec:
             - baz
             - binaryName
             - canBeNull
+            - defaultedEmptyMap
+            - defaultedEmptyObject
+            - defaultedEmptySlice
             - defaultedObject
             - defaultedSlice
             - defaultedString
