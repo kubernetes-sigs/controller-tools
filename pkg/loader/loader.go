@@ -389,12 +389,6 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 		}
 	}()
 
-	// uniquePkgIDs is used to keep track of the discovered packages to be nice
-	// and try and prevent packages from showing up twice when nested module
-	// support is enabled. there is not harm that comes from this per se, but
-	// it makes testing easier when a known number of modules can be asserted
-	uniquePkgIDs := sets.Set[string]{}
-
 	// loadPackages returns the Go packages for the provided roots
 	//
 	// if validatePkgFn is nil, a package will be returned in the slice,
@@ -412,10 +406,7 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 		var pkgs []*Package
 		for _, rp := range rawPkgs {
 			p := l.packageFor(rp)
-			if !uniquePkgIDs.Has(p.ID) {
-				pkgs = append(pkgs, p)
-				uniquePkgIDs.Insert(p.ID)
-			}
+			pkgs = append(pkgs, p)
 		}
 		return pkgs, nil
 	}
@@ -568,13 +559,14 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	for _, r := range fspRoots {
 		b, d := filepath.Base(r), filepath.Dir(r)
 
-		// we want the base part of the path to be either "..." or ".", except
-		// Go's filepath utilities clean paths during manipulation, removing the
-		// ".". thus, if not "...", let's update the path components so that:
+		// we want the base part of the path to be either "..." or ".", except Go's
+		// filepath utilities clean paths during manipulation or go file path,
+		// removing the ".". thus, if not "..." or go file, let's update the path
+		// components so that:
 		//
 		//   d = r
 		//   b = "."
-		if b != "..." {
+		if b != "..." && filepath.Ext(b) != ".go" {
 			d = r
 			b = "."
 		}
