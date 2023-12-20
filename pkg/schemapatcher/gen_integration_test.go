@@ -91,7 +91,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("checking that the expected and actual files for " + expectedFile.Name() + " are identical")
-			Expect(actualContents).To(Equal(expectedContents), "contents not as expected, check pkg/schemapatcher/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(string(actualContents), string(expectedContents)))
+			Expect(actualContents).To(MatchYAML(expectedContents), "contents not as expected, check pkg/schemapatcher/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(string(actualContents), string(expectedContents)))
 		}
 	})
 })

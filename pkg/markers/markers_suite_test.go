@@ -99,6 +99,17 @@ var _ = BeforeSuite(func() {
 					type HasDocsWithSpaces2 struct {
 					}
 
+					// This is a description
+					// this is an example as yaml:
+					// ---
+					// foo:
+					//   bar:
+					//     dar:
+					//     - value1
+					//     - value2
+					type HasNonAsteriskDocWithYamlEmbeeded struct {
+					}
+
 					type Baz interface {
 						// +testing:pkglvl="not here in interface"
 					}
