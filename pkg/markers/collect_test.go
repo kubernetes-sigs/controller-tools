@@ -106,7 +106,7 @@ var _ = Describe("Collecting", func() {
 			})
 
 			It("should have docs without markers", func() {
-				Expect(docsByType).To(HaveKeyWithValue("Foo", "normal godoc normal godoc"))
+				Expect(docsByType).To(HaveKeyWithValue("Foo", "normal godoc\nnormal godoc"))
 			})
 
 			It("should associate markers in the closest non-godoc block", func() {
@@ -133,7 +133,20 @@ var _ = Describe("Collecting", func() {
 
 			It("should have doc without extraneous spaces, even over multiple lines", func() {
 				Expect(docsByType).To(HaveKeyWithValue("HasDocsWithSpaces2",
-					"This type of doc has spaces preserved in go-ast, but we'd like to trim them, especially when formatted like this."))
+					"This type of doc has spaces preserved in go-ast, but we'd like to trim them,\nespecially when formatted like this."))
+			})
+		})
+		Context("types with //-style comments and yaml embeeded", func() {
+			It("should keep spaces and multiline", func() {
+				Expect(docsByType).To(HaveKeyWithValue("HasNonAsteriskDocWithYamlEmbeeded",
+					`This is a description
+this is an example as yaml:
+---
+foo:
+  bar:
+    dar:
+    - value1
+    - value2`))
 			})
 		})
 

@@ -1,3 +1,5 @@
+//go:generate ../../../../.run-controller-gen.sh crd paths=./v1beta1;./v1beta2 output:dir=.
+
 package multiple_versions
 
 type InnerStruct struct {
