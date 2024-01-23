@@ -101,12 +101,14 @@ var _ = BeforeSuite(func() {
 
 					// This is a description
 					// this is an example as yaml:
+					// ~~~yaml
 					// ---
 					// foo:
 					//   bar:
 					//     dar:
 					//     - value1
 					//     - value2
+					// ~~~
 					type HasNonAsteriskDocWithYamlEmbeeded struct {
 					}
 

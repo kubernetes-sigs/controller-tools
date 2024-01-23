@@ -1111,7 +1111,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -1178,7 +1177,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -1211,7 +1209,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the ConfigMap
@@ -1230,7 +1227,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the Secret
@@ -1338,7 +1334,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -1443,7 +1438,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -1567,7 +1561,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -1753,7 +1746,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -1930,7 +1922,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -2071,7 +2062,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -2354,7 +2344,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -2421,7 +2410,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -2454,7 +2442,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the ConfigMap
@@ -2473,7 +2460,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the Secret
@@ -2578,7 +2564,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -2683,7 +2668,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -2804,7 +2788,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -2976,7 +2959,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -3150,7 +3132,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -3284,7 +3265,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -3491,7 +3471,6 @@ spec:
                                       description: |-
                                         Name of the referent.
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                       type: string
                                   type: object
                                 type: array
@@ -3578,7 +3557,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -3645,7 +3623,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -3678,7 +3655,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the ConfigMap
@@ -3697,7 +3673,6 @@ spec:
                                                 description: |-
                                                   Name of the referent.
                                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                  TODO: Add other useful fields. apiVersion, kind, uid?
                                                 type: string
                                               optional:
                                                 description: Specify whether the Secret
@@ -3805,7 +3780,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -3910,7 +3884,6 @@ spec:
                                               description: |-
                                                 TCPSocket specifies an action involving a TCP port.
                                                 TCP hooks not yet supported
-                                                TODO: implement a realistic TCP lifecycle hook
                                               properties:
                                                 host:
                                                   description: 'Optional: Host name
@@ -4034,7 +4007,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -4220,7 +4192,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -4397,7 +4368,6 @@ spec:
                                                 type indicates which kind of seccomp profile will be applied.
                                                 Valid options are:
 
-
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
@@ -4538,7 +4508,6 @@ spec:
                                           description: |-
                                             TCPSocket specifies an action involving a TCP port.
                                             TCP hooks not yet supported
-                                            TODO: implement a realistic TCP lifecycle hook
                                           properties:
                                             host:
                                               description: 'Optional: Host name to
@@ -4790,11 +4759,9 @@ spec:
                                       Some volume types allow the Kubelet to change the ownership of that volume
                                       to be owned by the pod:
 
-
                                       1. The owning GID will be the FSGroup
                                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                                       3. The permission bits are OR'd with rw-rw----
-
 
                                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                                     format: int64
@@ -4875,7 +4842,6 @@ spec:
                                         description: |-
                                           type indicates which kind of seccomp profile will be applied.
                                           Valid options are:
-
 
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
@@ -5152,7 +5118,6 @@ spec:
                                             Tip: Ensure that the filesystem type is supported by the host operating system.
                                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                             More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
-                                            TODO: how do we prevent errors in the filesystem from compromising the machine
                                           type: string
                                         partition:
                                           description: |-
@@ -5272,7 +5237,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         user:
@@ -5310,7 +5274,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         volumeID:
@@ -5378,7 +5341,6 @@ spec:
                                           description: |-
                                             Name of the referent.
                                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion, kind, uid?
                                           type: string
                                         optional:
                                           description: Specify whether the ConfigMap
@@ -5413,7 +5375,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         readOnly:
@@ -5556,7 +5517,6 @@ spec:
                                         The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
                                         and deleted when the pod is removed.
 
-
                                         Use this if:
                                         a) the volume is only needed while the pod runs,
                                         b) features of normal volumes like restoring from snapshot or capacity
@@ -5567,16 +5527,13 @@ spec:
                                            information on the connection between this volume type
                                            and PersistentVolumeClaim).
 
-
                                         Use PersistentVolumeClaim or one of the vendor-specific
                                         APIs for volumes that persist for longer than the lifecycle
                                         of an individual pod.
 
-
                                         Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
                                         be used that way - see the documentation of the driver for
                                         more information.
-
 
                                         A pod can use both types of ephemeral volumes and
                                         persistent volumes at the same time.
@@ -5596,7 +5553,6 @@ spec:
                                             entry. Pod validation will reject the pod if the concatenated name
                                             is not valid for a PVC (for example, too long).
 
-
                                             An existing PVC with that name that is not owned by the pod
                                             will *not* be used for the pod to avoid using an unrelated
                                             volume by mistake. Starting the pod is then blocked until
@@ -5606,10 +5562,8 @@ spec:
                                             this should not be necessary, but it may be useful when
                                             manually reconstructing a broken cluster.
 
-
                                             This field is read-only and no changes will be made by Kubernetes
                                             to the PVC after it has been created.
-
 
                                             Required, must not be nil.
                                           properties:
@@ -5773,7 +5727,6 @@ spec:
                                             Filesystem type to mount.
                                             Must be a filesystem type supported by the host operating system.
                                             Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
-                                            TODO: how do we prevent errors in the filesystem from compromising the machine
                                           type: string
                                         lun:
                                           description: 'Optional: FC target lun number'
@@ -5836,7 +5789,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                       required:
@@ -5870,7 +5822,6 @@ spec:
                                             Tip: Ensure that the filesystem type is supported by the host operating system.
                                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                             More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
-                                            TODO: how do we prevent errors in the filesystem from compromising the machine
                                           type: string
                                         partition:
                                           description: |-
@@ -5951,9 +5902,6 @@ spec:
                                         used for system agents or other privileged things that are allowed
                                         to see the host machine. Most containers will NOT need this.
                                         More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                                        ---
-                                        TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
-                                        mount host directories as read/write.
                                       properties:
                                         path:
                                           description: |-
@@ -5990,7 +5938,6 @@ spec:
                                             Tip: Ensure that the filesystem type is supported by the host operating system.
                                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                             More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
-                                            TODO: how do we prevent errors in the filesystem from compromising the machine
                                           type: string
                                         initiatorName:
                                           description: |-
@@ -6030,7 +5977,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         targetPortal:
@@ -6202,7 +6148,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -6348,7 +6293,6 @@ spec:
                                                     description: |-
                                                       Name of the referent.
                                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                                     type: string
                                                   optional:
                                                     description: Specify whether the
@@ -6438,7 +6382,6 @@ spec:
                                             Tip: Ensure that the filesystem type is supported by the host operating system.
                                             Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
                                             More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
-                                            TODO: how do we prevent errors in the filesystem from compromising the machine
                                           type: string
                                         image:
                                           description: |-
@@ -6481,7 +6424,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         user:
@@ -6528,7 +6470,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         sslEnabled:
@@ -6647,7 +6588,6 @@ spec:
                                               description: |-
                                                 Name of the referent.
                                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                                TODO: Add other useful fields. apiVersion, kind, uid?
                                               type: string
                                           type: object
                                         volumeName:
@@ -7011,22 +6951,8 @@ spec:
               active:
                 description: A list of pointers to currently running jobs.
                 items:
-                  description: |-
-                    ObjectReference contains enough information to let you inspect or modify the referred object.
-                    ---
-                    New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.
-                     1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.
-                     2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular
-                        restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".
-                        Those cannot be well described when embedded.
-                     3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.
-                     4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity
-                        during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple
-                        and the version of the actual struct is irrelevant.
-                     5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type
-                        will affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.
-                    Instead of using this type, create a locally provided and used type that is well-focused on your reference.
-                    For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .
+                  description: ObjectReference contains enough information to let
+                    you inspect or modify the referred object.
                   properties:
                     apiVersion:
                       description: API version of the referent.
@@ -7040,7 +6966,6 @@ spec:
                         the event) or if no container name is specified "spec.containers[2]" (container with
                         index 2 in this pod). This syntax is chosen only to have some well-defined way of
                         referencing a part of an object.
-                        TODO: this design is not final and this field is subject to change in the future.
                       type: string
                     kind:
                       description: |-
