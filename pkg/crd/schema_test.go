@@ -127,20 +127,30 @@ func Test_Schema_ApplyMarkers(t *testing.T) {
 					invocations = append(invocations, "0")
 				},
 			},
-			&testPriorityMarker{priority: 1, callback: func() {
-				invocations = append(invocations, "1")
-
+			&testPriorityMarker{priority: 2, callback: func() {
+				invocations = append(invocations, "2")
+			}},
+			&testPriorityMarker{priority: 11, callback: func() {
+				invocations = append(invocations, "11")
+			}},
+			&defaultPriorityMarker{callback: func() {
+				invocations = append(invocations, "default")
 			}},
 			&testapplyFirstMarker{callback: func() {
 				invocations = append(invocations, "applyFirst")
 			}},
-			&testPriorityMarker{priority: crdmarkers.ApplyPriorityDefault, callback: func() {
-				invocations = append(invocations, "default")
-
-			}},
 		}}, props, nil)
 
-	g.Expect(invocations).To(gomega.Equal([]string{"0", "1", "applyFirst", "default"}))
+	g.Expect(invocations).To(gomega.Equal([]string{"0", "applyFirst", "2", "default", "11"}))
+}
+
+type defaultPriorityMarker struct {
+	callback func()
+}
+
+func (m *defaultPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
 }
 
 type testPriorityMarker struct {

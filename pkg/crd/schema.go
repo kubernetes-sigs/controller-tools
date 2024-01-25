@@ -125,11 +125,10 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
 }
 
-// applyMarkers applies schema markers to the given schema, respecting "apply first" markers.
+// applyMarkers applies schema markers given their priority to the given schema
 func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
 	markers := make([]SchemaMarker, 0, len(markerSet))
 
-	// apply "apply first" markers first...
 	for _, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
 			if schemaMarker, isSchemaMarker := markerValue.(SchemaMarker); isSchemaMarker {
