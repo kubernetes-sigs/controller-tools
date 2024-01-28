@@ -22,6 +22,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -333,6 +334,11 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 	}
 }
 
+// fieldScopePropertyName is the name of the property used to sore field scope information. A more
+// appropriate solution would be to use a custom extension, but that's not possible yet.
+// See: https://github.com/kubernetes/kubernetes/issues/82942
+const fieldScopePropertyName = "x-kubebuilder-field-scopes"
+
 // structToSchema creates a schema for the given struct.  Embedded fields are placed in AllOf,
 // and can be flattened later with a Flattener.
 func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSONSchemaProps {
@@ -346,6 +352,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		return props
 	}
 
+	var clusterScopedFields, namespaceScopedFields []string
 	for _, field := range ctx.info.Fields {
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
@@ -376,6 +383,30 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		}
 		fieldName := jsonOpts[0]
 		inline = inline || fieldName == "" // anonymous fields are inline fields in YAML/JSON
+
+		if scope := field.Markers.Get("kubebuilder:field:scope"); scope != nil {
+			value, ok := scope.(crdmarkers.FieldScope)
+			if !ok {
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("encountered non-string struct %q field %q scope %s", ctx.info.Name, field.Name, reflect.ValueOf(scope).Type().Name()), field.RawField))
+				continue
+			}
+			var scope apiext.ResourceScope
+			switch value {
+			case "":
+				scope = apiext.NamespaceScoped
+			default:
+				scope = apiext.ResourceScope(value)
+			}
+			switch scope {
+			case apiext.ClusterScoped:
+				clusterScopedFields = append(clusterScopedFields, fieldName)
+			case apiext.NamespaceScoped:
+				namespaceScopedFields = append(namespaceScopedFields, fieldName)
+			default:
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("invalid struct %q field %q scope %q", ctx.info.Name, field.Name, value), field.RawField))
+				continue
+			}
+		}
 
 		// if no default required mode is set, default to required
 		defaultMode := "required"
@@ -415,6 +446,22 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		}
 
 		props.Properties[fieldName] = *propSchema
+	}
+
+	if len(clusterScopedFields) > 0 || len(namespaceScopedFields) > 0 {
+		props.Properties[fieldScopePropertyName] = apiext.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]apiext.JSONSchemaProps{
+				string(apiext.ClusterScoped): {
+					Type:     "object",
+					Required: clusterScopedFields,
+				},
+				string(apiext.NamespaceScoped): {
+					Type:     "object",
+					Required: namespaceScopedFields,
+				},
+			},
+		}
 	}
 
 	return props

@@ -17,6 +17,7 @@ package crd
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -104,6 +105,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 			},
 		}
 		crd.Spec.Versions = append(crd.Spec.Versions, ver)
+
 	}
 
 	// markers are applied *after* initial generation of objects
@@ -127,6 +129,15 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 					}
 				}
 			}
+		}
+	}
+
+	// Apply field-scoped resources. The markers live on the field, not in the top-level CRD, so we
+	// must apply them manually here.
+	for versionIndex := range crd.Spec.Versions {
+		version := &crd.Spec.Versions[versionIndex]
+		if err := applyFieldScopes(version.Schema.OpenAPIV3Schema, crd.Spec.Scope); err != nil {
+			packages[0].AddError(fmt.Errorf("CRD for %s was unable to apply field scopes", groupKind))
 		}
 	}
 
@@ -175,4 +186,49 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	}
 
 	p.CustomResourceDefinitions[groupKind] = crd
+}
+
+func applyFieldScopes(props *apiext.JSONSchemaProps, scope apiext.ResourceScope) error {
+	var removed string
+	if scope == apiext.NamespaceScoped {
+		removed = string(apiext.ClusterScoped)
+	} else if scope == apiext.ClusterScoped {
+		removed = string(apiext.NamespaceScoped)
+	}
+	if err := removeScope(props, removed); err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeScope(props *apiext.JSONSchemaProps, scope string) error {
+	scopes, ok := props.Properties[fieldScopePropertyName]
+	if ok {
+		for _, item := range scopes.Properties[scope].Required {
+			delete(props.Properties, item)
+
+			index := slices.Index(props.Required, item)
+			if index == -1 {
+				continue
+			}
+			props.Required = slices.Delete(props.Required, index, index+1)
+		}
+	}
+	delete(props.Properties, fieldScopePropertyName)
+
+	for name, p := range props.Properties {
+		removeScope(&p, scope)
+		props.Properties[name] = p
+	}
+
+	if props.Items != nil {
+		if props.Items.Schema != nil {
+			removeScope(props.Items.Schema, scope)
+		}
+		for i := range props.Items.JSONSchemas {
+			removeScope(&props.Items.JSONSchemas[i], scope)
+		}
+	}
+
+	return nil
 }

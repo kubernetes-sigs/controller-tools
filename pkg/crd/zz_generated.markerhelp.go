@@ -33,20 +33,20 @@ func (Generator) Help() *markers.DefinitionHelp {
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"IgnoreUnexportedFields": {
-				Summary: "indicates that we should skip unexported fields. ",
+				Summary: "indicates that we should skip unexported fields.",
 				Details: "Left unspecified, the default is false.",
 			},
 			"AllowDangerousTypes": {
-				Summary: "allows types which are usually omitted from CRD generation because they are not recommended. ",
-				Details: "Currently the following additional types are allowed when this is true: float32 float64 \n Left unspecified, the default is false",
+				Summary: "allows types which are usually omitted from CRD generation",
+				Details: "because they are not recommended.\n\n\nCurrently the following additional types are allowed when this is true:\nfloat32\nfloat64\n\n\nLeft unspecified, the default is false",
 			},
 			"MaxDescLen": {
-				Summary: "specifies the maximum description length for fields in CRD's OpenAPI schema. ",
-				Details: "0 indicates drop the description for all fields completely. n indicates limit the description to at most n characters and truncate the description to closest sentence boundary if it exceeds n characters.",
+				Summary: "specifies the maximum description length for fields in CRD's OpenAPI schema.",
+				Details: "0 indicates drop the description for all fields completely.\nn indicates limit the description to at most n characters and truncate the description to\nclosest sentence boundary if it exceeds n characters.",
 			},
 			"CRDVersions": {
-				Summary: "specifies the target API versions of the CRD type itself to generate. Defaults to v1. ",
-				Details: "Currently, the only supported value is v1. \n The first version listed will be assumed to be the \"default\" version and will not get a version suffix in the output filename. \n You'll need to use \"v1\" to get support for features like defaulting, along with an API server that supports it (Kubernetes 1.16+).",
+				Summary: "specifies the target API versions of the CRD type itself to",
+				Details: "generate. Defaults to v1.\n\n\nCurrently, the only supported value is v1.\n\n\nThe first version listed will be assumed to be the \"default\" version and\nwill not get a version suffix in the output filename.\n\n\nYou'll need to use \"v1\" to get support for features like defaulting,\nalong with an API server that supports it (Kubernetes 1.16+).",
 			},
 			"GenerateEmbeddedObjectMeta": {
 				Summary: "specifies if any embedded ObjectMeta in the CRD should be generated",
