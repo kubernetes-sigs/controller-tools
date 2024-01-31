@@ -30,7 +30,7 @@ const (
 	ApplyPriorityFirst ApplyPriority = 1
 )
 
-// ApplyPriorityMarker designates the order markers should be applied.
+// ApplyPriorityMarker designates the order validation markers should be applied.
 // Lower priority indicates it should be applied first
 type ApplyPriorityMarker interface {
 	ApplyPriority() ApplyPriority
