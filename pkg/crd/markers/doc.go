@@ -47,7 +47,7 @@ limitations under the License.
 // # CRD Markers
 //
 // Markers that modify anything in the CRD itself *except* for the schema
-// implement ApplyToCRD (crd.CRDMarker).  They are expected to detect whether
+// implement ApplyToCRD (crd.SpecMarker).  They are expected to detect whether
 // they should apply themselves to a specific version in the CRD (as passed to
 // them), or to the root-level CRD for legacy cases.  They are applied *after*
 // the rest of the CRD is computed.
