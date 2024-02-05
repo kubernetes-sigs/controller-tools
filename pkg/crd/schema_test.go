@@ -25,6 +25,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -109,4 +110,69 @@ func Test_Schema_MapOfStringToArrayOfFloat32(t *testing.T) {
 			Schema: arrayOfNumbersSchema,
 		},
 	}))
+}
+
+func Test_Schema_ApplyMarkers(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	props := &apiext.JSONSchemaProps{}
+	ctx := &schemaContext{}
+
+	var invocations []string
+
+	applyMarkers(ctx, markers.MarkerValues{
+		"blah": []interface{}{
+			&testPriorityMarker{
+				priority: 0, callback: func() {
+					invocations = append(invocations, "0")
+				},
+			},
+			&testPriorityMarker{priority: 2, callback: func() {
+				invocations = append(invocations, "2")
+			}},
+			&testPriorityMarker{priority: 11, callback: func() {
+				invocations = append(invocations, "11")
+			}},
+			&defaultPriorityMarker{callback: func() {
+				invocations = append(invocations, "default")
+			}},
+			&testapplyFirstMarker{callback: func() {
+				invocations = append(invocations, "applyFirst")
+			}},
+		}}, props, nil)
+
+	g.Expect(invocations).To(gomega.Equal([]string{"0", "applyFirst", "2", "default", "11"}))
+}
+
+type defaultPriorityMarker struct {
+	callback func()
+}
+
+func (m *defaultPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
+}
+
+type testPriorityMarker struct {
+	priority crdmarkers.ApplyPriority
+	callback func()
+}
+
+func (m *testPriorityMarker) ApplyPriority() crdmarkers.ApplyPriority {
+	return m.priority
+}
+
+func (m *testPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
+}
+
+type testapplyFirstMarker struct {
+	callback func()
+}
+
+func (m *testapplyFirstMarker) ApplyFirst() {}
+func (m *testapplyFirstMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+	m.callback()
+	return nil
 }

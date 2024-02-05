@@ -22,6 +22,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"sort"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -124,41 +125,45 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
 }
 
-// applyMarkers applies schema markers to the given schema, respecting "apply first" markers.
+// applyMarkers applies schema markers given their priority to the given schema
 func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
-	// apply "apply first" markers first...
+	markers := make([]SchemaMarker, 0, len(markerSet))
+
 	for _, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
-			if _, isApplyFirst := markerValue.(applyFirstMarker); !isApplyFirst {
-				continue
-			}
-
-			schemaMarker, isSchemaMarker := markerValue.(SchemaMarker)
-			if !isSchemaMarker {
-				continue
-			}
-
-			if err := schemaMarker.ApplyToSchema(props); err != nil {
-				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
+			if schemaMarker, isSchemaMarker := markerValue.(SchemaMarker); isSchemaMarker {
+				markers = append(markers, schemaMarker)
 			}
 		}
 	}
 
-	// ...then the rest of the markers
-	for _, markerValues := range markerSet {
-		for _, markerValue := range markerValues {
-			if _, isApplyFirst := markerValue.(applyFirstMarker); isApplyFirst {
-				// skip apply-first markers, which were already applied
-				continue
-			}
+	sort.Slice(markers, func(i, j int) bool {
+		var iPriority, jPriority crdmarkers.ApplyPriority
 
-			schemaMarker, isSchemaMarker := markerValue.(SchemaMarker)
-			if !isSchemaMarker {
-				continue
-			}
-			if err := schemaMarker.ApplyToSchema(props); err != nil {
-				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
-			}
+		switch m := markers[i].(type) {
+		case crdmarkers.ApplyPriorityMarker:
+			iPriority = m.ApplyPriority()
+		case applyFirstMarker:
+			iPriority = crdmarkers.ApplyPriorityFirst
+		default:
+			iPriority = crdmarkers.ApplyPriorityDefault
+		}
+
+		switch m := markers[j].(type) {
+		case crdmarkers.ApplyPriorityMarker:
+			jPriority = m.ApplyPriority()
+		case applyFirstMarker:
+			jPriority = crdmarkers.ApplyPriorityFirst
+		default:
+			jPriority = crdmarkers.ApplyPriorityDefault
+		}
+
+		return iPriority < jPriority
+	})
+
+	for _, schemaMarker := range markers {
+		if err := schemaMarker.ApplyToSchema(props); err != nil {
+			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
 }
