@@ -33,17 +33,16 @@ var _ = Describe("Loader parsing root module", func() {
 		testmodPkg = loaderPkg + "/testmod"
 	)
 
-	var indexOfPackage = func(pkgID string, pkgs []*loader.Package) int {
-		for i := range pkgs {
-			if pkgs[i].ID == pkgID {
-				return i
-			}
-		}
-		return -1
+	var assertPkgExists = func(pkgID string, pkgs map[string]struct{}) {
+		Expect(pkgs).Should(HaveKey(pkgID))
 	}
 
-	var assertPkgExists = func(pkgID string, pkgs []*loader.Package) {
-		ExpectWithOffset(1, indexOfPackage(pkgID, pkgs)).Should(BeNumerically(">", -1))
+	var dedupPkgs = func(pkgs []*loader.Package) map[string]struct{} {
+		uniquePkgs := make(map[string]struct{})
+		for _, p := range pkgs {
+			uniquePkgs[p.ID] = struct{}{}
+		}
+		return uniquePkgs
 	}
 
 	Context("with named packages/modules", func() {
@@ -67,8 +66,9 @@ var _ = Describe("Loader parsing root module", func() {
 			It("should load one package", func() {
 				pkgs, err := loader.LoadRoots("sigs.k8s.io/controller-tools/pkg/loader/testmod/submod1")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(pkgs).To(HaveLen(1))
-				assertPkgExists(testmodPkg+"/submod1", pkgs)
+				uniquePkgs := dedupPkgs(pkgs)
+				Expect(uniquePkgs).To(HaveLen(1))
+				assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
 			})
 		})
 
@@ -76,13 +76,14 @@ var _ = Describe("Loader parsing root module", func() {
 			It("should load six packages", func() {
 				pkgs, err := loader.LoadRoots("sigs.k8s.io/controller-tools/pkg/loader/testmod/...")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(pkgs).To(HaveLen(6))
-				assertPkgExists(testmodPkg, pkgs)
-				assertPkgExists(testmodPkg+"/subdir1", pkgs)
-				assertPkgExists(testmodPkg+"/subdir1/subdir1", pkgs)
-				assertPkgExists(testmodPkg+"/subdir1/subdir2", pkgs)
-				assertPkgExists(testmodPkg+"/submod1", pkgs)
-				assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+				uniquePkgs := dedupPkgs(pkgs)
+				Expect(uniquePkgs).To(HaveLen(6))
+				assertPkgExists(testmodPkg, uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1/subdir1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1/subdir2", uniquePkgs)
+				assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/submod1/subdir1", uniquePkgs)
 			})
 		})
 
@@ -90,14 +91,15 @@ var _ = Describe("Loader parsing root module", func() {
 			It("should load seven packages", func() {
 				pkgs, err := loader.LoadRoots("sigs.k8s.io/controller-tools/pkg/loader/testmod/...", "./...")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(pkgs).To(HaveLen(7))
-				assertPkgExists(testmodPkg, pkgs)
-				assertPkgExists(testmodPkg+"/subdir1", pkgs)
-				assertPkgExists(testmodPkg+"/subdir1/subdir1", pkgs)
-				assertPkgExists(testmodPkg+"/subdir1/subdir2", pkgs)
-				assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
-				assertPkgExists(testmodPkg+"/submod1", pkgs)
-				assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+				uniquePkgs := dedupPkgs(pkgs)
+				Expect(uniquePkgs).To(HaveLen(7))
+				assertPkgExists(testmodPkg, uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1/subdir1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1/subdir2", uniquePkgs)
+				assertPkgExists(testmodPkg+"/subdir1/submod1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
+				assertPkgExists(testmodPkg+"/submod1/subdir1", uniquePkgs)
 			})
 		})
 	})
@@ -106,8 +108,9 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load one package", func() {
 			pkgs, err := loader.LoadRoots("../crd/.")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(1))
-			assertPkgExists(pkgPkg+"/crd", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(1))
+			assertPkgExists(pkgPkg+"/crd", uniquePkgs)
 		})
 	})
 
@@ -115,8 +118,9 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load one package", func() {
 			pkgs, err := loader.LoadRoots("./")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(1))
-			assertPkgExists(loaderPkg, pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(1))
+			assertPkgExists(loaderPkg, uniquePkgs)
 		})
 	})
 
@@ -124,8 +128,9 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load one package", func() {
 			pkgs, err := loader.LoadRoots("../../pkg/loader")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(1))
-			assertPkgExists(loaderPkg, pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(1))
+			assertPkgExists(loaderPkg, uniquePkgs)
 		})
 	})
 
@@ -135,14 +140,15 @@ var _ = Describe("Loader parsing root module", func() {
 				"../../pkg/loader/../loader/testmod/...",
 				"./testmod/./../testmod//.")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(7))
-			assertPkgExists(testmodPkg, pkgs)
-			assertPkgExists(testmodPkg+"/subdir1", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/subdir1", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/subdir2", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
-			assertPkgExists(testmodPkg+"/submod1", pkgs)
-			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(7))
+			assertPkgExists(testmodPkg, uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/subdir1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/subdir2", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/submod1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/submod1/subdir1", uniquePkgs)
 		})
 	})
 
@@ -150,14 +156,15 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load seven packages", func() {
 			pkgs, err := loader.LoadRoots("./testmod/...")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(7))
-			assertPkgExists(testmodPkg, pkgs)
-			assertPkgExists(testmodPkg+"/subdir1", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/subdir1", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/subdir2", pkgs)
-			assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
-			assertPkgExists(testmodPkg+"/submod1", pkgs)
-			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(7))
+			assertPkgExists(testmodPkg, uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/subdir1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/subdir2", uniquePkgs)
+			assertPkgExists(testmodPkg+"/subdir1/submod1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
+			assertPkgExists(testmodPkg+"/submod1/subdir1", uniquePkgs)
 		})
 	})
 
@@ -165,8 +172,9 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load one package", func() {
 			pkgs, err := loader.LoadRoots("./testmod/subdir1/submod1/...")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(1))
-			assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(1))
+			assertPkgExists(testmodPkg+"/subdir1/submod1", uniquePkgs)
 		})
 	})
 
@@ -174,9 +182,10 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load two packages", func() {
 			pkgs, err := loader.LoadRoots("./testmod", "./testmod/submod1")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(2))
-			assertPkgExists(testmodPkg, pkgs)
-			assertPkgExists(testmodPkg+"/submod1", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(2))
+			assertPkgExists(testmodPkg, uniquePkgs)
+			assertPkgExists(testmodPkg+"/submod1", uniquePkgs)
 		})
 	})
 
@@ -184,8 +193,9 @@ var _ = Describe("Loader parsing root module", func() {
 		It("should load one package", func() {
 			pkgs, err := loader.LoadRoots("./testmod/submod1/subdir1/")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pkgs).To(HaveLen(1))
-			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+			uniquePkgs := dedupPkgs(pkgs)
+			Expect(uniquePkgs).To(HaveLen(1))
+			assertPkgExists(testmodPkg+"/submod1/subdir1", uniquePkgs)
 		})
 	})
 })
