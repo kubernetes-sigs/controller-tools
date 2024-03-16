@@ -458,7 +458,7 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 // Open coded go/types representation of encoding/json.Marshaller
 var jsonMarshaler = types.NewInterfaceType([]*types.Func{
 	types.NewFunc(token.NoPos, nil, "MarshalJSON",
-		types.NewSignature(nil, nil,
+		types.NewSignatureType(nil, nil, nil, nil,
 			types.NewTuple(
 				types.NewVar(token.NoPos, nil, "", types.NewSlice(types.Universe.Lookup("byte").Type())),
 				types.NewVar(token.NoPos, nil, "", types.Universe.Lookup("error").Type())), false)),
