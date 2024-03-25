@@ -73,6 +73,16 @@ type Generator struct {
 	// closest sentence boundary if it exceeds n characters.
 	MaxDescLen *int `marker:",optional"`
 
+	// AllowDangerousTypes allows types which are usually omitted from CRD generation
+	// because they are not recommended.
+	//
+	// Currently the following additional types are allowed when this is true:
+	// float32
+	// float64
+	//
+	// Left unspecified, the default is false
+	AllowDangerousTypes *bool `marker:",optional"`
+
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta in the CRD should be generated
 	GenerateEmbeddedObjectMeta *bool `marker:",optional"`
 }
@@ -89,10 +99,11 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 
 func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 	parser := &crdgen.Parser{
-		Collector: ctx.Collector,
-		Checker:   ctx.Checker,
+		Collector:           ctx.Collector,
+		Checker:             ctx.Checker,
+		AllowDangerousTypes: g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
-		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta == true,
+		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
 	}
 
 	crdgen.AddKnownTypes(parser)
