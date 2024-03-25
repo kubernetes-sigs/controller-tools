@@ -141,12 +141,14 @@ var _ = Describe("Collecting", func() {
 				Expect(docsByType).To(HaveKeyWithValue("HasNonAsteriskDocWithYamlEmbeeded",
 					`This is a description
 this is an example as yaml:
+~~~yaml
 ---
 foo:
   bar:
     dar:
     - value1
-    - value2`))
+    - value2
+~~~`))
 			})
 		})
 
