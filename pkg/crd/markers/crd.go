@@ -55,6 +55,9 @@ var CRDMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:metadata", markers.DescribesType, Metadata{})).
 		WithHelp(Metadata{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:field:scope", markers.DescribesField, FieldScope(""))).
+		WithHelp(FieldScope("").Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -387,4 +390,13 @@ func (s Metadata) ApplyToCRD(crd *apiext.CustomResourceDefinition, _ string) err
 	}
 
 	return nil
+}
+
+// +controllertools:marker:generateHelp:category=CRD
+// FieldScope specifies the scope of the field. If the field scope does not match the outer-most
+// resource scope, then this field is ignored and not included in the final CRD.
+type FieldScope string
+
+func (m FieldScope) Value() string {
+	return string(m)
 }
