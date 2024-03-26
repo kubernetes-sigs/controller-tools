@@ -288,6 +288,15 @@ func isIntegral(value float64) bool {
 	return value == math.Trunc(value) && !math.IsNaN(value) && !math.IsInf(value, 0)
 }
 
+func thisOrItemsSchema(schema *apiext.JSONSchemaProps) *apiext.JSONSchemaProps {
+	if schema.Type == "array" &&
+		schema.Items != nil &&
+		schema.Items.Schema != nil {
+		return schema.Items.Schema
+	}
+	return schema
+}
+
 // +controllertools:marker:generateHelp:category="CRD validation"
 // XValidation marks a field as requiring a value for which a given
 // expression evaluates to true.
@@ -359,8 +368,9 @@ func (m MultipleOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m MaxLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema = thisOrItemsSchema(schema)
 	if schema.Type != "string" {
-		return fmt.Errorf("must apply maxlength to a string")
+		return fmt.Errorf("must apply maxlength to a string or a string array")
 	}
 	val := int64(m)
 	schema.MaxLength = &val
@@ -368,8 +378,9 @@ func (m MaxLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema = thisOrItemsSchema(schema)
 	if schema.Type != "string" {
-		return fmt.Errorf("must apply minlength to a string")
+		return fmt.Errorf("must apply minlength to a string or a string array")
 	}
 	val := int64(m)
 	schema.MinLength = &val
@@ -380,8 +391,9 @@ func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	// Allow string types or IntOrStrings. An IntOrString will still
 	// apply the pattern validation when a string is detected, the pattern
 	// will not apply to ints though.
+	schema = thisOrItemsSchema(schema)
 	if schema.Type != "string" && !schema.XIntOrString {
-		return fmt.Errorf("must apply pattern to a `string` or `IntOrString`")
+		return fmt.Errorf("must apply pattern to a string or IntOrString or an array of them")
 	}
 	schema.Pattern = string(m)
 	return nil
@@ -510,6 +522,7 @@ func (m XEmbeddedResource) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 // which means the "XIntOrString" marker *must* be applied first.
 
 func (m XIntOrString) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema = thisOrItemsSchema(schema)
 	schema.XIntOrString = true
 	return nil
 }
