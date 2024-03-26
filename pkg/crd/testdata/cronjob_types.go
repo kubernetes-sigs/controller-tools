@@ -252,6 +252,24 @@ type CronJobSpec struct {
 
 	// Checks that arrays work when the type contains a composite literal
 	ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
+
+	// This tests string slice item validation.
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:MaxLength=255
+	// +kubebuilder:validation:items:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+	Hosts []string `json:"hosts,omitempty"`
+
+	HostsAlias Hosts `json:"hostsAlias,omitempty"`
+
+	// This tests string alias slice item validation.
+	LongerStringArray []LongerString `json:"longerStringArray,omitempty"`
+
+	// This tests that a slice of IntOrString can also have a pattern attached to it.
+	// This can be useful if you want to limit the string to a perecentage or integer.
+	// The XIntOrString marker is a requirement for having a pattern on this type.
+	// +kubebuilder:validation:items:XIntOrString
+	// +kubebuilder:validation:items:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
+	IntOrStringArrayWithAPattern []*intstr.IntOrString `json:"intOrStringArrayWithAPattern,omitempty"`
 }
 
 type ContainsNestedMap struct {
@@ -359,6 +377,12 @@ type LongerString string
 // +kubebuilder:validation:Type=string
 // TotallyABool is a bool that serializes as a string.
 type TotallyABool bool
+
+// This tests string slice item validation.
+// +kubebuilder:validation:items:MinLength=1
+// +kubebuilder:validation:items:MaxLength=255
+// +kubebuilder:validation:items:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+type Hosts []string
 
 func (t TotallyABool) MarshalJSON() ([]byte, error) {
 	if t {

@@ -196,12 +196,40 @@ spec:
                 description: This tests that exported fields are not skipped in the
                   schema generation
                 type: string
+              hosts:
+                description: This tests string slice item validation.
+                items:
+                  maxLength: 255
+                  minLength: 1
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                type: array
+              hostsAlias:
+                description: This tests string slice item validation.
+                items:
+                  maxLength: 255
+                  minLength: 1
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                type: array
               int32WithValidations:
                 format: int32
                 maximum: 2
                 minimum: -2
                 multipleOf: 2
                 type: integer
+              intOrStringArrayWithAPattern:
+                description: |-
+                  This tests that a slice of IntOrString can also have a pattern attached to it.
+                  This can be useful if you want to limit the string to a perecentage or integer.
+                  The XIntOrString marker is a requirement for having a pattern on this type.
+                items:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
+                  x-kubernetes-int-or-string: true
+                type: array
               intOrStringWithAPattern:
                 anyOf:
                 - type: integer
@@ -6609,6 +6637,14 @@ spec:
                 - bar
                 - foo
                 type: object
+              longerStringArray:
+                description: This tests string alias slice item validation.
+                items:
+                  description: This tests that markers that are allowed on both fields
+                    and types are applied to types
+                  minLength: 4
+                  type: string
+                type: array
               mapOfArraysOfFloats:
                 additionalProperties:
                   items:
