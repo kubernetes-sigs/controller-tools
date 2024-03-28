@@ -42,6 +42,15 @@ func (d *definitionWithHelp) Register(reg *markers.Registry) error {
 	return nil
 }
 
+func (d *definitionWithHelp) clone() *definitionWithHelp {
+	newDef := *d.Definition
+	// copy both parts so we don't change the definition
+	return &definitionWithHelp{
+		Definition: &newDef,
+		Help:       d.Help,
+	}
+}
+
 func must(def *markers.Definition, err error) *definitionWithHelp {
 	return &definitionWithHelp{
 		Definition: markers.Must(def, err),
@@ -60,7 +69,7 @@ type hasHelp interface {
 func mustMakeAllWithPrefix(prefix string, target markers.TargetType, objs ...interface{}) []*definitionWithHelp {
 	defs := make([]*definitionWithHelp, len(objs))
 	for i, obj := range objs {
-		name := prefix + ":" + reflect.TypeOf(obj).Name()
+		name := prefix + reflect.TypeOf(obj).Name()
 		def, err := markers.MakeDefinition(name, target, obj)
 		if err != nil {
 			panic(err)
