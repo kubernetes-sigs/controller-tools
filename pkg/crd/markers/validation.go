@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -27,7 +28,10 @@ import (
 )
 
 const (
-	SchemalessName = "kubebuilder:validation:Schemaless"
+	validationPrefix = "kubebuilder:validation:"
+
+	SchemalessName        = "kubebuilder:validation:Schemaless"
+	ValidationItemsPrefix = validationPrefix + "items:"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -35,7 +39,9 @@ const (
 // All markers start with `+kubebuilder:validation:`, and continue with their type name.
 // A copy is produced of all markers that describes types as well, for making types
 // reusable and writing complex validations on slice items.
-var ValidationMarkers = mustMakeAllWithPrefix("kubebuilder:validation", markers.DescribesField,
+// At last a copy of all markers with the prefix `+kubebuilder:validation:items:` is
+// produced for marking slice fields and types.
+var ValidationMarkers = mustMakeAllWithPrefix(validationPrefix, markers.DescribesField,
 
 	// numeric markers
 
@@ -110,14 +116,22 @@ func init() {
 	AllDefinitions = append(AllDefinitions, ValidationMarkers...)
 
 	for _, def := range ValidationMarkers {
-		newDef := *def.Definition
-		// copy both parts so we don't change the definition
-		typDef := definitionWithHelp{
-			Definition: &newDef,
-			Help:       def.Help,
-		}
+		typDef := def.clone()
 		typDef.Target = markers.DescribesType
-		AllDefinitions = append(AllDefinitions, &typDef)
+		AllDefinitions = append(AllDefinitions, typDef)
+
+		itemsName := ValidationItemsPrefix + strings.TrimPrefix(def.Name, validationPrefix)
+
+		itemsFieldDef := def.clone()
+		itemsFieldDef.Name = itemsName
+		itemsFieldDef.Help.Summary = "for array items " + itemsFieldDef.Help.Summary
+		AllDefinitions = append(AllDefinitions, itemsFieldDef)
+
+		itemsTypDef := def.clone()
+		itemsTypDef.Name = itemsName
+		itemsTypDef.Help.Summary = "for array items " + itemsTypDef.Help.Summary
+		itemsTypDef.Target = markers.DescribesType
+		AllDefinitions = append(AllDefinitions, itemsTypDef)
 	}
 
 	AllDefinitions = append(AllDefinitions, FieldOnlyMarkers...)

@@ -196,12 +196,44 @@ spec:
                 description: This tests that exported fields are not skipped in the
                   schema generation
                 type: string
+              hosts:
+                description: This tests string slice item validation.
+                items:
+                  maxLength: 255
+                  minLength: 1
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: set
+              hostsAlias:
+                description: This tests string slice item validation.
+                items:
+                  maxLength: 255
+                  minLength: 1
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: set
               int32WithValidations:
                 format: int32
                 maximum: 2
                 minimum: -2
                 multipleOf: 2
                 type: integer
+              intOrStringArrayWithAPattern:
+                description: |-
+                  This tests that a slice of IntOrString can also have a pattern attached to it.
+                  This can be useful if you want to limit the string to a percentage or integer.
+                  The XIntOrString marker is a requirement for having a pattern on this type.
+                items:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
+                  x-kubernetes-int-or-string: true
+                type: array
               intOrStringWithAPattern:
                 anyOf:
                 - type: integer
@@ -209,7 +241,7 @@ spec:
                 description: |-
                   This tests that an IntOrString can also have a pattern attached
                   to it.
-                  This can be useful if you want to limit the string to a perecentage or integer.
+                  This can be useful if you want to limit the string to a percentage or integer.
                   The XIntOrString marker is a requirement for having a pattern on this type.
                 pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                 x-kubernetes-int-or-string: true
@@ -6609,6 +6641,15 @@ spec:
                 - bar
                 - foo
                 type: object
+              longerStringArray:
+                description: This tests string alias slice item validation.
+                items:
+                  description: This tests that markers that are allowed on both fields
+                    and types are applied to types
+                  minLength: 4
+                  type: string
+                minItems: 3
+                type: array
               mapOfArraysOfFloats:
                 additionalProperties:
                   items:
@@ -6742,6 +6783,13 @@ spec:
                   time for any reason.  Missed jobs executions will be counted as failed ones.
                 format: int64
                 type: integer
+              stringPair:
+                description: This tests string slice validation.
+                items:
+                  type: string
+                maxItems: 2
+                minItems: 2
+                type: array
               stringSliceData:
                 additionalProperties:
                   items:
@@ -6839,6 +6887,7 @@ spec:
             - nestedassociativeList
             - patternObject
             - schedule
+            - stringPair
             - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1

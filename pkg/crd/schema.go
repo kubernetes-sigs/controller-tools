@@ -128,16 +128,23 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 // applyMarkers applies schema markers given their priority to the given schema
 func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
 	markers := make([]SchemaMarker, 0, len(markerSet))
+	itemsMarkers := make([]SchemaMarker, 0, len(markerSet))
+	itemsMarkerNames := make(map[SchemaMarker]string)
 
-	for _, markerValues := range markerSet {
+	for markerName, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
 			if schemaMarker, isSchemaMarker := markerValue.(SchemaMarker); isSchemaMarker {
-				markers = append(markers, schemaMarker)
+				if strings.HasPrefix(markerName, crdmarkers.ValidationItemsPrefix) {
+					itemsMarkers = append(itemsMarkers, schemaMarker)
+					itemsMarkerNames[schemaMarker] = markerName
+				} else {
+					markers = append(markers, schemaMarker)
+				}
 			}
 		}
 	}
 
-	sort.Slice(markers, func(i, j int) bool {
+	cmpPriority := func(markers []SchemaMarker, i, j int) bool {
 		var iPriority, jPriority crdmarkers.ApplyPriority
 
 		switch m := markers[i].(type) {
@@ -159,11 +166,25 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 		}
 
 		return iPriority < jPriority
-	})
+	}
+	sort.Slice(markers, func(i, j int) bool { return cmpPriority(markers, i, j) })
+	sort.Slice(itemsMarkers, func(i, j int) bool { return cmpPriority(itemsMarkers, i, j) })
 
 	for _, schemaMarker := range markers {
 		if err := schemaMarker.ApplyToSchema(props); err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
+		}
+	}
+
+	for _, schemaMarker := range itemsMarkers {
+		if props.Type != "array" || props.Items == nil || props.Items.Schema == nil {
+			err := fmt.Errorf("must apply %s to an array value, found %s", itemsMarkerNames[schemaMarker], props.Type)
+			ctx.pkg.AddError(loader.ErrFromNode(err, node))
+		} else {
+			itemsSchema := props.Items.Schema
+			if err := schemaMarker.ApplyToSchema(itemsSchema); err != nil {
+				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
+			}
 		}
 	}
 }
