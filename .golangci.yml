@@ -2,4 +2,11 @@ run:
   modules-download-mode: readonly
   # Increase the default deadline from 1m as some module operations can take a
   # while if uncached!
-  deadline: 5m
+  timeout: 10m
+
+issues:
+  exclude-rules:
+    # Dot imports for gomega and ginkgo are allowed
+    # within test files.
+  - path: _test\.go
+    text: should not use dot imports

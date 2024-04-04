@@ -100,7 +100,7 @@ function setup_envs {
 header_text "using tools"
 
 if ! which golangci-lint 2>&1 >/dev/null; then
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
+  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.57.2
   export PATH=$PATH:$(go env GOPATH)/bin
 fi
 
@@ -132,7 +132,6 @@ golangci-lint run --disable-all \
     --enable=gocyclo \
     --enable=gosec \
     --enable=gofmt \
-    --deadline=5m \
     ./pkg/... ./cmd/...
 
 # --enable=structcheck \  # doesn't understand embedded structs
