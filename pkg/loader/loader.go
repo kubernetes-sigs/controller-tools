@@ -489,7 +489,6 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 		p string,
 		d os.DirEntry,
 		e error) error {
-
 		if e != nil {
 			return e
 		}
@@ -518,7 +517,6 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 
 		// get the absolute path of the root
 		if !filepath.IsAbs(r) {
-
 			// if the initial value of cfg.Dir was non-empty then use it when
 			// building the absolute path to this root. otherwise use the
 			// filepath.Abs function to get the absolute path of the root based
@@ -548,7 +546,6 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 			if err := filepath.WalkDir(
 				d,
 				addNestedGoModulesToRoots); err != nil {
-
 				return nil, err
 			}
 		}

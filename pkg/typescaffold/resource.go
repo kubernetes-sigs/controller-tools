@@ -46,7 +46,7 @@ func (r *Resource) Validate() error {
 	}
 
 	if r.Kind != flect.Pascalize(r.Kind) {
-		return fmt.Errorf("Kind must be camelcase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
+		return fmt.Errorf("kind must be CamelCase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
 	}
 
 	return nil

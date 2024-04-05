@@ -105,10 +105,10 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
 		// Perform defaulting here to avoid ambiguity later
-		IgnoreUnexportedFields: g.IgnoreUnexportedFields != nil && *g.IgnoreUnexportedFields == true,
-		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes == true,
+		IgnoreUnexportedFields: g.IgnoreUnexportedFields != nil && *g.IgnoreUnexportedFields,
+		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
-		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta == true,
+		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
 	}
 
 	AddKnownTypes(parser)
@@ -194,7 +194,6 @@ func removeDescriptionFromMetadataProps(v *apiext.JSONSchemaProps) {
 		if meta.Description != "" {
 			meta.Description = ""
 			v.Properties["metadata"] = m
-
 		}
 	}
 }
