@@ -1,0 +1,79 @@
+name: Package controller-runtime envtest
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hack/envtest/_matrix/*.yaml'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+        - linux
+        - darwin
+        arch:
+        - amd64
+        - arm64
+        include:
+          - arch: ppc64le
+            os: linux
+          - arch: s390x
+            os: linux
+          - arch: amd64
+            os: windows
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # tag=v4.1.2
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@2d756ea4c53f7f6b397767d8723b3a10a9f35bf2 # tag=v44.0.0
+        with:
+          files: |
+            hack/envtest/_matrix/*.yaml
+      - name: Setup package release version
+        id: release-version
+        run: |
+            if [[ ${{ steps.changed-files.outputs.all_changed_files_count }} != 1 ]]; then
+              echo "One Kubernetes patch version files should be changed to create a package, found ${{ steps.changed-files.outputs.all_changed_files_count }}"
+              exit 1
+            fi
+            for changed_file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+              export KUBERNETES_VERSION=$(echo "${changed_file}" | grep -oP '(?<=/)[^/]+(?=\.yaml)')
+              echo "KUBERNETES_VERSION=$KUBERNETES_VERSION" >> $GITHUB_ENV
+
+              GO_VERSION=$(yq eval '.go' $changed_file)
+              echo "GO_VERSION=$GO_VERSION" >> $GITHUB_ENV
+
+              ETCD_VERSION=$(yq eval '.etcd' $changed_file)
+              echo "ETCD_VERSION=$ETCD_VERSION" >> $GITHUB_ENV
+            done
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # tag=v3.2.0
+      - name: Log in to the Container registry
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # tag=v3.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker images
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # tag=v5.3.0
+        with:
+          context: .
+          file: ./hack/envtest/${{matrix.os}}/Dockerfile
+          build-args: |
+            GO_VERSION=${{env.GO_VERSION}}
+            KUBERNETES_VERSION=${{env.KUBERNETES_VERSION}}
+            ETCD_VERSION=${{env.ETCD_VERSION}}
+            OS=${{matrix.os}}
+            ARCH=${{matrix.arch}}
+          push: true
+          tags: |
+            ghcr.io/kubernetes-sigs/controller-tools/envtest:${{env.KUBERNETES_VERSION}}-${{matrix.os}}-${{matrix.arch}}
