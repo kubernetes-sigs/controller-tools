@@ -99,11 +99,6 @@ function setup_envs {
 
 header_text "using tools"
 
-if ! which golangci-lint 2>&1 >/dev/null; then
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.57.2
-  export PATH=$PATH:$(go env GOPATH)/bin
-fi
-
 # fetch the testing binaries - e.g. apiserver and etcd
 fetch_kb_tools
 
@@ -116,23 +111,7 @@ pushd cmd/controller-gen > /dev/null
 popd > /dev/null
 
 header_text "running golangci-lint"
-
-
-golangci-lint run --disable-all \
-    --enable=misspell \
-    --enable=revive \
-    --enable=govet \
-    --enable=unused \
-    --enable=goimports \
-    --enable=errcheck \
-    --enable=unparam \
-    --enable=ineffassign \
-    --enable=nakedret \
-    --enable=misspell \
-    --enable=gocyclo \
-    --enable=gosec \
-    --enable=gofmt \
-    ./pkg/... ./cmd/...
+make lint
 
 # --enable=structcheck \  # doesn't understand embedded structs
 # --enable=goconst \  # complains about constants that shouldn't be constants
