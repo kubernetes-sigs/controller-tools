@@ -1,0 +1,56 @@
+name: Kubernetes Tools Releases for controller-runtime envtest
+
+on:
+  push:
+    branches:
+      - tools-releases
+
+env:
+  KUBERNETES_VERSION: 1.28.0
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+        - linux
+        - darwin
+        arch:
+        - amd64
+        - arm64
+        include:
+          - arch: ppc64le
+            os: linux
+          - arch: s390x
+            os: linux
+          - arch: amd64
+            os: windows
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./hack/tools/envtest/${{matrix.os}}/Dockerfile
+          build-args: |
+            KUBERNETES_VERSION=v${{env.KUBERNETES_VERSION}}
+            OS=${{matrix.os}}
+            ARCH=${{matrix.arch}}
+          push: true
+          tags: |
+            ghcr.io/kubernetes-sigs/controller-tools/envtest:${{env.KUBERNETES_VERSION}}-${{matrix.os}}-${{matrix.arch}}
