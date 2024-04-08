@@ -18,6 +18,7 @@
 *~
 
 # Tools binaries.
+out
 hack/tools/bin
 
 junit-report.xml

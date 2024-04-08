@@ -51,6 +51,14 @@ RUN curl -sfLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/
     unzip -o ${ETCD_BASE_NAME}.zip && \
     cp ${ETCD_BASE_NAME}/etcd.exe $DEST
 
+# Package into tarball.
+RUN tar -czvf /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz $DEST
+RUN sha512sum /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz > /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz.sha512
+
 # Build the final image with the binaries.
 FROM scratch
-COPY --from=builder /controller-tools/envtest /controller-tools/envtest
+ARG OS
+ARG ARCH
+ARG KUBERNETES_VERSION
+COPY --from=builder /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz /
+COPY --from=builder /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz.sha512 /
