@@ -85,6 +85,13 @@ type Generator struct {
 
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
+
+	// PreserveUnknownFields indicates whether or not we should turn off pruning.
+	//
+	// Specifies spec.preserveUnknownFields value that is false and omitted by default.
+	//
+	// It's required to be false for v1 CRDs.
+	PreserveUnknownFields *bool `marker:",optional"`
 }
 
 func (Generator) CheckFilter() loader.NodeFilter {
@@ -98,6 +105,16 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 func transformRemoveCRDStatus(obj map[string]interface{}) error {
 	delete(obj, "status")
 	return nil
+}
+
+// transformPreserveUnknownFields adds spec.preserveUnknownFields=value.
+func transformPreserveUnknownFields(value bool) func(map[string]interface{}) error {
+	return func(obj map[string]interface{}) error {
+		if spec, ok := obj["spec"].(map[interface{}]interface{}); ok {
+			spec["preserveUnknownFields"] = value
+		}
+		return nil
+	}
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
@@ -146,6 +163,14 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 	headerText = strings.ReplaceAll(headerText, " YEAR", " "+g.Year)
 
+	yamlOpts := []*genall.WriteYAMLOptions{
+		genall.WithTransform(transformRemoveCRDStatus),
+		genall.WithTransform(genall.TransformRemoveCreationTimestamp),
+	}
+	if g.PreserveUnknownFields != nil {
+		yamlOpts = append(yamlOpts, genall.WithTransform(transformPreserveUnknownFields(*g.PreserveUnknownFields)))
+	}
+
 	for _, groupKind := range kubeKinds {
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
@@ -171,7 +196,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			} else {
 				fileName = fmt.Sprintf("%s_%s.%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural, crdVersions[i])
 			}
-			if err := ctx.WriteYAML(fileName, headerText, []interface{}{crd}, genall.WithTransform(transformRemoveCRDStatus), genall.WithTransform(genall.TransformRemoveCreationTimestamp)); err != nil {
+			if err := ctx.WriteYAML(fileName, headerText, []interface{}{crd}, yamlOpts...); err != nil {
 				return err
 			}
 		}
