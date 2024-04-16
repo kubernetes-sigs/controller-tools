@@ -124,8 +124,8 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("calling Generate")
 		no := false
 		gen := &crd.Generator{
-			CRDVersions:           []string{"v1"},
-			PreserveUnknownFields: &no,
+			CRDVersions: []string{"v1"},
+			DeprecatedV1beta1CompatibilityPreserveUnknownFields: &no,
 		}
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
@@ -137,8 +137,8 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("calling Generate")
 		yes := true
 		gen := &crd.Generator{
-			CRDVersions:           []string{"v1"},
-			PreserveUnknownFields: &yes,
+			CRDVersions: []string{"v1"},
+			DeprecatedV1beta1CompatibilityPreserveUnknownFields: &yes,
 		}
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 

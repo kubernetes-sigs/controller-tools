@@ -86,12 +86,19 @@ type Generator struct {
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
 
-	// PreserveUnknownFields indicates whether or not we should turn off pruning.
+	// DeprecatedV1beta1CompatibilityPreserveUnknownFields indicates whether
+	// or not we should turn off field pruning for this resource.
 	//
 	// Specifies spec.preserveUnknownFields value that is false and omitted by default.
+	// This value can only be specified for CustomResourceDefinitions that were created with
+	// `apiextensions.k8s.io/v1beta1`.
 	//
-	// It's required to be false for v1 CRDs.
-	PreserveUnknownFields *bool `marker:",optional"`
+	// The field can be set for compatiblity reasons, although strongly discouraged, resource
+	// authors should move to a structural OpenAPI schema instead.
+	//
+	// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#field-pruning
+	// for more information about field pruning and v1beta1 resources compatibility.
+	DeprecatedV1beta1CompatibilityPreserveUnknownFields *bool `marker:",optional"`
 }
 
 func (Generator) CheckFilter() loader.NodeFilter {
@@ -167,8 +174,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		genall.WithTransform(transformRemoveCRDStatus),
 		genall.WithTransform(genall.TransformRemoveCreationTimestamp),
 	}
-	if g.PreserveUnknownFields != nil {
-		yamlOpts = append(yamlOpts, genall.WithTransform(transformPreserveUnknownFields(*g.PreserveUnknownFields)))
+	if g.DeprecatedV1beta1CompatibilityPreserveUnknownFields != nil {
+		yamlOpts = append(yamlOpts, genall.WithTransform(transformPreserveUnknownFields(*g.DeprecatedV1beta1CompatibilityPreserveUnknownFields)))
 	}
 
 	for _, groupKind := range kubeKinds {
