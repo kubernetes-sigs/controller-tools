@@ -43,7 +43,7 @@ jobs:
         uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # tag=v2.0.4
         with:
           name: envtest-${{ env.KUBERNETES_VERSION }}
-          draft: true
+          draft: false
           make_latest: false
           files: |
             out/envtest-*.tar.gz

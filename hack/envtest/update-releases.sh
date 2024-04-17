@@ -39,6 +39,6 @@ for file in "${ROOT}"/out/*.tar.gz; do
   self_link=https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${file_name}
 
   yq eval \
-    ".releases[\"${KUBERNETES_VERSION}\"] += {\"${file_name}\": {\"hash\": \"${file_hash}\", \"self_link\": \"${self_link}\"}}" \
+    ".releases[\"${KUBERNETES_VERSION}\"] += {\"${file_name}\": {\"hash\": \"${file_hash}\", \"selfLink\": \"${self_link}\"}}" \
     -i "${ROOT}"/envtest-releases.yaml
 done
