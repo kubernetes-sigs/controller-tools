@@ -35,6 +35,8 @@ export GOPROXY
 export GO111MODULE=on
 
 # Tools.
+ENVTEST_DIR := hack/envtest
+ENVTEST_MATRIX_DIR := $(ENVTEST_DIR)/_matrix
 TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(abspath $(TOOLS_DIR)/bin)
 GOLANGCI_LINT := $(abspath $(TOOLS_BIN_DIR)/golangci-lint)
@@ -92,3 +94,44 @@ clean: ## Cleanup.
 .PHONY: clean-bin
 clean-bin: ## Remove all generated binaries.
 	rm -rf hack/tools/bin
+
+.PHONE: clean-release
+clean-release: ## Remove all generated release binaries.
+	rm -rf $(RELEASE_DIR)
+
+## --------------------------------------
+## Envtest Build
+## --------------------------------------
+
+RELEASE_DIR := out
+
+.PHONY: $(RELEASE_DIR)
+$(RELEASE_DIR):
+	mkdir -p $(RELEASE_DIR)/
+
+.PHONY: release-envtest
+release-envtest: clean-release ## Build the envtest binaries by operating system.
+	OS=linux ARCH=amd64 $(MAKE) release-envtest-docker-build
+	OS=linux ARCH=arm64 $(MAKE) release-envtest-docker-build
+	OS=linux ARCH=ppc64le $(MAKE) release-envtest-docker-build
+	OS=linux ARCH=s390x $(MAKE) release-envtest-docker-build
+	OS=darwin ARCH=amd64 $(MAKE) release-envtest-docker-build
+	OS=darwin ARCH=arm64 $(MAKE) release-envtest-docker-build
+	OS=windows ARCH=amd64 $(MAKE) release-envtest-docker-build
+	./hack/envtest/update-releases.sh
+
+.PHONY: release-envtest-docker-build
+release-envtest-docker-build: $(RELEASE_DIR) ## Build the envtest binaries.
+	@: $(if $(KUBERNETES_VERSION),,$(error KUBERNETES_VERSION is not set))
+	@: $(if $(OS),,$(error OS is not set))
+	@: $(if $(ARCH),,$(error ARCH is not set))
+	docker buildx build \
+		--file ./hack/envtest/$(OS)/Dockerfile \
+		--build-arg KUBERNETES_VERSION=$(KUBERNETES_VERSION) \
+		--build-arg GO_VERSION=$(shell yq eval '.go' $(ENVTEST_MATRIX_DIR)/$(KUBERNETES_VERSION).yaml) \
+		--build-arg ETCD_VERSION=$(shell yq eval '.etcd' $(ENVTEST_MATRIX_DIR)/$(KUBERNETES_VERSION).yaml) \
+		--build-arg OS=$(OS) \
+		--build-arg ARCH=$(ARCH) \
+		--tag sigs.k8s.io/controller-tools/envtest:$(KUBERNETES_VERSION)-$(OS)-$(ARCH) \
+		--output type=local,dest=$(RELEASE_DIR) \
+		.
