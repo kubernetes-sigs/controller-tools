@@ -4,6 +4,7 @@ on:
     types: [opened, edited, synchronize, reopened]
     branches:
       - main
+      - master
 
 permissions:
   # Required: allow read access to the content for analysis.
@@ -21,7 +22,6 @@ jobs:
       matrix:
         working-directory:
           - ""
-          - tools/setup-envtest
     steps:
       - name: Set up Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # tag=v5.0.0
