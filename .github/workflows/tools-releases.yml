@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   build-and-push:
@@ -53,6 +54,16 @@ jobs:
           name: envtest-${{ env.KUBERNETES_VERSION }}
           draft: true
           make_latest: false
-          files: out/envtest-*.tar.gz
+          files: |
+            out/envtest-*.tar.gz
+            out/envtest-*.tar.gz.sha512
           fail_on_unmatched_files: true
           body_path: out/release-notes.md
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83 # tag=v6.0.4
+        with:
+          commit-message: Promote envtest release for Kubernetes ${{ env.KUBERNETES_VERSION }}
+          title: ":seedling: Promotion of envtest release for Kubernetes ${{ env.KUBERNETES_VERSION }}"
+          branch: promote-envtest-${{ env.KUBERNETES_VERSION }}
+          add-paths: |
+            envtest-releases.yaml

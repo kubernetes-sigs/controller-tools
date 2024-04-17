@@ -35,6 +35,8 @@ export GOPROXY
 export GO111MODULE=on
 
 # Tools.
+ENVTEST_DIR := hack/envtest
+ENVTEST_MATRIX_DIR := $(ENVTEST_DIR)/_matrix
 TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(abspath $(TOOLS_DIR)/bin)
 GOLANGCI_LINT := $(abspath $(TOOLS_BIN_DIR)/golangci-lint)
@@ -120,17 +122,14 @@ release-envtest: clean-release ## Build the envtest binaries by operating system
 
 .PHONY: release-envtest-docker-build
 release-envtest-docker-build: $(RELEASE_DIR) ## Build the envtest binaries.
-	@: $(if $(GO_VERSION),,$(error GO_VERSION is not set))
 	@: $(if $(KUBERNETES_VERSION),,$(error KUBERNETES_VERSION is not set))
-	@: $(if $(ETCD_VERSION),,$(error ETCD_VERSION is not set))
 	@: $(if $(OS),,$(error OS is not set))
 	@: $(if $(ARCH),,$(error ARCH is not set))
-
 	docker buildx build \
 		--file ./hack/envtest/$(OS)/Dockerfile \
-		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg KUBERNETES_VERSION=$(KUBERNETES_VERSION) \
-		--build-arg ETCD_VERSION=$(ETCD_VERSION) \
+		--build-arg GO_VERSION=$(shell yq eval '.go' $(ENVTEST_MATRIX_DIR)/$(KUBERNETES_VERSION).yaml) \
+		--build-arg ETCD_VERSION=$(shell yq eval '.etcd' $(ENVTEST_MATRIX_DIR)/$(KUBERNETES_VERSION).yaml) \
 		--build-arg OS=$(OS) \
 		--build-arg ARCH=$(ARCH) \
 		--tag sigs.k8s.io/controller-tools/envtest:$(KUBERNETES_VERSION)-$(OS)-$(ARCH) \

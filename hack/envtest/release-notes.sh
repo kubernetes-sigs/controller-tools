@@ -26,25 +26,31 @@ if [ -z "${KUBERNETES_VERSION}" ]; then
   exit 1
 fi
 
-# For each file in out/*.tar.gz, build a out/release-notes.md files containing a table
-# with every file and their respective hash
+# Create the releases.yaml file in hack/envtest if it does not exist
+if [ ! -f "${ROOT}"/envtest-releases.yaml ]; then
+  echo "releases:" > "${ROOT}"/envtest-releases.yaml
+fi
 
 # Create the release notes file
 echo -e "# Envtest Kubernetes ${KUBERNETES_VERSION} Binaries\n" > out/release-notes.md
+
+# Add the newly built Kubernetes version to the releases.yaml file with yq as an object key under releases
+yq eval ".releases += {\"${KUBERNETES_VERSION}\": {}}" -i "${ROOT}"/envtest-releases.yaml
 
 # Create the table header
 echo "filename | sha512 hash" >> out/release-notes.md
 echo "-------- | -----------" >> out/release-notes.md
 
 for file in "${ROOT}"/out/*.tar.gz; do
-  # Get the file name
   file_name=$(basename "${file}")
-
-  # Get the hash of the file
   file_hash=$(awk '{ print $1 }' < "${file}.sha512")
+  self_link=https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${file_name}
 
-  # Add the file and hash to the release notes
-  echo "| [${file_name}](https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${file_name}) | ${file_hash} |" >> out/release-notes.md
+  # Add the file and hash to the release notes and yaml
+  echo "| [${file_name}](${self_link}) | ${file_hash} |" >> out/release-notes.md
+  yq eval \
+    ".releases[\"${KUBERNETES_VERSION}\"] += {\"${file_name}\": {\"hash\": \"${file_hash}\", \"self_link\": \"${self_link}\"}}" \
+    -i "${ROOT}"/envtest-releases.yaml
 done
 
 # Close the table
