@@ -119,6 +119,43 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		expectedOut := string(expectedFileFoos) + string(expectedFileZoos)
 		Expect(out.buf.String()).To(Equal(expectedOut), cmp.Diff(out.buf.String(), expectedOut))
 	})
+
+	It("should add preserveUnknownFields=false when specified", func() {
+		By("calling Generate")
+		no := false
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+			DeprecatedV1beta1CompatibilityPreserveUnknownFields: &no,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching preserveUnknownFields")
+		Expect(out.buf.String()).To(ContainSubstring("preserveUnknownFields: false"))
+	})
+
+	It("should add preserveUnknownFields=true when specified", func() {
+		By("calling Generate")
+		yes := true
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+			DeprecatedV1beta1CompatibilityPreserveUnknownFields: &yes,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching preserveUnknownFields")
+		Expect(out.buf.String()).To(ContainSubstring("preserveUnknownFields: true"))
+	})
+
+	It("should not add preserveUnknownFields when not specified", func() {
+		By("calling Generate")
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching preserveUnknownFields")
+		Expect(out.buf.String()).NotTo(ContainSubstring("preserveUnknownFields"))
+	})
 })
 
 // fixAnnotations fixes the attribution annotation for tests.
