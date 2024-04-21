@@ -6805,6 +6805,13 @@ spec:
                 - message: must have even length
                   rule: self.size() % 2 == 0
                 - rule: "true"
+              stringWithEvenLengthAndMessageExpression:
+                description: Test of the expression-based validation with
+                  messageExpression marker.
+                type: string
+                x-kubernetes-validations:
+                - messageExpression: "'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
+                  rule: self.size() % 2 == 0
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:

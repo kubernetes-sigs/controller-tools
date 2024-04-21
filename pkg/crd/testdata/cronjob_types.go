@@ -247,6 +247,10 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:XValidation:rule="true"
 	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
 
+	// Test of the expression-based validation with messageExpression marker.
+	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
+	StringWithEvenLengthAndMessageExpression string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
+
 	// Checks that fixed-length arrays work
 	Array [3]int `json:"array,omitempty"`
 
@@ -336,7 +340,6 @@ type MinMaxObject struct {
 }
 
 type EmpiableObject struct {
-
 	// +kubebuilder:default=forty-two
 	Foo string `json:"foo,omitempty"`
 	Bar string `json:"bar,omitempty"`
