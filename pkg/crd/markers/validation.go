@@ -309,8 +309,9 @@ func isIntegral(value float64) bool {
 // This marker may be repeated to specify multiple expressions, all of
 // which must evaluate to true.
 type XValidation struct {
-	Rule    string
-	Message string `marker:",optional"`
+	Rule              string
+	Message           string `marker:",optional"`
+	MessageExpression string `marker:"messageExpression,optional"`
 }
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
@@ -534,8 +535,9 @@ func (m XIntOrString) ApplyPriority() ApplyPriority {
 
 func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
-		Rule:    m.Rule,
-		Message: m.Message,
+		Rule:              m.Rule,
+		Message:           m.Message,
+		MessageExpression: m.MessageExpression,
 	})
 	return nil
 }
