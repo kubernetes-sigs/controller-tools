@@ -196,6 +196,11 @@ spec:
                 description: This tests that exported fields are not skipped in the
                   schema generation
                 type: string
+              forbiddenInt:
+                description: |-
+                  Test that we can add a forbidden field using XValidation Reason and FieldPath.
+                  The validation is applied to the spec struct itself and not the field.
+                type: integer
               hosts:
                 description: This tests string slice item validation.
                 items:
@@ -6806,11 +6811,12 @@ spec:
                   rule: self.size() % 2 == 0
                 - rule: "true"
               stringWithEvenLengthAndMessageExpression:
-                description: Test of the expression-based validation with
-                  messageExpression marker.
+                description: Test of the expression-based validation with messageExpression
+                  marker.
                 type: string
                 x-kubernetes-validations:
-                - messageExpression: "'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
+                - messageExpression: '''Length has to be even but is '' + len(self.stringWithEvenLengthAndMessageExpression)
+                    + '' instead'''
                   rule: self.size() % 2 == 0
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
@@ -6903,6 +6909,11 @@ spec:
             - unprunedFomTypeAndField
             - unprunedJSON
             type: object
+            x-kubernetes-validations:
+            - fieldPath: .forbiddenInt
+              message: forbiddenInt is not allowed
+              reason: FieldValueForbidden
+              rule: has(oldSelf.forbiddenInt) || !has(self.forbiddenInt)
           status:
             description: CronJobStatus defines the observed state of CronJob
             properties:
