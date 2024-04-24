@@ -312,6 +312,8 @@ type XValidation struct {
 	Rule              string
 	Message           string `marker:",optional"`
 	MessageExpression string `marker:"messageExpression,optional"`
+	Reason            string `marker:"reason,optional"`
+	FieldPath         string `marker:"fieldPath,optional"`
 }
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
@@ -534,10 +536,22 @@ func (m XIntOrString) ApplyPriority() ApplyPriority {
 }
 
 func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	var reason *apiext.FieldValueErrorReason
+	if m.Reason != "" {
+		switch m.Reason {
+		case string(apiext.FieldValueRequired), string(apiext.FieldValueInvalid), string(apiext.FieldValueForbidden), string(apiext.FieldValueDuplicate):
+			reason = (*apiext.FieldValueErrorReason)(&m.Reason)
+		default:
+			return fmt.Errorf("invalid reason %s, valid values are %s, %s, %s and %s", m.Reason, apiext.FieldValueRequired, apiext.FieldValueInvalid, apiext.FieldValueForbidden, apiext.FieldValueDuplicate)
+		}
+	}
+
 	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
 		Rule:              m.Rule,
 		Message:           m.Message,
 		MessageExpression: m.MessageExpression,
+		Reason:            reason,
+		FieldPath:         m.FieldPath,
 	})
 	return nil
 }

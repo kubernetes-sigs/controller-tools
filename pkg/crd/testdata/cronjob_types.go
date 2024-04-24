@@ -39,6 +39,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CronJobSpec defines the desired state of CronJob
+// +kubebuilder:validation:XValidation:rule="has(oldSelf.forbiddenInt) || !has(self.forbiddenInt)",message="forbiddenInt is not allowed",fieldPath=".forbiddenInt",reason="FieldValueForbidden"
 type CronJobSpec struct {
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule string `json:"schedule"`
@@ -250,6 +251,10 @@ type CronJobSpec struct {
 	// Test of the expression-based validation with messageExpression marker.
 	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
 	StringWithEvenLengthAndMessageExpression string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
+
+	// Test that we can add a forbidden field using XValidation Reason and FieldPath.
+	// The validation is applied to the spec struct itself and not the field.
+	ForbiddenInt int `json:"forbiddenInt,omitempty"`
 
 	// Checks that fixed-length arrays work
 	Array [3]int `json:"array,omitempty"`

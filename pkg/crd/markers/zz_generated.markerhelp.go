@@ -523,6 +523,14 @@ func (XValidation) Help() *markers.DefinitionHelp {
 				Summary: "",
 				Details: "",
 			},
+			"Reason": {
+				Summary: "",
+				Details: "",
+			},
+			"FieldPath": {
+				Summary: "",
+				Details: "",
+			},
 		},
 	}
 }
