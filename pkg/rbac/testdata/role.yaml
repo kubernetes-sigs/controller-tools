@@ -55,21 +55,9 @@ rules:
   - deduplicate
   resources:
   - some
-  verbs:
-  - get
-- apiGroups:
-  - deduplicate
-  resources:
-  - some
   - some/status
   verbs:
   - get
-  - list
-- apiGroups:
-  - deduplicate
-  resources:
-  - some/status
-  verbs:
   - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1

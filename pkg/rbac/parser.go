@@ -93,6 +93,12 @@ func (r *Rule) key() ruleKey {
 	}
 }
 
+func (r *Rule) KeyWithoutResources() string {
+	key := r.key()
+	verbs := strings.Join(r.Verbs, "&")
+	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.ResourceNames, key.URLs, verbs)
+}
+
 // addVerbs adds new verbs into a Rule.
 // The duplicates in `r.Verbs` will be removed, and then `r.Verbs` will be sorted.
 func (r *Rule) addVerbs(verbs []string) {
@@ -168,36 +174,71 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
 func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{}, error) {
-	rulesByNS := make(map[string][]*Rule)
+	rulesByNSAndResource := make(map[string][]*Rule)
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
 		if err != nil {
 			root.AddError(err)
 		}
 
-		// group RBAC markers by namespace
+		// group RBAC markers by namespace and resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
-			namespace := rule.Namespace
-			if _, ok := rulesByNS[namespace]; !ok {
-				rules := make([]*Rule, 0)
-				rulesByNS[namespace] = rules
+			for _, resource := range rule.Resources {
+				r := Rule{
+					Groups:        rule.Groups,
+					Resources:     []string{resource},
+					ResourceNames: rule.ResourceNames,
+					URLs:          rule.URLs,
+					Namespace:     rule.Namespace,
+					Verbs:         rule.Verbs,
+				}
+				namespace := r.Namespace
+				if _, ok := rulesByNSAndResource[namespace]; !ok {
+					rules := make([]*Rule, 0)
+					rulesByNSAndResource[namespace] = rules
+				}
+				rulesByNSAndResource[namespace] = append(rulesByNSAndResource[namespace], &r)
 			}
-			rulesByNS[namespace] = append(rulesByNS[namespace], &rule)
 		}
 	}
 
 	// NormalizeRules merge Rule with the same ruleKey and sort the Rules
 	NormalizeRules := func(rules []*Rule) []rbacv1.PolicyRule {
-		ruleMap := make(map[ruleKey]*Rule)
+		ruleMapByResource := make(map[ruleKey]*Rule)
 		// all the Rules having the same ruleKey will be merged into the first Rule
 		for _, rule := range rules {
 			key := rule.key()
-			if _, ok := ruleMap[key]; !ok {
-				ruleMap[key] = rule
+			if _, ok := ruleMapByResource[key]; !ok {
+				ruleMapByResource[key] = rule
 				continue
 			}
-			ruleMap[key].addVerbs(rule.Verbs)
+			ruleMapByResource[key].addVerbs(rule.Verbs)
+		}
+
+		// all rules having the same Groups, ResourceNames, URLs and Verbs will be
+		// merged together.
+		ruleMapWithoutResources := make(map[string][]*Rule)
+		for _, rule := range ruleMapByResource {
+			// unset Resources on the key
+			groupKey := rule.KeyWithoutResources()
+			if _, ok := ruleMapWithoutResources[groupKey]; !ok {
+				rules := make([]*Rule, 0)
+				ruleMapWithoutResources[groupKey] = rules
+			}
+			ruleMapWithoutResources[groupKey] = append(ruleMapWithoutResources[groupKey], rule)
+		}
+
+		// all rules which are equal except for resources get merged together.
+		ruleMap := make(map[ruleKey]*Rule)
+		for _, rules := range ruleMapWithoutResources {
+			rule := rules[0]
+			for _, mergeRule := range rules[1:] {
+				rule.Resources = append(rule.Resources, mergeRule.Resources...)
+			}
+
+			key := rule.key()
+			ruleMap[key] = rule
 		}
 
 		// sort the Rules in rules according to their ruleKeys
@@ -216,7 +257,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 
 	// collect all the namespaces and sort them
 	var namespaces []string
-	for ns := range rulesByNS {
+	for ns := range rulesByNSAndResource {
 		namespaces = append(namespaces, ns)
 	}
 	sort.Strings(namespaces)
@@ -224,7 +265,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	// process the items in rulesByNS by the order specified in `namespaces` to make sure that the Role order is stable
 	var objs []interface{}
 	for _, ns := range namespaces {
-		rules := rulesByNS[ns]
+		rules := rulesByNSAndResource[ns]
 		policyRules := NormalizeRules(rules)
 		if len(policyRules) == 0 {
 			continue
