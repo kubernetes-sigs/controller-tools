@@ -11,3 +11,6 @@ package controller
 // +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=watch;watch
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=park
 // +kubebuilder:rbac:groups=batch.io,resources=cronjobs,resourceNames=foo;bar;baz,verbs=get;watch
+// +kubebuilder:rbac:groups=deduplicate,resources=some;some/status,verbs=get;list
+// +kubebuilder:rbac:groups=deduplicate,resources=some,verbs=get
+// +kubebuilder:rbac:groups=deduplicate,resources=some/status,verbs=list

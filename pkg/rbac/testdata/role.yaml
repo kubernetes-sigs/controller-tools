@@ -1,4 +1,3 @@
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -52,7 +51,26 @@ rules:
   - get
   - patch
   - update
-
+- apiGroups:
+  - deduplicate
+  resources:
+  - some
+  verbs:
+  - get
+- apiGroups:
+  - deduplicate
+  resources:
+  - some
+  - some/status
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - deduplicate
+  resources:
+  - some/status
+  verbs:
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -66,7 +84,6 @@ rules:
   - jobs
   verbs:
   - get
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
