@@ -81,11 +81,6 @@ metadata:
 rules:
 - apiGroups:
   - art
-  resources:
-  - jobs
-  verbs:
-  - get
-- apiGroups:
   - wave
   resources:
   - jobs
