@@ -189,6 +189,22 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:optional
 	JustNestedObject *JustNestedObject `json:"justNestedObject,omitempty"`
 
+	// This tests explicitly optional kubebuilder fields
+	// +kubebuilder:validation:Optional
+	ExplicitlyOptionalKubebuilder string `json:"explicitlyOptionalKubebuilder"`
+
+	// This tests explicitly optional kubernetes fields
+	// +optional
+	ExplicitlyOptionalKubernetes string `json:"explicitlyOptionalKubernetes"`
+
+	// This tests explicitly required kubebuilder fields
+	// +kubebuilder:validation:Required
+	ExplicitlyRequiredKubebuilder string `json:"explicitlyRequiredKubebuilder,omitempty"`
+
+	// This tests explicitly required kubernetes fields
+	// +required
+	ExplicitlyRequiredKubernetes string `json:"explicitlyRequiredKubernetes,omitempty"`
+
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
 
