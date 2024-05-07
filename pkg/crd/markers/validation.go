@@ -93,6 +93,8 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeAnyTypeDefinition("kubebuilder:default", markers.DescribesField, Default{})).
 		WithHelp(Default{}.Help()),
+	must(markers.MakeDefinition("default", markers.DescribesField, KubernetesDefault{})).
+		WithHelp(KubernetesDefault{}.Help()),
 
 	must(markers.MakeAnyTypeDefinition("kubebuilder:example", markers.DescribesField, Example{})).
 		WithHelp(Example{}.Help()),
@@ -238,6 +240,20 @@ type Nullable struct{}
 // validation will be performed. Full validation of a default requires
 // submission of the containing CRD to an apiserver.
 type Default struct {
+	Value interface{}
+}
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// Default sets the default value for this field.
+//
+// A default value will be accepted as any value valid for the field.
+// Only JSON-formatted values are accepted. `ref(...)` values are ignored.
+// Formatting for common types include: boolean: `true`, string:
+// `"Cluster"`, numerical: `1.24`, array: `[1,2]`, object: `{"policy":
+// "delete"}`). Defaults should be defined in pruned form, and only best-effort
+// validation will be performed. Full validation of a default requires
+// submission of the containing CRD to an apiserver.
+type KubernetesDefault struct {
 	Value interface{}
 }
 
@@ -503,6 +519,39 @@ func (m Default) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	}
 	schema.Default = &apiext.JSON{Raw: marshalledDefault}
 	return nil
+}
+
+func (m Default) ApplyPriority() ApplyPriority {
+	// explicitly go after +default markers, so kubebuilder-specific defaults get applied last and stomp
+	return 10
+}
+
+func (m *KubernetesDefault) ParseMarker(_ string, _ string, restFields string) error {
+	if strings.HasPrefix(strings.TrimSpace(restFields), "ref(") {
+		// Skip +default=ref(...) values for now, since we don't have a good way to evaluate go constant values via AST.
+		// See https://github.com/kubernetes-sigs/controller-tools/pull/938#issuecomment-2096790018
+		return nil
+	}
+	return json.Unmarshal([]byte(restFields), &m.Value)
+}
+
+// Defaults are only valid CRDs created with the v1 API
+func (m KubernetesDefault) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if m.Value == nil {
+		// only apply to the schema if we have a non-nil default value
+		return nil
+	}
+	marshalledDefault, err := json.Marshal(m.Value)
+	if err != nil {
+		return err
+	}
+	schema.Default = &apiext.JSON{Raw: marshalledDefault}
+	return nil
+}
+
+func (m KubernetesDefault) ApplyPriority() ApplyPriority {
+	// explicitly go before +kubebuilder:default markers, so kubebuilder-specific defaults get applied last and stomp
+	return 9
 }
 
 func (m Example) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
