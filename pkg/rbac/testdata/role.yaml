@@ -52,12 +52,55 @@ rules:
   - patch
   - update
 - apiGroups:
-  - deduplicate
+  - deduplicate-all
+  - deduplicate-all-group
   resources:
-  - some
-  - some/status
+  - bar
+  - foo
   verbs:
   - get
+  - list
+- apiGroups:
+  - deduplicate-groups1
+  - deduplicate-groups2
+  - deduplicate-groups3
+  resources:
+  - foo
+  verbs:
+  - patch
+- apiGroups:
+  - deduplicate-resources
+  resources:
+  - one
+  - three
+  - two
+  verbs:
+  - create
+- apiGroups:
+  - deduplicate-verbs
+  resources:
+  - some
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - not-deduplicate-groups1
+  - not-deduplicate-resources
+  resources:
+  - some
+  verbs:
+  - get
+- apiGroups:
+  - not-deduplicate-groups2
+  resources:
+  - some
+  verbs:
+  - list
+- apiGroups:
+  - not-deduplicate-resources
+  resources:
+  - another
+  verbs:
   - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1

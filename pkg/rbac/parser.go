@@ -93,13 +93,13 @@ func (r *Rule) key() ruleKey {
 	}
 }
 
-func (r *Rule) KeyWithoutResources() string {
+func (r *Rule) keyWithGroupResourceNamesURLsVerbs() string {
 	key := r.key()
 	verbs := strings.Join(r.Verbs, "&")
 	return fmt.Sprintf("%s + %s + %s + %s", key.Groups, key.ResourceNames, key.URLs, verbs)
 }
 
-func (r *Rule) KeyWithoutGroups() string {
+func (r *Rule) keyWithResourcesResourceNamesURLsVerbs() string {
 	key := r.key()
 	verbs := strings.Join(r.Verbs, "&")
 	return fmt.Sprintf("%s + %s + %s + %s", key.Resources, key.ResourceNames, key.URLs, verbs)
@@ -187,7 +187,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 			root.AddError(err)
 		}
 
-		// group RBAC markers by namespace and resource
+		// group RBAC markers by namespace and separate by resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
 			for _, resource := range rule.Resources {
@@ -200,10 +200,6 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 					Verbs:         rule.Verbs,
 				}
 				namespace := r.Namespace
-				if _, ok := rulesByNSResource[namespace]; !ok {
-					rules := make([]*Rule, 0)
-					rulesByNSResource[namespace] = rules
-				}
 				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
 			}
 		}
@@ -226,12 +222,8 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 		// 1. create map based on key without resources
 		ruleMapWithoutResources := make(map[string][]*Rule)
 		for _, rule := range ruleMap {
-			// unset Resources on the key
-			key := rule.KeyWithoutResources()
-			if _, ok := ruleMapWithoutResources[key]; !ok {
-				rules := make([]*Rule, 0)
-				ruleMapWithoutResources[key] = rules
-			}
+			// get key without Resources
+			key := rule.keyWithGroupResourceNamesURLsVerbs()
 			ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
 		}
 		// 2. merge to ruleMap
@@ -250,12 +242,8 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 		// 1. create map based on key without group
 		ruleMapWithoutGroup := make(map[string][]*Rule)
 		for _, rule := range ruleMap {
-			// unset Resources on the key
-			key := rule.KeyWithoutGroups()
-			if _, ok := ruleMapWithoutGroup[key]; !ok {
-				rules := make([]*Rule, 0)
-				ruleMapWithoutGroup[key] = rules
-			}
+			// get key without Group
+			key := rule.keyWithResourcesResourceNamesURLsVerbs()
 			ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
 		}
 		// 2. merge to ruleMap
