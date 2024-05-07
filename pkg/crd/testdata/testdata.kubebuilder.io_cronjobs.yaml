@@ -172,6 +172,18 @@ spec:
                 description: This tests that primitive defaulting can be performed.
                 example: forty-two
                 type: string
+              explicitlyOptionalKubebuilder:
+                description: This tests explicitly optional kubebuilder fields
+                type: string
+              explicitlyOptionalKubernetes:
+                description: This tests explicitly optional kubernetes fields
+                type: string
+              explicitlyRequiredKubebuilder:
+                description: This tests explicitly required kubebuilder fields
+                type: string
+              explicitlyRequiredKubernetes:
+                description: This tests explicitly required kubernetes fields
+                type: string
               embeddedResource:
                 type: object
                 x-kubernetes-embedded-resource: true
@@ -6887,6 +6899,8 @@ spec:
             - defaultedSlice
             - defaultedString
             - embeddedResource
+            - explicitlyRequiredKubebuilder
+            - explicitlyRequiredKubernetes
             - float64WithValidations
             - floatWithValidations
             - foo

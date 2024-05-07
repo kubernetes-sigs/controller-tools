@@ -80,11 +80,13 @@ var ValidationMarkers = mustMakeAllWithPrefix(validationPrefix, markers.Describe
 // sense on a type, and thus aren't in ValidationMarkers).
 var FieldOnlyMarkers = []*definitionWithHelp{
 	must(markers.MakeDefinition("kubebuilder:validation:Required", markers.DescribesField, struct{}{})).
-		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required, if fields are optional by default.")),
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("kubebuilder:validation:Optional", markers.DescribesField, struct{}{})).
-		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional, if fields are required by default.")),
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
+	must(markers.MakeDefinition("required", markers.DescribesField, struct{}{})).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})).
-		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional, if fields are required by default.")),
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
 
 	must(markers.MakeDefinition("nullable", markers.DescribesField, Nullable{})).
 		WithHelp(Nullable{}.Help()),
