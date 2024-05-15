@@ -133,13 +133,15 @@ spec:
                     foo: baz
                 - nested:
                     bar: false
-                description: This tests that object defaulting can be performed.
+                    foo: qux
+                description: This tests that slice and object defaulting can be performed.
                 example:
                 - nested:
                     bar: true
                     foo: baz
                 - nested:
                     bar: false
+                    foo: qux
                 items:
                   properties:
                     nested:
@@ -183,6 +185,74 @@ spec:
                 type: string
               explicitlyRequiredKubernetes:
                 description: This tests explicitly required kubernetes fields
+                type: string
+              doubleDefaultedString:
+                default: kubebuilder-default
+                description: This tests that kubebuilder defaulting takes precedence.
+                type: string
+              kubernetesDefaultedEmptyMap:
+                additionalProperties:
+                  type: string
+                default: {}
+                description: This tests that an empty object defaulting can be performed
+                  on a map.
+                type: object
+              kubernetesDefaultedEmptyObject:
+                default: {}
+                description: This tests that an empty object defaulting can be performed
+                  on an object.
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    default: forty-two
+                    type: string
+                type: object
+              kubernetesDefaultedEmptySlice:
+                default: []
+                description: This tests that empty slice defaulting can be performed.
+                items:
+                  type: string
+                type: array
+              kubernetesDefaultedObject:
+                default:
+                - nested:
+                    bar: true
+                    foo: baz
+                - nested:
+                    bar: false
+                    foo: qux
+                description: This tests that slice and object defaulting can be performed.
+                items:
+                  properties:
+                    nested:
+                      properties:
+                        bar:
+                          type: boolean
+                        foo:
+                          type: string
+                      required:
+                      - bar
+                      - foo
+                      type: object
+                  required:
+                  - nested
+                  type: object
+                type: array
+              kubernetesDefaultedSlice:
+                default:
+                - a
+                - b
+                description: This tests that slice defaulting can be performed.
+                items:
+                  type: string
+                type: array
+              kubernetesDefaultedString:
+                default: forty-two
+                description: This tests that primitive defaulting can be performed.
+                type: string
+              kubernetesDefaultedRef:
+                description: This tests that use of +default=ref(...) doesn't break generation
                 type: string
               embeddedResource:
                 type: object
@@ -6898,6 +6968,7 @@ spec:
             - defaultedObject
             - defaultedSlice
             - defaultedString
+            - doubleDefaultedString
             - embeddedResource
             - explicitlyRequiredKubebuilder
             - explicitlyRequiredKubernetes
@@ -6907,6 +6978,12 @@ spec:
             - int32WithValidations
             - intWithValidations
             - jobTemplate
+            - kubernetesDefaultedEmptyMap
+            - kubernetesDefaultedEmptyObject
+            - kubernetesDefaultedEmptySlice
+            - kubernetesDefaultedObject
+            - kubernetesDefaultedSlice
+            - kubernetesDefaultedString
             - mapOfInfo
             - nestedMapOfInfo
             - nestedStructWithSeveralFields
