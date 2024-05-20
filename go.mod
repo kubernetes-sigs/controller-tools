@@ -3,7 +3,7 @@ module sigs.k8s.io/controller-tools
 go 1.22.0
 
 require (
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/gobuffalo/flect v1.0.2
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo v1.16.5
