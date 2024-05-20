@@ -38,6 +38,18 @@ spec:
           spec:
             description: Spec comments SHOULD appear in the CRD spec
             properties:
+              address:
+                description: This verifies that the format annotation is applied in
+                  the CRD.
+                format: ipv4
+                type: string
+              addresses:
+                description: This verifies that the format annotation is applied in
+                  the CRD.
+                format: ipv4
+                items:
+                  type: string
+                type: array
               defaultedString:
                 default: fooDefaultString
                 description: |-
@@ -46,6 +58,8 @@ spec:
                 example: fooExampleString
                 type: string
             required:
+            - address
+            - addresses
             - defaultedString
             type: object
           status:

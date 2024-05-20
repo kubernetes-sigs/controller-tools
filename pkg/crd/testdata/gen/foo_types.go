@@ -30,6 +30,14 @@ type FooSpec struct {
 	// +kubebuilder:default=fooDefaultString
 	// +kubebuilder:example=fooExampleString
 	DefaultedString string `json:"defaultedString"`
+
+	// This verifies that the format annotation is applied in the CRD.
+	// +kubebuilder:validation:Format=ipv4
+	Address string `json:"address"`
+
+	// This verifies that the format annotation is applied in the CRD.
+	// +kubebuilder:validation:Format=ipv4
+	Addresses []string `json:"addresses"`
 }
 type FooStatus struct{}
 
