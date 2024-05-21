@@ -373,6 +373,11 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 			continue
 		}
 
+		if field.Markers.Get("kubebuilder:skip") != nil {
+			// Explicitly ignore this field for schema generation
+			continue
+		}
+
 		jsonTag, hasTag := field.Tag.Lookup("json")
 		if !hasTag {
 			// if the field doesn't have a JSON tag, it doesn't belong in output (and shouldn't exist in a serialized type)

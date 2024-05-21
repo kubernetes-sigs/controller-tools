@@ -30,6 +30,10 @@ type FooSpec struct {
 	// +kubebuilder:default=fooDefaultString
 	// +kubebuilder:example=fooExampleString
 	DefaultedString string `json:"defaultedString"`
+
+	// This field is explicitly ignored for schema generation.
+	// +kubebuilder:skip
+	Skipped string `json:"skipped"`
 }
 type FooStatus struct{}
 
