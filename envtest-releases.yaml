@@ -219,3 +219,25 @@ releases:
     envtest-v1.29.1-windows-amd64.tar.gz:
       hash: c5b65cee850dcb70ea2ecea49b7411e3b83f640a54ea2ce6c029c22b802e083fbefd92989a3377917233a7d5157dc6fccbbf1916ce8008515641c32f2c9530c5
       selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.29.1/envtest-v1.29.1-windows-amd64.tar.gz
+  v1.24.2:
+    envtest-v1.24.2-darwin-amd64.tar.gz:
+      hash: 8d0a73308daafbb65ed97449bce81e09d249045d4594ce4e4050cc8c5f2aa3147bf4a4fbda6b73a18b0a0cba4f88a01a4e0b9f66c371eba924e3bb36fe9860d5
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-darwin-amd64.tar.gz
+    envtest-v1.24.2-darwin-arm64.tar.gz:
+      hash: f2eb57ac07a0eeb97d6a8e36bc397eb0b5bcaa432ccadb5a574d5684dd482d2121a193f3dfdf1ee04b4df7cdead8d899c5a57e753283ea406bad560063dbabb7
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-darwin-arm64.tar.gz
+    envtest-v1.24.2-linux-amd64.tar.gz:
+      hash: 2b330c1802f7fd858a8a6e97141b07a4260eec135712c8913d36bb8e48f8dbfa45a8e5b13c15e7c20127a55d75bfda5007bf018e853cf156e3ac2b019d492892
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-linux-amd64.tar.gz
+    envtest-v1.24.2-linux-arm64.tar.gz:
+      hash: 5cda1ba1f734a067e8b823130fca9c6bec151106aa1d32856ef7524afdfdd733e6c5c87b1b8d41c293083fd64ac668db8b74dca26554e0c99e0120e6f99f9e21
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-linux-arm64.tar.gz
+    envtest-v1.24.2-linux-ppc64le.tar.gz:
+      hash: c2b72f3dbdda268aadb86c3abe78af412c74a750b652b5c326cab6b06a8ede9c2f57dfad16c9e6fddc68c56228ab0a61b9da0131b53f4de6abcd465f272eaf0b
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-linux-ppc64le.tar.gz
+    envtest-v1.24.2-linux-s390x.tar.gz:
+      hash: 1dc3f4b7375fdb703c1dd84e302559c7245c0676250e26f7396ad145f14162897c327812a7e4336b3b233b329338b58d3340f288490918c25883f1c2df0689ad
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-linux-s390x.tar.gz
+    envtest-v1.24.2-windows-amd64.tar.gz:
+      hash: b9708002e6265eb72ee3ba8a229624dbb1328881f08e53855b2d22fb334d6b40af3de11b9598f3a4c6829bbb6c787aa4556479855354eda1e899df34a2e93a5c
+      selfLink: https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v1.24.2/envtest-v1.24.2-windows-amd64.tar.gz
