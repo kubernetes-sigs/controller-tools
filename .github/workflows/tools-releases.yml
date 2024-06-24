@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # tag=v4.1.6
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@d6babd6899969df1a11d14c368283ea4436bca78 # tag=v44.5.2
+        uses: tj-actions/changed-files@cc3bbb0c526f8ee1d282f8c5f9f4e50745a5b457 # tag=v44.5.4
         with:
           files: |
             hack/envtest/_matrix/*.yaml
