@@ -105,6 +105,17 @@ func (ExclusiveMinimum) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (FieldScope) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "specifies the scope of the field. If the field scope does not match the outer-most",
+			Details: "resource scope, then this field is ignored and not included in the final CRD.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Format) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
