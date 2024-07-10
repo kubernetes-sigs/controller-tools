@@ -56,6 +56,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -85,6 +86,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -116,6 +118,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -145,6 +148,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -174,6 +178,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -219,6 +224,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -268,6 +274,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -313,6 +320,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
 		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
@@ -326,6 +334,83 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		err = webhook.Generator{}.Generate(genCtx)
 		Expect(err).To(HaveOccurred())
 	})
+
+	It("should properly generate the webhook definition when a name is specified with the `kubebuilder:webhookconfiguration` marker", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/valid-custom-name")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+		for _, r := range genCtx.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML")
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualMutating, actualValidating := unmarshalBothV1(actualFile)
+
+		By("loading the desired v1 YAML")
+		expectedFile, err := os.ReadFile("manifests.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedMutating, expectedValidating := unmarshalBothV1(expectedFile)
+
+		By("comparing the two")
+		assertSame(actualMutating, expectedMutating)
+		assertSame(actualValidating, expectedValidating)
+	})
+
+	It("should fail to generate when there are multiple `kubebuilder:webhookconfiguration` markers of the same mutation type", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/invalid-multiple-webhookconfigurations")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		err = webhook.Generator{}.Generate(genCtx)
+		Expect(err).To(HaveOccurred())
+	})
+
 })
 
 func unmarshalBothV1(in []byte) (mutating admissionregv1.MutatingWebhookConfiguration, validating admissionregv1.ValidatingWebhookConfiguration) {
