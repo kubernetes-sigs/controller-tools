@@ -100,9 +100,9 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			}
 		})
 
-		assertCRD := func(pkg *loader.Package, kind, fileName string) {
-			By(fmt.Sprintf("requesting that the %s CRD be generated", kind))
-			groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+		assertCRDForGroupKind := func(pkg *loader.Package, groupKind schema.GroupKind, fileName string) {
+			kind := groupKind.Kind
+			By(fmt.Sprintf("requesting that the %s CRD be generated in group %s", kind, groupKind.Group))
 			parser.NeedCRDFor(groupKind, nil)
 
 			By(fmt.Sprintf("fixing top level ObjectMeta on the %s CRD", kind))
@@ -129,6 +129,10 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 			By(fmt.Sprintf("comparing the two %s CRDs", kind))
 			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+		}
+
+		assertCRD := func(pkg *loader.Package, kind, fileName string) {
+			assertCRDForGroupKind(pkg, schema.GroupKind{Group: "testdata.kubebuilder.io", Kind: kind}, fileName)
 		}
 
 		assertError := func(pkg *loader.Package, kind, errorMsg string) {
@@ -181,6 +185,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 			It("can not successfully generate the CronJob CRD", func() {
 				assertError(pkgs[0], "CronJob", "is not in 'xxx=xxx' format")
+			})
+		})
+
+		Context("CronJob API without group", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./nogroup"}
+				expPkgLen = 1
+			})
+			It("should successfully generate the CronJob CRD", func() {
+				assertCRDForGroupKind(pkgs[0], schema.GroupKind{Kind: "CronJob"}, "testdata._cronjobs.yaml")
 			})
 		})
 	})
