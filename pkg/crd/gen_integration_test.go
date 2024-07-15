@@ -156,6 +156,24 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("searching preserveUnknownFields")
 		Expect(out.buf.String()).NotTo(ContainSubstring("preserveUnknownFields"))
 	})
+
+	It("should truncate CRD descriptions", func() {
+		By("calling Generate")
+		var fifty int = 50
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+			MaxDescLen: &fifty,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("loading the desired YAML")
+		expectedFile, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos_maxdesclen.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		expectedFile = fixAnnotations(expectedFile)
+
+		By("comparing the two")
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
+	})
 })
 
 // fixAnnotations fixes the attribution annotation for tests.

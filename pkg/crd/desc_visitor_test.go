@@ -75,7 +75,7 @@ var _ = Describe("TruncateDescription", func() {
 		}
 		crd.TruncateDescription(schema, len(schema.Description)-2)
 		Expect(schema).To(Equal(&apiext.JSONSchemaProps{
-			Description: `This is top level description of the root obje`,
+			Description: `This is top level description of the root...`,
 		}))
 	})
 })
