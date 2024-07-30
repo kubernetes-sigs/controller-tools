@@ -298,7 +298,7 @@ type XEmbeddedResource struct{}
 // IntOrString marks a fields as an IntOrString.
 //
 // This is required when applying patterns or other validations to an IntOrString
-// field. Knwon information about the type is applied during the collapse phase
+// field. Known information about the type is applied during the collapse phase
 // and as such is not normally available during marker application.
 type XIntOrString struct{}
 
