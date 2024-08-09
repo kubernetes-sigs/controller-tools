@@ -246,8 +246,8 @@ var _ = Describe("AllOf Flattening", func() {
 			By("flattening a schema with multiple validation fields")
 			original := &apiext.JSONSchemaProps{
 				AllOf: []apiext.JSONSchemaProps{
-					{XValidations: apiext.ValidationRules{{Rule: "rule1"}, {Rule: "rule2"}}},
-					{XValidations: apiext.ValidationRules{{Rule: "rule3"}}},
+					{XValidations: apiext.ValidationRules{{Rule: "rule2"}, {Rule: "rule3"}}},
+					{XValidations: apiext.ValidationRules{{Rule: "rule1"}}},
 				},
 			}
 			flattened := crd.FlattenEmbedded(original, errRec)

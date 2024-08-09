@@ -6845,10 +6845,10 @@ spec:
                   and type.
                 type: string
                 x-kubernetes-validations:
-                - message: must have even length
-                  rule: self.size() % 2 == 0
                 - message: must have good prefix
                   rule: self.startsWith('good-')
+                - message: must have even length
+                  rule: self.size() % 2 == 0
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:
