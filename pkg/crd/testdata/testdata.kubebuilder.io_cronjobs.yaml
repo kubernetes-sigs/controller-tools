@@ -6840,6 +6840,15 @@ spec:
                 - messageExpression: '''Length has to be even but is '' + len(self.stringWithEvenLengthAndMessageExpression)
                     + '' instead'''
                   rule: self.size() % 2 == 0
+              stringWithEvenLengthAndGoodPrefix:
+                description: Test of the expression-based validation on both field
+                  and type.
+                type: string
+                x-kubernetes-validations:
+                - message: must have good prefix
+                  rule: self.startsWith('good-')
+                - message: must have even length
+                  rule: self.size() % 2 == 0
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:

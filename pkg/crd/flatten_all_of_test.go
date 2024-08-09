@@ -241,6 +241,25 @@ var _ = Describe("AllOf Flattening", func() {
 				},
 			}))
 		})
+
+		It("should merge XValidation fields", func() {
+			By("flattening a schema with multiple validation fields")
+			original := &apiext.JSONSchemaProps{
+				AllOf: []apiext.JSONSchemaProps{
+					{XValidations: apiext.ValidationRules{{Rule: "rule2"}, {Rule: "rule3"}}},
+					{XValidations: apiext.ValidationRules{{Rule: "rule1"}}},
+				},
+			}
+			flattened := crd.FlattenEmbedded(original, errRec)
+			Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+			By("ensuring that the result lists all validation rules")
+			Expect(flattened).To(Equal(&apiext.JSONSchemaProps{
+				XValidations: []apiext.ValidationRule{
+					{Rule: "rule1"}, {Rule: "rule2"}, {Rule: "rule3"},
+				},
+			}))
+		})
 	})
 
 	It("should skip Title, Description, Example, and ExternalDocs, assuming they've been merged pre-AllOf flattening", func() {

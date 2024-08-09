@@ -303,6 +303,10 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
 	StringWithEvenLengthAndMessageExpression string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
 
+	// Test of the expression-based validation on both field and type.
+	// +kubebuilder:validation:XValidation:rule="self.startsWith('good-')",message="must have good prefix"
+	StringWithEvenLengthAndGoodPrefix StringEvenType `json:"stringWithEvenLengthAndGoodPrefix,omitempty"`
+
 	// Test that we can add a forbidden field using XValidation Reason and FieldPath.
 	// The validation is applied to the spec struct itself and not the field.
 	ForbiddenInt int `json:"forbiddenInt,omitempty"`
@@ -584,6 +588,10 @@ const (
 	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
+
+// StringEvenType is a type that includes an expression-based validation.
+// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",message="must have even length"
+type StringEvenType string
 
 // CronJobStatus defines the observed state of CronJob
 type CronJobStatus struct {
