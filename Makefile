@@ -24,6 +24,11 @@
 SHELL:=/usr/bin/env bash
 .DEFAULT_GOAL:=help
 
+#
+# Go.
+#
+GO_VERSION ?= 1.22.5
+
 # Use GOPROXY environment variable if set
 GOPROXY := $(shell go env GOPROXY)
 ifeq ($(GOPROXY),)
@@ -33,6 +38,13 @@ export GOPROXY
 
 # Active module mode, as we use go modules to manage dependencies
 export GO111MODULE=on
+
+# Hosts running SELinux need :z added to volume mounts
+SELINUX_ENABLED := $(shell cat /sys/fs/selinux/enforce 2> /dev/null || echo 0)
+
+ifeq ($(SELINUX_ENABLED),1)
+  DOCKER_VOL_OPTS?=:z
+endif
 
 # Tools.
 ENVTEST_DIR := hack/envtest
@@ -100,7 +112,7 @@ clean-release: ## Remove all generated release binaries.
 	rm -rf $(RELEASE_DIR)
 
 ## --------------------------------------
-## Envtest Build
+## Release
 ## --------------------------------------
 
 RELEASE_DIR := out
@@ -135,3 +147,37 @@ release-envtest-docker-build: $(RELEASE_DIR) ## Build the envtest binaries.
 		--tag sigs.k8s.io/controller-tools/envtest:$(KUBERNETES_VERSION)-$(OS)-$(ARCH) \
 		--output type=local,dest=$(RELEASE_DIR) \
 		.
+
+.PHONY: release-controller-gen
+release-controller-gen: clean-release ## Build controller-gen binaries.
+	RELEASE_BINARY=controller-gen-linux-amd64       GOOS=linux   GOARCH=amd64   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-linux-arm64       GOOS=linux   GOARCH=arm64   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-linux-ppc64le     GOOS=linux   GOARCH=ppc64le $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-linux-s390x       GOOS=linux   GOARCH=s390x   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-darwin-amd64      GOOS=darwin  GOARCH=amd64   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-darwin-arm64      GOOS=darwin  GOARCH=arm64   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-windows-amd64.exe GOOS=windows GOARCH=amd64   $(MAKE) release-binary
+
+.PHONY: release-binary
+release-binary: $(RELEASE_DIR)
+	docker run \
+		--rm \
+		-e CGO_ENABLED=0 \
+		-e GOOS=$(GOOS) \
+		-e GOARCH=$(GOARCH) \
+		-e GOCACHE=/tmp/ \
+		--user $$(id -u):$$(id -g) \
+		-v "$$(pwd):/workspace$(DOCKER_VOL_OPTS)" \
+		-w /workspace \
+		golang:$(GO_VERSION) \
+		go build -a -trimpath -ldflags "-extldflags '-static'" \
+		-o ./out/$(RELEASE_BINARY) ./cmd/controller-gen
+
+## --------------------------------------
+## Helpers
+## --------------------------------------
+
+##@ helpers:
+
+go-version: ## Print the go version we use to compile our binaries and images
+	@echo $(GO_VERSION)
