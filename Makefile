@@ -88,11 +88,19 @@ test: ## Run the test.sh script which will check all.
 	TRACE=1 ./test.sh
 
 test-all:
+	$(MAKE) verify-modules
 	$(MAKE) test
 
 .PHONY: modules
 modules: ## Runs go mod to ensure modules are up to date.
 	go mod tidy
+
+.PHONY: verify-modules
+verify-modules: modules ## Verify go modules are up to date
+	@if !(git diff --quiet HEAD -- go.sum go.mod); then \
+		git diff; \
+		echo "go module files are out of date, please run 'make modules'"; exit 1; \
+	fi
 
 ## --------------------------------------
 ## Cleanup / Verification
