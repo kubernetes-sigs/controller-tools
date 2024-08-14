@@ -8949,6 +8949,13 @@ spec:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
                 type: string
+              protocol:
+                default: TCP
+                description: |-
+                  This tests that we can embed protocol correctly (without ending up with allOf).
+                  Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
+                  Defaults to "TCP".
+                type: string
               ptrData:
                 additionalProperties:
                   type: string

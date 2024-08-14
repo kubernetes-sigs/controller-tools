@@ -342,6 +342,13 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:items:XIntOrString
 	// +kubebuilder:validation:items:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringArrayWithAPattern []*intstr.IntOrString `json:"intOrStringArrayWithAPattern,omitempty"`
+
+	// This tests that we can embed protocol correctly (without ending up with allOf).
+	// Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
+	// Defaults to "TCP".
+	// +optional
+	// +default="TCP"
+	Protocol corev1.Protocol `json:"protocol,omitempty" protobuf:"bytes,4,opt,name=protocol,casttype=Protocol"`
 }
 
 type ContainsNestedMap struct {
