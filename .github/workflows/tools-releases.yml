@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
     paths:
       - 'hack/envtest/_matrix/*.yaml'
 
