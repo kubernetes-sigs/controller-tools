@@ -1,5 +1,5 @@
 [![Go Reference](https://pkg.go.dev/badge/sigs.k8s.io/controller-tools.svg)](https://pkg.go.dev/sigs.k8s.io/controller-tools)
-[![Build Status](https://travis-ci.org/kubernetes-sigs/controller-tools.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/controller-tools "Travis")
+[![Build Status](https://travis-ci.org/kubernetes-sigs/controller-tools.svg?branch=main)](https://travis-ci.org/kubernetes-sigs/controller-tools "Travis")
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/controller-tools)](https://goreportcard.com/report/sigs.k8s.io/controller-tools)
 
 # Kubernetes controller-tools Project
