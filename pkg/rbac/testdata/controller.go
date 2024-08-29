@@ -28,3 +28,5 @@ package controller
 // +kubebuilder:rbac:groups=not-deduplicate-resources,resources=another,verbs=list
 // +kubebuilder:rbac:groups=not-deduplicate-groups1,resources=some,verbs=get
 // +kubebuilder:rbac:groups=not-deduplicate-groups2,resources=some,verbs=list
+// +kubebuilder:rbac:urls=/url-to-duplicate,verbs=get
+// +kubebuilder:rbac:urls=/another/url-to-duplicate,verbs=get

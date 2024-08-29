@@ -4,6 +4,11 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
+- nonResourceURLs:
+  - /another/url-to-duplicate
+  - /url-to-duplicate
+  verbs:
+  - get
 - apiGroups:
   - art
   resources:
