@@ -146,12 +146,6 @@ func removeDupAndSort(strs []string) []string {
 
 // ToRule converts this rule to its Kubernetes API form.
 func (r *Rule) ToRule() rbacv1.PolicyRule {
-	// fix the group names first, since letting people type "core" is nice
-	for i, group := range r.Groups {
-		if group == "core" {
-			r.Groups[i] = ""
-		}
-	}
 	return rbacv1.PolicyRule{
 		APIGroups:       r.Groups,
 		Verbs:           r.Verbs,
@@ -230,6 +224,13 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 		ruleMap := make(map[ruleKey]*Rule)
 		// all the Rules having the same ruleKey will be merged into the first Rule
 		for _, rule := range rules {
+			// fix the group name first, since letting people type "core" is nice
+			for i, name := range rule.Groups {
+				if name == "core" {
+					rule.Groups[i] = ""
+				}
+			}
+
 			key := rule.key()
 			if _, ok := ruleMap[key]; !ok {
 				ruleMap[key] = rule
