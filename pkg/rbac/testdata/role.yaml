@@ -10,6 +10,21 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - ""
+  resources:
+  - deduplicate
+  - me
+  verbs:
+  - list
+- apiGroups:
+  - ""
+  - some-other-to-deduplicate-with-core
+  resources:
+  - me
+  verbs:
+  - get
+  - list
+- apiGroups:
   - art
   resources:
   - jobs

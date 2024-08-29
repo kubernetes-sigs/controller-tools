@@ -30,3 +30,6 @@ package controller
 // +kubebuilder:rbac:groups=not-deduplicate-groups2,resources=some,verbs=list
 // +kubebuilder:rbac:urls=/url-to-duplicate,verbs=get
 // +kubebuilder:rbac:urls=/another/url-to-duplicate,verbs=get
+// +kubebuilder:rbac:groups=core,resources=deduplicate,verbs=list
+// +kubebuilder:rbac:groups="",resources=me,verbs=list
+// +kubebuilder:rbac:groups=core;"";some-other-to-deduplicate-with-core,resources=me,verbs=list;get
