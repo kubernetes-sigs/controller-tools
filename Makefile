@@ -178,7 +178,8 @@ release-binary: $(RELEASE_DIR)
 		-v "$$(pwd):/workspace$(DOCKER_VOL_OPTS)" \
 		-w /workspace \
 		golang:$(GO_VERSION) \
-		go build -a -trimpath -ldflags "-extldflags '-static'" \
+		go build -a -trimpath \
+		-ldflags "-extldflags '-static' -X sigs.k8s.io/controller-tools/pkg/version.version=$(RELEASE_TAG)" \
 		-o ./out/$(RELEASE_BINARY) ./cmd/controller-gen
 
 ## --------------------------------------
