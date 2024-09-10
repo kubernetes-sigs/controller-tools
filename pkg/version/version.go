@@ -23,7 +23,7 @@ import (
 )
 
 // version to be set using ldflags:
-// -ldflags "-X sigs.k8s.io/controller-tools/pkg/version.version=1.0.0"
+// -ldflags "-X sigs.k8s.io/controller-tools/pkg/version.version=v1.0.0"
 // falls back to module information is unset
 var version = ""
 
