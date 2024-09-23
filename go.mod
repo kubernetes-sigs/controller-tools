@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/fatih/color v1.17.0
-	github.com/gobuffalo/flect v1.0.2
+	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
