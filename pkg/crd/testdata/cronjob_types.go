@@ -327,6 +327,9 @@ type CronJobSpec struct {
 
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 
+	// This tests that string alias is handled correctly.
+	StringAlias StringAlias `json:"stringAlias,omitempty"`
+
 	// This tests string slice validation.
 	// +kubebuilder:validation:MinItems=2
 	// +kubebuilder:validation:MaxItems=2
@@ -350,6 +353,8 @@ type CronJobSpec struct {
 	// +default="TCP"
 	Protocol corev1.Protocol `json:"protocol,omitempty" protobuf:"bytes,4,opt,name=protocol,casttype=Protocol"`
 }
+
+type StringAlias = string
 
 type ContainsNestedMap struct {
 	InnerMap map[string]string `json:"innerMap,omitempty"`

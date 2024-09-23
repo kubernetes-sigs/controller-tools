@@ -8972,6 +8972,9 @@ spec:
                   time for any reason.  Missed jobs executions will be counted as failed ones.
                 format: int64
                 type: integer
+              stringAlias:
+                description: This tests that string alias is handled correctly.
+                type: string
               stringPair:
                 description: This tests string slice validation.
                 items:
