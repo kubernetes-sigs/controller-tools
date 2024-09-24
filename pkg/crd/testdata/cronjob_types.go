@@ -349,6 +349,9 @@ type CronJobSpec struct {
 	// +optional
 	// +default="TCP"
 	Protocol corev1.Protocol `json:"protocol,omitempty" protobuf:"bytes,4,opt,name=protocol,casttype=Protocol"`
+
+	// This tests that selectable field.
+	SelectableFieldString string `json:"selectableFieldString,omitempty"`
 }
 
 type ContainsNestedMap struct {
@@ -634,6 +637,7 @@ type CronJobStatus struct {
 // +kubebuilder:resource:singular=mycronjob
 // +kubebuilder:storageversion
 // +kubebuilder:metadata:annotations="api-approved.kubernetes.io=https://github.com/kubernetes-sigs/controller-tools";"cert-manager.io/inject-ca-from-secret=cert-manager/cert-manager-webhook-ca"
+// +kubebuilder:selectablefield:JSONPath=`.spec.selectableFieldString`
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {

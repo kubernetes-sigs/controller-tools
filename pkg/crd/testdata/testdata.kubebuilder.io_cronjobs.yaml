@@ -8966,6 +8966,9 @@ spec:
                 type: string
               schemaless:
                 description: This tests that the schemaless marker works
+              selectableFieldString:
+                description: This tests that selectable field.
+                type: string
               startingDeadlineSeconds:
                 description: |-
                   Optional deadline in seconds for starting the job if it misses scheduled
@@ -9203,6 +9206,8 @@ spec:
                 type: string
             type: object
         type: object
+    selectableFields:
+    - jsonPath: .spec.selectableFieldString
     served: true
     storage: true
     subresources:
