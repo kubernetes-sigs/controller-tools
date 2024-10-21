@@ -242,14 +242,18 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %s", ident.Name), ident))
 		return &apiext.JSONSchemaProps{}
 	}
+	// This reproduces the behavior we had pre gotypesalias=1 (needed if this
+	// project is compiled with default settings and Go >= 1.23).
+	if aliasInfo, isAlias := typeInfo.(*types.Alias); isAlias {
+		typeInfo = aliasInfo.Underlying()
+	}
 	if basicInfo, isBasic := typeInfo.(*types.Basic); isBasic {
 		typ, fmt, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
-		// Check for type aliasing to a basic type. Note that this is no longer
-		// needed with gotypesalias=1 as the above isBasic check is false. See
-		// more https://pkg.go.dev/go/types#Alias:
+		// Check for type aliasing to a basic type for gotypesalias=0. See more
+		// in documentation https://pkg.go.dev/go/types#Alias:
 		// > For gotypesalias=1, alias declarations produce an Alias type.
 		// > Otherwise, the alias information is only in the type name, which
 		// > points directly to the actual (aliased) type.
