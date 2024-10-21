@@ -8978,6 +8978,16 @@ spec:
               stringAlias:
                 description: This tests that string alias is handled correctly.
                 type: string
+              stringAliasAddedValidation:
+                description: This tests that validation on a string alias type is handled correctly.
+                maxLength: 255
+                minLength: 1
+                type: string
+              stringAliasAlreadyValidated:
+                description: This tests that validation on a the string alias type itself is handled correctly.
+                maxLength: 255
+                minLength: 1
+                type: string
               stringPair:
                 description: This tests string slice validation.
                 items:

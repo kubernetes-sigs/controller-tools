@@ -247,6 +247,21 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
+		// Check for type aliasing to a basic type. Note that this is no longer
+		// needed with gotypesalias=1 as the above isBasic check is false. See
+		// more https://pkg.go.dev/go/types#Alias:
+		// > For gotypesalias=1, alias declarations produce an Alias type.
+		// > Otherwise, the alias information is only in the type name, which
+		// > points directly to the actual (aliased) type.
+		if basicInfo.Name() != ident.Name {
+			ctx.requestSchema("", ident.Name)
+			link := TypeRefLink("", ident.Name)
+			return &apiext.JSONSchemaProps{
+				Type:   typ,
+				Format: fmt,
+				Ref:    &link,
+			}
+		}
 		return &apiext.JSONSchemaProps{
 			Type:   typ,
 			Format: fmt,
