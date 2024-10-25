@@ -335,6 +335,14 @@ type CronJobSpec struct {
 	// This tests that string alias is handled correctly.
 	StringAlias StringAlias `json:"stringAlias,omitempty"`
 
+	// This tests that validation on a string alias type is handled correctly.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=255
+	StringAliasAddedValidation StringAlias `json:"stringAliasAddedValidation,omitempty"`
+
+	// This tests that validation on a the string alias type itself is handled correctly.
+	StringAliasAlreadyValidated StringAliasWithValidation `json:"stringAliasAlreadyValidated,omitempty"`
+
 	// This tests string slice validation.
 	// +kubebuilder:validation:MinItems=2
 	// +kubebuilder:validation:MaxItems=2
@@ -363,6 +371,10 @@ type CronJobSpec struct {
 }
 
 type StringAlias = string
+
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=255
+type StringAliasWithValidation = string
 
 type ContainsNestedMap struct {
 	InnerMap map[string]string `json:"innerMap,omitempty"`
