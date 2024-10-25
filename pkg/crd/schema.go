@@ -274,7 +274,7 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiext.JSONSche
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %v.%s", named.X, named.Sel.Name), named))
 		return &apiext.JSONSchemaProps{}
 	}
-	typeInfo := typeInfoRaw.(*types.Named)
+	typeInfo := typeInfoRaw.(interface{ Obj() *types.TypeName })
 	typeNameInfo := typeInfo.Obj()
 	nonVendorPath := loader.NonVendorPath(typeNameInfo.Pkg().Path())
 	ctx.requestSchema(nonVendorPath, typeNameInfo.Name())

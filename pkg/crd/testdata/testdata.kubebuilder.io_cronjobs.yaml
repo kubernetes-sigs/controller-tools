@@ -8975,6 +8975,12 @@ spec:
                   time for any reason.  Missed jobs executions will be counted as failed ones.
                 format: int64
                 type: integer
+              aliasFromPackage:
+                description: |-
+                  This tests that alias imported from a package is handled correctly. The
+                  corev1.IPFamilyPolicyType is just reused since it's available from
+                  imported package. We can create our own in a separate package if needed.
+                type: string
               stringAlias:
                 description: This tests that string alias is handled correctly.
                 type: string

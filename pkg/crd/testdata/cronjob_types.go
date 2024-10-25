@@ -327,6 +327,11 @@ type CronJobSpec struct {
 
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 
+	// This tests that alias imported from a package is handled correctly. The
+	// corev1.IPFamilyPolicyType is just reused since it's available from
+	// imported package. We can create our own in a separate package if needed.
+	AliasFromPackage corev1.IPFamilyPolicyType `json:"aliasFromPackage,omitempty"`
+
 	// This tests that string alias is handled correctly.
 	StringAlias StringAlias `json:"stringAlias,omitempty"`
 
