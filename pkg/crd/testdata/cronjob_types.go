@@ -325,6 +325,10 @@ type CronJobSpec struct {
 	// +listType=set
 	Hosts []string `json:"hosts,omitempty"`
 
+	// This tests slice item validation with enum
+	// +kubebuilder:validation:items:Enum=0;1;3
+	EnumSlice []int `json:"enumSlice,omitempty"`
+
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 
 	// This tests that alias imported from a package is handled correctly. The

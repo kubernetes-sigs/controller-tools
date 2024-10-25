@@ -125,29 +125,38 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
 }
 
+type schemaMarkerWithName struct {
+	SchemaMarker SchemaMarker
+	Name         string
+}
+
 // applyMarkers applies schema markers given their priority to the given schema
 func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
-	markers := make([]SchemaMarker, 0, len(markerSet))
-	itemsMarkers := make([]SchemaMarker, 0, len(markerSet))
-	itemsMarkerNames := make(map[SchemaMarker]string)
+	markers := make([]schemaMarkerWithName, 0, len(markerSet))
+	itemsMarkers := make([]schemaMarkerWithName, 0, len(markerSet))
 
 	for markerName, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
 			if schemaMarker, isSchemaMarker := markerValue.(SchemaMarker); isSchemaMarker {
 				if strings.HasPrefix(markerName, crdmarkers.ValidationItemsPrefix) {
-					itemsMarkers = append(itemsMarkers, schemaMarker)
-					itemsMarkerNames[schemaMarker] = markerName
+					itemsMarkers = append(itemsMarkers, schemaMarkerWithName{
+						SchemaMarker: schemaMarker,
+						Name:         markerName,
+					})
 				} else {
-					markers = append(markers, schemaMarker)
+					markers = append(markers, schemaMarkerWithName{
+						SchemaMarker: schemaMarker,
+						Name:         markerName,
+					})
 				}
 			}
 		}
 	}
 
-	cmpPriority := func(markers []SchemaMarker, i, j int) bool {
+	cmpPriority := func(markers []schemaMarkerWithName, i, j int) bool {
 		var iPriority, jPriority crdmarkers.ApplyPriority
 
-		switch m := markers[i].(type) {
+		switch m := markers[i].SchemaMarker.(type) {
 		case crdmarkers.ApplyPriorityMarker:
 			iPriority = m.ApplyPriority()
 		case applyFirstMarker:
@@ -156,7 +165,7 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			iPriority = crdmarkers.ApplyPriorityDefault
 		}
 
-		switch m := markers[j].(type) {
+		switch m := markers[j].SchemaMarker.(type) {
 		case crdmarkers.ApplyPriorityMarker:
 			jPriority = m.ApplyPriority()
 		case applyFirstMarker:
@@ -171,18 +180,18 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	sort.Slice(itemsMarkers, func(i, j int) bool { return cmpPriority(itemsMarkers, i, j) })
 
 	for _, schemaMarker := range markers {
-		if err := schemaMarker.ApplyToSchema(props); err != nil {
+		if err := schemaMarker.SchemaMarker.ApplyToSchema(props); err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
 
 	for _, schemaMarker := range itemsMarkers {
 		if props.Type != "array" || props.Items == nil || props.Items.Schema == nil {
-			err := fmt.Errorf("must apply %s to an array value, found %s", itemsMarkerNames[schemaMarker], props.Type)
+			err := fmt.Errorf("must apply %s to an array value, found %s", schemaMarker.Name, props.Type)
 			ctx.pkg.AddError(loader.ErrFromNode(err, node))
 		} else {
 			itemsSchema := props.Items.Schema
-			if err := schemaMarker.ApplyToSchema(itemsSchema); err != nil {
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(itemsSchema); err != nil {
 				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 			}
 		}
