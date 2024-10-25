@@ -23,6 +23,7 @@ limitations under the License.
 package cronjob
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -592,6 +593,30 @@ func (u *URL2) String() string {
 	return (*url.URL)(u).String()
 }
 
+// URL3 wraps [net/url.URL]. It implements [encoding.TextMarshaler] so that it
+// can be used in K8s CRDs such that the CRD resource will have the URL but
+// operator code can can work with the URL struct.
+type URL3 struct{ url.URL }
+
+var _ encoding.TextMarshaler = (*URL3)(nil)
+
+// MarshalText implements [encoding.TextMarshaler].
+func (u *URL3) MarshalText() (text []byte, err error) {
+	return u.MarshalBinary()
+}
+
+// URL4 is an alias of [net/url.URL]. It implements [encoding.TextMarshaler] so
+// that it can be used in K8s CRDs such that the CRD resource will have the URL
+// but operator code can can work with the URL struct.
+type URL4 url.URL
+
+var _ encoding.TextMarshaler = (*URL4)(nil)
+
+// MarshalText implements [encoding.TextMarshaler].
+func (u *URL4) MarshalText() (text []byte, err error) {
+	return (*url.URL)(u).MarshalBinary()
+}
+
 // Duration has a custom Marshaler but no markers.
 // We want the CRD generation to infer type information
 // from the go types and ignore the presense of the Marshaler.
@@ -654,6 +679,14 @@ type CronJobStatus struct {
 	// LastActiveLogURL2 specifies the logging url for the last started job
 	// +optional
 	LastActiveLogURL2 *URL2 `json:"lastActiveLogURL2,omitempty"`
+
+	// LastActiveLogURL3 specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL3 *URL3 `json:"lastActiveLogURL3,omitempty"`
+
+	// LastActiveLogURL4 specifies the logging url for the last started job
+	// +optional
+	LastActiveLogURL4 *URL4 `json:"lastActiveLogURL4,omitempty"`
 
 	Runtime *Duration `json:"duration,omitempty"`
 }

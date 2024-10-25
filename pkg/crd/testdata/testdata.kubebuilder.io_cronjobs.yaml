@@ -9221,6 +9221,14 @@ spec:
                 description: LastActiveLogURL2 specifies the logging url for the last
                   started job
                 type: string
+              lastActiveLogURL3:
+                description: LastActiveLogURL3 specifies the logging url for the last
+                  started job
+                type: string
+              lastActiveLogURL4:
+                description: LastActiveLogURL4 specifies the logging url for the last
+                  started job
+                type: string
               lastScheduleMicroTime:
                 description: |-
                   Information about the last time the job was successfully scheduled,
