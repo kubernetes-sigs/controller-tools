@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/genall/help"
 	prettyhelp "sigs.k8s.io/controller-tools/pkg/genall/help/pretty"
 	"sigs.k8s.io/controller-tools/pkg/markers"
+	"sigs.k8s.io/controller-tools/pkg/metrics"
 	"sigs.k8s.io/controller-tools/pkg/rbac"
 	"sigs.k8s.io/controller-tools/pkg/schemapatcher"
 	"sigs.k8s.io/controller-tools/pkg/version"
@@ -53,6 +54,7 @@ var (
 		"object":      deepcopy.Generator{},
 		"webhook":     webhook.Generator{},
 		"schemapatch": schemapatcher.Generator{},
+		"metrics":     metrics.Generator{},
 	}
 
 	// allOutputRules defines the list of all known output rules, giving
