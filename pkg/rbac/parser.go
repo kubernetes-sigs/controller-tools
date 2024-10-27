@@ -322,6 +322,11 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	var objs []interface{}
 	for _, ns := range namespaces {
 		rules := rulesByNSResource[ns]
+		for _, rule := range rules {
+			if containsAsterisk(rule.Verbs) {
+				rule.Verbs = []string{"*"}
+			}
+		}
 		policyRules := NormalizeRules(rules)
 		if len(policyRules) == 0 {
 			continue
@@ -353,6 +358,15 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	}
 
 	return objs, nil
+}
+
+func containsAsterisk(strList []string) bool {
+	for _, str := range strList {
+		if str == "*" {
+			return true
+		}
+	}
+	return false
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
