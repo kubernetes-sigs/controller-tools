@@ -303,6 +303,8 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 			keys = append(keys, key)
 		}
 		sort.Sort(ruleKeys(keys))
+
+		// Normalize rule verbs to "*" if any verb in the rule is an asterisk
 		for _, rule := range ruleMap {
 			for _, verb := range rule.Verbs {
 				if verb == "*" {
