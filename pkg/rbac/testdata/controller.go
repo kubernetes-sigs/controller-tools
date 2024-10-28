@@ -23,6 +23,8 @@ package controller
 // +kubebuilder:rbac:groups=deduplicate-all,resources=foo;bar,verbs=get;list
 // +kubebuilder:rbac:groups=deduplicate-all,resources=foo,verbs=get
 // +kubebuilder:rbac:groups=deduplicate-all,resources=bar,verbs=list
+// +kubebuilder:rbac:groups=deduplicate-groups4,resources=xyz,verbs=get;update;patch
+// +kubebuilder:rbac:groups=deduplicate-groups4,resources=xyz,verbs=*
 // +kubebuilder:rbac:groups=deduplicate-all-group,resources=foo;bar,verbs=get;list
 // +kubebuilder:rbac:groups=not-deduplicate-resources,resources=some,verbs=get
 // +kubebuilder:rbac:groups=not-deduplicate-resources,resources=another,verbs=list
@@ -33,3 +35,5 @@ package controller
 // +kubebuilder:rbac:groups=core,resources=deduplicate,verbs=list
 // +kubebuilder:rbac:groups="",resources=me,verbs=list
 // +kubebuilder:rbac:groups=core;"";some-other-to-deduplicate-with-core,resources=me,verbs=list;get
+// +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=get;update;patch;create,namespace=here
+// +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=*,namespace=here
