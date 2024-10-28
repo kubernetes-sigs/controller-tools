@@ -303,7 +303,14 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 			keys = append(keys, key)
 		}
 		sort.Sort(ruleKeys(keys))
-
+		for _, rule := range ruleMap {
+			for _, verb := range rule.Verbs {
+				if verb == "*" {
+					rule.Verbs = []string{"*"}
+					break
+				}
+			}
+		}
 		var policyRules []rbacv1.PolicyRule
 		for _, key := range keys {
 			policyRules = append(policyRules, ruleMap[key].ToRule())
@@ -322,11 +329,6 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	var objs []interface{}
 	for _, ns := range namespaces {
 		rules := rulesByNSResource[ns]
-		for _, rule := range rules {
-			if containsAsterisk(rule.Verbs) {
-				rule.Verbs = []string{"*"}
-			}
-		}
 		policyRules := NormalizeRules(rules)
 		if len(policyRules) == 0 {
 			continue
@@ -358,15 +360,6 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	}
 
 	return objs, nil
-}
-
-func containsAsterisk(strList []string) bool {
-	for _, str := range strList {
-		if str == "*" {
-			return true
-		}
-	}
-	return false
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {

@@ -89,6 +89,12 @@ rules:
   verbs:
   - patch
 - apiGroups:
+  - deduplicate-groups4
+  resources:
+  - xyz
+  verbs:
+  - '*'
+- apiGroups:
   - deduplicate-resources
   resources:
   - one

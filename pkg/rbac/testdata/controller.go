@@ -23,6 +23,8 @@ package controller
 // +kubebuilder:rbac:groups=deduplicate-all,resources=foo;bar,verbs=get;list
 // +kubebuilder:rbac:groups=deduplicate-all,resources=foo,verbs=get
 // +kubebuilder:rbac:groups=deduplicate-all,resources=bar,verbs=list
+// +kubebuilder:rbac:groups=deduplicate-groups4,resources=xyz,verbs=get;update;patch
+// +kubebuilder:rbac:groups=deduplicate-groups4,resources=xyz,verbs=*
 // +kubebuilder:rbac:groups=deduplicate-all-group,resources=foo;bar,verbs=get;list
 // +kubebuilder:rbac:groups=not-deduplicate-resources,resources=some,verbs=get
 // +kubebuilder:rbac:groups=not-deduplicate-resources,resources=another,verbs=list
