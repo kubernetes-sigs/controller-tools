@@ -133,6 +133,19 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: manager-role
+  namespace: here
+rules:
+- apiGroups:
+  - deduplicate-groups5
+  resources:
+  - abc
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role
   namespace: park
 rules:
 - apiGroups:
@@ -155,3 +168,4 @@ rules:
   - jobs
   verbs:
   - get
+
