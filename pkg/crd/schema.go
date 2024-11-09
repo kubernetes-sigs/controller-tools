@@ -280,6 +280,17 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			Format: fmt,
 		}
 	}
+	// Handle embedded structs, they do not have a type name.
+	if _, isNamed := typeInfo.(*types.Named); !isNamed {
+		// TODO: Following uses deprecated "ident.Obj" so alternative solution is needed.
+		typeSpec, ok := ident.Obj.Decl.(*ast.TypeSpec)
+		if !ok {
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown error"), ident))
+			return &apiext.JSONSchemaProps{}
+		}
+		return typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), typeSpec.Type)
+	}
+
 	// NB(directxman12): if there are dot imports, this might be an external reference,
 	// so use typechecking info to get the actual object
 	typeNameInfo := typeInfo.(interface{ Obj() *types.TypeName }).Obj()

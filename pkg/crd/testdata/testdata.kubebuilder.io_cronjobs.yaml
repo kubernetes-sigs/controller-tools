@@ -234,6 +234,10 @@ spec:
                   Test that we can add a forbidden field using XValidation Reason and FieldPath.
                   The validation is applied to the spec struct itself and not the field.
                 type: integer
+              fromEmbedded:
+                description: FromEmbedded is a field from the embedded struct that
+                  was used through an alias type.
+                type: string
               hosts:
                 description: This tests string slice item validation.
                 items:

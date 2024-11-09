@@ -372,6 +372,9 @@ type CronJobSpec struct {
 
 	// This tests that selectable field.
 	SelectableFieldString string `json:"selectableFieldString,omitempty"`
+
+	// This tests that embedded struct, which is an alias type, is handled correctly.
+	InlineAlias `json:",inline"`
 }
 
 type StringAlias = string
@@ -379,6 +382,14 @@ type StringAlias = string
 // +kubebuilder:validation:MinLength=1
 // +kubebuilder:validation:MaxLength=255
 type StringAliasWithValidation = string
+
+type InlineAlias = EmbeddedStruct
+
+// EmbeddedStruct is for testing that embedded struct is handled correctly when it is used through an alias type.
+type EmbeddedStruct struct {
+	// FromEmbedded is a field from the embedded struct that was used through an alias type.
+	FromEmbedded string `json:"fromEmbedded,omitempty"`
+}
 
 type ContainsNestedMap struct {
 	InnerMap map[string]string `json:"innerMap,omitempty"`
