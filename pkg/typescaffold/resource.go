@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/flect"
+	"github.com/jinzhu/inflection"
 )
 
 // Resource contains the information required to scaffold files for a resource.
@@ -42,7 +43,7 @@ func (r *Resource) Validate() error {
 	}
 
 	if len(r.Resource) == 0 {
-		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
+		r.Resource = inflection.Plural(strings.ToLower(r.Kind))
 	}
 
 	if r.Kind != flect.Pascalize(r.Kind) {

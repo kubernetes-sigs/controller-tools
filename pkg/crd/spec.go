@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gobuffalo/flect"
+	"github.com/jinzhu/inflection"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +63,7 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 		packages = append(packages, pkg)
 	}
 
-	defaultPlural := strings.ToLower(flect.Pluralize(groupKind.Kind))
+	defaultPlural := strings.ToLower(inflection.Plural(groupKind.Kind))
 	crd := apiext.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiext.SchemeGroupVersion.String(),
