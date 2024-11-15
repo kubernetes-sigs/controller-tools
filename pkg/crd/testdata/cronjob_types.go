@@ -27,6 +27,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -605,9 +606,9 @@ func (u *URL3) MarshalText() (text []byte, err error) {
 	return u.MarshalBinary()
 }
 
-// URL4 is an alias of [net/url.URL]. It implements [encoding.TextMarshaler] so
-// that it can be used in K8s CRDs such that the CRD resource will have the URL
-// but operator code can can work with the URL struct.
+// URL4 is newtype around [net/url.URL]. It implements [encoding.TextMarshaler]
+// so that it can be used in K8s CRDs such that the CRD resource will have the
+// URL but operator code can can work with the URL struct.
 type URL4 url.URL
 
 var _ encoding.TextMarshaler = (*URL4)(nil)
@@ -615,6 +616,28 @@ var _ encoding.TextMarshaler = (*URL4)(nil)
 // MarshalText implements [encoding.TextMarshaler].
 func (u *URL4) MarshalText() (text []byte, err error) {
 	return (*url.URL)(u).MarshalBinary()
+}
+
+// +kubebuilder:validation:Type=integer
+// +kubebuilder:validation:Format=int64
+// Time2 is a newtype around [metav1.Time].
+// It implements both [encoding.TextMarshaler] and [json.Marshaler].
+// The latter is authoritative for the CRD generation.
+type Time2 time.Time
+
+var _ interface {
+	encoding.TextMarshaler
+	json.Marshaler
+} = (*Time2)(nil)
+
+// MarshalText implements [encoding.TextMarshaler].
+func (t *Time2) MarshalText() (text []byte, err error) {
+	return []byte((*time.Time)(t).String()), nil
+}
+
+// MarshalJSON implements [json.Marshaler].
+func (t *Time2) MarshalJSON() ([]byte, error) {
+	return strconv.AppendInt(nil, (*time.Time)(t).UnixMilli(), 10), nil
 }
 
 // Duration has a custom Marshaler but no markers.
@@ -666,6 +689,10 @@ type CronJobStatus struct {
 	// Information when was the last time the job was successfully scheduled.
 	// +optional
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+
+	// Information when was the last time the job was successfully scheduled.
+	// +optional
+	LastScheduleTime2 Time2 `json:"lastScheduleTime2,omitempty"`
 
 	// Information about the last time the job was successfully scheduled,
 	// with microsecond precision.

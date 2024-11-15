@@ -9240,6 +9240,11 @@ spec:
                   scheduled.
                 format: date-time
                 type: string
+              lastScheduleTime2:
+                description: Information when was the last time the job was successfully
+                  scheduled.
+                format: int64
+                type: integer
             type: object
         type: object
     selectableFields:
