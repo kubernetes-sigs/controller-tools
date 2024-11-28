@@ -404,7 +404,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		Properties: make(map[string]apiext.JSONSchemaProps),
 	}
 
-	if ctx.info.RawSpec.Type != structType {
+	if ctx.info.RawSpec != nil && ctx.info.RawSpec.Type != structType {
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("encountered non-top-level struct (possibly embedded), those aren't allowed"), structType))
 		return props
 	}
