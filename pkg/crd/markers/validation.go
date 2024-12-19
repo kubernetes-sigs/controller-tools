@@ -88,6 +88,9 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 	must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
 
+	must(markers.MakeDefinition("kubebuilder:skip", markers.DescribesField, struct{}{})).
+		WithHelp(markers.SimpleHelp("CRD generation", "specifies that this field should be skipped for schema generation.")),
+
 	must(markers.MakeDefinition("nullable", markers.DescribesField, Nullable{})).
 		WithHelp(Nullable{}.Help()),
 
