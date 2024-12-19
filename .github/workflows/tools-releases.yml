@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # tag=v4.2.2
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@4edd678ac3f81e2dc578756871e4d00c19191daf # tag=v45.0.4
+        uses: tj-actions/changed-files@bab30c2299617f6615ec02a68b9a40d10bd21366 # tag=v45.0.5
         with:
           files: |
             hack/envtest/_matrix/*.yaml
@@ -39,7 +39,7 @@ jobs:
         run: |
           make release-envtest KUBERNETES_VERSION=${{ env.KUBERNETES_VERSION }}
       - name: Release
-        uses: softprops/action-gh-release@01570a1f39cb168c169c802c3bceb9e93fb10974 # tag=v2.1.0
+        uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048 # tag=v2.2.0
         with:
           tag_name: envtest-${{ env.KUBERNETES_VERSION }}
           draft: false
