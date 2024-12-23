@@ -35,7 +35,7 @@ RUN curl -sfLO https://dl.k8s.io/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kube-ap
     cp kube-apiserver $DEST
 
 # kubectl
-RUN curl -sfLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
+RUN curl -sfLO https://dl.k8s.io/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 

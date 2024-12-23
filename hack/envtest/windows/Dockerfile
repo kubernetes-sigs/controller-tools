@@ -39,7 +39,7 @@ RUN make WHAT=cmd/kube-apiserver && \
 
 # kubectl
 RUN /bin/bash -x -c ' \
-    { curl -sfLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl.exe && \
+    { curl -sfLO https://dl.k8s.io/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl.exe && \
       chmod +x kubectl.exe &&  \
       cp kubectl.exe $DEST; } || \
     { make WHAT=cmd/kubectl && \
