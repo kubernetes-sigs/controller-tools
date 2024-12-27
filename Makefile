@@ -140,7 +140,6 @@ release-envtest: clean-release ## Build the envtest binaries by operating system
 	OS=darwin ARCH=amd64 $(MAKE) release-envtest-docker-build
 	OS=darwin ARCH=arm64 $(MAKE) release-envtest-docker-build
 	OS=windows ARCH=amd64 $(MAKE) release-envtest-docker-build
-	./hack/envtest/update-releases.sh
 
 .PHONY: release-envtest-docker-build
 release-envtest-docker-build: $(RELEASE_DIR) ## Build the envtest binaries.
