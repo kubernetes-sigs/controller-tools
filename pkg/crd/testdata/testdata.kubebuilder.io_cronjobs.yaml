@@ -256,13 +256,15 @@ spec:
                 type: integer
               intOrStringArrayWithAPattern:
                 description: |-
-                  This tests that a slice of IntOrString can also have a pattern attached to it.
+                  This tests that a slice of IntOrString can also have string validation.
                   This can be useful if you want to limit the string to a percentage or integer.
                   The XIntOrString marker is a requirement for having a pattern on this type.
                 items:
                   anyOf:
                   - type: integer
                   - type: string
+                  maxLength: 10
+                  minLength: 1
                   pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                   x-kubernetes-int-or-string: true
                 type: array
@@ -271,10 +273,11 @@ spec:
                 - type: integer
                 - type: string
                 description: |-
-                  This tests that an IntOrString can also have a pattern attached
-                  to it.
+                  This tests that an IntOrString can also have string validation.
                   This can be useful if you want to limit the string to a percentage or integer.
                   The XIntOrString marker is a requirement for having a pattern on this type.
+                maxLength: 11
+                minLength: 2
                 pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                 x-kubernetes-int-or-string: true
               intWithValidations:

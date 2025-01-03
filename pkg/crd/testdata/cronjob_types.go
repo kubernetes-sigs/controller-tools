@@ -249,11 +249,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:Schemaless
 	Schemaless []byte `json:"schemaless,omitempty"`
 
-	// This tests that an IntOrString can also have a pattern attached
-	// to it.
+	// This tests that an IntOrString can also have string validation.
 	// This can be useful if you want to limit the string to a percentage or integer.
 	// The XIntOrString marker is a requirement for having a pattern on this type.
 	// +kubebuilder:validation:XIntOrString
+	// +kubebuilder:validation:MaxLength=11
+	// +kubebuilder:validation:MinLength=2
 	// +kubebuilder:validation:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
 
@@ -358,10 +359,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MinItems=3
 	LongerStringArray []LongerString `json:"longerStringArray,omitempty"`
 
-	// This tests that a slice of IntOrString can also have a pattern attached to it.
+	// This tests that a slice of IntOrString can also have string validation.
 	// This can be useful if you want to limit the string to a percentage or integer.
 	// The XIntOrString marker is a requirement for having a pattern on this type.
 	// +kubebuilder:validation:items:XIntOrString
+	// +kubebuilder:validation:items:MaxLength=10
+	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringArrayWithAPattern []*intstr.IntOrString `json:"intOrStringArrayWithAPattern,omitempty"`
 
