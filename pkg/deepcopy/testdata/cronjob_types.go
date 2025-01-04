@@ -116,7 +116,7 @@ type SpecificCases struct {
 
 	// other map types
 	MapToDeepCopyPtr              map[string]DeepCopyPtr        `json:"mapToDeepCopyPtr"`
-	MapToDeepCopyNonPtr           map[string]DeepCopyPtr        `json:"mapToDeepCopyNonPtr"`
+	MapToDeepCopyNonPtr           map[string]DeepCopyNonPtr     `json:"mapToDeepCopyNonPtr"`
 	MapToDeepCopyIntoPtr          map[string]DeepCopyIntoPtr    `json:"mapToDeepCopyIntoPtr"`
 	MapToDeepCopyIntoNonPtr       map[string]DeepCopyIntoNonPtr `json:"mapToDeepCopyIntoNonPtr"`
 	MapToShallowNamedType         map[string]TotallyAString     `json:"mapToShallowNamedType"`
@@ -129,7 +129,7 @@ type SpecificCases struct {
 
 	// other slice types
 	SliceToDeepCopyPtr        []DeepCopyPtr        `json:"sliceToDeepCopyPtr"`
-	SliceToDeepCopyNonPtr     []DeepCopyPtr        `json:"sliceToDeepCopyNonPtr"`
+	SliceToDeepCopyNonPtr     []DeepCopyNonPtr     `json:"sliceToDeepCopyNonPtr"`
 	SliceToDeepCopyIntoPtr    []DeepCopyIntoPtr    `json:"sliceToDeepCopyIntoPtr"`
 	SliceToDeepCopyIntoNonPtr []DeepCopyIntoNonPtr `json:"sliceToDeepCopyIntoNonPtr"`
 	SliceToShallowNamedType   []TotallyAString     `json:"sliceToShallowNamedType"`
@@ -138,7 +138,7 @@ type SpecificCases struct {
 
 	// other pointer types
 	PtrToDeepCopyPtr        *DeepCopyPtr        `json:"ptrToDeepCopyPtr"`
-	PtrToDeepCopyNonPtr     *DeepCopyPtr        `json:"ptrToDeepCopyNonPtr"`
+	PtrToDeepCopyNonPtr     *DeepCopyNonPtr     `json:"ptrToDeepCopyNonPtr"`
 	PtrToDeepCopyIntoPtr    *DeepCopyIntoPtr    `json:"ptrToDeepCopyIntoPtr"`
 	PtrToDeepCopyIntoNonPtr *DeepCopyIntoNonPtr `json:"ptrToDeepCopyIntoNonPtr"`
 	PtrToShallowNamedType   *TotallyAString     `json:"ptrToShallowNamedType"`

@@ -609,9 +609,9 @@ func (in *SpecificCases) DeepCopyInto(out *SpecificCases) {
 	}
 	if in.MapToDeepCopyNonPtr != nil {
 		in, out := &in.MapToDeepCopyNonPtr, &out.MapToDeepCopyNonPtr
-		*out = make(map[string]DeepCopyPtr, len(*in))
+		*out = make(map[string]DeepCopyNonPtr, len(*in))
 		for key, val := range *in {
-			(*out)[key] = *val.DeepCopy()
+			(*out)[key] = val.DeepCopy()
 		}
 	}
 	if in.MapToDeepCopyIntoPtr != nil {
@@ -709,7 +709,7 @@ func (in *SpecificCases) DeepCopyInto(out *SpecificCases) {
 	}
 	if in.SliceToDeepCopyNonPtr != nil {
 		in, out := &in.SliceToDeepCopyNonPtr, &out.SliceToDeepCopyNonPtr
-		*out = make([]DeepCopyPtr, len(*in))
+		*out = make([]DeepCopyNonPtr, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -757,7 +757,8 @@ func (in *SpecificCases) DeepCopyInto(out *SpecificCases) {
 	}
 	if in.PtrToDeepCopyNonPtr != nil {
 		in, out := &in.PtrToDeepCopyNonPtr, &out.PtrToDeepCopyNonPtr
-		*out = (*in).DeepCopy()
+		x := (*in).DeepCopy()
+		*out = &x
 	}
 	if in.PtrToDeepCopyIntoPtr != nil {
 		in, out := &in.PtrToDeepCopyIntoPtr, &out.PtrToDeepCopyIntoPtr
