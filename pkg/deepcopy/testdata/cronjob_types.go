@@ -153,7 +153,12 @@ type SpecificCases struct {
 
 	// Case: kubernetes-sigs/controller-tools#262 part 2 (see type definition)
 	StringMap MapOfStrings `json:"stringMap"`
+
+	// Case: kubernetes-sigs/controller-tools#813
+	StringAlias StringAlias `json:"stringAlias,omitempty"`
 }
+
+type StringAlias = string
 
 // Test aliases to basic types
 type TotallyAString string

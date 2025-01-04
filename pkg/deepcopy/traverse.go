@@ -618,14 +618,15 @@ func shouldBeCopied(pkg *loader.Package, info *markers.TypeInfo) bool {
 		return false
 	}
 
-	// according to gengo, everything named is an alias, except for an alias to a pointer,
-	// which is just a pointer, afaict.  Just roll with it.
-	if asPtr, isPtr := typeInfo.(*types.Named).Underlying().(*types.Pointer); isPtr {
-		typeInfo = asPtr
-	}
-
 	lastType := typeInfo
 	if _, isNamed := typeInfo.(*types.Named); isNamed {
+		// according to gengo, everything named is an alias, except for an alias to a pointer,
+		// which is just a pointer, afaict.  Just roll with it.
+		if asPtr, isPtr := typeInfo.(*types.Named).Underlying().(*types.Pointer); isPtr {
+			lastType = asPtr
+			typeInfo = asPtr
+		}
+
 		// if it has a manual deepcopy or deepcopyinto, we're fine
 		if hasAnyDeepCopyMethod(pkg, typeInfo) {
 			return true
