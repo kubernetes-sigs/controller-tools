@@ -41,6 +41,12 @@ spec:
           spec:
             description: CronJobSpec defines the desired state of CronJob
             properties:
+              aliasFromPackage:
+                description: |-
+                  This tests that alias imported from a package is handled correctly. The
+                  corev1.IPFamilyPolicyType is just reused since it's available from
+                  imported package. We can create our own in a separate package if needed.
+                type: string
               array:
                 description: Checks that fixed-length arrays work
                 items:
@@ -184,13 +190,13 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               enumSlice:
                 description: This tests slice item validation with enum
-                type: array
                 items:
-                  type: integer
                   enum:
                   - 0
                   - 1
                   - 3
+                  type: integer
+                type: array
               explicitlyOptionalKubebuilder:
                 description: This tests explicitly optional kubebuilder fields
                 type: string
@@ -8984,22 +8990,18 @@ spec:
                   time for any reason.  Missed jobs executions will be counted as failed ones.
                 format: int64
                 type: integer
-              aliasFromPackage:
-                description: |-
-                  This tests that alias imported from a package is handled correctly. The
-                  corev1.IPFamilyPolicyType is just reused since it's available from
-                  imported package. We can create our own in a separate package if needed.
-                type: string
               stringAlias:
                 description: This tests that string alias is handled correctly.
                 type: string
               stringAliasAddedValidation:
-                description: This tests that validation on a string alias type is handled correctly.
+                description: This tests that validation on a string alias type is
+                  handled correctly.
                 maxLength: 255
                 minLength: 1
                 type: string
               stringAliasAlreadyValidated:
-                description: This tests that validation on a the string alias type itself is handled correctly.
+                description: This tests that validation on a the string alias type
+                  itself is handled correctly.
                 maxLength: 255
                 minLength: 1
                 type: string
