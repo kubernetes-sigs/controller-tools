@@ -4,6 +4,19 @@ run:
   # while if uncached!
   timeout: 10m
 
+linters:
+  enable:
+  - errcheck
+  - gosimple
+  - govet
+  - ineffassign
+  - staticcheck
+  - unused
+  - testifylint
+  - iface
+  - exptostd
+  - nilnesserr
+
 issues:
   exclude-rules:
     # Dot imports for gomega and ginkgo are allowed
