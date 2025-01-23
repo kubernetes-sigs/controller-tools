@@ -13,6 +13,11 @@ linters:
   - staticcheck
   - unused
   - testifylint
+  - revive
+  - errorlint
+  - whitespace
+  - gci
+  - misspell
   - iface
   - exptostd
   - nilnesserr
@@ -23,3 +28,47 @@ issues:
     # within test files.
   - path: _test\.go
     text: should not use dot imports
+    # Ignore error type switch case
+  - path: "pkg/loader/loader.go"
+    linters:
+      - errorlint
+
+linters-settings:
+  revive:
+    # By default, revive will enable only the linting rules that are named in the configuration file.
+    # So, it's needed to explicitly enable all required rules here.
+    rules:
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md
+      - name: blank-imports
+      - name: comment-spacings
+      - name: context-as-argument
+        arguments:
+          # Allow functions with test or bench signatures.
+          - allowTypesBefore: "*testing.T,testing.TB"
+      - name: context-keys-type
+      - name: dot-imports
+      # A lot of false positives: incorrectly identifies channel draining as "empty code block".
+      # See https://github.com/mgechev/revive/issues/386
+      - name: empty-block
+        disabled: true
+      - name: error-naming
+      - name: error-return
+      - name: error-strings
+      - name: errorf
+      - name: increment-decrement
+      - name: indent-error-flow
+      - name: range
+      - name: receiver-naming
+      - name: redefines-builtin-id
+      - name: superfluous-else
+      - name: time-naming
+      - name: unexported-return
+      - name: unreachable-code
+      - name: unused-parameter
+        disabled: true
+      - name: var-declaration
+      - name: var-naming
+  gci:
+    sections:
+      - standard
+      - default

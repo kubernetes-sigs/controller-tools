@@ -50,4 +50,3 @@ var _ = Describe("TestVersion", func() {
 		})
 	}
 })
-

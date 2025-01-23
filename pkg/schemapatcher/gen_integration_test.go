@@ -23,7 +23,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	. "sigs.k8s.io/controller-tools/pkg/schemapatcher"
 )

@@ -21,7 +21,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"

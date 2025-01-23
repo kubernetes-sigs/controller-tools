@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"sigs.k8s.io/controller-tools/pkg/genall/help"
-
 	"github.com/fatih/color"
+	"sigs.k8s.io/controller-tools/pkg/genall/help"
 )
 
 var (

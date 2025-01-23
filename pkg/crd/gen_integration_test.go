@@ -25,7 +25,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -162,7 +161,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		var fifty int = 50
 		gen := &crd.Generator{
 			CRDVersions: []string{"v1"},
-			MaxDescLen: &fifty,
+			MaxDescLen:  &fifty,
 		}
 		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
 
