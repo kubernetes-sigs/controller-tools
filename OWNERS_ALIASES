@@ -20,6 +20,7 @@ aliases:
   # file)
   controller-tools-reviewers:
     - chrischdi
+    - JoelSpeed
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
