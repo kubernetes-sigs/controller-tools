@@ -27,7 +27,7 @@ func (c *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:url="https://anothersomewebhook:9443/validate-testdata-kubebuilder-io-v1-cronjob",path="/somepath",verbs=create;update,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=cronjobs,versions=v1,name=validation.cronjob.testdata.kubebuilder.io,sideEffects=NoneOnDryRun,timeoutSeconds=10,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:url="https://anothersomewebhook:9443/validate-testdata-kubebuilder-io-v1-cronjob",path="/somepath",verbs=create;update,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuilder.io,resources=cronjobs,versions=v1,name=validation.cronjob.testdata.kubebuilder.io,sideEffects=NoneOnDryRun,timeoutSeconds=10,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &CronJob{}
 var _ webhook.Validator = &CronJob{}
