@@ -18,9 +18,13 @@ package markers
 
 import (
 	"fmt"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/utils/ptr"
+
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
@@ -57,6 +61,9 @@ var CRDMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:selectablefield", markers.DescribesType, SelectableField{})).
 		WithHelp(SelectableField{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:schemaModifier", markers.DescribesType, SchemaModifier{})).
+		WithHelp(SchemaModifier{}.Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -418,4 +425,188 @@ func (s SelectableField) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, ve
 	})
 
 	return nil
+}
+
+// +controllertools:marker:generateHelp:category=CRD
+
+// SchemaModifier allows modifying JSONSchemaProps for CRDs.
+//
+// The PathPattern field defines the rule for selecting target fields within the CRD structure.
+// This rule is specified as a path in a JSONPath-like format and supports special wildcard characters:
+// - `*`: matches any single field name (e.g., `/spec/*/field`).
+// - `**`: matches fields at any depth, across multiple levels of nesting (e.g., `/spec/**/field`).
+//
+// Example:
+// +kubebuilder:schemaModifier:pathPattern=/spec/exampleField/*,description=""
+//
+// In this example, all fields matching the path `/spec/exampleField/*` will have the empty description applied.
+//
+// Any specified values (e.g., Description, Format, Maximum, etc.) will be applied to all schemas matching the given path.
+type SchemaModifier struct {
+	// PathPattern defines the path for selecting JSON schemas.
+	// Supports `*` and `**` for matching nested fields.
+	PathPattern string `marker:"pathPattern"`
+
+	// Description sets a new value for JSONSchemaProps.Description.
+	Description *string `marker:",optional"`
+	// Format sets a new value for JSONSchemaProps.Format.
+	Format *string `marker:",optional"`
+	// Maximum sets a new value for JSONSchemaProps.Maximum.
+	Maximum *float64 `marker:",optional"`
+	// ExclusiveMaximum sets a new value for JSONSchemaProps.ExclusiveMaximum.
+	ExclusiveMaximum *bool `marker:",optional"`
+	// Minimum sets a new value for JSONSchemaProps.Minimum.
+	Minimum *float64 `marker:",optional"`
+	// ExclusiveMinimum sets a new value for JSONSchemaProps.ExclusiveMinimum.
+	ExclusiveMinimum *bool `marker:",optional"`
+	// MaxLength sets a new value for JSONSchemaProps.MaxLength.
+	MaxLength *int `marker:",optional"`
+	// MinLength sets a new value for JSONSchemaProps.MinLength.
+	MinLength *int `marker:",optional"`
+	// Pattern sets a new value for JSONSchemaProps.Pattern.
+	Pattern *string `marker:",optional"`
+	// MaxItems sets a new value for JSONSchemaProps.MaxItems.
+	MaxItems *int `marker:",optional"`
+	// MinItems sets a new value for JSONSchemaProps.MinItems.
+	MinItems *int `marker:",optional"`
+	// UniqueItems sets a new value for JSONSchemaProps.UniqueItems.
+	UniqueItems *bool `marker:",optional"`
+	// MultipleOf sets a new value for JSONSchemaProps.MultipleOf.
+	MultipleOf *float64 `marker:",optional"`
+	// MaxProperties sets a new value for JSONSchemaProps.MaxProperties.
+	MaxProperties *int `marker:",optional"`
+	// MinProperties sets a new value for JSONSchemaProps.MinProperties.
+	MinProperties *int `marker:",optional"`
+	// Required sets a new value for JSONSchemaProps.Required.
+	Required *[]string `marker:",optional"`
+	// Nullable sets a new value for JSONSchemaProps.Nullable.
+	Nullable *bool `marker:",optional"`
+}
+
+func (s SchemaModifier) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, _ string) error {
+	ruleRegex, err := s.parsePattern()
+	if err != nil {
+		return fmt.Errorf("failed to parse rule: %w", err)
+	}
+
+	for i := range crd.Versions {
+		ver := &crd.Versions[i]
+		if err = s.applyRuleToSchema(ver.Schema.OpenAPIV3Schema, ruleRegex, "/"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s SchemaModifier) applyRuleToSchema(schema *apiext.JSONSchemaProps, ruleRegex *regexp.Regexp, path string) error {
+	if schema == nil {
+		return nil
+	}
+
+	if ruleRegex.MatchString(path) {
+		s.applyToSchema(schema)
+	}
+
+	if schema.Properties != nil {
+		for key := range schema.Properties {
+			prop := schema.Properties[key]
+
+			newPath := filepath.Join(path, key)
+
+			if err := s.applyRuleToSchema(&prop, ruleRegex, newPath); err != nil {
+				return err
+			}
+			schema.Properties[key] = prop
+		}
+	}
+
+	if schema.Items != nil {
+		if schema.Items.Schema != nil {
+			if err := s.applyRuleToSchema(schema.Items.Schema, ruleRegex, path+"/items"); err != nil {
+				return err
+			}
+		} else if len(schema.Items.JSONSchemas) > 0 {
+			for i, item := range schema.Items.JSONSchemas {
+				newPath := fmt.Sprintf("%s/items/%d", path, i)
+				if err := s.applyRuleToSchema(&item, ruleRegex, newPath); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s SchemaModifier) applyToSchema(schema *apiext.JSONSchemaProps) {
+	if schema == nil {
+		return
+	}
+	if s.Description != nil {
+		schema.Description = *s.Description
+	}
+	if s.Format != nil {
+		schema.Format = *s.Format
+	}
+	if s.Maximum != nil {
+		schema.Maximum = s.Maximum
+	}
+	if s.ExclusiveMaximum != nil {
+		schema.ExclusiveMaximum = *s.ExclusiveMaximum
+	}
+	if s.Minimum != nil {
+		schema.Minimum = s.Minimum
+	}
+	if s.ExclusiveMinimum != nil {
+		schema.ExclusiveMinimum = *s.ExclusiveMinimum
+	}
+	if s.MaxLength != nil {
+		schema.MaxLength = ptr.To(int64(*s.MaxLength))
+	}
+	if s.MinLength != nil {
+		schema.MinLength = ptr.To(int64(*s.MinLength))
+	}
+	if s.Pattern != nil {
+		schema.Pattern = *s.Pattern
+	}
+	if s.MaxItems != nil {
+		schema.MaxItems = ptr.To(int64(*s.MaxItems))
+	}
+	if s.MinItems != nil {
+		schema.MinItems = ptr.To(int64(*s.MinItems))
+	}
+	if s.UniqueItems != nil {
+		schema.UniqueItems = *s.UniqueItems
+	}
+	if s.MultipleOf != nil {
+		schema.MultipleOf = s.MultipleOf
+	}
+	if s.MaxProperties != nil {
+		schema.MaxProperties = ptr.To(int64(*s.MaxProperties))
+	}
+	if s.MinProperties != nil {
+		schema.MinProperties = ptr.To(int64(*s.MinProperties))
+	}
+	if s.Required != nil {
+		schema.Required = *s.Required
+	}
+	if s.Nullable != nil {
+		schema.Nullable = *s.Nullable
+	}
+}
+
+func (s SchemaModifier) parsePattern() (*regexp.Regexp, error) {
+	pattern := s.PathPattern
+	pattern = strings.ReplaceAll(pattern, "**", "!☸!")
+	pattern = strings.ReplaceAll(pattern, "*", "[^/]+")
+	pattern = strings.ReplaceAll(pattern, "!☸!", ".*")
+
+	regexStr := "^" + pattern + "$"
+
+	compiledRegex, err := regexp.Compile(regexStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid rule: %w", err)
+	}
+
+	return compiledRegex, nil
 }

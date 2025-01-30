@@ -374,6 +374,90 @@ func (Resource) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (SchemaModifier) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "allows modifying JSONSchemaProps for CRDs.",
+			Details: "The PathPattern field defines the rule for selecting target fields within the CRD structure.\nThis rule is specified as a path in a JSONPath-like format and supports special wildcard characters:\n- `*`: matches any single field name (e.g., `/spec/*/field`).\n- `**`: matches fields at any depth, across multiple levels of nesting (e.g., `/spec/**/field`).\n\nExample:\n\nIn this example, all fields matching the path `/spec/exampleField/*` will have the empty description applied.\n\nAny specified values (e.g., Description, Format, Maximum, etc.) will be applied to all schemas matching the given path.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"PathPattern": {
+				Summary: "defines the path for selecting JSON schemas.",
+				Details: "Supports `*` and `**` for matching nested fields.",
+			},
+			"Description": {
+				Summary: "sets a new value for JSONSchemaProps.Description.",
+				Details: "",
+			},
+			"Format": {
+				Summary: "sets a new value for JSONSchemaProps.Format.",
+				Details: "",
+			},
+			"Maximum": {
+				Summary: "sets a new value for JSONSchemaProps.Maximum.",
+				Details: "",
+			},
+			"ExclusiveMaximum": {
+				Summary: "sets a new value for JSONSchemaProps.ExclusiveMaximum.",
+				Details: "",
+			},
+			"Minimum": {
+				Summary: "sets a new value for JSONSchemaProps.Minimum.",
+				Details: "",
+			},
+			"ExclusiveMinimum": {
+				Summary: "sets a new value for JSONSchemaProps.ExclusiveMinimum.",
+				Details: "",
+			},
+			"MaxLength": {
+				Summary: "sets a new value for JSONSchemaProps.MaxLength.",
+				Details: "",
+			},
+			"MinLength": {
+				Summary: "sets a new value for JSONSchemaProps.MinLength.",
+				Details: "",
+			},
+			"Pattern": {
+				Summary: "sets a new value for JSONSchemaProps.Pattern.",
+				Details: "",
+			},
+			"MaxItems": {
+				Summary: "sets a new value for JSONSchemaProps.MaxItems.",
+				Details: "",
+			},
+			"MinItems": {
+				Summary: "sets a new value for JSONSchemaProps.MinItems.",
+				Details: "",
+			},
+			"UniqueItems": {
+				Summary: "sets a new value for JSONSchemaProps.UniqueItems.",
+				Details: "",
+			},
+			"MultipleOf": {
+				Summary: "sets a new value for JSONSchemaProps.MultipleOf.",
+				Details: "",
+			},
+			"MaxProperties": {
+				Summary: "sets a new value for JSONSchemaProps.MaxProperties.",
+				Details: "",
+			},
+			"MinProperties": {
+				Summary: "sets a new value for JSONSchemaProps.MinProperties.",
+				Details: "",
+			},
+			"Required": {
+				Summary: "sets a new value for JSONSchemaProps.Required.",
+				Details: "",
+			},
+			"Nullable": {
+				Summary: "sets a new value for JSONSchemaProps.Nullable.",
+				Details: "",
+			},
+		},
+	}
+}
+
 func (Schemaless) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

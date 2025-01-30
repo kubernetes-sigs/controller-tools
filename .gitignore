@@ -23,3 +23,4 @@ hack/tools/bin
 
 junit-report.xml
 /artifacts
+tmp
