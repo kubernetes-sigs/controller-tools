@@ -29,7 +29,7 @@ func (c *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=cronjobs,versions=v1,name=cronjob.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
+// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuilder.io,resources=cronjobs,versions=v1,name=cronjob.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
 type cronJobValidator struct {
 	client client.Client
@@ -47,7 +47,7 @@ func (v cronJobValidator) ValidateDelete(ctx context.Context, obj runtime.Object
 	return nil
 }
 
-// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjoblist,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=cronjoblist,versions=v1,name=cronjoblist.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
+// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjoblist,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuilder.io,resources=cronjoblist,versions=v1,name=cronjoblist.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
 type cronjobListValidator struct {
 	client client.Client
@@ -65,7 +65,7 @@ func (v cronJobListValidator) ValidateDelete(ctx context.Context, obj runtime.Ob
 	return nil
 }
 
-// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-deployments,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuiler.io,resources=deployments,versions=v1,name=deployment.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
+// +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-deployments,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuilder.io,resources=deployments,versions=v1,name=deployment.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
 type deploymentValidator struct {
 	client client.Client

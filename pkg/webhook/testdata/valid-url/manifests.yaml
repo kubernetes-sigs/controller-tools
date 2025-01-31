@@ -17,7 +17,7 @@ webhooks:
   name: default.cronjob.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:
@@ -44,7 +44,7 @@ webhooks:
   name: validation.cronjob.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:
@@ -64,7 +64,7 @@ webhooks:
   name: validation.cronjob.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:

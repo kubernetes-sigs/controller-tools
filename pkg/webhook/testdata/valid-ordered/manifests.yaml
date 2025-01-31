@@ -17,7 +17,7 @@ webhooks:
   name: cronjob.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:
@@ -39,7 +39,7 @@ webhooks:
   name: cronjoblist.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:
@@ -61,7 +61,7 @@ webhooks:
   name: deployment.testdata.kubebuilder.io
   rules:
   - apiGroups:
-    - testdata.kubebuiler.io
+    - testdata.kubebuilder.io
     apiVersions:
     - v1
     operations:
