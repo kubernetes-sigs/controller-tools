@@ -24,6 +24,7 @@ package webhook
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -448,6 +449,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	var mutatingWebhookCfgs admissionregv1.MutatingWebhookConfiguration
 	var validatingWebhookCfgs admissionregv1.ValidatingWebhookConfiguration
 
+	groupRegex := regexp.MustCompile(`^[a-z][-a-z0-9.]*[a-z0-9]$`)
+
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
 		if err != nil {
@@ -492,6 +495,14 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			webhookVersions, err := cfg.webhookVersions()
 			if err != nil {
 				return err
+			}
+			for _, group := range cfg.Groups {
+				if group == "" { // aka "core"
+					continue
+				}
+				if !groupRegex.MatchString(group) {
+					return fmt.Errorf("invalid group name: %s", group)
+				}
 			}
 			if cfg.Mutating {
 				w, err := cfg.ToMutatingWebhook()
