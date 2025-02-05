@@ -173,18 +173,12 @@ func (n *namingInfo) Syntax(basePkg *loader.Package, imports *importsList) strin
 
 	// NB(directxman12): typeInfo.String gets us most of the way there,
 	// but fails (for us) on named imports, since it uses the full package path.
+	var typeName *types.TypeName
 	switch typeInfo := n.typeInfo.(type) {
+	case *types.Alias:
+		typeName = typeInfo.Obj()
 	case *types.Named:
-		// register that we need an import for this type,
-		// so we can get the appropriate alias to use.
-		typeName := typeInfo.Obj()
-		otherPkg := typeName.Pkg()
-		if otherPkg == basePkg.Types {
-			// local import
-			return typeName.Name()
-		}
-		alias := imports.NeedImport(loader.NonVendorPath(otherPkg.Path()))
-		return alias + "." + typeName.Name()
+		typeName = typeInfo.Obj()
 	case *types.Basic:
 		return typeInfo.String()
 	case *types.Pointer:
@@ -200,6 +194,16 @@ func (n *namingInfo) Syntax(basePkg *loader.Package, imports *importsList) strin
 		basePkg.AddError(fmt.Errorf("name requested for invalid type: %s", typeInfo))
 		return typeInfo.String()
 	}
+
+	// register that we need an import for this type,
+	// so we can get the appropriate alias to use.
+	otherPkg := typeName.Pkg()
+	if otherPkg == basePkg.Types {
+		// local import
+		return typeName.Name()
+	}
+	alias := imports.NeedImport(loader.NonVendorPath(otherPkg.Path()))
+	return alias + "." + typeName.Name()
 }
 
 // copyMethodMakers makes DeepCopy (and related) methods for Go types,
