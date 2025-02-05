@@ -156,6 +156,9 @@ type SpecificCases struct {
 
 	// Case: kubernetes-sigs/controller-tools#813
 	StringAlias StringAlias `json:"stringAlias,omitempty"`
+
+	// Case: kubernetes-sigs/controller-tools#1136
+	StringAliasPtr *StringAlias `json:"stringAliasPtr,omitempty"`
 }
 
 type StringAlias = string

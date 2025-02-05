@@ -340,7 +340,8 @@ type CronJobSpec struct {
 	AliasFromPackage corev1.IPFamilyPolicyType `json:"aliasFromPackage,omitempty"`
 
 	// This tests that string alias is handled correctly.
-	StringAlias StringAlias `json:"stringAlias,omitempty"`
+	StringAlias    StringAlias  `json:"stringAlias,omitempty"`
+	StringAliasPtr *StringAlias `json:"stringAliasPtr,omitempty"`
 
 	// This tests that validation on a string alias type is handled correctly.
 	// +kubebuilder:validation:MinLength=1

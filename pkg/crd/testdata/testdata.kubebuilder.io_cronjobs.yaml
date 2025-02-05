@@ -9012,6 +9012,8 @@ spec:
                 maxLength: 255
                 minLength: 1
                 type: string
+              stringAliasPtr:
+                type: string
               stringPair:
                 description: This tests string slice validation.
                 items:
