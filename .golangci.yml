@@ -1,26 +1,52 @@
 run:
+  allow-parallel-runners: true
   modules-download-mode: readonly
   # Increase the default deadline from 1m as some module operations can take a
   # while if uncached!
   timeout: 10m
+  go: "1.23"
 
 linters:
+  # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml
+  disable-all: true
   enable:
-  - errcheck
-  - gosimple
-  - govet
-  - ineffassign
-  - staticcheck
-  - unused
-  - testifylint
-  - revive
-  - errorlint
-  - whitespace
-  - gci
-  - misspell
-  - iface
-  - exptostd
-  - nilnesserr
+    # - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - dupl
+    - errcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - ginkgolinter
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - makezero
+    - misspell
+    - nakedret
+    - nilerr
+    - nolintlint
+    - prealloc
+    - revive
+    - staticcheck
+    - stylecheck
+    - tagliatelle
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
 
 issues:
   exclude-rules:
@@ -32,43 +58,56 @@ issues:
   - path: "pkg/loader/loader.go"
     linters:
       - errorlint
-
+    # Ignore test files
+  - linters:
+      - dupl
+      - ginkgolinter
+    path: _test\.go
+  - linters:
+      - gocritic
+    path: "pkg/markers/help.go"
+  - linters:
+      - exhaustive
+    path: "pkg/markers/parse.go|pkg/deepcopy/traverse.go|pkg/genall/help/types.go|pkg/crd/schema.go|pkg/crd/flatten.go"
+    # Ignore consider pre-allocating variables
+  - linters:
+      - prealloc
+    text: Consider pre-allocating
 linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+  importas:
+    no-unaliased: true
   revive:
     # By default, revive will enable only the linting rules that are named in the configuration file.
     # So, it's needed to explicitly enable all required rules here.
     rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md
+      # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
       - name: blank-imports
-      - name: comment-spacings
       - name: context-as-argument
-        arguments:
-          # Allow functions with test or bench signatures.
-          - allowTypesBefore: "*testing.T,testing.TB"
       - name: context-keys-type
       - name: dot-imports
-      # A lot of false positives: incorrectly identifies channel draining as "empty code block".
-      # See https://github.com/mgechev/revive/issues/386
-      - name: empty-block
-        disabled: true
-      - name: error-naming
       - name: error-return
       - name: error-strings
-      - name: errorf
+      - name: error-naming
+      - name: if-return
       - name: increment-decrement
-      - name: indent-error-flow
+      - name: var-naming
+      - name: var-declaration
       - name: range
       - name: receiver-naming
-      - name: redefines-builtin-id
-      - name: superfluous-else
       - name: time-naming
       - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: superfluous-else
       - name: unreachable-code
-      - name: unused-parameter
-        disabled: true
-      - name: var-declaration
-      - name: var-naming
-  gci:
-    sections:
-      - standard
-      - default
+      - name: redefines-builtin-id
+      #
+      # Rules in addition to the recommended configuration above.
+      #
+      - name: bool-literal-in-expr
+      - name: constant-logical-expr

@@ -168,7 +168,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 
 	return protoRuntime{
 		Paths:            paths,
-		Generators:       Generators(gens),
+		Generators:       gens,
 		OutputRules:      rules,
 		GeneratorsByName: gensByName,
 	}, nil

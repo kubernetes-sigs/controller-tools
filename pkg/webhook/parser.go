@@ -411,6 +411,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
+//gocyclo:ignore
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
 	mutatingCfgs := make(map[string][]admissionregv1.MutatingWebhook, len(supportedWebhookVersions))
@@ -425,7 +426,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		webhookCfgs := markerSet[WebhookConfigDefinition.Name]
-		var hasValidatingWebhookConfig, hasMutatingWebhookConfig bool = false, false
+		hasValidatingWebhookConfig, hasMutatingWebhookConfig := false, false
 		for _, webhookCfg := range webhookCfgs {
 			webhookCfg := webhookCfg.(WebhookConfig)
 

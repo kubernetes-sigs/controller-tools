@@ -246,7 +246,7 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiext.JSONSchemaProps 
 // escapes).
 func qualifiedName(pkgName, typeName string) string {
 	if pkgName != "" {
-		return strings.Replace(pkgName, "/", "~1", -1) + "~0" + typeName
+		return strings.ReplaceAll(pkgName, "/", "~1") + "~0" + typeName
 	}
 	return typeName
 }

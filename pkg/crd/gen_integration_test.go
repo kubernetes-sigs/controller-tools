@@ -158,7 +158,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 	It("should truncate CRD descriptions", func() {
 		By("calling Generate")
-		var fifty int = 50
+		fifty := 50
 		gen := &crd.Generator{
 			CRDVersions: []string{"v1"},
 			MaxDescLen:  &fifty,

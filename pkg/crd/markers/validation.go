@@ -312,7 +312,7 @@ type XIntOrString struct{}
 type Schemaless struct{}
 
 func hasNumericType(schema *apiext.JSONSchemaProps) bool {
-	return schema.Type == "integer" || schema.Type == "number"
+	return schema.Type == string(Integer) || schema.Type == string(Number)
 }
 
 func hasTextualType(schema *apiext.JSONSchemaProps) bool {
@@ -342,7 +342,7 @@ func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
 	}
 
-	if schema.Type == "integer" && !isIntegral(m.Value()) {
+	if schema.Type == string(Integer) && !isIntegral(m.Value()) {
 		return fmt.Errorf("cannot apply non-integral maximum validation (%v) to integer value", m.Value())
 	}
 
@@ -423,7 +423,7 @@ func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m MaxItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "array" {
+	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply maxitem to an array")
 	}
 	val := int64(m)
@@ -432,7 +432,7 @@ func (m MaxItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m MinItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	if schema.Type != "array" {
+	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply minitems to an array")
 	}
 	val := int64(m)
