@@ -217,6 +217,9 @@ type CronJobSpec struct {
 	// A struct that can only be entirely replaced via a nested type.
 	NestedStructWithSeveralFields NestedStructWithSeveralFields `json:"nestedStructWithSeveralFields"`
 
+	// A struct with an anonymous struct as a field.
+	StructWithAnonymousStruct StructWithAnonymousStruct `json:"structWithAnonymousStruct"`
+
 	// A struct that can only be entirely replaced via a nested type and
 	// field markers.
 	// +structType=atomic
@@ -437,6 +440,12 @@ func (p *Preserved) MarshalJSON() ([]byte, error) {
 type NestedObject struct {
 	Foo string `json:"foo"`
 	Bar bool   `json:"bar"`
+}
+
+type StructWithAnonymousStruct struct {
+	Anonymous struct {
+		Baz string `json:"baz"`
+	} `json:"anonymous"`
 }
 
 // +structType=atomic
