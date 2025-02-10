@@ -28,7 +28,6 @@ import (
 
 	"github.com/onsi/ginkgo"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
-
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )
 
@@ -47,11 +46,11 @@ func (t fakeT) Cleanup(f func()) {
 }
 
 func (t fakeT) Error(args ...interface{}) {
-	t.g.Error(args)
+	t.g.Error(args...)
 }
 
 func (t fakeT) Errorf(format string, args ...interface{}) {
-	t.g.Errorf(format, args)
+	t.g.Errorf(format, args...)
 }
 
 func (t fakeT) Fail() {
@@ -67,11 +66,11 @@ func (t fakeT) Failed() bool {
 }
 
 func (t fakeT) Fatal(args ...interface{}) {
-	t.g.Fatal(args)
+	t.g.Fatal(args...)
 }
 
 func (t fakeT) Fatalf(format string, args ...interface{}) {
-	t.g.Fatalf(format, args)
+	t.g.Fatalf(format, args...)
 }
 
 func (t fakeT) Helper() {
@@ -79,11 +78,11 @@ func (t fakeT) Helper() {
 }
 
 func (t fakeT) Log(args ...interface{}) {
-	t.g.Log(args)
+	t.g.Log(args...)
 }
 
 func (t fakeT) Logf(format string, args ...interface{}) {
-	t.g.Logf(format, args)
+	t.g.Logf(format, args...)
 }
 
 func (t fakeT) Name() string {
@@ -95,7 +94,7 @@ func (t fakeT) Setenv(key, value string) {
 }
 
 func (t fakeT) Skip(args ...interface{}) {
-	t.g.Skip(args)
+	t.g.Skip(args...)
 }
 
 func (t fakeT) SkipNow() {
@@ -103,7 +102,7 @@ func (t fakeT) SkipNow() {
 }
 
 func (t fakeT) Skipf(format string, args ...interface{}) {
-	t.g.Skipf(format, args)
+	t.g.Skipf(format, args...)
 }
 
 func (t fakeT) Skipped() bool {

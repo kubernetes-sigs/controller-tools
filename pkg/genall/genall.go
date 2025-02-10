@@ -24,7 +24,6 @@ import (
 
 	"golang.org/x/tools/go/packages"
 	rawyaml "gopkg.in/yaml.v2"
-
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -175,7 +174,7 @@ func (g GenerationContext) WriteYAML(itemPath, headerText string, objs []interfa
 func yamlMarshal(o interface{}, options ...*WriteYAMLOptions) ([]byte, error) {
 	j, err := json.Marshal(o)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling into JSON: %v", err)
+		return nil, fmt.Errorf("error marshaling into JSON: %w", err)
 	}
 
 	return yamlJSONToYAMLWithFilter(j, options...)

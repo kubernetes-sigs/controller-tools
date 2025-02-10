@@ -17,13 +17,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/deepcopy"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -198,7 +198,8 @@ func main() {
 	})
 
 	if err := cmd.Execute(); err != nil {
-		if _, noUsage := err.(noUsageError); !noUsage {
+		var errNoUsage noUsageError
+		if !errors.As(err, &errNoUsage) {
 			// print the usage unless we suppressed it
 			if err := cmd.Usage(); err != nil {
 				panic(err)

@@ -30,22 +30,24 @@ var _ = Describe("DeleteNode", func() {
 		want    interface{}
 		wantErr bool
 	}{
-		/*{name: "non-empty, unknown path",
-			obj: map[string]interface{}{
-				"bar": int64(42),
+		/*
+			{name: "non-empty, unknown path",
+				obj: map[string]interface{}{
+					"bar": int64(42),
+				},
+				path:  []string{"foo"},
+				want: map[string]interface{}{
+					"bar": int64(42),
+				},
 			},
-			path:  []string{"foo"},
-			want: map[string]interface{}{
-				"bar": int64(42),
+			{name: "non-empty, existing path",
+				obj: map[string]interface{}{
+					"bar": int64(42),
+				},
+				path:  []string{"bar"},
+				want: map[string]interface{}{},
 			},
-		},
-		{name: "non-empty, existing path",
-			obj: map[string]interface{}{
-				"bar": int64(42),
-			},
-			path:  []string{"bar"},
-			want: map[string]interface{}{},
-		},*/
+		*/
 		{name: "non-empty, long path",
 			obj: map[string]interface{}{
 				"foo": map[string]interface{}{
