@@ -10,7 +10,7 @@ linters:
   # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml
   disable-all: true
   enable:
-    # - asasalint
+    - asasalint
     - asciicheck
     - bidichk
     - bodyclose
