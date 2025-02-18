@@ -335,6 +335,7 @@ type XValidation struct {
 	MessageExpression string `marker:"messageExpression,optional"`
 	Reason            string `marker:"reason,optional"`
 	FieldPath         string `marker:"fieldPath,optional"`
+	OptionalOldSelf   *bool  `marker:"optionalOldSelf,optional"`
 }
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
@@ -603,6 +604,7 @@ func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		MessageExpression: m.MessageExpression,
 		Reason:            reason,
 		FieldPath:         m.FieldPath,
+		OptionalOldSelf:   m.OptionalOldSelf,
 	})
 	return nil
 }

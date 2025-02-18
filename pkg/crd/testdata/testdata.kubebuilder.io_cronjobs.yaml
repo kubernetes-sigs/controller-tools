@@ -8967,6 +8967,16 @@ spec:
                   This flag is like suspend, but for when you really mean it.
                   It helps test the +kubebuilder:validation:Type marker.
                 type: string
+              onlyAllowSettingOnUpdate:
+                description: Test that we can add a field that can only be set to
+                  a non-default value on updates using XValidation OptionalOldSelf.
+                format: int32
+                type: integer
+                x-kubernetes-validations:
+                - message: must be set to 0 on creation. can be set to any value on
+                    an update.
+                  optionalOldSelf: true
+                  rule: oldSelf.hasValue() || self == 0
               patternObject:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
