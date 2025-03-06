@@ -24,6 +24,17 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
+func (InputBuildTags) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "represents go build tags used when including or excluding code during builds.",
+			Details: "Multiple tags can be specified by using this marker multiple times: buildTag=tag1 buildTag=tag2",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (InputPaths) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "",
