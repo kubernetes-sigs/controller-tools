@@ -4,7 +4,7 @@ run:
   # Increase the default deadline from 1m as some module operations can take a
   # while if uncached!
   timeout: 10m
-  go: "1.23"
+  go: "1.24"
 
 linters:
   # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml

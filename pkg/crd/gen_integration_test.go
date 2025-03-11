@@ -93,7 +93,6 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("loading the desired YAML")
 		expectedFile, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
-		expectedFile = fixAnnotations(expectedFile)
 
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
@@ -109,10 +108,8 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("loading the desired YAMLs")
 		expectedFileFoos, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
-		expectedFileFoos = fixAnnotations(expectedFileFoos)
 		expectedFileZoos, err := os.ReadFile(filepath.Join(genDir, "zoo", "bar.example.com_zoos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
-		expectedFileZoos = fixAnnotations(expectedFileZoos)
 
 		By("comparing the two, output must be deterministic because groupKinds are sorted")
 		expectedOut := string(expectedFileFoos) + string(expectedFileZoos)
@@ -168,17 +165,11 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("loading the desired YAML")
 		expectedFile, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos_maxdesclen.yaml"))
 		Expect(err).NotTo(HaveOccurred())
-		expectedFile = fixAnnotations(expectedFile)
 
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
 })
-
-// fixAnnotations fixes the attribution annotation for tests.
-func fixAnnotations(crdBytes []byte) []byte {
-	return bytes.Replace(crdBytes, []byte("(devel)"), []byte("(unknown)"), 1)
-}
 
 type outputRule struct {
 	buf *bytes.Buffer

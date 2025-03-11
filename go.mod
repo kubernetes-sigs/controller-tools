@@ -1,6 +1,6 @@
 module sigs.k8s.io/controller-tools
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/fatih/color v1.18.0
@@ -13,9 +13,9 @@ require (
 	golang.org/x/tools v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.33.0-alpha.2
-	k8s.io/apiextensions-apiserver v0.33.0-alpha.2
-	k8s.io/apimachinery v0.33.0-alpha.2
+	k8s.io/api v0.33.0-alpha.3
+	k8s.io/apiextensions-apiserver v0.33.0-alpha.3
+	k8s.io/apimachinery v0.33.0-alpha.3
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
 	sigs.k8s.io/yaml v1.4.0
 )

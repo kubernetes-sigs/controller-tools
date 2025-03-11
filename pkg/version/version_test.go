@@ -30,7 +30,7 @@ var _ = Describe("TestVersion", func() {
 		{
 			name:     "empty returns unknown",
 			version:  "",
-			expected: "(unknown)",
+			expected: "(devel)",
 		},
 		{
 			name:     "set to a value returns it",
