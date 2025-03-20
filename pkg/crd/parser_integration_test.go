@@ -192,10 +192,10 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 				pkgPaths = []string{"./wrong_title_format"}
 				expPkgLen = 1
 			})
-			It("cannot generate title field", func() {
+			It("cannot generate title field from integer", func() {
 				assertError(pkgs[0], "JobSpec", "expected string, got int")
 			})
-			It("cannot generate title field", func() {
+			It("cannot generate title field from map", func() {
 				assertError(pkgs[0], "TestType", "expected string, got map[string]interface {}")
 			})
 		})
