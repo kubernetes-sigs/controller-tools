@@ -187,6 +187,19 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Field with unvalid title format", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./wrong_title_format"}
+				expPkgLen = 1
+			})
+			It("cannot generate title field", func() {
+				assertError(pkgs[0], "JobSpec", "expected string, got int")
+			})
+			It("cannot generate title field", func() {
+				assertError(pkgs[0], "TestType", "expected string, got map[string]interface {}")
+			})
+		})
+
 		Context("CronJob API without group", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./nogroup"}
