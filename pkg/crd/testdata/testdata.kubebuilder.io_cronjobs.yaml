@@ -131,6 +131,7 @@ spec:
                 description: This tests that empty slice defaulting can be performed.
                 items:
                   type: string
+                title: '{}'
                 type: array
               defaultedObject:
                 default:
@@ -163,6 +164,7 @@ spec:
                   required:
                   - nested
                   type: object
+                title: "124"
                 type: array
               defaultedSlice:
                 default:
@@ -174,11 +176,13 @@ spec:
                 - b
                 items:
                   type: string
+                title: DefaultedSlice
                 type: array
               defaultedString:
                 default: forty-two
                 description: This tests that primitive defaulting can be performed.
                 example: forty-two
+                title: DefaultedString
                 type: string
               doubleDefaultedString:
                 default: kubebuilder-default
