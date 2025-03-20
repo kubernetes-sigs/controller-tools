@@ -20,11 +20,13 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
 var (
 	InputPathsMarker = markers.Must(markers.MakeDefinition("paths", markers.DescribesPackage, InputPaths(nil)))
+	BuildTagsMarker  = markers.Must(markers.MakeDefinition("buildTag", markers.DescribesPackage, InputBuildTags(nil)))
 )
 
 // +controllertools:marker:generateHelp:category=""
@@ -33,6 +35,13 @@ var (
 //
 // Multiple paths can be specified using "{path1, path2, path3}".
 type InputPaths []string
+
+// +controllertools:marker:generateHelp:category=""
+
+// InputBuildTags represents go build tags used when including or excluding code during builds.
+//
+// Multiple tags can be specified by using this marker multiple times: buildTag=tag1 buildTag=tag2
+type InputBuildTags []string
 
 // RegisterOptionsMarkers registers "mandatory" options markers for FromOptions into the given registry.
 // At this point, that's just InputPaths.
@@ -44,6 +53,14 @@ func RegisterOptionsMarkers(into *markers.Registry) error {
 	if helpGiver, hasHelp := ((interface{})(InputPaths(nil))).(HasHelp); hasHelp {
 		into.AddHelp(InputPathsMarker, helpGiver.Help())
 	}
+
+	if err := into.Register(BuildTagsMarker); err != nil {
+		return err
+	}
+	if helpGiver, hasHelp := ((interface{})(InputBuildTags(nil))).(HasHelp); hasHelp {
+		into.AddHelp(BuildTagsMarker, helpGiver.Help())
+	}
+
 	return nil
 }
 
@@ -78,9 +95,8 @@ func FromOptions(optionsRegistry *markers.Registry, options []string) (*Runtime,
 	if err != nil {
 		return nil, err
 	}
-
 	// make the runtime
-	genRuntime, err := protoRt.Generators.ForRoots(protoRt.Paths...)
+	genRuntime, err := protoRt.Generators.ForRootsWithConfig(protoRt.getConfig(), protoRt.Paths...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +128,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 		ByGenerator: make(map[*Generator]OutputRule),
 	}
 	var paths []string
+	var tags []string
 
 	// collect the generators first, so that we can key the output on the actual
 	// generator, which matters if there's settings in the gen object and it's not a pointer.
@@ -151,6 +168,8 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 			continue
 		case InputPaths:
 			paths = append(paths, val...)
+		case InputBuildTags:
+			tags = append(tags, val...)
 		default:
 			return protoRuntime{}, fmt.Errorf("unknown option marker %q", defn.Name)
 		}
@@ -171,6 +190,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 		Generators:       gens,
 		OutputRules:      rules,
 		GeneratorsByName: gensByName,
+		Tags:             tags,
 	}, nil
 }
 
@@ -181,6 +201,7 @@ type protoRuntime struct {
 	Generators       Generators
 	OutputRules      OutputRules
 	GeneratorsByName map[string]*Generator
+	Tags             []string
 }
 
 // splitOutputRuleOption splits a marker name of "output:rule:gen" or "output:rule"
@@ -193,4 +214,14 @@ func splitOutputRuleOption(name string) (ruleName string, genName string) {
 	}
 	// output:<rule>
 	return parts[1], ""
+}
+
+// getConfig generates the initial config based on the the optional arguments,
+// which are currently only tags
+func (p protoRuntime) getConfig() *packages.Config {
+	cfg := &packages.Config{}
+	for _, tag := range p.Tags {
+		cfg.BuildFlags = append(cfg.BuildFlags, "-tags", tag)
+	}
+	return cfg
 }
