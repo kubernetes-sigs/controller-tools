@@ -5,29 +5,95 @@ package cronjob
 import (
 	v1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	testdatacronjob "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob"
 )
 
 // CronJobSpecApplyConfiguration represents a declarative configuration of the CronJobSpec type for use
 // with apply.
 type CronJobSpecApplyConfiguration struct {
-	Schedule                   *string                             `json:"schedule,omitempty"`
-	StartingDeadlineSeconds    *int64                              `json:"startingDeadlineSeconds,omitempty"`
-	ConcurrencyPolicy          *testdatacronjob.ConcurrencyPolicy  `json:"concurrencyPolicy,omitempty"`
-	Suspend                    *bool                               `json:"suspend,omitempty"`
-	BinaryName                 []byte                              `json:"binaryName,omitempty"`
-	CanBeNull                  *string                             `json:"canBeNull,omitempty"`
-	JobTemplate                *v1beta1.JobTemplateSpec            `json:"jobTemplate,omitempty"`
-	SuccessfulJobsHistoryLimit *int32                              `json:"successfulJobsHistoryLimit,omitempty"`
-	FailedJobsHistoryLimit     *int32                              `json:"failedJobsHistoryLimit,omitempty"`
-	StringSliceData            map[string][]string                 `json:"stringSliceData,omitempty"`
-	PtrData                    map[string]*string                  `json:"ptrData,omitempty"`
-	Slice                      []string                            `json:"slice,omitempty"`
-	SlicePtr                   []*string                           `json:"slicePtr,omitempty"`
-	SliceStruct                []*testdatacronjob.ExampleStruct    `json:"sliceStruct,omitempty"`
-	BuiltInReference           *v1.PodSpec                         `json:"builtInReference,omitempty"`
-	Int                        *int                                `json:"int,omitempty"`
-	AssociativeList            []AssociativeTypeApplyConfiguration `json:"associativeList,omitempty"`
+	Schedule                                  *string                                          `json:"schedule,omitempty"`
+	StartingDeadlineSeconds                   *int64                                           `json:"startingDeadlineSeconds,omitempty"`
+	ConcurrencyPolicy                         *testdatacronjob.ConcurrencyPolicy               `json:"concurrencyPolicy,omitempty"`
+	Suspend                                   *bool                                            `json:"suspend,omitempty"`
+	NoReallySuspend                           *testdatacronjob.TotallyABool                    `json:"noReallySuspend,omitempty"`
+	BinaryName                                []byte                                           `json:"binaryName,omitempty"`
+	CanBeNull                                 *string                                          `json:"canBeNull,omitempty"`
+	JobTemplate                               *v1beta1.JobTemplateSpec                         `json:"jobTemplate,omitempty"`
+	SuccessfulJobsHistoryLimit                *int32                                           `json:"successfulJobsHistoryLimit,omitempty"`
+	FailedJobsHistoryLimit                    *int32                                           `json:"failedJobsHistoryLimit,omitempty"`
+	ByteSliceData                             map[string][]byte                                `json:"byteSliceData,omitempty"`
+	StringSliceData                           map[string][]string                              `json:"stringSliceData,omitempty"`
+	PtrData                                   map[string]*string                               `json:"ptrData,omitempty"`
+	TwoOfAKindPart0                           *string                                          `json:"twoOfAKindPart0,omitempty"`
+	TwoOfAKindPart1                           *testdatacronjob.LongerString                    `json:"twoOfAKindPart1,omitempty"`
+	DefaultedString                           *string                                          `json:"defaultedString,omitempty"`
+	DefaultedSlice                            []string                                         `json:"defaultedSlice,omitempty"`
+	DefaultedObject                           []RootObjectApplyConfiguration                   `json:"defaultedObject,omitempty"`
+	DefaultedEmptySlice                       []string                                         `json:"defaultedEmptySlice,omitempty"`
+	DefaultedEmptyMap                         map[string]string                                `json:"defaultedEmptyMap,omitempty"`
+	DefaultedEmptyObject                      *EmpiableObjectApplyConfiguration                `json:"defaultedEmptyObject,omitempty"`
+	DoubleDefaultedString                     *string                                          `json:"doubleDefaultedString,omitempty"`
+	KubernetesDefaultedString                 *string                                          `json:"kubernetesDefaultedString,omitempty"`
+	KubernetesDefaultedSlice                  []string                                         `json:"kubernetesDefaultedSlice,omitempty"`
+	KubernetesDefaultedObject                 []RootObjectApplyConfiguration                   `json:"kubernetesDefaultedObject,omitempty"`
+	KubernetesDefaultedEmptySlice             []string                                         `json:"kubernetesDefaultedEmptySlice,omitempty"`
+	KubernetesDefaultedEmptyMap               map[string]string                                `json:"kubernetesDefaultedEmptyMap,omitempty"`
+	KubernetesDefaultedEmptyObject            *EmpiableObjectApplyConfiguration                `json:"kubernetesDefaultedEmptyObject,omitempty"`
+	KubernetesDefaultedRef                    *string                                          `json:"kubernetesDefaultedRef,omitempty"`
+	PatternObject                             *string                                          `json:"patternObject,omitempty"`
+	EmbeddedResource                          *runtime.RawExtension                            `json:"embeddedResource,omitempty"`
+	UnprunedJSON                              *NestedObjectApplyConfiguration                  `json:"unprunedJSON,omitempty"`
+	UnprunedEmbeddedResource                  *runtime.RawExtension                            `json:"unprunedEmbeddedResource,omitempty"`
+	UnprunedFromType                          *PreservedApplyConfiguration                     `json:"unprunedFomType,omitempty"`
+	UnprunedFromTypeAndField                  *PreservedApplyConfiguration                     `json:"unprunedFomTypeAndField,omitempty"`
+	AssociativeList                           []AssociativeTypeApplyConfiguration              `json:"associativeList,omitempty"`
+	NestedAssociativeList                     *testdatacronjob.NestedAssociativeList           `json:"nestedassociativeList,omitempty"`
+	MapOfInfo                                 map[string][]byte                                `json:"mapOfInfo,omitempty"`
+	NestedMapOfInfo                           *testdatacronjob.NestedMapOfInfo                 `json:"nestedMapOfInfo,omitempty"`
+	StructWithSeveralFields                   *NestedObjectApplyConfiguration                  `json:"structWithSeveralFields,omitempty"`
+	NestedStructWithSeveralFields             *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFields,omitempty"`
+	NestedStructWithSeveralFieldsDoubleMarked *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFieldsDoubleMarked,omitempty"`
+	JustNestedObject                          *JustNestedObjectApplyConfiguration              `json:"justNestedObject,omitempty"`
+	ExplicitlyOptionalKubebuilder             *string                                          `json:"explicitlyOptionalKubebuilder,omitempty"`
+	ExplicitlyOptionalKubernetes              *string                                          `json:"explicitlyOptionalKubernetes,omitempty"`
+	ExplicitlyRequiredKubebuilder             *string                                          `json:"explicitlyRequiredKubebuilder,omitempty"`
+	ExplicitlyRequiredKubernetes              *string                                          `json:"explicitlyRequiredKubernetes,omitempty"`
+	MinMaxProperties                          *MinMaxObjectApplyConfiguration                  `json:"minMaxProperties,omitempty"`
+	Schemaless                                []byte                                           `json:"schemaless,omitempty"`
+	IntOrStringWithAPattern                   *intstr.IntOrString                              `json:"intOrStringWithAPattern,omitempty"`
+	NestedMap                                 map[string]map[string]string                     `json:"nestedMap,omitempty"`
+	NestedNestedMap                           map[string]map[string]map[string]string          `json:"nestedNestedMap,omitempty"`
+	ContainsNestedMapMap                      map[string]ContainsNestedMapApplyConfiguration   `json:"nestedMapInStruct,omitempty"`
+	MapOfArraysOfFloats                       map[string][]bool                                `json:"mapOfArraysOfFloats,omitempty"`
+	FloatWithValidations                      *float64                                         `json:"floatWithValidations,omitempty"`
+	Float64WithValidations                    *float64                                         `json:"float64WithValidations,omitempty"`
+	IntWithValidations                        *int                                             `json:"intWithValidations,omitempty"`
+	Int32WithValidations                      *int32                                           `json:"int32WithValidations,omitempty"`
+	unexportedStructApplyConfiguration        `json:",inline"`
+	ExportedStructApplyConfiguration          `json:",inline"`
+	StringWithEvenLength                      *string                         `json:"stringWithEvenLength,omitempty"`
+	StringWithEvenLengthAndMessageExpression  *string                         `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
+	StringWithEvenLengthAndGoodPrefix         *testdatacronjob.StringEvenType `json:"stringWithEvenLengthAndGoodPrefix,omitempty"`
+	ForbiddenInt                              *int                            `json:"forbiddenInt,omitempty"`
+	Array                                     *[3]int                         `json:"array,omitempty"`
+	ArrayUsingCompositeLiteral                *[3]string                      `json:"arrayUsingCompositeLiteral,omitempty"`
+	Hosts                                     []string                        `json:"hosts,omitempty"`
+	EnumSlice                                 []int                           `json:"enumSlice,omitempty"`
+	HostsAlias                                *testdatacronjob.Hosts          `json:"hostsAlias,omitempty"`
+	AliasFromPackage                          *v1.IPFamilyPolicy              `json:"aliasFromPackage,omitempty"`
+	StringAlias                               *string                         `json:"stringAlias,omitempty"`
+	StringAliasPtr                            *string                         `json:"stringAliasPtr,omitempty"`
+	StringAliasAddedValidation                *string                         `json:"stringAliasAddedValidation,omitempty"`
+	StringAliasAlreadyValidated               *string                         `json:"stringAliasAlreadyValidated,omitempty"`
+	StringPair                                []string                        `json:"stringPair,omitempty"`
+	LongerStringArray                         []testdatacronjob.LongerString  `json:"longerStringArray,omitempty"`
+	IntOrStringArrayWithAPattern              []*intstr.IntOrString           `json:"intOrStringArrayWithAPattern,omitempty"`
+	Protocol                                  *v1.Protocol                    `json:"protocol,omitempty"`
+	SelectableFieldString                     *string                         `json:"selectableFieldString,omitempty"`
+	EmbeddedStructApplyConfiguration          `json:",inline"`
+	OnlyAllowSettingOnUpdate                  *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with
@@ -65,6 +131,14 @@ func (b *CronJobSpecApplyConfiguration) WithConcurrencyPolicy(value testdatacron
 // If called multiple times, the Suspend field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithSuspend(value bool) *CronJobSpecApplyConfiguration {
 	b.Suspend = &value
+	return b
+}
+
+// WithNoReallySuspend sets the NoReallySuspend field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NoReallySuspend field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithNoReallySuspend(value testdatacronjob.TotallyABool) *CronJobSpecApplyConfiguration {
+	b.NoReallySuspend = &value
 	return b
 }
 
@@ -110,6 +184,20 @@ func (b *CronJobSpecApplyConfiguration) WithFailedJobsHistoryLimit(value int32) 
 	return b
 }
 
+// WithByteSliceData puts the entries into the ByteSliceData field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the ByteSliceData field,
+// overwriting an existing map entries in ByteSliceData field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithByteSliceData(entries map[string][]byte) *CronJobSpecApplyConfiguration {
+	if b.ByteSliceData == nil && len(entries) > 0 {
+		b.ByteSliceData = make(map[string][]byte, len(entries))
+	}
+	for k, v := range entries {
+		b.ByteSliceData[k] = v
+	}
+	return b
+}
+
 // WithStringSliceData puts the entries into the StringSliceData field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the StringSliceData field,
@@ -138,55 +226,209 @@ func (b *CronJobSpecApplyConfiguration) WithPtrData(entries map[string]*string) 
 	return b
 }
 
-// WithSlice adds the given value to the Slice field in the declarative configuration
+// WithTwoOfAKindPart0 sets the TwoOfAKindPart0 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TwoOfAKindPart0 field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithTwoOfAKindPart0(value string) *CronJobSpecApplyConfiguration {
+	b.TwoOfAKindPart0 = &value
+	return b
+}
+
+// WithTwoOfAKindPart1 sets the TwoOfAKindPart1 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TwoOfAKindPart1 field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithTwoOfAKindPart1(value testdatacronjob.LongerString) *CronJobSpecApplyConfiguration {
+	b.TwoOfAKindPart1 = &value
+	return b
+}
+
+// WithDefaultedString sets the DefaultedString field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultedString field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedString(value string) *CronJobSpecApplyConfiguration {
+	b.DefaultedString = &value
+	return b
+}
+
+// WithDefaultedSlice adds the given value to the DefaultedSlice field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Slice field.
-func (b *CronJobSpecApplyConfiguration) WithSlice(values ...string) *CronJobSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the DefaultedSlice field.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedSlice(values ...string) *CronJobSpecApplyConfiguration {
 	for i := range values {
-		b.Slice = append(b.Slice, values[i])
+		b.DefaultedSlice = append(b.DefaultedSlice, values[i])
 	}
 	return b
 }
 
-// WithSlicePtr adds the given value to the SlicePtr field in the declarative configuration
+// WithDefaultedObject adds the given value to the DefaultedObject field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SlicePtr field.
-func (b *CronJobSpecApplyConfiguration) WithSlicePtr(values ...*string) *CronJobSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the DefaultedObject field.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedObject(values ...*RootObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithSlicePtr")
+			panic("nil value passed to WithDefaultedObject")
 		}
-		b.SlicePtr = append(b.SlicePtr, *values[i])
+		b.DefaultedObject = append(b.DefaultedObject, *values[i])
 	}
 	return b
 }
 
-// WithSliceStruct adds the given value to the SliceStruct field in the declarative configuration
+// WithDefaultedEmptySlice adds the given value to the DefaultedEmptySlice field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SliceStruct field.
-func (b *CronJobSpecApplyConfiguration) WithSliceStruct(values ...**testdatacronjob.ExampleStruct) *CronJobSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the DefaultedEmptySlice field.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedEmptySlice(values ...string) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.DefaultedEmptySlice = append(b.DefaultedEmptySlice, values[i])
+	}
+	return b
+}
+
+// WithDefaultedEmptyMap puts the entries into the DefaultedEmptyMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the DefaultedEmptyMap field,
+// overwriting an existing map entries in DefaultedEmptyMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedEmptyMap(entries map[string]string) *CronJobSpecApplyConfiguration {
+	if b.DefaultedEmptyMap == nil && len(entries) > 0 {
+		b.DefaultedEmptyMap = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.DefaultedEmptyMap[k] = v
+	}
+	return b
+}
+
+// WithDefaultedEmptyObject sets the DefaultedEmptyObject field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DefaultedEmptyObject field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithDefaultedEmptyObject(value *EmpiableObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.DefaultedEmptyObject = value
+	return b
+}
+
+// WithDoubleDefaultedString sets the DoubleDefaultedString field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DoubleDefaultedString field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithDoubleDefaultedString(value string) *CronJobSpecApplyConfiguration {
+	b.DoubleDefaultedString = &value
+	return b
+}
+
+// WithKubernetesDefaultedString sets the KubernetesDefaultedString field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the KubernetesDefaultedString field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedString(value string) *CronJobSpecApplyConfiguration {
+	b.KubernetesDefaultedString = &value
+	return b
+}
+
+// WithKubernetesDefaultedSlice adds the given value to the KubernetesDefaultedSlice field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the KubernetesDefaultedSlice field.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedSlice(values ...string) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.KubernetesDefaultedSlice = append(b.KubernetesDefaultedSlice, values[i])
+	}
+	return b
+}
+
+// WithKubernetesDefaultedObject adds the given value to the KubernetesDefaultedObject field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the KubernetesDefaultedObject field.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedObject(values ...*RootObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithSliceStruct")
+			panic("nil value passed to WithKubernetesDefaultedObject")
 		}
-		b.SliceStruct = append(b.SliceStruct, *values[i])
+		b.KubernetesDefaultedObject = append(b.KubernetesDefaultedObject, *values[i])
 	}
 	return b
 }
 
-// WithBuiltInReference sets the BuiltInReference field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the BuiltInReference field is set to the value of the last call.
-func (b *CronJobSpecApplyConfiguration) WithBuiltInReference(value v1.PodSpec) *CronJobSpecApplyConfiguration {
-	b.BuiltInReference = &value
+// WithKubernetesDefaultedEmptySlice adds the given value to the KubernetesDefaultedEmptySlice field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the KubernetesDefaultedEmptySlice field.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedEmptySlice(values ...string) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.KubernetesDefaultedEmptySlice = append(b.KubernetesDefaultedEmptySlice, values[i])
+	}
 	return b
 }
 
-// WithInt sets the Int field in the declarative configuration to the given value
+// WithKubernetesDefaultedEmptyMap puts the entries into the KubernetesDefaultedEmptyMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the KubernetesDefaultedEmptyMap field,
+// overwriting an existing map entries in KubernetesDefaultedEmptyMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedEmptyMap(entries map[string]string) *CronJobSpecApplyConfiguration {
+	if b.KubernetesDefaultedEmptyMap == nil && len(entries) > 0 {
+		b.KubernetesDefaultedEmptyMap = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.KubernetesDefaultedEmptyMap[k] = v
+	}
+	return b
+}
+
+// WithKubernetesDefaultedEmptyObject sets the KubernetesDefaultedEmptyObject field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Int field is set to the value of the last call.
-func (b *CronJobSpecApplyConfiguration) WithInt(value int) *CronJobSpecApplyConfiguration {
-	b.Int = &value
+// If called multiple times, the KubernetesDefaultedEmptyObject field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedEmptyObject(value *EmpiableObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.KubernetesDefaultedEmptyObject = value
+	return b
+}
+
+// WithKubernetesDefaultedRef sets the KubernetesDefaultedRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the KubernetesDefaultedRef field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithKubernetesDefaultedRef(value string) *CronJobSpecApplyConfiguration {
+	b.KubernetesDefaultedRef = &value
+	return b
+}
+
+// WithPatternObject sets the PatternObject field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PatternObject field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithPatternObject(value string) *CronJobSpecApplyConfiguration {
+	b.PatternObject = &value
+	return b
+}
+
+// WithEmbeddedResource sets the EmbeddedResource field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EmbeddedResource field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithEmbeddedResource(value runtime.RawExtension) *CronJobSpecApplyConfiguration {
+	b.EmbeddedResource = &value
+	return b
+}
+
+// WithUnprunedJSON sets the UnprunedJSON field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UnprunedJSON field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithUnprunedJSON(value *NestedObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.UnprunedJSON = value
+	return b
+}
+
+// WithUnprunedEmbeddedResource sets the UnprunedEmbeddedResource field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UnprunedEmbeddedResource field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithUnprunedEmbeddedResource(value runtime.RawExtension) *CronJobSpecApplyConfiguration {
+	b.UnprunedEmbeddedResource = &value
+	return b
+}
+
+// WithUnprunedFromType sets the UnprunedFromType field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UnprunedFromType field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithUnprunedFromType(value *PreservedApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.UnprunedFromType = value
+	return b
+}
+
+// WithUnprunedFromTypeAndField sets the UnprunedFromTypeAndField field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UnprunedFromTypeAndField field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithUnprunedFromTypeAndField(value *PreservedApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.UnprunedFromTypeAndField = value
 	return b
 }
 
@@ -200,5 +442,410 @@ func (b *CronJobSpecApplyConfiguration) WithAssociativeList(values ...*Associati
 		}
 		b.AssociativeList = append(b.AssociativeList, *values[i])
 	}
+	return b
+}
+
+// WithNestedAssociativeList sets the NestedAssociativeList field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NestedAssociativeList field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithNestedAssociativeList(value testdatacronjob.NestedAssociativeList) *CronJobSpecApplyConfiguration {
+	b.NestedAssociativeList = &value
+	return b
+}
+
+// WithMapOfInfo puts the entries into the MapOfInfo field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the MapOfInfo field,
+// overwriting an existing map entries in MapOfInfo field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithMapOfInfo(entries map[string][]byte) *CronJobSpecApplyConfiguration {
+	if b.MapOfInfo == nil && len(entries) > 0 {
+		b.MapOfInfo = make(map[string][]byte, len(entries))
+	}
+	for k, v := range entries {
+		b.MapOfInfo[k] = v
+	}
+	return b
+}
+
+// WithNestedMapOfInfo sets the NestedMapOfInfo field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NestedMapOfInfo field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithNestedMapOfInfo(value testdatacronjob.NestedMapOfInfo) *CronJobSpecApplyConfiguration {
+	b.NestedMapOfInfo = &value
+	return b
+}
+
+// WithStructWithSeveralFields sets the StructWithSeveralFields field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StructWithSeveralFields field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStructWithSeveralFields(value *NestedObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.StructWithSeveralFields = value
+	return b
+}
+
+// WithNestedStructWithSeveralFields sets the NestedStructWithSeveralFields field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NestedStructWithSeveralFields field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithNestedStructWithSeveralFields(value *NestedStructWithSeveralFieldsApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.NestedStructWithSeveralFields = value
+	return b
+}
+
+// WithNestedStructWithSeveralFieldsDoubleMarked sets the NestedStructWithSeveralFieldsDoubleMarked field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NestedStructWithSeveralFieldsDoubleMarked field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithNestedStructWithSeveralFieldsDoubleMarked(value *NestedStructWithSeveralFieldsApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.NestedStructWithSeveralFieldsDoubleMarked = value
+	return b
+}
+
+// WithJustNestedObject sets the JustNestedObject field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the JustNestedObject field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithJustNestedObject(value *JustNestedObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.JustNestedObject = value
+	return b
+}
+
+// WithExplicitlyOptionalKubebuilder sets the ExplicitlyOptionalKubebuilder field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExplicitlyOptionalKubebuilder field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithExplicitlyOptionalKubebuilder(value string) *CronJobSpecApplyConfiguration {
+	b.ExplicitlyOptionalKubebuilder = &value
+	return b
+}
+
+// WithExplicitlyOptionalKubernetes sets the ExplicitlyOptionalKubernetes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExplicitlyOptionalKubernetes field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithExplicitlyOptionalKubernetes(value string) *CronJobSpecApplyConfiguration {
+	b.ExplicitlyOptionalKubernetes = &value
+	return b
+}
+
+// WithExplicitlyRequiredKubebuilder sets the ExplicitlyRequiredKubebuilder field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExplicitlyRequiredKubebuilder field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithExplicitlyRequiredKubebuilder(value string) *CronJobSpecApplyConfiguration {
+	b.ExplicitlyRequiredKubebuilder = &value
+	return b
+}
+
+// WithExplicitlyRequiredKubernetes sets the ExplicitlyRequiredKubernetes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExplicitlyRequiredKubernetes field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithExplicitlyRequiredKubernetes(value string) *CronJobSpecApplyConfiguration {
+	b.ExplicitlyRequiredKubernetes = &value
+	return b
+}
+
+// WithMinMaxProperties sets the MinMaxProperties field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MinMaxProperties field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithMinMaxProperties(value *MinMaxObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.MinMaxProperties = value
+	return b
+}
+
+// WithSchemaless adds the given value to the Schemaless field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Schemaless field.
+func (b *CronJobSpecApplyConfiguration) WithSchemaless(values ...byte) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.Schemaless = append(b.Schemaless, values[i])
+	}
+	return b
+}
+
+// WithIntOrStringWithAPattern sets the IntOrStringWithAPattern field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the IntOrStringWithAPattern field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithIntOrStringWithAPattern(value intstr.IntOrString) *CronJobSpecApplyConfiguration {
+	b.IntOrStringWithAPattern = &value
+	return b
+}
+
+// WithNestedMap puts the entries into the NestedMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the NestedMap field,
+// overwriting an existing map entries in NestedMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithNestedMap(entries map[string]map[string]string) *CronJobSpecApplyConfiguration {
+	if b.NestedMap == nil && len(entries) > 0 {
+		b.NestedMap = make(map[string]map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.NestedMap[k] = v
+	}
+	return b
+}
+
+// WithNestedNestedMap puts the entries into the NestedNestedMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the NestedNestedMap field,
+// overwriting an existing map entries in NestedNestedMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithNestedNestedMap(entries map[string]map[string]map[string]string) *CronJobSpecApplyConfiguration {
+	if b.NestedNestedMap == nil && len(entries) > 0 {
+		b.NestedNestedMap = make(map[string]map[string]map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.NestedNestedMap[k] = v
+	}
+	return b
+}
+
+// WithContainsNestedMapMap puts the entries into the ContainsNestedMapMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the ContainsNestedMapMap field,
+// overwriting an existing map entries in ContainsNestedMapMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithContainsNestedMapMap(entries map[string]ContainsNestedMapApplyConfiguration) *CronJobSpecApplyConfiguration {
+	if b.ContainsNestedMapMap == nil && len(entries) > 0 {
+		b.ContainsNestedMapMap = make(map[string]ContainsNestedMapApplyConfiguration, len(entries))
+	}
+	for k, v := range entries {
+		b.ContainsNestedMapMap[k] = v
+	}
+	return b
+}
+
+// WithMapOfArraysOfFloats puts the entries into the MapOfArraysOfFloats field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the MapOfArraysOfFloats field,
+// overwriting an existing map entries in MapOfArraysOfFloats field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithMapOfArraysOfFloats(entries map[string][]bool) *CronJobSpecApplyConfiguration {
+	if b.MapOfArraysOfFloats == nil && len(entries) > 0 {
+		b.MapOfArraysOfFloats = make(map[string][]bool, len(entries))
+	}
+	for k, v := range entries {
+		b.MapOfArraysOfFloats[k] = v
+	}
+	return b
+}
+
+// WithFloatWithValidations sets the FloatWithValidations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FloatWithValidations field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithFloatWithValidations(value float64) *CronJobSpecApplyConfiguration {
+	b.FloatWithValidations = &value
+	return b
+}
+
+// WithFloat64WithValidations sets the Float64WithValidations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Float64WithValidations field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithFloat64WithValidations(value float64) *CronJobSpecApplyConfiguration {
+	b.Float64WithValidations = &value
+	return b
+}
+
+// WithIntWithValidations sets the IntWithValidations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the IntWithValidations field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithIntWithValidations(value int) *CronJobSpecApplyConfiguration {
+	b.IntWithValidations = &value
+	return b
+}
+
+// WithInt32WithValidations sets the Int32WithValidations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Int32WithValidations field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithInt32WithValidations(value int32) *CronJobSpecApplyConfiguration {
+	b.Int32WithValidations = &value
+	return b
+}
+
+// WithFoo sets the Foo field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Foo field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithFoo(value string) *CronJobSpecApplyConfiguration {
+	b.unexportedStructApplyConfiguration.Foo = &value
+	return b
+}
+
+// WithBaz sets the Baz field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Baz field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithBaz(value string) *CronJobSpecApplyConfiguration {
+	b.ExportedStructApplyConfiguration.Baz = &value
+	return b
+}
+
+// WithStringWithEvenLength sets the StringWithEvenLength field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringWithEvenLength field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringWithEvenLength(value string) *CronJobSpecApplyConfiguration {
+	b.StringWithEvenLength = &value
+	return b
+}
+
+// WithStringWithEvenLengthAndMessageExpression sets the StringWithEvenLengthAndMessageExpression field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringWithEvenLengthAndMessageExpression field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringWithEvenLengthAndMessageExpression(value string) *CronJobSpecApplyConfiguration {
+	b.StringWithEvenLengthAndMessageExpression = &value
+	return b
+}
+
+// WithStringWithEvenLengthAndGoodPrefix sets the StringWithEvenLengthAndGoodPrefix field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringWithEvenLengthAndGoodPrefix field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringWithEvenLengthAndGoodPrefix(value testdatacronjob.StringEvenType) *CronJobSpecApplyConfiguration {
+	b.StringWithEvenLengthAndGoodPrefix = &value
+	return b
+}
+
+// WithForbiddenInt sets the ForbiddenInt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ForbiddenInt field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithForbiddenInt(value int) *CronJobSpecApplyConfiguration {
+	b.ForbiddenInt = &value
+	return b
+}
+
+// WithArray sets the Array field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Array field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithArray(value [3]int) *CronJobSpecApplyConfiguration {
+	b.Array = &value
+	return b
+}
+
+// WithArrayUsingCompositeLiteral sets the ArrayUsingCompositeLiteral field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ArrayUsingCompositeLiteral field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithArrayUsingCompositeLiteral(value [3]string) *CronJobSpecApplyConfiguration {
+	b.ArrayUsingCompositeLiteral = &value
+	return b
+}
+
+// WithHosts adds the given value to the Hosts field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Hosts field.
+func (b *CronJobSpecApplyConfiguration) WithHosts(values ...string) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.Hosts = append(b.Hosts, values[i])
+	}
+	return b
+}
+
+// WithEnumSlice adds the given value to the EnumSlice field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the EnumSlice field.
+func (b *CronJobSpecApplyConfiguration) WithEnumSlice(values ...int) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.EnumSlice = append(b.EnumSlice, values[i])
+	}
+	return b
+}
+
+// WithHostsAlias sets the HostsAlias field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HostsAlias field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithHostsAlias(value testdatacronjob.Hosts) *CronJobSpecApplyConfiguration {
+	b.HostsAlias = &value
+	return b
+}
+
+// WithAliasFromPackage sets the AliasFromPackage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AliasFromPackage field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithAliasFromPackage(value v1.IPFamilyPolicy) *CronJobSpecApplyConfiguration {
+	b.AliasFromPackage = &value
+	return b
+}
+
+// WithStringAlias sets the StringAlias field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringAlias field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringAlias(value string) *CronJobSpecApplyConfiguration {
+	b.StringAlias = &value
+	return b
+}
+
+// WithStringAliasPtr sets the StringAliasPtr field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringAliasPtr field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringAliasPtr(value string) *CronJobSpecApplyConfiguration {
+	b.StringAliasPtr = &value
+	return b
+}
+
+// WithStringAliasAddedValidation sets the StringAliasAddedValidation field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringAliasAddedValidation field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringAliasAddedValidation(value string) *CronJobSpecApplyConfiguration {
+	b.StringAliasAddedValidation = &value
+	return b
+}
+
+// WithStringAliasAlreadyValidated sets the StringAliasAlreadyValidated field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StringAliasAlreadyValidated field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithStringAliasAlreadyValidated(value string) *CronJobSpecApplyConfiguration {
+	b.StringAliasAlreadyValidated = &value
+	return b
+}
+
+// WithStringPair adds the given value to the StringPair field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the StringPair field.
+func (b *CronJobSpecApplyConfiguration) WithStringPair(values ...string) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.StringPair = append(b.StringPair, values[i])
+	}
+	return b
+}
+
+// WithLongerStringArray adds the given value to the LongerStringArray field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the LongerStringArray field.
+func (b *CronJobSpecApplyConfiguration) WithLongerStringArray(values ...testdatacronjob.LongerString) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		b.LongerStringArray = append(b.LongerStringArray, values[i])
+	}
+	return b
+}
+
+// WithIntOrStringArrayWithAPattern adds the given value to the IntOrStringArrayWithAPattern field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the IntOrStringArrayWithAPattern field.
+func (b *CronJobSpecApplyConfiguration) WithIntOrStringArrayWithAPattern(values ...*intstr.IntOrString) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithIntOrStringArrayWithAPattern")
+		}
+		b.IntOrStringArrayWithAPattern = append(b.IntOrStringArrayWithAPattern, *values[i])
+	}
+	return b
+}
+
+// WithProtocol sets the Protocol field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Protocol field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithProtocol(value v1.Protocol) *CronJobSpecApplyConfiguration {
+	b.Protocol = &value
+	return b
+}
+
+// WithSelectableFieldString sets the SelectableFieldString field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SelectableFieldString field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithSelectableFieldString(value string) *CronJobSpecApplyConfiguration {
+	b.SelectableFieldString = &value
+	return b
+}
+
+// WithFromEmbedded sets the FromEmbedded field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FromEmbedded field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithFromEmbedded(value string) *CronJobSpecApplyConfiguration {
+	b.EmbeddedStructApplyConfiguration.FromEmbedded = &value
+	return b
+}
+
+// WithOnlyAllowSettingOnUpdate sets the OnlyAllowSettingOnUpdate field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OnlyAllowSettingOnUpdate field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithOnlyAllowSettingOnUpdate(value int32) *CronJobSpecApplyConfiguration {
+	b.OnlyAllowSettingOnUpdate = &value
 	return b
 }

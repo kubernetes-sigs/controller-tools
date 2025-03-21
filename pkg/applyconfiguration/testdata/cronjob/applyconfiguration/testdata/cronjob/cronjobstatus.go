@@ -5,14 +5,21 @@ package cronjob
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	testdatacronjob "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob"
 )
 
 // CronJobStatusApplyConfiguration represents a declarative configuration of the CronJobStatus type for use
 // with apply.
 type CronJobStatusApplyConfiguration struct {
-	Active                []v1.ObjectReference `json:"active,omitempty"`
-	LastScheduleTime      *metav1.Time         `json:"lastScheduleTime,omitempty"`
-	LastScheduleMicroTime *metav1.MicroTime    `json:"lastScheduleMicroTime,omitempty"`
+	Active                []v1.ObjectReference        `json:"active,omitempty"`
+	LastScheduleTime      *metav1.Time                `json:"lastScheduleTime,omitempty"`
+	LastScheduleTime2     *testdatacronjob.Time2      `json:"lastScheduleTime2,omitempty"`
+	LastScheduleMicroTime *metav1.MicroTime           `json:"lastScheduleMicroTime,omitempty"`
+	LastActiveLogURL      *testdatacronjob.URL        `json:"lastActiveLogURL,omitempty"`
+	LastActiveLogURL2     *testdatacronjob.URL2       `json:"lastActiveLogURL2,omitempty"`
+	LastActiveLogURL3     *testdatacronjob.URL3       `json:"lastActiveLogURL3,omitempty"`
+	LastActiveLogURL4     *testdatacronjob.URL4       `json:"lastActiveLogURL4,omitempty"`
+	Runtime               *DurationApplyConfiguration `json:"duration,omitempty"`
 }
 
 // CronJobStatusApplyConfiguration constructs a declarative configuration of the CronJobStatus type for use with
@@ -39,10 +46,58 @@ func (b *CronJobStatusApplyConfiguration) WithLastScheduleTime(value metav1.Time
 	return b
 }
 
+// WithLastScheduleTime2 sets the LastScheduleTime2 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastScheduleTime2 field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithLastScheduleTime2(value testdatacronjob.Time2) *CronJobStatusApplyConfiguration {
+	b.LastScheduleTime2 = &value
+	return b
+}
+
 // WithLastScheduleMicroTime sets the LastScheduleMicroTime field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LastScheduleMicroTime field is set to the value of the last call.
 func (b *CronJobStatusApplyConfiguration) WithLastScheduleMicroTime(value metav1.MicroTime) *CronJobStatusApplyConfiguration {
 	b.LastScheduleMicroTime = &value
+	return b
+}
+
+// WithLastActiveLogURL sets the LastActiveLogURL field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastActiveLogURL field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithLastActiveLogURL(value testdatacronjob.URL) *CronJobStatusApplyConfiguration {
+	b.LastActiveLogURL = &value
+	return b
+}
+
+// WithLastActiveLogURL2 sets the LastActiveLogURL2 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastActiveLogURL2 field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithLastActiveLogURL2(value testdatacronjob.URL2) *CronJobStatusApplyConfiguration {
+	b.LastActiveLogURL2 = &value
+	return b
+}
+
+// WithLastActiveLogURL3 sets the LastActiveLogURL3 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastActiveLogURL3 field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithLastActiveLogURL3(value testdatacronjob.URL3) *CronJobStatusApplyConfiguration {
+	b.LastActiveLogURL3 = &value
+	return b
+}
+
+// WithLastActiveLogURL4 sets the LastActiveLogURL4 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastActiveLogURL4 field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithLastActiveLogURL4(value testdatacronjob.URL4) *CronJobStatusApplyConfiguration {
+	b.LastActiveLogURL4 = &value
+	return b
+}
+
+// WithRuntime sets the Runtime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Runtime field is set to the value of the last call.
+func (b *CronJobStatusApplyConfiguration) WithRuntime(value *DurationApplyConfiguration) *CronJobStatusApplyConfiguration {
+	b.Runtime = value
 	return b
 }
