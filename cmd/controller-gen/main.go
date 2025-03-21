@@ -50,12 +50,12 @@ var (
 	// each turns into a command line option,
 	// and has options for output forms.
 	allGenerators = map[string]genall.Generator{
-		"crd":         crd.Generator{},
-		"rbac":        rbac.Generator{},
-		"object":      deepcopy.Generator{},
-		"apply":       applyconfigurations.Generator{},
-		"webhook":     webhook.Generator{},
-		"schemapatch": schemapatcher.Generator{},
+		"crd":                crd.Generator{},
+		"rbac":               rbac.Generator{},
+		"object":             deepcopy.Generator{},
+		"applyconfiguration": applyconfigurations.Generator{},
+		"webhook":            webhook.Generator{},
+		"schemapatch":        schemapatcher.Generator{},
 	}
 
 	// allOutputRules defines the list of all known output rules, giving
@@ -153,7 +153,7 @@ func main() {
 	# Generate applyconfigurations for CRDs for use with Server Side Apply. They will be placed
 	# into a "applyconfiguration/" subdirectory
 
-	controller-gen apply paths=./apis/...
+	controller-gen applyconfiguration paths=./apis/...
 `,
 		RunE: func(c *cobra.Command, rawOpts []string) error {
 			// print version if asked for it
