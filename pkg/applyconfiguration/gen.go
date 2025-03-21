@@ -30,6 +30,7 @@ import (
 	"k8s.io/gengo/v2/generator"
 	"k8s.io/gengo/v2/parser"
 
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -45,7 +46,7 @@ var (
 	enableTypeMarker = markers.Must(markers.MakeDefinition("kubebuilder:ac:generate", markers.DescribesType, false))
 )
 
-const importPathSuffix = "applyconfiguration"
+const defaultOutputPackage = "applyconfiguration"
 
 // +controllertools:marker:generateHelp
 
@@ -72,11 +73,11 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	into.AddHelp(isCRDMarker,
 		markers.SimpleHelp("apply", "enables apply configuration generation for this type"))
 	into.AddHelp(
-		enableTypeMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfigurations generation for the type"))
+		enableTypeMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfiguration generation for the type, can be used to generate applyconfiguration for a single type when the package generation is disabled, or to disable generation for a single type when the package generation is enabled"))
 	into.AddHelp(
-		enablePkgMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfigurations generation for the package"))
+		enablePkgMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfiguration generation for the package"))
 	into.AddHelp(
-		outputPkgMarker, markers.SimpleHelp("apply", "overrides the default output package for the applyconfigurations generation"))
+		outputPkgMarker, markers.SimpleHelp("apply", "overrides the default output package for the applyconfiguration generation, supports relative paths to the API directory. The default value is \"applyconfiguration\""))
 	return nil
 }
 
@@ -92,7 +93,6 @@ func enabledOnPackage(col *markers.Collector, pkg *loader.Package) (bool, error)
 	return false, nil
 }
 
-// enableOnType marks whether applyconfiguration generation is enabled for the type.
 func enabledOnType(info *markers.TypeInfo) bool {
 	if typeMarker := info.Markers.Get(enableTypeMarker.Name); typeMarker != nil {
 		return typeMarker.(bool)
@@ -100,19 +100,21 @@ func enabledOnType(info *markers.TypeInfo) bool {
 	return isCRD(info)
 }
 
-func outputPkg(col *markers.Collector, pkg *loader.Package) (string, error) {
+func outputPkg(col *markers.Collector, pkg *loader.Package) string {
 	pkgMarkers, err := markers.PackageMarkers(col, pkg)
 	if err != nil {
-		return "", err
+		// Use the default when there's an error.
+		return defaultOutputPackage
 	}
+
 	pkgMarker := pkgMarkers.Get(outputPkgMarker.Name)
 	if pkgMarker != nil {
-		return pkgMarker.(string), nil
+		return pkgMarker.(string)
 	}
-	return "", nil
+
+	return defaultOutputPackage
 }
 
-// isCRD marks whether the type is a CRD based on the +kubebuilder:resource marker.
 func isCRD(info *markers.TypeInfo) bool {
 	objectEnabled := info.Markers.Get(isCRDMarker.Name)
 	return objectEnabled != nil
@@ -126,7 +128,9 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 		if err != nil {
 			return fmt.Errorf("failed to create temporary file: %w", err)
 		}
-		tmpFile.Close()
+		if err := tmpFile.Close(); err != nil {
+			return fmt.Errorf("failed to close temporary file: %w", err)
+		}
 
 		defer os.Remove(tmpFile.Name())
 
@@ -139,11 +143,17 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 		HeaderFilePath: headerFilePath,
 	}
 
+	errs := []error{}
 	for _, pkg := range ctx.Roots {
 		if err := objGenCtx.generateForPackage(pkg); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
+
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
+	}
+
 	return nil
 }
 
@@ -158,7 +168,6 @@ type ObjectGenCtx struct {
 
 // generateForPackage generates apply configuration implementations for
 // types in the given package, writing the formatted result to given writer.
-// May return nil if source could not be generated.
 func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	enabled, _ := enabledOnPackage(ctx.Collector, root)
 	if !enabled {
@@ -171,10 +180,7 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	arguments := args.New()
 	arguments.GoHeaderFile = ctx.HeaderFilePath
 
-	outpkg, _ := outputPkg(ctx.Collector, root)
-	if outpkg == "" {
-		outpkg = importPathSuffix
-	}
+	outpkg := outputPkg(ctx.Collector, root)
 
 	arguments.OutputDir = filepath.Join(root.Dir, outpkg)
 	arguments.OutputPkg = filepath.Join(root.Package.PkgPath, outpkg)
