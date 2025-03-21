@@ -18,7 +18,7 @@ limitations under the License.
 // +versionName=v1
 // +kubebuilder:ac:generate=true
 // +kubebuilder:ac:output:package="applyconfiguration"
-package testdata
+package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

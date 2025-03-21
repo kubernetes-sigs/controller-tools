@@ -76,7 +76,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 			// Copy the testdata directory, but removed the generated files.
 			Expect(os.CopyFS(tmpDir, os.DirFS(cronjobDir))).To(Succeed(), "Should be able to copy source files")
-			Expect(os.RemoveAll(filepath.Join(tmpDir, applyConfigurationDir))).To(Succeed(), "Should be able to remove generated file from temp directory")
+			Expect(os.RemoveAll(filepath.Join(tmpDir, "api/v1", applyConfigurationDir))).To(Succeed(), "Should be able to remove generated file from temp directory")
 		})
 
 		By("Switching into testdata to appease go modules", func() {
@@ -97,7 +97,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 	})
 
 	DescribeTable("should be able to verify generated ApplyConfiguration types for the CronJob schema", func(outputPackage string) {
-		Expect(replaceOutputPkgMarker(".", outputPackage)).To(Succeed())
+		Expect(replaceOutputPkgMarker("./api/v1", outputPackage)).To(Succeed())
 
 		// The output is used to capture the generated CRD file.
 		// The output of the applyconfiguration cannot be generated to memory, gengo handles all of the writing to disk directly.
@@ -105,19 +105,21 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		By("Initializing the runtime")
 		optionsRegistry := &markers.Registry{}
+		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("crd", markers.DescribesPackage, crd.Generator{})))).To(Succeed())
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
 
 		rt, err := genall.FromOptions(optionsRegistry, []string{
 			"crd:allowDangerousTypes=true,ignoreUnexportedFields=true", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
 			"applyconfiguration",
+			"paths=./api/v1",
 		})
 		Expect(err).NotTo(HaveOccurred())
 
 		rt.OutputRules = genall.OutputRules{Default: output}
 
 		originalFS := os.DirFS(filepath.Join(originalCWD, cronjobDir))
-		tmpFS := os.DirFS(".")
+		tmpFS := os.DirFS("./api/v1")
 
 		By("Running the generator")
 		hadErrs := rt.Run()
@@ -127,7 +129,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		filesInOriginal := make(map[string][]byte)
 		originalFileNames := sets.New[string]()
-		Expect(fs.WalkDir(originalFS, applyConfigurationDir, func(path string, d fs.DirEntry, err error) error {
+		Expect(fs.WalkDir(originalFS, filepath.Join("api/v1", applyConfigurationDir), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -142,7 +144,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 			}
 
 			// Record the path without the path prefix for comparison later.
-			path = strings.TrimPrefix(path, applyConfigurationDir+"/")
+			path = strings.TrimPrefix(path, filepath.Join("api/v1", applyConfigurationDir)+"/")
 			originalFileNames.Insert(path)
 			filesInOriginal[path] = data
 			return nil
@@ -159,7 +161,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 				return nil
 			}
 
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(filepath.Join("./api/v1", path))
 			if err != nil {
 				return fmt.Errorf("error reading file %s: %w", path, err)
 			}
@@ -179,7 +181,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 			content = []byte(strings.Replace(string(content), "package applyconfiguration", fmt.Sprintf("package %s", outputPackage), 1))
 
 			// Make sure the import paths are correct for the newly generated content.
-			content = []byte(strings.ReplaceAll(string(content), "testdata/cronjob/applyconfiguration", fmt.Sprintf("testdata/cronjob/%s", outputPackage)))
+			content = []byte(strings.ReplaceAll(string(content), "testdata/cronjob/api/v1/applyconfiguration", fmt.Sprintf("testdata/cronjob/api/v1/%s", outputPackage)))
 
 			Expect(string(filesInOutput[name])).To(BeComparableTo(string(content)), "Generated files should match the checked in files, diff found in %s", name)
 		}
