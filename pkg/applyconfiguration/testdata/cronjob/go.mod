@@ -1,4 +1,4 @@
-module sigs.k8s.io/controller-tools/pkg/applyconfigurations/testdata/cronjob
+module sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob
 
 go 1.23.0
 

@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 // Package applyconfigurations generates types for constructing declarative apply configurations.
-package applyconfigurations
+package applyconfiguration
