@@ -119,7 +119,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		rt.OutputRules = genall.OutputRules{Default: output}
 
 		originalFS := os.DirFS(filepath.Join(originalCWD, cronjobDir))
-		tmpFS := os.DirFS("./api/v1")
+		tmpFS := os.DirFS(".")
 
 		By("Running the generator")
 		hadErrs := rt.Run()
@@ -152,7 +152,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		filesInOutput := make(map[string][]byte)
 		outputFileNames := sets.New[string]()
-		Expect(fs.WalkDir(tmpFS, outputPackage, func(path string, d fs.DirEntry, err error) error {
+		Expect(fs.WalkDir(tmpFS, filepath.Join("api/v1", outputPackage), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -161,13 +161,13 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 				return nil
 			}
 
-			data, err := os.ReadFile(filepath.Join("./api/v1", path))
+			data, err := os.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("error reading file %s: %w", path, err)
 			}
 
 			// Record the path without the path prefix for comparison later.
-			path = strings.TrimPrefix(path, outputPackage+"/")
+			path = strings.TrimPrefix(path, filepath.Join("api/v1", outputPackage)+"/")
 			outputFileNames.Insert(path)
 			filesInOutput[path] = data
 			return nil
@@ -177,17 +177,21 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		Expect(outputFileNames.UnsortedList()).To(ConsistOf(originalFileNames.UnsortedList()), "Generated files should match the checked in files")
 
 		for name, content := range filesInOriginal {
+			// If the output package uses a relative path we need to remove the "../" from the package name.
+			outputPackageName := strings.ReplaceAll(outputPackage, "../", "")
+
 			// Make sure the package string is correct for the newly generated content.
-			content = []byte(strings.Replace(string(content), "package applyconfiguration", fmt.Sprintf("package %s", outputPackage), 1))
+			content = []byte(strings.Replace(string(content), "package applyconfiguration", fmt.Sprintf("package %s", outputPackageName), 1))
 
 			// Make sure the import paths are correct for the newly generated content.
-			content = []byte(strings.ReplaceAll(string(content), "testdata/cronjob/api/v1/applyconfiguration", fmt.Sprintf("testdata/cronjob/api/v1/%s", outputPackage)))
+			content = []byte(strings.ReplaceAll(string(content), "testdata/cronjob/api/v1/applyconfiguration", filepath.Join("testdata/cronjob/api/v1", outputPackage)))
 
 			Expect(string(filesInOutput[name])).To(BeComparableTo(string(content)), "Generated files should match the checked in files, diff found in %s", name)
 		}
 	},
 		Entry("with the default applyconfiguration output package", "applyconfiguration"),
 		Entry("with the an alternative output package", "other"),
+		Entry("with a package outside of the current directory", "../../clients"),
 	)
 })
 
