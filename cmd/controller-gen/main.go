@@ -25,7 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/controller-tools/pkg/applyconfigurations"
+	"sigs.k8s.io/controller-tools/pkg/applyconfiguration"
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/deepcopy"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -53,7 +53,7 @@ var (
 		"crd":                crd.Generator{},
 		"rbac":               rbac.Generator{},
 		"object":             deepcopy.Generator{},
-		"applyconfiguration": applyconfigurations.Generator{},
+		"applyconfiguration": applyconfiguration.Generator{},
 		"webhook":            webhook.Generator{},
 		"schemapatch":        schemapatcher.Generator{},
 	}
