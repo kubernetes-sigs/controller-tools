@@ -18,14 +18,36 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 	// Group=testdata, Version=cronjob
 	case cronjob.SchemeGroupVersion.WithKind("AssociativeType"):
 		return &testdatacronjob.AssociativeTypeApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("ContainsNestedMap"):
+		return &testdatacronjob.ContainsNestedMapApplyConfiguration{}
 	case cronjob.SchemeGroupVersion.WithKind("CronJob"):
 		return &testdatacronjob.CronJobApplyConfiguration{}
 	case cronjob.SchemeGroupVersion.WithKind("CronJobSpec"):
 		return &testdatacronjob.CronJobSpecApplyConfiguration{}
 	case cronjob.SchemeGroupVersion.WithKind("CronJobStatus"):
 		return &testdatacronjob.CronJobStatusApplyConfiguration{}
-	case cronjob.SchemeGroupVersion.WithKind("ExampleStruct"):
-		return &testdatacronjob.ExampleStructApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("Duration"):
+		return &testdatacronjob.DurationApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("EmbeddedStruct"):
+		return &testdatacronjob.EmbeddedStructApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("EmpiableObject"):
+		return &testdatacronjob.EmpiableObjectApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("ExportedStruct"):
+		return &testdatacronjob.ExportedStructApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("JustNestedObject"):
+		return &testdatacronjob.JustNestedObjectApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("MinMaxObject"):
+		return &testdatacronjob.MinMaxObjectApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("NestedObject"):
+		return &testdatacronjob.NestedObjectApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("NestedStructWithSeveralFields"):
+		return &testdatacronjob.NestedStructWithSeveralFieldsApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("Preserved"):
+		return &testdatacronjob.PreservedApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("RootObject"):
+		return &testdatacronjob.RootObjectApplyConfiguration{}
+	case cronjob.SchemeGroupVersion.WithKind("UnexportedStruct"):
+		return &testdatacronjob.unexportedStructApplyConfiguration{}
 
 	}
 	return nil

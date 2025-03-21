@@ -109,7 +109,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
 
 		rt, err := genall.FromOptions(optionsRegistry, []string{
-			"crd", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
+			"crd:allowDangerousTypes=true,ignoreUnexportedFields=true", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
 			"applyconfiguration",
 		})
 		Expect(err).NotTo(HaveOccurred())
