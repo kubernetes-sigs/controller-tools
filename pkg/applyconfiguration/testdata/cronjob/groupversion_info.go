@@ -17,7 +17,7 @@ limitations under the License.
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
 // +kubebuilder:ac:generate=true
-// +kubebuilder:ac:output:package="testapplyconfiguration"
+// +kubebuilder:ac:output:package="applyconfiguration"
 package testdata
 
 import (
