@@ -284,7 +284,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 				var member = &ctx.info.EnumValues[i]
 				var v *ast.BasicLit
 				if v, ok = member.Values[0].(*ast.BasicLit); !ok {
-					ctx.pkg.AddError(loader.ErrFromNode(errors.New("constants for a +enum decorated type should be stirngs"), ident))
+					ctx.pkg.AddError(loader.ErrFromNode(errors.New("constants for a +enum decorated type should be strings"), ident))
 				}
 				var value string
 				if value, err = strconv.Unquote(v.Value); err != nil {
