@@ -17,12 +17,14 @@ limitations under the License.
 package crd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
 	"sort"
+	"strconv"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -274,6 +276,29 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
+		var enumMembers []apiext.JSON
+		if ctx.info.Markers.Get("enum") != nil && typ == "string" {
+			enumMembers = make([]apiext.JSON, 0, len(ctx.info.EnumValues))
+			var ok bool
+			for i := range ctx.info.EnumValues {
+				var member = &ctx.info.EnumValues[i]
+				var v *ast.BasicLit
+				if v, ok = member.Values[0].(*ast.BasicLit); !ok {
+					ctx.pkg.AddError(loader.ErrFromNode(errors.New("constants for a +enum decorated type should be stirngs"), ident))
+				}
+				var value string
+				if value, err = strconv.Unquote(v.Value); err != nil {
+					ctx.pkg.AddError(loader.ErrFromNode(err, ident))
+					continue
+				}
+				var j apiext.JSON
+				if j.Raw, err = json.Marshal(value); err != nil {
+					ctx.pkg.AddError(loader.ErrFromNode(err, ident))
+					continue
+				}
+				enumMembers = append(enumMembers, j)
+			}
+		}
 		// Check for type aliasing to a basic type for gotypesalias=0. See more
 		// in documentation https://pkg.go.dev/go/types#Alias:
 		// > For gotypesalias=1, alias declarations produce an Alias type.
@@ -284,12 +309,14 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			link := TypeRefLink("", ident.Name)
 			return &apiext.JSONSchemaProps{
 				Type:   typ,
+				Enum:   enumMembers,
 				Format: fmt,
 				Ref:    &link,
 			}
 		}
 		return &apiext.JSONSchemaProps{
 			Type:   typ,
+			Enum:   enumMembers,
 			Format: fmt,
 		}
 	}

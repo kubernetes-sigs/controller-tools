@@ -67,6 +67,17 @@ func (Enum) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (InferredEnum) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "enum marks a string type as an enum.",
+			Details: "It infers the members from constants declared of that type.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Example) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

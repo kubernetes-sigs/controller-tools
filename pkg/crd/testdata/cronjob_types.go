@@ -42,6 +42,15 @@ import (
 
 const DefaultRefValue = "defaultRefValue"
 
+// +enum
+type EnumType string
+
+const (
+	EnumType_One   EnumType = "one"
+	EnumType_Two   EnumType = "two"
+	EnumType_Three EnumType = "three"
+)
+
 // CronJobSpec defines the desired state of CronJob
 // +kubebuilder:validation:XValidation:rule="has(oldSelf.forbiddenInt) || !has(self.forbiddenInt)",message="forbiddenInt is not allowed",fieldPath=".forbiddenInt",reason="FieldValueForbidden"
 type CronJobSpec struct {
@@ -331,6 +340,8 @@ type CronJobSpec struct {
 	// This tests slice item validation with enum
 	// +kubebuilder:validation:items:Enum=0;1;3
 	EnumSlice []int `json:"enumSlice,omitempty"`
+
+	EnumValue EnumType `json:"enumValue,omitempty"`
 
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 

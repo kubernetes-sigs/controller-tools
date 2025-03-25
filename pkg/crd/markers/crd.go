@@ -399,6 +399,12 @@ type SelectableField struct {
 	JSONPath string `marker:"JSONPath"`
 }
 
+// +controllertools:marker:generateHelp:category="CRD validation"
+
+// Enum marker marks a string alias type as an enum.
+// It infers the members from constants declared of that type.
+type InferredEnum struct{}
+
 func (s SelectableField) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
 	var selectableFields *[]apiext.SelectableField
 	for i := range crd.Versions {
