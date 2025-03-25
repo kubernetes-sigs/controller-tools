@@ -51,6 +51,20 @@ const (
 	EnumType_Three EnumType = "three"
 )
 
+// This enum type tests for whether when both "+enum" and
+// "+kubebuilder:validation:Enum" are defined the former takes precedence.
+// It should.
+//
+// +enum
+// +kubebuilder:validation:Enum=Allow;Forbid;Replace
+type AnotherEnumType string
+
+const (
+	AnotherEnumType_One   AnotherEnumType = "another_one"
+	AnotherEnumType_Two   AnotherEnumType = "another_two"
+	AnotherEnumType_Three AnotherEnumType = "another_three"
+)
+
 // CronJobSpec defines the desired state of CronJob
 // +kubebuilder:validation:XValidation:rule="has(oldSelf.forbiddenInt) || !has(self.forbiddenInt)",message="forbiddenInt is not allowed",fieldPath=".forbiddenInt",reason="FieldValueForbidden"
 type CronJobSpec struct {
@@ -341,7 +355,8 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:items:Enum=0;1;3
 	EnumSlice []int `json:"enumSlice,omitempty"`
 
-	EnumValue EnumType `json:"enumValue,omitempty"`
+	EnumValue        EnumType        `json:"enumValue,omitempty"`
+	AnotherEnumValue AnotherEnumType `json:"anotherEnumValue,omitempty"`
 
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 

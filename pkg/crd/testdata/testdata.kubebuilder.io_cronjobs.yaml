@@ -51,6 +51,16 @@ spec:
                 - PreferDualStack
                 - RequireDualStack
                 type: string
+              anotherEnumValue:
+                description: |-
+                  This enum type tests for whether when both "+enum" and
+                  "+kubebuilder:validation:Enum" are defined the former takes precedence.
+                  It should.
+                enum:
+                - another_one
+                - another_two
+                - another_three
+                type: string
               array:
                 description: Checks that fixed-length arrays work
                 items:

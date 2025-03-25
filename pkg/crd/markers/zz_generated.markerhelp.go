@@ -67,17 +67,6 @@ func (Enum) Help() *markers.DefinitionHelp {
 	}
 }
 
-func (InferredEnum) Help() *markers.DefinitionHelp {
-	return &markers.DefinitionHelp{
-		Category: "CRD validation",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "enum marks a string type as an enum.",
-			Details: "It infers the members from constants declared of that type.",
-		},
-		FieldHelp: map[string]markers.DetailedHelp{},
-	}
-}
-
 func (Example) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
@@ -122,6 +111,17 @@ func (Format) Help() *markers.DefinitionHelp {
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies additional \"complex\" formatting for this field.",
 			Details: "For example, a date-time field would be marked as \"type: string\" and\n\"format: date-time\".",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (InferredEnum) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "Enum marker marks a string alias type as an enum.",
+			Details: "It infers the members from constants declared of that type.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
