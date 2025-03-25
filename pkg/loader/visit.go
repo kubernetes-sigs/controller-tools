@@ -44,6 +44,8 @@ func EachType(pkg *Package, cb TypeCallback) {
 	}
 }
 
+// EachConstDecl calls the given callback for each
+// *ast.ValueSpec associated with constant declarations.
 func EachConstDecl(pkg *Package, cb ConstCallback) {
 	pkg.NeedSyntax()
 	for _, file := range pkg.Syntax {
