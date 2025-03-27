@@ -126,7 +126,6 @@ func Test_labelFromPathMarker_ApplyToResource(t *testing.T) {
 			if !reflect.DeepEqual(tt.resource, tt.wantResource) {
 				t.Errorf("labelFromPathMarker.ApplyToResource() = %v, want %v", tt.resource, tt.wantResource)
 			}
-
 		})
 	}
 }
