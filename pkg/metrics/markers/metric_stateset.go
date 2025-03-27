@@ -74,7 +74,7 @@ func (s stateSetMarker) ToGenerator(basePath ...string) (*config.Generator, erro
 	if s.JSONPath != nil {
 		valueFrom, err = s.JSONPath.Parse()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse JSONPath: %v", err)
+			return nil, fmt.Errorf("failed to parse JSONPath: %w", err)
 		}
 	}
 
