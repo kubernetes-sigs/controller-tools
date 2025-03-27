@@ -77,7 +77,7 @@ func (g gaugeMarker) ToGenerator(basePath ...string) (*config.Generator, error) 
 	if g.ValueFrom != nil {
 		valueFrom, err = g.ValueFrom.Parse()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse ValueFrom: %v", err)
+			return nil, fmt.Errorf("failed to parse ValueFrom: %w", err)
 		}
 	}
 
