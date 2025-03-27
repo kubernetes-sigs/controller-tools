@@ -79,8 +79,8 @@ func Test_Generate(t *testing.T) {
 	}
 
 	generatedData := map[string]string{
-		"metrics.yaml": header + "---\n" + string(output[1]),
-		"rbac.yaml":    "---\n" + string(output[2]),
+		"metrics.yaml": header + "---\n" + output[1],
+		"rbac.yaml":    "---\n" + output[2],
 	}
 
 	t.Log("Comparing output to testdata to check for regressions")
