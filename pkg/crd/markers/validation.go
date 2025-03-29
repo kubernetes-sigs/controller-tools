@@ -113,6 +113,8 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(XPreserveUnknownFields{}.Help()),
 	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesType, XPreserveUnknownFields{})).
 		WithHelp(XPreserveUnknownFields{}.Help()),
+	must(markers.MakeDefinition("enum", markers.DescribesType, InferredEnum{})).
+		WithHelp(InferredEnum{}.Help()),
 }
 
 func init() {
@@ -468,6 +470,11 @@ func (m MaxProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (m Enum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	// apply this enum only if there were no other enum values specified
+	// (e.g. via a "+enum" marker)
+	if len(schema.Enum) != 0 {
+		return nil
+	}
 	// TODO(directxman12): this is a bit hacky -- we should
 	// probably support AnyType better + using the schema structure
 	vals := make([]apiext.JSON, len(m))
