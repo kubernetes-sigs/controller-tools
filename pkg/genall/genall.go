@@ -218,7 +218,11 @@ func (g GenerationContext) ReadFile(path string) ([]byte, error) {
 // ForRoots produces a Runtime to run the given generators against the
 // given packages.  It outputs to /dev/null by default.
 func (g Generators) ForRoots(rootPaths ...string) (*Runtime, error) {
-	roots, err := loader.LoadRoots(rootPaths...)
+	return g.ForRootsWithConfig(&packages.Config{}, rootPaths...)
+}
+
+func (g Generators) ForRootsWithConfig(cfg *packages.Config, rootPaths ...string) (*Runtime, error) {
+	roots, err := loader.LoadRootsWithConfig(cfg, rootPaths...)
 	if err != nil {
 		return nil, err
 	}
