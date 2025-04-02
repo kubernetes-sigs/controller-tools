@@ -244,10 +244,10 @@ func FixTopLevelMetadata(crd apiext.CustomResourceDefinition) {
 // addAttribution adds attribution info to indicate controller-gen tool was used
 // to generate this CRD definition along with the version info.
 func addAttribution(crd *apiext.CustomResourceDefinition) {
-	if crd.ObjectMeta.Annotations == nil {
-		crd.ObjectMeta.Annotations = map[string]string{}
+	if crd.Annotations == nil {
+		crd.Annotations = map[string]string{}
 	}
-	crd.ObjectMeta.Annotations["controller-gen.kubebuilder.io/version"] = version.Version()
+	crd.Annotations["controller-gen.kubebuilder.io/version"] = version.Version()
 }
 
 // FindMetav1 locates the actual package representing metav1 amongst
