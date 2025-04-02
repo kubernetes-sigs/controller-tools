@@ -401,12 +401,12 @@ func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Valu
 	// the "hard" case -- bare tokens not including ',' (the argument
 	// separator), ';' (the slice separator), ':' (the map separator), or '}'
 	// (delimitted slice ender)
-	startPos := scanner.Position.Offset
+	startPos := scanner.Offset
 	for hint := peekNoSpace(scanner); hint != ',' && hint != ';' && hint != ':' && hint != '}' && hint != sc.EOF; hint = peekNoSpace(scanner) {
 		// skip this token
 		scanner.Scan()
 	}
-	endPos := scanner.Position.Offset + len(scanner.TokenText())
+	endPos := scanner.Offset + len(scanner.TokenText())
 	castAndSet(out, reflect.ValueOf(raw[startPos:endPos]))
 }
 
@@ -868,11 +868,9 @@ func (d *Definition) Parse(rawMarker string) (interface{}, error) {
 		seen[""] = struct{}{} // mark as seen for strict definitions
 	} else if !d.Empty() && scanner.Peek() != sc.EOF {
 		// if we expect *and* actually have arguments passed
-		for {
+		for expect(scanner, sc.Ident, "argument name") {
 			// parse the argument name
-			if !expect(scanner, sc.Ident, "argument name") {
-				break
-			}
+
 			argName := scanner.TokenText()
 			if !expect(scanner, '=', "equals") {
 				break
@@ -913,7 +911,7 @@ func (d *Definition) Parse(rawMarker string) (interface{}, error) {
 	}
 
 	if tok := scanner.Scan(); tok != sc.EOF {
-		scanner.Error(scanner, fmt.Sprintf("extra arguments provided: %q", fields[scanner.Position.Offset:]))
+		scanner.Error(scanner, fmt.Sprintf("extra arguments provided: %q", fields[scanner.Offset:]))
 	}
 
 	if d.Strict {
