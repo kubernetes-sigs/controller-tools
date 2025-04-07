@@ -190,6 +190,8 @@ k8s.io/apiextensions-apiserver v0.33.0-beta.0 h1:3oqBvfd26IOekt96KEfE8A0wA/k1wDS
 k8s.io/apiextensions-apiserver v0.33.0-beta.0/go.mod h1:TKTeoFcmGvtiDNV+wj8wJfZhamZNOhvi9yOIE2d1iWs=
 k8s.io/apimachinery v0.33.0-beta.0 h1:vLDBChfQwyimk6AbuT7OZOIqxSg/44JlXuxqBk85j68=
 k8s.io/apimachinery v0.33.0-beta.0/go.mod h1:S2OIkExGqJOXYSYcAJwQ9zWcc6BkBUdTJUu4M7z0cvo=
+k8s.io/client-go v0.33.0-beta.0 h1:xRGKK5hU39pb6CFDCDOOlG+LEenB93/RK9hoP4eyAsU=
+k8s.io/client-go v0.33.0-beta.0/go.mod h1:RF6hSu+FncpgHQs1zA1UfGbMq8gxay89r37bCQe+Mj4=
 k8s.io/code-generator v0.33.0-beta.0 h1:QYiWYFUT9G7lnF1ucDYr/sZUaG/kptrooX2PJxEL+Go=
 k8s.io/code-generator v0.33.0-beta.0/go.mod h1:RBvFpvqtyQygCBjMayNyYqdzy+89LdzqAx0Th+dgmzQ=
 k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 h1:2OX19X59HxDprNCVrWi6jb7LW1PoqTlYqEq5H2oetog=
