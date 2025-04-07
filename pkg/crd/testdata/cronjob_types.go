@@ -113,20 +113,24 @@ type CronJobSpec struct {
 	// This tests that primitive defaulting can be performed.
 	// +kubebuilder:default=forty-two
 	// +kubebuilder:example=forty-two
+	// +kubebuilder:title=DefaultedString
 	DefaultedString string `json:"defaultedString"`
 
 	// This tests that slice defaulting can be performed.
 	// +kubebuilder:default={a,b}
 	// +kubebuilder:example={a,b}
+	// +kubebuilder:title=DefaultedSlice
 	DefaultedSlice []string `json:"defaultedSlice"`
 
 	// This tests that slice and object defaulting can be performed.
 	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {foo: "qux", bar: false}}}
 	// +kubebuilder:example={{nested: {foo: "baz", bar: true}},{nested: {foo: "qux", bar: false}}}
+	// +kubebuilder:title="124"
 	DefaultedObject []RootObject `json:"defaultedObject"`
 
 	// This tests that empty slice defaulting can be performed.
 	// +kubebuilder:default={}
+	// +kubebuilder:title="{}"
 	DefaultedEmptySlice []string `json:"defaultedEmptySlice"`
 
 	// This tests that an empty object defaulting can be performed on a map.
