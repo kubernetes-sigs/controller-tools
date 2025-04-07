@@ -1,14 +1,11 @@
+version: "2"
 run:
-  allow-parallel-runners: true
-  modules-download-mode: readonly
-  # Increase the default deadline from 1m as some module operations can take a
-  # while if uncached!
-  timeout: 10m
   go: "1.24"
-
+  modules-download-mode: readonly
+  allow-parallel-runners: true
 linters:
   # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml
-  disable-all: true
+  default: none
   enable:
     - asasalint
     - asciicheck
@@ -25,10 +22,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
     - goprintffuncname
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -40,74 +34,91 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - stylecheck
     - tagliatelle
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
-
-issues:
-  exclude-rules:
-    # Dot imports for gomega and ginkgo are allowed
-    # within test files.
-  - path: _test\.go
-    text: should not use dot imports
-    # Ignore error type switch case
-  - path: "pkg/loader/loader.go"
-    linters:
-      - errorlint
-    # Ignore test files
-  - linters:
-      - dupl
-      - ginkgolinter
-    path: _test\.go
-  - linters:
-      - gocritic
-    path: "pkg/markers/help.go"
-  - linters:
-      - exhaustive
-    path: "pkg/markers/parse.go|pkg/deepcopy/traverse.go|pkg/genall/help/types.go|pkg/crd/schema.go|pkg/crd/flatten.go"
-    # Ignore consider pre-allocating variables
-  - linters:
-      - prealloc
-    text: Consider pre-allocating
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-      - shadow
-  importas:
-    no-unaliased: true
-  revive:
-    # By default, revive will enable only the linting rules that are named in the configuration file.
-    # So, it's needed to explicitly enable all required rules here.
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      enable-all: true
+    importas:
+      no-unaliased: true
+    revive:
+      # By default, revive will enable only the linting rules that are named in the configuration file.
+      # So, it's needed to explicitly enable all required rules here.
+      rules:
+        # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        #
+        # Rules in addition to the recommended configuration above.
+        #
+        - name: bool-literal-in-expr
+        - name: constant-logical-expr
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: if-return
-      - name: increment-decrement
-      - name: var-naming
-      - name: var-declaration
-      - name: range
-      - name: receiver-naming
-      - name: time-naming
-      - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
-      - name: superfluous-else
-      - name: unreachable-code
-      - name: redefines-builtin-id
-      #
-      # Rules in addition to the recommended configuration above.
-      #
-      - name: bool-literal-in-expr
-      - name: constant-logical-expr
+      # Dot imports for gomega and ginkgo are allowed
+      # within test files.
+      - path: _test\.go
+        text: should not use dot imports
+      # Ignore error type switch case
+      - linters:
+          - errorlint
+        path: pkg/loader/loader.go
+      # Ignore test files
+      - linters:
+          - dupl
+          - ginkgolinter
+        path: _test\.go
+      - linters:
+          - gocritic
+        path: pkg/markers/help.go
+      - linters:
+          - exhaustive
+        path: pkg/markers/parse.go|pkg/deepcopy/traverse.go|pkg/genall/help/types.go|pkg/crd/schema.go|pkg/crd/flatten.go
+      # Ignore consider pre-allocating variables
+      - linters:
+          - prealloc
+        text: Consider pre-allocating
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
