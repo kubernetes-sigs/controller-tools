@@ -4,6 +4,7 @@ run:
   modules-download-mode: readonly
   allow-parallel-runners: true
 linters:
+  # sync from https://github.com/kubernetes-sigs/controller-runtime/blob/main/.golangci.yml
   default: none
   enable:
     - asasalint
@@ -47,7 +48,10 @@ linters:
     importas:
       no-unaliased: true
     revive:
+      # By default, revive will enable only the linting rules that are named in the configuration file.
+      # So, it's needed to explicitly enable all required rules here.
       rules:
+        # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
         - name: blank-imports
         - name: context-as-argument
         - name: context-keys-type
@@ -68,6 +72,9 @@ linters:
         - name: superfluous-else
         - name: unreachable-code
         - name: redefines-builtin-id
+        #
+        # Rules in addition to the recommended configuration above.
+        #
         - name: bool-literal-in-expr
         - name: constant-logical-expr
   exclusions:
@@ -78,11 +85,15 @@ linters:
       - legacy
       - std-error-handling
     rules:
+      # Dot imports for gomega and ginkgo are allowed
+      # within test files.
       - path: _test\.go
         text: should not use dot imports
+      # Ignore error type switch case
       - linters:
           - errorlint
         path: pkg/loader/loader.go
+      # Ignore test files
       - linters:
           - dupl
           - ginkgolinter
@@ -93,6 +104,7 @@ linters:
       - linters:
           - exhaustive
         path: pkg/markers/parse.go|pkg/deepcopy/traverse.go|pkg/genall/help/types.go|pkg/crd/schema.go|pkg/crd/flatten.go
+      # Ignore consider pre-allocating variables
       - linters:
           - prealloc
         text: Consider pre-allocating
