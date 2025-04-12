@@ -38,7 +38,8 @@ import (
 
 const (
 	// defPrefix is the prefix used to link to definitions in the OpenAPI schema.
-	defPrefix = "#/definitions/"
+	defPrefix  = "#/definitions/"
+	typeString = "string"
 )
 
 // byteType is the types.Type for byte (see the types documention
@@ -128,9 +129,9 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 
 		// If the obj implements a text marshaler, encode it as a string.
 		case implements(obj.Type(), textMarshaler):
-			schema := &apiext.JSONSchemaProps{Type: "string"}
+			schema := &apiext.JSONSchemaProps{Type: typeString}
 			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
-			if schema.Type != "string" {
+			if schema.Type != typeString {
 				err := fmt.Errorf("%q implements encoding.TextMarshaler but schema type is not string: %q", ctx.info.RawSpec.Name, schema.Type)
 				ctx.pkg.AddError(loader.ErrFromNode(err, ctx.info.RawSpec.Type))
 			}
@@ -277,7 +278,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
 		var enumMembers []apiext.JSON
-		if ctx.info.Markers.Get("enum") != nil && typ == "string" {
+		if ctx.info.Markers.Get("enum") != nil && typ == typeString {
 			enumMembers = make([]apiext.JSON, 0, len(ctx.info.EnumValues))
 			var ok bool
 			for i := range ctx.info.EnumValues {
@@ -361,7 +362,7 @@ func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiext.JSONSchemaP
 		// byte slices are represented as base64-encoded strings
 		// (the format is defined in OpenAPI v3, but not JSON Schema)
 		return &apiext.JSONSchemaProps{
-			Type:   "string",
+			Type:   typeString,
 			Format: "byte",
 		}
 	}
@@ -529,7 +530,7 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 	case basicInfo&types.IsBoolean != 0:
 		typ = "boolean"
 	case basicInfo&types.IsString != 0:
-		typ = "string"
+		typ = typeString
 	case basicInfo&types.IsInteger != 0:
 		typ = "integer"
 	case basicInfo&types.IsFloat != 0:
