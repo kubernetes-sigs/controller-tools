@@ -57,9 +57,9 @@ spec:
                   "+kubebuilder:validation:Enum" are defined the former takes precedence.
                   It should.
                 enum:
-                - another_one
-                - another_two
-                - another_three
+                - Allow
+                - Forbid
+                - Replace
                 type: string
               array:
                 description: Checks that fixed-length arrays work
@@ -9222,6 +9222,17 @@ spec:
                 description: |-
                   This flag is like suspend, but for when you really mean it.
                   It helps test the +kubebuilder:validation:Type marker.
+                type: string
+              oneMoreEnumValue:
+                allOf:
+                - enum:
+                  - one
+                  - two
+                  - three
+                - enum:
+                  - Allow
+                  - Forbid
+                  - Replace
                 type: string
               onlyAllowSettingOnUpdate:
                 description: Test that we can add a field that can only be set to

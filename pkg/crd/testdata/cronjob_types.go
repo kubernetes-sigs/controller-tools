@@ -357,6 +357,8 @@ type CronJobSpec struct {
 
 	EnumValue        EnumType        `json:"enumValue,omitempty"`
 	AnotherEnumValue AnotherEnumType `json:"anotherEnumValue,omitempty"`
+	// +kubebuilder:validation:Enum=Allow;Forbid;Replace
+	OneMoreEnumValue EnumType `json:"oneMoreEnumValue,omitempty"`
 
 	HostsAlias Hosts `json:"hostsAlias,omitempty"`
 
