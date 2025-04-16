@@ -9067,6 +9067,15 @@ spec:
                 - messageExpression: '''Length has to be even but is '' + len(self.stringWithEvenLengthAndMessageExpression)
                     + '' instead'''
                   rule: self.size() % 2 == 0
+              structWithAnonymousStruct:
+                description: A struct with an anonymous struct as a field.
+                type: object
+                properties:
+                  anonymous:
+                    type: object
+                    properties: {}
+                required:
+                  - anonymous
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:
@@ -9159,6 +9168,7 @@ spec:
             - patternObject
             - schedule
             - stringPair
+            - structWithAnonymousStruct
             - structWithSeveralFields
             - twoOfAKindPart0
             - twoOfAKindPart1
