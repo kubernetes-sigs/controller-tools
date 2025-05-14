@@ -484,7 +484,7 @@ type SchemaModifier struct {
 }
 
 func (s SchemaModifier) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, _ string) error {
-	ruleRegex, err := s.parsePattern()
+	ruleRegex, err := s.ParsePattern()
 	if err != nil {
 		return fmt.Errorf("failed to parse rule: %w", err)
 	}
@@ -595,12 +595,8 @@ func (s SchemaModifier) applyToSchema(schema *apiext.JSONSchemaProps) {
 	}
 }
 
-func (s SchemaModifier) parsePattern() (*regexp.Regexp, error) {
-	pattern := s.PathPattern
-	pattern = strings.ReplaceAll(pattern, "**", "!☸!")
-	pattern = strings.ReplaceAll(pattern, "*", "[^/]+")
-	pattern = strings.ReplaceAll(pattern, "!☸!", ".*")
-
+func (s SchemaModifier) ParsePattern() (*regexp.Regexp, error) {
+	pattern := strings.NewReplacer("**", ".*", "*", "[^/]+").Replace(s.PathPattern)
 	regexStr := "^" + pattern + "$"
 
 	compiledRegex, err := regexp.Compile(regexStr)
