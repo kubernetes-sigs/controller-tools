@@ -401,12 +401,12 @@ func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Valu
 	// the "hard" case -- bare tokens not including ',' (the argument
 	// separator), ';' (the slice separator), ':' (the map separator), or '}'
 	// (delimitted slice ender)
-	startPos := scanner.Offset
+	startPos := scanner.Position.Offset
 	for hint := peekNoSpace(scanner); hint != ',' && hint != ';' && hint != ':' && hint != '}' && hint != sc.EOF; hint = peekNoSpace(scanner) {
 		// skip this token
 		scanner.Scan()
 	}
-	endPos := scanner.Offset + len(scanner.TokenText())
+	endPos := scanner.Position.Offset + len(scanner.TokenText())
 	castAndSet(out, reflect.ValueOf(raw[startPos:endPos]))
 }
 
@@ -911,7 +911,7 @@ func (d *Definition) Parse(rawMarker string) (interface{}, error) {
 	}
 
 	if tok := scanner.Scan(); tok != sc.EOF {
-		scanner.Error(scanner, fmt.Sprintf("extra arguments provided: %q", fields[scanner.Offset:]))
+		scanner.Error(scanner, fmt.Sprintf("extra arguments provided: %q", fields[scanner.Position.Offset:]))
 	}
 
 	if d.Strict {

@@ -1,6 +1,7 @@
 version: "2"
 run:
   go: "1.24"
+  timeout: 10m
   modules-download-mode: readonly
   allow-parallel-runners: true
 linters:
@@ -78,7 +79,10 @@ linters:
         - name: bool-literal-in-expr
         - name: constant-logical-expr
   exclusions:
-    generated: lax
+    generated: strict
+    paths:
+      - zz_generated.*\.go$
+      - .*conversion.*\.go$
     presets:
       - comments
       - common-false-positives
@@ -87,7 +91,9 @@ linters:
     rules:
       # Dot imports for gomega and ginkgo are allowed
       # within test files.
-      - path: _test\.go
+      - linters:
+          - revive
+        path: _test\.go
         text: should not use dot imports
       # Ignore error type switch case
       - linters:
@@ -108,17 +114,16 @@ linters:
       - linters:
           - prealloc
         text: Consider pre-allocating
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - linters:
+          - staticcheck
+        path: (.+)\.go$
+        text: (QF1008)
 formatters:
   enable:
     - gofmt
     - goimports
   exclusions:
-    generated: lax
+    generated: strict
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - zz_generated.*\.go$
+      - .*conversion.*\.go$

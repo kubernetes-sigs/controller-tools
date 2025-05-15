@@ -183,7 +183,7 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	outpkg := outputPkg(ctx.Collector, root)
 
 	arguments.OutputDir = filepath.Join(root.Dir, outpkg)
-	arguments.OutputPkg = filepath.Join(root.PkgPath, outpkg)
+	arguments.OutputPkg = filepath.Join(root.Package.PkgPath, outpkg)
 
 	// The following code is based on gengo/v2.Execute.
 	// We have lifted it from there so that we can adjust the markers on the types to make sure

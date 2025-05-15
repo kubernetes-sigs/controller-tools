@@ -112,7 +112,7 @@ func (c *Collector) parseMarkersInPackage(nodeMarkersRaw map[ast.Node][]markerCo
 		markerVals := make(map[string][]interface{})
 		for _, markerRaw := range markersRaw {
 			markerText := markerRaw.Text()
-			def := c.Lookup(markerText, target)
+			def := c.Registry.Lookup(markerText, target)
 			if def == nil {
 				continue
 			}
@@ -173,14 +173,14 @@ func (c *Collector) associateFileMarkers(file *ast.File) map[ast.Node][]markerCo
 				continue
 			}
 			markerText := marker.Text()
-			typeDef := c.Lookup(markerText, DescribesType)
+			typeDef := c.Registry.Lookup(markerText, DescribesType)
 			if typeDef != nil {
 				// prefer assuming type-level markers
 				markers[endOfMarkers] = marker
 				endOfMarkers++
 				continue
 			}
-			def := c.Lookup(markerText, DescribesPackage)
+			def := c.Registry.Lookup(markerText, DescribesPackage)
 			if def == nil {
 				// assume type-level unless proven otherwise
 				markers[endOfMarkers] = marker

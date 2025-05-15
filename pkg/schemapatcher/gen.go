@@ -190,7 +190,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 		// with them against older servers.
 		for _, crd := range set.CRDVersions {
 			if err := func() error {
-				outWriter, err := ctx.Open(nil, crd.FileName)
+				outWriter, err := ctx.OutputRule.Open(nil, crd.FileName)
 				if err != nil {
 					return err
 				}
