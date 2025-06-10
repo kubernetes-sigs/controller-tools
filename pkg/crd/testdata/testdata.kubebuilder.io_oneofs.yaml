@@ -1,0 +1,138 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: oneofs.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: Oneof
+    listKind: OneofList
+    plural: oneofs
+    singular: oneof
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Oneof is the Schema for the Oneof API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: OneofSpec is the spec for the oneofs API.
+            properties:
+              firstTypeWithExactOneof:
+                oneOf:
+                - required:
+                  - foo
+                - required:
+                  - bar
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    type: string
+                type: object
+              firstTypeWithOneof:
+                oneOf:
+                - not:
+                    anyOf:
+                    - required:
+                      - foo
+                    - required:
+                      - bar
+                - required:
+                  - foo
+                - required:
+                  - bar
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    type: string
+                type: object
+              secondTypeWithExactOneof:
+                allOf:
+                - oneOf:
+                  - required:
+                    - a
+                  - required:
+                    - b
+                - oneOf:
+                  - required:
+                    - c
+                  - required:
+                    - d
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+              secondTypeWithOneof:
+                allOf:
+                - oneOf:
+                  - not:
+                      anyOf:
+                      - required:
+                        - a
+                      - required:
+                        - b
+                  - required:
+                    - a
+                  - required:
+                    - b
+                - oneOf:
+                  - not:
+                      anyOf:
+                      - required:
+                        - c
+                      - required:
+                        - d
+                  - required:
+                    - c
+                  - required:
+                    - d
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
+  

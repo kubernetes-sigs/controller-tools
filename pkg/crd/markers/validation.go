@@ -31,6 +31,9 @@ const (
 
 	SchemalessName        = "kubebuilder:validation:Schemaless"
 	ValidationItemsPrefix = validationPrefix + "items:"
+
+	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
+	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -74,6 +77,14 @@ var ValidationMarkers = mustMakeAllWithPrefix(validationPrefix, markers.Describe
 	XIntOrString{},
 	XValidation{},
 )
+
+// TypeOnlyMarkers list type-specific validation markers (i.e. those markers that don't make sense on a field, and thus aren't in ValidationMarkers or FieldOnlyMarkers).
+var TypeOnlyMarkers = []*definitionWithHelp{
+	must(markers.MakeDefinition(ValidationAtMostOneOfPrefix, markers.DescribesType, AtMostOneOf(nil))).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtMostOneOf constraint.")),
+	must(markers.MakeDefinition(ValidationExactlyOneOfPrefix, markers.DescribesType, ExactlyOneOf(nil))).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
+}
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
 // sense on a type, and thus aren't in ValidationMarkers).
@@ -141,6 +152,7 @@ func init() {
 	}
 
 	AllDefinitions = append(AllDefinitions, FieldOnlyMarkers...)
+	AllDefinitions = append(AllDefinitions, TypeOnlyMarkers...)
 	AllDefinitions = append(AllDefinitions, ValidationIshMarkers...)
 }
 
@@ -351,6 +363,18 @@ type XValidation struct {
 	FieldPath         string `marker:"fieldPath,optional"`
 	OptionalOldSelf   *bool  `marker:"optionalOldSelf,optional"`
 }
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// AtMostOneOf adds a validation constraint that allows at most one of the specified fields.
+//
+// This marker may be repeated to specify multiple AtMostOneOf constraints that are mutually exclusive.
+type AtMostOneOf []string
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// ExactlyOneOf adds a validation constraint that allows at exactly one of the specified fields.
+//
+// This marker may be repeated to specify multiple ExactlyOneOf constraints that are mutually exclusive.
+type ExactlyOneOf []string
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
@@ -632,6 +656,55 @@ func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		Reason:            reason,
 		FieldPath:         m.FieldPath,
 		OptionalOldSelf:   m.OptionalOldSelf,
+	})
+	return nil
+}
+
+func (fields AtMostOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	// Build the oneOf group for this AtMostOneOf
+	required := make([]apiext.JSONSchemaProps, 0, len(fields))
+	for _, field := range fields {
+		required = append(required, apiext.JSONSchemaProps{
+			Required: []string{field},
+		})
+	}
+	oneOfGroup := []apiext.JSONSchemaProps{
+		// Add a Not AnyOf constraint to allow no fields to be set (satisfies AtMostOneOf)
+		{
+			Not: &apiext.JSONSchemaProps{
+				AnyOf: required,
+			},
+		},
+	}
+	oneOfGroup = append(oneOfGroup, required...)
+
+	// Add to schema.AllOf
+	schema.AllOf = append(schema.AllOf, apiext.JSONSchemaProps{
+		OneOf: oneOfGroup,
+	})
+	return nil
+}
+
+func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	// Build the oneOf group for this ExactlyMostOneOf
+	required := make([]apiext.JSONSchemaProps, 0, len(fields))
+	for _, field := range fields {
+		required = append(required, apiext.JSONSchemaProps{
+			Required: []string{field},
+		})
+	}
+
+	// Add to schema.AllOf
+	schema.AllOf = append(schema.AllOf, apiext.JSONSchemaProps{
+		OneOf: required,
 	})
 	return nil
 }

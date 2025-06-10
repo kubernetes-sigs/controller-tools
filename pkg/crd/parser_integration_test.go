@@ -52,7 +52,6 @@ func packageErrors(pkg *loader.Package, filterKinds ...packages.ErrorKind) error
 
 var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func() {
 	Context("should properly generate and flatten the rewritten schemas", func() {
-
 		var (
 			prevCwd   string
 			pkgPaths  []string
@@ -127,6 +126,9 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			}
 
 			By(fmt.Sprintf("comparing the two %s CRDs", kind))
+			// Uncomment below to see the actual generated CRD
+			// crdStr, _ := yaml.Marshal(parser.CustomResourceDefinitions[groupKind])
+			// GinkgoT().Logf("actual CRD:\n%s", crdStr)
 			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 		}
 
@@ -174,6 +176,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			It("should successfully generate the CronJob and Job CRDs", func() {
 				assertCRD(pkgs[0], "CronJob", "testdata.kubebuilder.io_cronjobs.yaml")
 				assertCRD(pkgs[3], "Job", "testdata.kubebuilder.io_jobs.yaml")
+			})
+		})
+
+		Context("OneOf API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./oneof/..."}
+				expPkgLen = 1
+			})
+			It("should successfully generate the CRD with OneOf validation constraints", func() {
+				assertCRD(pkgs[0], "Oneof", "testdata.kubebuilder.io_oneofs.yaml")
 			})
 		})
 
@@ -338,5 +350,4 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		By("comparing the two")
 		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 	})
-
 })

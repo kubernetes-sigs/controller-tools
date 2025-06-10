@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -408,6 +409,17 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		return props
 	}
 
+	exactlyOneOf, err := oneOfValuesToSet(ctx.info.Markers[crdmarkers.ValidationExactlyOneOfPrefix])
+	if err != nil {
+		ctx.pkg.AddError(loader.ErrFromNode(err, structType))
+		return props
+	}
+	atMostOneOf, err := oneOfValuesToSet(ctx.info.Markers[crdmarkers.ValidationAtMostOneOfPrefix])
+	if err != nil {
+		ctx.pkg.AddError(loader.ErrFromNode(err, structType))
+		return props
+	}
+
 	for _, field := range ctx.info.Fields {
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
@@ -449,11 +461,19 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		case field.Markers.Get("kubebuilder:validation:Optional") != nil:
 			// explicitly optional - kubebuilder
 		case field.Markers.Get("kubebuilder:validation:Required") != nil:
+			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and cannot be marked as required", fieldName), structType))
+				return props
+			}
 			// explicitly required - kubebuilder
 			props.Required = append(props.Required, fieldName)
 		case field.Markers.Get("optional") != nil:
 			// explicitly optional - kubernetes
 		case field.Markers.Get("required") != nil:
+			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and cannot be marked as required", fieldName), structType))
+				return props
+			}
 			// explicitly required - kubernetes
 			props.Required = append(props.Required, fieldName)
 
@@ -461,6 +481,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		case defaultMode == "required":
 			// ...everything that's not inline / omitempty is required
 			if !inline && !omitEmpty {
+				if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty tag", fieldName), structType))
+					return props
+				}
 				props.Required = append(props.Required, fieldName)
 			}
 
@@ -488,6 +512,21 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 	}
 
 	return props
+}
+
+func oneOfValuesToSet(oneOfGroups []any) (sets.Set[string], error) {
+	set := sets.New[string]()
+	for _, oneOf := range oneOfGroups {
+		switch vals := oneOf.(type) {
+		case crdmarkers.ExactlyOneOf:
+			set.Insert(vals...)
+		case crdmarkers.AtMostOneOf:
+			set.Insert(vals...)
+		default:
+			return nil, fmt.Errorf("expected ExactlyOneOf or AtMostOneOf, got %T", oneOf)
+		}
+	}
+	return set, nil
 }
 
 // builtinToType converts builtin basic types to their equivalent JSON schema form.
