@@ -664,47 +664,39 @@ func (fields AtMostOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
-
-	// Build the oneOf group for this AtMostOneOf
-	required := make([]apiext.JSONSchemaProps, 0, len(fields))
-	for _, field := range fields {
-		required = append(required, apiext.JSONSchemaProps{
-			Required: []string{field},
-		})
+	rule := fieldsToOneOfCelRuleStr(fields)
+	xvalidation := XValidation{
+		Rule:    fmt.Sprintf("%s <= 1", rule),
+		Message: fmt.Sprintf("at most one of the fields in %v may be set", fields),
 	}
-	oneOfGroup := []apiext.JSONSchemaProps{
-		// Add a Not AnyOf constraint to allow no fields to be set (satisfies AtMostOneOf)
-		{
-			Not: &apiext.JSONSchemaProps{
-				AnyOf: required,
-			},
-		},
-	}
-	oneOfGroup = append(oneOfGroup, required...)
-
-	// Add to schema.AllOf
-	schema.AllOf = append(schema.AllOf, apiext.JSONSchemaProps{
-		OneOf: oneOfGroup,
-	})
-	return nil
+	return xvalidation.ApplyToSchema(schema)
 }
 
 func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
-
-	// Build the oneOf group for this ExactlyMostOneOf
-	required := make([]apiext.JSONSchemaProps, 0, len(fields))
-	for _, field := range fields {
-		required = append(required, apiext.JSONSchemaProps{
-			Required: []string{field},
-		})
+	rule := fieldsToOneOfCelRuleStr(fields)
+	xvalidation := XValidation{
+		Rule:    fmt.Sprintf("%s == 1", rule),
+		Message: fmt.Sprintf("exactly one of the fields in %v must be set", fields),
 	}
+	return xvalidation.ApplyToSchema(schema)
+}
 
-	// Add to schema.AllOf
-	schema.AllOf = append(schema.AllOf, apiext.JSONSchemaProps{
-		OneOf: required,
-	})
-	return nil
+// fieldsToOneOfCelRuleStr converts a slice of field names to a string representation
+// [has(self.field1),has(self.field1),...].filter(x, x == true).size()
+func fieldsToOneOfCelRuleStr(fields []string) string {
+	var list strings.Builder
+	list.WriteString("[")
+	for i, f := range fields {
+		if i > 0 {
+			list.WriteString(",")
+		}
+		list.WriteString("has(self.")
+		list.WriteString(f)
+		list.WriteString(")")
+	}
+	list.WriteString("].filter(x,x==true).size()")
+	return list.String()
 }

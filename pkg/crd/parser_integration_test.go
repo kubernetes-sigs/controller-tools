@@ -126,9 +126,6 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			}
 
 			By(fmt.Sprintf("comparing the two %s CRDs", kind))
-			// Uncomment below to see the actual generated CRD
-			// crdStr, _ := yaml.Marshal(parser.CustomResourceDefinitions[groupKind])
-			// GinkgoT().Logf("actual CRD:\n%s", crdStr)
 			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
 		}
 
@@ -186,6 +183,21 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 			It("should successfully generate the CRD with OneOf validation constraints", func() {
 				assertCRD(pkgs[0], "Oneof", "testdata.kubebuilder.io_oneofs.yaml")
+			})
+		})
+
+		Context("OneOf API with invalid marker", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./oneof_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error with nested field in marker", func() {
+				kind := "Oneof"
+				groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "kubebuilder:validation:AtMostOneOf: cannot reference nested fields: field.foo,field.bar"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
 			})
 		})
 

@@ -38,47 +38,28 @@ spec:
             description: OneofSpec is the spec for the oneofs API.
             properties:
               firstTypeWithExactOneof:
-                oneOf:
-                - required:
-                  - foo
-                - required:
-                  - bar
                 properties:
                   bar:
                     type: string
                   foo:
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [foo bar] must be set
+                  rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() ==
+                    1'
               firstTypeWithOneof:
-                oneOf:
-                - not:
-                    anyOf:
-                    - required:
-                      - foo
-                    - required:
-                      - bar
-                - required:
-                  - foo
-                - required:
-                  - bar
                 properties:
                   bar:
                     type: string
                   foo:
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: at most one of the fields in [foo bar] may be set
+                  rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() <=
+                    1'
               secondTypeWithExactOneof:
-                allOf:
-                - oneOf:
-                  - required:
-                    - a
-                  - required:
-                    - b
-                - oneOf:
-                  - required:
-                    - c
-                  - required:
-                    - d
                 properties:
                   a:
                     type: string
@@ -89,30 +70,12 @@ spec:
                   d:
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [a b] must be set
+                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() == 1'
+                - message: exactly one of the fields in [c d] must be set
+                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 1'
               secondTypeWithOneof:
-                allOf:
-                - oneOf:
-                  - not:
-                      anyOf:
-                      - required:
-                        - a
-                      - required:
-                        - b
-                  - required:
-                    - a
-                  - required:
-                    - b
-                - oneOf:
-                  - not:
-                      anyOf:
-                      - required:
-                        - c
-                      - required:
-                        - d
-                  - required:
-                    - c
-                  - required:
-                    - d
                 properties:
                   a:
                     type: string
@@ -123,6 +86,11 @@ spec:
                   d:
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: at most one of the fields in [a b] may be set
+                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() <= 1'
+                - message: at most one of the fields in [c d] may be set
+                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() <= 1'
             type: object
         required:
         - spec
@@ -135,4 +103,3 @@ status:
     plural: ""
   conditions: null
   storedVersions: null
-  

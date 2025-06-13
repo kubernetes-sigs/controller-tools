@@ -398,6 +398,8 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 
 // structToSchema creates a schema for the given struct.  Embedded fields are placed in AllOf,
 // and can be flattened later with a Flattener.
+//
+//nolint:gocyclo
 func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSONSchemaProps {
 	props := &apiext.JSONSchemaProps{
 		Type:       "object",
@@ -519,14 +521,34 @@ func oneOfValuesToSet(oneOfGroups []any) (sets.Set[string], error) {
 	for _, oneOf := range oneOfGroups {
 		switch vals := oneOf.(type) {
 		case crdmarkers.ExactlyOneOf:
+			if err := validateOneOfValues(vals...); err != nil {
+				return nil, fmt.Errorf("%s: %w", crdmarkers.ValidationExactlyOneOfPrefix, err)
+			}
 			set.Insert(vals...)
 		case crdmarkers.AtMostOneOf:
+			if err := validateOneOfValues(vals...); err != nil {
+				return nil, fmt.Errorf("%s: %w", crdmarkers.ValidationAtMostOneOfPrefix, err)
+			}
 			set.Insert(vals...)
 		default:
 			return nil, fmt.Errorf("expected ExactlyOneOf or AtMostOneOf, got %T", oneOf)
 		}
 	}
 	return set, nil
+}
+
+func validateOneOfValues(fields ...string) error {
+	var invalid []string
+	for _, field := range fields {
+		if strings.Contains(field, ".") {
+			// nested fields are not allowed in OneOf validation markers
+			invalid = append(invalid, field)
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("cannot reference nested fields: %s", strings.Join(invalid, ","))
+	}
+	return nil
 }
 
 // builtinToType converts builtin basic types to their equivalent JSON schema form.
