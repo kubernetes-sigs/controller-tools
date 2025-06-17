@@ -106,6 +106,9 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesField, Title{})).
 		WithHelp(Title{}.Help()),
+
+	must(markers.MakeDefinition("k8s:immutable", markers.DescribesField, Immutable{})).
+		WithHelp(Immutable{}.Help()),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -324,6 +327,19 @@ type XIntOrString struct{}
 // Because this field disables all type checking, it is recommended
 // to be used only as a last resort.
 type Schemaless struct{}
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// Immutable marks a field as immutable.
+// The value of an immutable field may not be changed after creation.
+type Immutable struct{}
+
+func (Immutable) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
+		Message: "Value is immutable",
+		Rule:    "self == oldSelf",
+	})
+	return nil
+}
 
 func hasNumericType(schema *apiext.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)

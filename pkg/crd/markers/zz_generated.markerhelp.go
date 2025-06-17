@@ -116,6 +116,17 @@ func (Format) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Immutable) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks a field as immutable.",
+			Details: "The value of an immutable field may not be changed after creation.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (KubernetesDefault) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
