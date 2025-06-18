@@ -118,8 +118,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		rt.OutputRules = genall.OutputRules{Default: output}
 
-		originalFS := os.DirFS(filepath.Join(originalCWD, cronjobDir))
-		tmpFS := os.DirFS(".")
+		fixturePath := filepath.Join(originalCWD, cronjobDir)
 
 		By("Running the generator")
 		hadErrs := rt.Run()
@@ -127,28 +126,38 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		By("Checking for generation errors")
 		Expect(hadErrs).To(BeFalse(), "Generator should run without errors")
 
+		tmpFS := os.DirFS(".")
+		if os.Getenv("UPDATE") != "" && outputPackage == "applyconfiguration" {
+			Expect(os.RemoveAll(fixturePath)).NotTo(HaveOccurred())
+			Expect(os.CopyFS(fixturePath, tmpFS)).NotTo(HaveOccurred())
+		}
+
+		originalFS := os.DirFS(fixturePath)
+
 		filesInOriginal := make(map[string][]byte)
 		originalFileNames := sets.New[string]()
-		Expect(fs.WalkDir(originalFS, filepath.Join("api/v1", applyConfigurationDir), func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
+		Expect(fs.WalkDir(originalFS, filepath.Join("api/v1", applyConfigurationDir),
+			func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
 
-			if d.IsDir() {
+				if d.IsDir() {
+					return nil
+				}
+
+				data, err := os.ReadFile(filepath.Join(originalCWD, cronjobDir, path))
+				if err != nil {
+					return fmt.Errorf("error reading file %s: %w", path, err)
+				}
+
+				// Record the path without the path prefix for comparison later.
+				path = strings.TrimPrefix(path, filepath.Join("api/v1", applyConfigurationDir)+"/")
+				originalFileNames.Insert(path)
+				filesInOriginal[path] = data
 				return nil
-			}
-
-			data, err := os.ReadFile(filepath.Join(originalCWD, cronjobDir, path))
-			if err != nil {
-				return fmt.Errorf("error reading file %s: %w", path, err)
-			}
-
-			// Record the path without the path prefix for comparison later.
-			path = strings.TrimPrefix(path, filepath.Join("api/v1", applyConfigurationDir)+"/")
-			originalFileNames.Insert(path)
-			filesInOriginal[path] = data
-			return nil
-		})).To(Succeed())
+			},
+		)).To(Succeed())
 
 		filesInOutput := make(map[string][]byte)
 		outputFileNames := sets.New[string]()
