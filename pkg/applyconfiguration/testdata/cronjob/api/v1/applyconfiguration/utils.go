@@ -6,48 +6,48 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	testing "k8s.io/client-go/testing"
-	v1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
-	apiv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/api/v1"
 	internal "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/internal"
+	testdatakubebuilderiov1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/testdata.kubebuilder.io/v1"
+	v1 "testdata.kubebuilder.io/v1"
 )
 
 // ForKind returns an apply configuration type for the given GroupVersionKind, or nil if no
 // apply configuration type exists for the given GroupVersionKind.
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
-	// Group=api, Version=v1
+	// Group=testdata.kubebuilder.io, Version=v1
 	case v1.SchemeGroupVersion.WithKind("AssociativeType"):
-		return &apiv1.AssociativeTypeApplyConfiguration{}
+		return &testdatakubebuilderiov1.AssociativeTypeApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ContainsNestedMap"):
-		return &apiv1.ContainsNestedMapApplyConfiguration{}
+		return &testdatakubebuilderiov1.ContainsNestedMapApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("CronJob"):
-		return &apiv1.CronJobApplyConfiguration{}
+		return &testdatakubebuilderiov1.CronJobApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("CronJobSpec"):
-		return &apiv1.CronJobSpecApplyConfiguration{}
+		return &testdatakubebuilderiov1.CronJobSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("CronJobStatus"):
-		return &apiv1.CronJobStatusApplyConfiguration{}
+		return &testdatakubebuilderiov1.CronJobStatusApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Duration"):
-		return &apiv1.DurationApplyConfiguration{}
+		return &testdatakubebuilderiov1.DurationApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmbeddedStruct"):
-		return &apiv1.EmbeddedStructApplyConfiguration{}
+		return &testdatakubebuilderiov1.EmbeddedStructApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmpiableObject"):
-		return &apiv1.EmpiableObjectApplyConfiguration{}
+		return &testdatakubebuilderiov1.EmpiableObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ExportedStruct"):
-		return &apiv1.ExportedStructApplyConfiguration{}
+		return &testdatakubebuilderiov1.ExportedStructApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("JustNestedObject"):
-		return &apiv1.JustNestedObjectApplyConfiguration{}
+		return &testdatakubebuilderiov1.JustNestedObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("MinMaxObject"):
-		return &apiv1.MinMaxObjectApplyConfiguration{}
+		return &testdatakubebuilderiov1.MinMaxObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("NestedObject"):
-		return &apiv1.NestedObjectApplyConfiguration{}
+		return &testdatakubebuilderiov1.NestedObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("NestedStructWithSeveralFields"):
-		return &apiv1.NestedStructWithSeveralFieldsApplyConfiguration{}
+		return &testdatakubebuilderiov1.NestedStructWithSeveralFieldsApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Preserved"):
-		return &apiv1.PreservedApplyConfiguration{}
+		return &testdatakubebuilderiov1.PreservedApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RootObject"):
-		return &apiv1.RootObjectApplyConfiguration{}
+		return &testdatakubebuilderiov1.RootObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("UnexportedStruct"):
-		return &apiv1.unexportedStructApplyConfiguration{}
+		return &testdatakubebuilderiov1.unexportedStructApplyConfiguration{}
 
 	}
 	return nil

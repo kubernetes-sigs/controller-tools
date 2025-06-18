@@ -24,7 +24,7 @@ func CronJob(name, namespace string) *CronJobApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("CronJob")
-	b.WithAPIVersion("api/v1")
+	b.WithAPIVersion("testdata.kubebuilder.io/v1")
 	return b
 }
 
