@@ -15,7 +15,7 @@ import (
 // apply configuration type exists for the given GroupVersionKind.
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
-	// Group=api, Version=v1
+	// Group=testdata.kubebuilder.io, Version=v1
 	case v1.SchemeGroupVersion.WithKind("AssociativeType"):
 		return &apiv1.AssociativeTypeApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ContainsNestedMap"):
