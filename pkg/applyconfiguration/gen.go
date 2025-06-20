@@ -72,6 +72,10 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 		return err
 	}
 
+	if err := crdmarkers.Register(into); err != nil {
+		return err
+	}
+
 	into.AddHelp(isCRDMarker,
 		markers.SimpleHelp("apply", "enables apply configuration generation for this type"))
 	into.AddHelp(
