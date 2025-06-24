@@ -106,11 +106,9 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		By("Initializing the runtime")
 		optionsRegistry := &markers.Registry{}
 		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
-		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("crd", markers.DescribesPackage, crd.Generator{})))).To(Succeed())
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
 
 		rt, err := genall.FromOptions(optionsRegistry, []string{
-			"crd:allowDangerousTypes=true,ignoreUnexportedFields=true", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
 			"applyconfiguration",
 			"paths=./api/v1",
 		})
@@ -118,8 +116,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		rt.OutputRules = genall.OutputRules{Default: output}
 
-		originalFS := os.DirFS(filepath.Join(originalCWD, cronjobDir))
-		tmpFS := os.DirFS(".")
+		fixturePath := filepath.Join(originalCWD, cronjobDir)
 
 		By("Running the generator")
 		hadErrs := rt.Run()
@@ -127,28 +124,38 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		By("Checking for generation errors")
 		Expect(hadErrs).To(BeFalse(), "Generator should run without errors")
 
+		tmpFS := os.DirFS(".")
+		if os.Getenv("UPDATE") != "" && outputPackage == "applyconfiguration" {
+			Expect(os.RemoveAll(fixturePath)).NotTo(HaveOccurred())
+			Expect(os.CopyFS(fixturePath, tmpFS)).NotTo(HaveOccurred())
+		}
+
+		originalFS := os.DirFS(fixturePath)
+
 		filesInOriginal := make(map[string][]byte)
 		originalFileNames := sets.New[string]()
-		Expect(fs.WalkDir(originalFS, filepath.Join("api/v1", applyConfigurationDir), func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
+		Expect(fs.WalkDir(originalFS, filepath.Join("api/v1", applyConfigurationDir),
+			func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
 
-			if d.IsDir() {
+				if d.IsDir() {
+					return nil
+				}
+
+				data, err := os.ReadFile(filepath.Join(originalCWD, cronjobDir, path))
+				if err != nil {
+					return fmt.Errorf("error reading file %s: %w", path, err)
+				}
+
+				// Record the path without the path prefix for comparison later.
+				path = strings.TrimPrefix(path, filepath.Join("api/v1", applyConfigurationDir)+"/")
+				originalFileNames.Insert(path)
+				filesInOriginal[path] = data
 				return nil
-			}
-
-			data, err := os.ReadFile(filepath.Join(originalCWD, cronjobDir, path))
-			if err != nil {
-				return fmt.Errorf("error reading file %s: %w", path, err)
-			}
-
-			// Record the path without the path prefix for comparison later.
-			path = strings.TrimPrefix(path, filepath.Join("api/v1", applyConfigurationDir)+"/")
-			originalFileNames.Insert(path)
-			filesInOriginal[path] = data
-			return nil
-		})).To(Succeed())
+			},
+		)).To(Succeed())
 
 		filesInOutput := make(map[string][]byte)
 		outputFileNames := sets.New[string]()
@@ -188,6 +195,41 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 			Expect(string(filesInOutput[name])).To(BeComparableTo(string(content)), "Generated files should match the checked in files, diff found in %s", name)
 		}
+	},
+		Entry("with the default applyconfiguration output package", "applyconfiguration"),
+		Entry("with the an alternative output package", "other"),
+		Entry("with a package outside of the current directory", "../../clients"),
+	)
+
+	DescribeTable("should be able to run another generator for the CronJob schema without interfering", func(outputPackage string) {
+		Expect(replaceOutputPkgMarker("./api/v1", outputPackage)).To(Succeed())
+
+		// The output is used to capture the generated CRD file.
+		// The output of the applyconfiguration cannot be generated to memory, gengo handles all of the writing to disk directly.
+		output := make(outputToMap)
+
+		By("Initializing the runtime")
+		optionsRegistry := &markers.Registry{}
+		generator := Generator{}
+		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("crd", markers.DescribesPackage, crd.Generator{})))).To(Succeed())
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, generator)))).To(Succeed())
+		Expect(generator.RegisterMarkers(optionsRegistry)).To(Succeed())
+
+		rt, err := genall.FromOptions(optionsRegistry, []string{
+			"crd:allowDangerousTypes=true,ignoreUnexportedFields=true", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
+			"applyconfiguration",
+			"paths=./api/v1",
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		rt.OutputRules = genall.OutputRules{Default: output}
+
+		By("Running the generator")
+		hadErrs := rt.Run()
+
+		By("Checking for generation errors")
+		Expect(hadErrs).To(BeFalse(), "Generator should run without errors")
 	},
 		Entry("with the default applyconfiguration output package", "applyconfiguration"),
 		Entry("with the an alternative output package", "other"),
