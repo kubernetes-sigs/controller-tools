@@ -71,7 +71,6 @@ type CronJobSpecApplyConfiguration struct {
 	Float64WithValidations                    *float64                                         `json:"float64WithValidations,omitempty"`
 	IntWithValidations                        *int                                             `json:"intWithValidations,omitempty"`
 	Int32WithValidations                      *int32                                           `json:"int32WithValidations,omitempty"`
-	unexportedStructApplyConfiguration        `json:",inline"`
 	ExportedStructApplyConfiguration          `json:",inline"`
 	StringWithEvenLength                      *string                `json:"stringWithEvenLength,omitempty"`
 	StringWithEvenLengthAndMessageExpression  *string                `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
@@ -89,7 +88,6 @@ type CronJobSpecApplyConfiguration struct {
 	StringAliasAlreadyValidated               *string                `json:"stringAliasAlreadyValidated,omitempty"`
 	StringPair                                []string               `json:"stringPair,omitempty"`
 	LongerStringArray                         []apiv1.LongerString   `json:"longerStringArray,omitempty"`
-	IntOrStringArrayWithAPattern              []*intstr.IntOrString  `json:"intOrStringArrayWithAPattern,omitempty"`
 	Protocol                                  *corev1.Protocol       `json:"protocol,omitempty"`
 	SelectableFieldString                     *string                `json:"selectableFieldString,omitempty"`
 	EmbeddedStructApplyConfiguration          `json:",inline"`
@@ -654,14 +652,6 @@ func (b *CronJobSpecApplyConfiguration) WithInt32WithValidations(value int32) *C
 	return b
 }
 
-// WithFoo sets the Foo field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Foo field is set to the value of the last call.
-func (b *CronJobSpecApplyConfiguration) WithFoo(value string) *CronJobSpecApplyConfiguration {
-	b.unexportedStructApplyConfiguration.Foo = &value
-	return b
-}
-
 // WithBaz sets the Baz field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Baz field is set to the value of the last call.
@@ -802,19 +792,6 @@ func (b *CronJobSpecApplyConfiguration) WithStringPair(values ...string) *CronJo
 func (b *CronJobSpecApplyConfiguration) WithLongerStringArray(values ...apiv1.LongerString) *CronJobSpecApplyConfiguration {
 	for i := range values {
 		b.LongerStringArray = append(b.LongerStringArray, values[i])
-	}
-	return b
-}
-
-// WithIntOrStringArrayWithAPattern adds the given value to the IntOrStringArrayWithAPattern field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the IntOrStringArrayWithAPattern field.
-func (b *CronJobSpecApplyConfiguration) WithIntOrStringArrayWithAPattern(values ...*intstr.IntOrString) *CronJobSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithIntOrStringArrayWithAPattern")
-		}
-		b.IntOrStringArrayWithAPattern = append(b.IntOrStringArrayWithAPattern, *values[i])
 	}
 	return b
 }

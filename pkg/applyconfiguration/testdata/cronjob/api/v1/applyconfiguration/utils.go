@@ -46,8 +46,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.PreservedApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RootObject"):
 		return &apiv1.RootObjectApplyConfiguration{}
-	case v1.SchemeGroupVersion.WithKind("UnexportedStruct"):
-		return &apiv1.unexportedStructApplyConfiguration{}
 
 	}
 	return nil
