@@ -13,6 +13,7 @@ type PreservedApplyConfiguration struct {
 func Preserved() *PreservedApplyConfiguration {
 	return &PreservedApplyConfiguration{}
 }
+func (b PreservedApplyConfiguration) IsApplyConfiguration() {}
 
 // WithConcreteField sets the ConcreteField field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.

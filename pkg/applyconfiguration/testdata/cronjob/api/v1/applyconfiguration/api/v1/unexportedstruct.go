@@ -13,6 +13,7 @@ type UnexportedStructApplyConfiguration struct {
 func UnexportedStruct() *UnexportedStructApplyConfiguration {
 	return &UnexportedStructApplyConfiguration{}
 }
+func (b UnexportedStructApplyConfiguration) IsApplyConfiguration() {}
 
 // WithFoo sets the Foo field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
