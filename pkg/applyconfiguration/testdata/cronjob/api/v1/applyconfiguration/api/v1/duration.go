@@ -17,6 +17,7 @@ type DurationApplyConfiguration struct {
 func Duration() *DurationApplyConfiguration {
 	return &DurationApplyConfiguration{}
 }
+func (b DurationApplyConfiguration) IsApplyConfiguration() {}
 
 // WithValue sets the Value field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.

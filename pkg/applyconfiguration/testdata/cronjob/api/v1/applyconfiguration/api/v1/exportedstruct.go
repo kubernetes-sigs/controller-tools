@@ -13,6 +13,7 @@ type ExportedStructApplyConfiguration struct {
 func ExportedStruct() *ExportedStructApplyConfiguration {
 	return &ExportedStructApplyConfiguration{}
 }
+func (b ExportedStructApplyConfiguration) IsApplyConfiguration() {}
 
 // WithBaz sets the Baz field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
