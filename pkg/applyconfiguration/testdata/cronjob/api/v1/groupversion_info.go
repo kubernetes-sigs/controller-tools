@@ -27,9 +27,10 @@ import (
 )
 
 var (
-	GroupName     = "testdata.kubebuilder.io"
-	GroupVersion  = schema.GroupVersion{Group: GroupName, Version: "v1"}
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	GroupName          = "testdata.kubebuilder.io"
+	GroupVersion       = schema.GroupVersion{Group: GroupName, Version: "v1"}
+	SchemeGroupVersion = GroupVersion
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes)
 
 	// AddToScheme exists solely to keep the old generators creating valid code
 	AddToScheme = SchemeBuilder.AddToScheme

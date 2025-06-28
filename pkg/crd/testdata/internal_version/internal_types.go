@@ -72,7 +72,3 @@ type CronJobList struct {
 	metav1.ListMeta
 	Items []CronJob
 }
-
-func init() {
-	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
-}
