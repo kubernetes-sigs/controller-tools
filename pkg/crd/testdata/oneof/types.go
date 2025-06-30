@@ -34,6 +34,7 @@ type OneofSpec struct {
 	SecondTypeWithExactOneof *TypeWithMultipleExactOneofs `json:"secondTypeWithExactOneof,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:message="only one of foo|bar may be set",rule="!(has(self.foo) && has(self.bar))"
 // +kubebuilder:validation:AtMostOneOf=foo;bar
 type TypeWithOneofs struct {
 	Foo *string `json:"foo,omitempty"`
