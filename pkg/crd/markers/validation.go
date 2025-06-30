@@ -660,6 +660,10 @@ func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
+func (XValidation) ApplyPriority() ApplyPriority {
+	return ApplyPriorityDefault
+}
+
 func (fields AtMostOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
@@ -672,6 +676,11 @@ func (fields AtMostOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return xvalidation.ApplyToSchema(schema)
 }
 
+func (AtMostOneOf) ApplyPriority() ApplyPriority {
+	// explicitly go after XValidation markers so that the ordering is deterministic
+	return XValidation{}.ApplyPriority() + 1
+}
+
 func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
@@ -682,6 +691,11 @@ func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		Message: fmt.Sprintf("exactly one of the fields in %v must be set", fields),
 	}
 	return xvalidation.ApplyToSchema(schema)
+}
+
+func (ExactlyOneOf) ApplyPriority() ApplyPriority {
+	// explicitly go after XValidation markers so that the ordering is deterministic
+	return XValidation{}.ApplyPriority() + 1
 }
 
 // fieldsToOneOfCelRuleStr converts a slice of field names to a string representation

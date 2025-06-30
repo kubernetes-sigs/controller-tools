@@ -56,6 +56,8 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-validations:
+                - message: only one of foo|bar may be set
+                  rule: '!(has(self.foo) && has(self.bar))'
                 - message: at most one of the fields in [foo bar] may be set
                   rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() <=
                     1'
