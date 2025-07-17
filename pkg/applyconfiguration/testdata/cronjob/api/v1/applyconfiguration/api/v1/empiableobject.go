@@ -14,7 +14,6 @@ type EmpiableObjectApplyConfiguration struct {
 func EmpiableObject() *EmpiableObjectApplyConfiguration {
 	return &EmpiableObjectApplyConfiguration{}
 }
-func (b EmpiableObjectApplyConfiguration) IsApplyConfiguration() {}
 
 // WithFoo sets the Foo field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.

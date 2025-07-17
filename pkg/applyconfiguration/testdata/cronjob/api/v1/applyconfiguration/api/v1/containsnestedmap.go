@@ -13,7 +13,6 @@ type ContainsNestedMapApplyConfiguration struct {
 func ContainsNestedMap() *ContainsNestedMapApplyConfiguration {
 	return &ContainsNestedMapApplyConfiguration{}
 }
-func (b ContainsNestedMapApplyConfiguration) IsApplyConfiguration() {}
 
 // WithInnerMap puts the entries into the InnerMap field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
