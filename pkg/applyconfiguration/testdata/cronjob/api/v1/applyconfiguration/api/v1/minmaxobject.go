@@ -15,7 +15,6 @@ type MinMaxObjectApplyConfiguration struct {
 func MinMaxObject() *MinMaxObjectApplyConfiguration {
 	return &MinMaxObjectApplyConfiguration{}
 }
-func (b MinMaxObjectApplyConfiguration) IsApplyConfiguration() {}
 
 // WithFoo sets the Foo field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.

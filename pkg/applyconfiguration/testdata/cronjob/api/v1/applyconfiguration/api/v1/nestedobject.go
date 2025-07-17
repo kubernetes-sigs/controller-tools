@@ -14,7 +14,6 @@ type NestedObjectApplyConfiguration struct {
 func NestedObject() *NestedObjectApplyConfiguration {
 	return &NestedObjectApplyConfiguration{}
 }
-func (b NestedObjectApplyConfiguration) IsApplyConfiguration() {}
 
 // WithFoo sets the Foo field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
