@@ -27,6 +27,8 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # tag=v5.5.0
       with:
         go-version: ${{ steps.vars.outputs.go_version }}
+        check-latest: true
+        cache: true
     - name: Update all modules
       run: make modules
     - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # tag=v9.1.4

@@ -25,6 +25,8 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # tag=v5.5.0
       with:
         go-version: ${{ steps.vars.outputs.go_version }}
+        check-latest: true
+        cache: true
     - name: Generate release binaries
       run: |
         make release-controller-gen
