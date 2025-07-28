@@ -472,9 +472,9 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 			}
 			// explicitly required - kubebuilder
 			props.Required = append(props.Required, fieldName)
-		case field.Markers.Get("optional") != nil:
+		case field.Markers.Get("optional") != nil, field.Markers.Get("k8s:optional") != nil:
 			// explicitly optional - kubernetes
-		case field.Markers.Get("required") != nil:
+		case field.Markers.Get("required") != nil, field.Markers.Get("k8s:required") != nil:
 			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
 				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and cannot be marked as required", fieldName), structType))
 				return props
