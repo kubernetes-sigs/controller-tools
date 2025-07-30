@@ -186,6 +186,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Enum API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./enum/..."}
+				expPkgLen = 1
+			})
+			It("should successfully generate the CRD with enum validation constraints", func() {
+				assertCRD(pkgs[0], "Enum", "testdata.kubebuilder.io_enums.yaml")
+			})
+		})
+
 		Context("OneOf API with invalid marker", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./oneof_error/..."}
