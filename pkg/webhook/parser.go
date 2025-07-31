@@ -19,7 +19,7 @@ limitations under the License.
 //
 // The markers take the form:
 //
-//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,timeoutSeconds=<int>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>
+//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,timeoutSeconds=<int>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>,matchConditions=<[]string>
 package webhook
 
 import (
@@ -159,6 +159,13 @@ type Config struct {
 	// The URL configuration should be between quotes.
 	// `url` cannot be specified when `path` is specified.
 	URL string `marker:"url,optional"`
+
+	// MatchConditions specifies a list of match conditions for fine-grained request filtering.
+	// Each condition is specified as "name=expression" where name is a unique identifier and
+	// expression is a CEL expression that must evaluate to true for the condition to match.
+	// The expression has access to 'object', 'oldObject', 'request', and 'authorizer' variables.
+	// This field can be repeated up to 64 times.
+	MatchConditions []string `marker:"matchConditions,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -222,6 +229,11 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		return admissionregv1.MutatingWebhook{}, err
 	}
 
+	matchConditions, err := c.matchConditions()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, err
+	}
+
 	return admissionregv1.MutatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -232,6 +244,7 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
 		ReinvocationPolicy:      c.reinvocationPolicy(),
+		MatchConditions:         matchConditions,
 	}, nil
 }
 
@@ -251,6 +264,11 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		return admissionregv1.ValidatingWebhook{}, err
 	}
 
+	matchConditions, err := c.matchConditions()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, err
+	}
+
 	return admissionregv1.ValidatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -260,6 +278,7 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		SideEffects:             c.sideEffects(),
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
+		MatchConditions:         matchConditions,
 	}, nil
 }
 
@@ -400,6 +419,30 @@ func (c Config) reinvocationPolicy() *admissionregv1.ReinvocationPolicyType {
 		return nil
 	}
 	return &reinvocationPolicy
+}
+
+// matchConditions parses the string-based match conditions and returns them as Kubernetes API objects.
+func (c Config) matchConditions() ([]admissionregv1.MatchCondition, error) {
+	var conditions []admissionregv1.MatchCondition
+	for _, condition := range c.MatchConditions {
+		parts := strings.SplitN(condition, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid match condition format: %q, expected \"name=expression\"", condition)
+		}
+		name := strings.TrimSpace(parts[0])
+		expression := strings.TrimSpace(parts[1])
+		if name == "" {
+			return nil, fmt.Errorf("match condition name cannot be empty in: %q", condition)
+		}
+		if expression == "" {
+			return nil, fmt.Errorf("match condition expression cannot be empty in: %q", condition)
+		}
+		conditions = append(conditions, admissionregv1.MatchCondition{
+			Name:       name,
+			Expression: expression,
+		})
+	}
+	return conditions, nil
 }
 
 // webhookVersions returns the target API versions of the {Mutating,Validating}WebhookConfiguration objects for a webhook.
