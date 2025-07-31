@@ -138,6 +138,17 @@ func (Format) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (InferredEnum) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "Enum marker marks a string alias type as an enum.",
+			Details: "It infers the members from constants declared of that type.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (KubernetesDefault) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
