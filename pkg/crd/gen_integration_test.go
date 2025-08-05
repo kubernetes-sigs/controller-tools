@@ -171,6 +171,44 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 	})
 })
 
+var _ = Describe("CRD Generation with any", func() {
+	It("Works", func() {
+		oldWorkingDir, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		const testModuleDir = "testdata2"
+		Expect(os.Chdir(testModuleDir)).To(Succeed()) // go modules are directory-sensitive
+		defer func() {
+			Expect(os.Chdir(oldWorkingDir)).To(Succeed())
+		}()
+
+		pkgs, err := loader.LoadRoots("./v1/...")
+		Expect(err).NotTo(HaveOccurred())
+
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		gen := &crd.Generator{}
+		out := &outputRule{
+			buf: &bytes.Buffer{},
+		}
+		ctx := &genall.GenerationContext{
+			Collector: &markers.Collector{
+				Registry: reg,
+			},
+			Roots: pkgs,
+			Checker: &loader.TypeChecker{
+				NodeFilters: []loader.NodeFilter{gen.CheckFilter()},
+			},
+			OutputRule: out,
+		}
+		err = gen.Generate(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		wantCRDYAML, err := os.ReadFile("v1/example.com_foos.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		gotCRDYAML := out.buf.String()
+		Expect(gotCRDYAML).To(Equal(string(wantCRDYAML)), cmp.Diff(gotCRDYAML, string(wantCRDYAML)))
+	})
+})
+
 type outputRule struct {
 	buf *bytes.Buffer
 }
