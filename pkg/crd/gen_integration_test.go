@@ -34,8 +34,8 @@ import (
 
 var _ = Describe("CRD Generation proper defaulting", func() {
 	var (
-		ctx, ctx2 *genall.GenerationContext
-		out       *outputRule
+		ctx, ctx2, ctx3 *genall.GenerationContext
+		out             *outputRule
 
 		genDir = filepath.Join("testdata", "gen")
 	)
@@ -53,7 +53,10 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(pkgs).To(HaveLen(1))
 		pkgs2, err := loader.LoadRoots("./...")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(pkgs2).To(HaveLen(2))
+		Expect(pkgs2).To(HaveLen(3))
+		pkgs3, err := loader.LoadRoots("./iface")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs3).To(HaveLen(1))
 
 		By("setup up the context")
 		reg := &markers.Registry{}
@@ -70,6 +73,12 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		ctx2 = &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs2,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+		ctx3 = &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs3,
 			Checker:    &loader.TypeChecker{},
 			OutputRule: out,
 		}
@@ -106,13 +115,15 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(gen.Generate(ctx2)).NotTo(HaveOccurred())
 
 		By("loading the desired YAMLs")
+		expectedFileIfaces, err := os.ReadFile(filepath.Join(genDir, "iface", "iface.example.com_kindwithifaces.yaml"))
+		Expect(err).NotTo(HaveOccurred())
 		expectedFileFoos, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 		expectedFileZoos, err := os.ReadFile(filepath.Join(genDir, "zoo", "bar.example.com_zoos.yaml"))
 		Expect(err).NotTo(HaveOccurred())
 
-		By("comparing the two, output must be deterministic because groupKinds are sorted")
-		expectedOut := string(expectedFileFoos) + string(expectedFileZoos)
+		By("comparing the three, output must be deterministic because groupKinds are sorted")
+		expectedOut := string(expectedFileFoos) + string(expectedFileIfaces) + string(expectedFileZoos)
 		Expect(out.buf.String()).To(Equal(expectedOut), cmp.Diff(out.buf.String(), expectedOut))
 	})
 
@@ -169,43 +180,25 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
-})
 
-var _ = Describe("CRD Generation with any", func() {
-	It("Works", func() {
-		oldWorkingDir, err := os.Getwd()
-		Expect(err).NotTo(HaveOccurred())
-		const testModuleDir = "testdata2"
-		Expect(os.Chdir(testModuleDir)).To(Succeed()) // go modules are directory-sensitive
-		defer func() {
-			Expect(os.Chdir(oldWorkingDir)).To(Succeed())
-		}()
-
-		pkgs, err := loader.LoadRoots("./v1/...")
-		Expect(err).NotTo(HaveOccurred())
-
-		reg := &markers.Registry{}
-		Expect(crdmarkers.Register(reg)).To(Succeed())
+	It("should gracefully error on interface types", func() {
 		gen := &crd.Generator{}
-		out := &outputRule{
-			buf: &bytes.Buffer{},
-		}
-		ctx := &genall.GenerationContext{
-			Collector: &markers.Collector{
-				Registry: reg,
-			},
-			Roots: pkgs,
-			Checker: &loader.TypeChecker{
-				NodeFilters: []loader.NodeFilter{gen.CheckFilter()},
-			},
-			OutputRule: out,
-		}
-		err = gen.Generate(ctx)
+		err := gen.Generate(ctx3)
 		Expect(err).NotTo(HaveOccurred())
-		wantCRDYAML, err := os.ReadFile("v1/example.com_foos.yaml")
+
+		wd, err := os.Getwd()
 		Expect(err).NotTo(HaveOccurred())
-		gotCRDYAML := out.buf.String()
-		Expect(gotCRDYAML).To(Equal(string(wantCRDYAML)), cmp.Diff(gotCRDYAML, string(wantCRDYAML)))
+		matches := 0
+		for _, pkg := range ctx3.Roots {
+			for _, pkgError := range pkg.Errors {
+				posRel, err := filepath.Rel(filepath.Join(wd, genDir), pkgError.Pos)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(posRel).To(Equal("iface/iface_types.go:32:6"))
+				Expect(pkgError.Msg).To(Equal("cannot generate schema for interface type any"))
+				matches++
+			}
+		}
+		Expect(matches).To(Equal(1))
 	})
 })
 

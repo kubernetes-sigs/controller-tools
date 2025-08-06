@@ -294,11 +294,8 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			Format: fmt,
 		}
 	}
-	if ifaceInfo, isInterface := typeInfo.(*types.Interface); isInterface {
-		// The "any" type introduced in Go1.18 shows up as an identifier / empty interface.
-		if !ifaceInfo.Empty() {
-			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("cannot generate schema for non-empty interface type %s", ident.Name), ident))
-		}
+	if _, isInterface := typeInfo.(*types.Interface); isInterface {
+		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("cannot generate schema for interface type %s", ident.Name), ident))
 		return &apiext.JSONSchemaProps{}
 	}
 	// NB(directxman12): if there are dot imports, this might be an external reference,
