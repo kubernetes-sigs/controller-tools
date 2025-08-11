@@ -1,0 +1,108 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: featuregatetests.
+spec:
+  group: ""
+  names:
+    kind: FeatureGateTest
+    listKind: FeatureGateTestList
+    plural: featuregatetests
+    singular: featuregatetest
+  scope: Namespaced
+  versions:
+  - name: ""
+    schema:
+      openAPIV3Schema:
+        description: FeatureGateTest is the Schema for testing feature gates
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FeatureGateTestSpec defines the desired state with feature-gated
+              fields
+            properties:
+              alphaFeature:
+                description: Alpha-gated field - only included when alpha gate is
+                  enabled
+                type: string
+              andFeature:
+                description: AND-gated field - included only when both alpha AND beta
+                  gates are enabled
+                type: string
+              betaFeature:
+                description: Beta-gated field - only included when beta gate is enabled
+                type: string
+              complexAndFeature:
+                description: Complex precedence field - included when (alpha OR beta)
+                  AND gamma is enabled
+                type: string
+              complexOrFeature:
+                description: Complex precedence field - included when (alpha AND beta)
+                  OR gamma is enabled
+                type: string
+              name:
+                description: Standard field - always included
+                type: string
+              orFeature:
+                description: OR-gated field - included when either alpha OR beta gate
+                  is enabled
+                type: string
+            required:
+            - name
+            type: object
+          status:
+            description: FeatureGateTestStatus defines the observed state with feature-gated
+              fields
+            properties:
+              alphaStatus:
+                description: Alpha-gated status field
+                type: string
+              andStatus:
+                description: AND-gated status field - included only when both alpha
+                  AND beta gates are enabled
+                type: string
+              betaStatus:
+                description: Beta-gated status field
+                type: string
+              complexAndStatus:
+                description: Complex precedence status field - included when (alpha
+                  OR beta) AND gamma is enabled
+                type: string
+              complexOrStatus:
+                description: Complex precedence status field - included when (alpha
+                  AND beta) OR gamma is enabled
+                type: string
+              orStatus:
+                description: OR-gated status field - included when either alpha OR
+                  beta gate is enabled
+                type: string
+              ready:
+                description: Standard status field
+                type: boolean
+            required:
+            - ready
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
