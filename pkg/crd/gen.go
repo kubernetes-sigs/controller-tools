@@ -36,6 +36,7 @@ import (
 type FeatureGateMap map[string]bool
 
 // parseFeatureGates parses a feature gates string in the format "gate1=true,gate2=false"
+// and returns a FeatureGateMap. Supports comma-separated key=value pairs.
 // and returns a FeatureGateMap.
 func parseFeatureGates(featureGatesStr string) (FeatureGateMap, error) {
 	gates := make(FeatureGateMap)
@@ -127,7 +128,12 @@ type Generator struct {
 
 	// FeatureGates specifies which feature gates are enabled for conditional field inclusion.
 	//
-	// Format: "gate1=true,gate2=false"
+	// Single gate format: "gatename=true"
+	// Multiple gates format: "gate1=true,gate2=false" (must use quoted strings for comma-separated values)
+	//
+	// Examples:
+	//   controller-gen crd:featureGates="alpha=true" paths=./api/...
+	//   controller-gen 'crd:featureGates="alpha=true,beta=false"' paths=./api/...
 	FeatureGates string `marker:",optional"`
 
 	// DeprecatedV1beta1CompatibilityPreserveUnknownFields indicates whether

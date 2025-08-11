@@ -72,7 +72,7 @@ type schemaContext struct {
 
 	allowDangerousTypes    bool
 	ignoreUnexportedFields bool
-	featureGates          FeatureGateMap
+	featureGates           FeatureGateMap
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
@@ -84,7 +84,7 @@ func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTy
 		schemaRequester:        req,
 		allowDangerousTypes:    allowDangerousTypes,
 		ignoreUnexportedFields: ignoreUnexportedFields,
-		featureGates:          featureGates,
+		featureGates:           featureGates,
 	}
 }
 
@@ -97,7 +97,7 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		schemaRequester:        c.schemaRequester,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
-		featureGates:          c.featureGates,
+		featureGates:           c.featureGates,
 	}
 }
 
