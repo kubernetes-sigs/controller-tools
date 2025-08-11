@@ -92,6 +92,9 @@ type Parser struct {
 
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta should be generated
 	GenerateEmbeddedObjectMeta bool
+
+	// FeatureGates specifies which feature gates are enabled for conditional field inclusion
+	FeatureGates FeatureGateMap
 }
 
 func (p *Parser) init() {
@@ -172,7 +175,7 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	// avoid tripping recursive schemata, like ManagedFields, by adding an empty WIP schema
 	p.Schemata[typ] = apiext.JSONSchemaProps{}
 
-	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes, p.IgnoreUnexportedFields)
+	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes, p.IgnoreUnexportedFields, p.FeatureGates)
 	ctxForInfo := schemaCtx.ForInfo(info)
 
 	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)

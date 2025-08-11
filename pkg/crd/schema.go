@@ -72,17 +72,19 @@ type schemaContext struct {
 
 	allowDangerousTypes    bool
 	ignoreUnexportedFields bool
+	featureGates          FeatureGateMap
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
 // It must have type info added before use via ForInfo.
-func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool) *schemaContext {
+func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool, featureGates FeatureGateMap) *schemaContext {
 	pkg.NeedTypesInfo()
 	return &schemaContext{
 		pkg:                    pkg,
 		schemaRequester:        req,
 		allowDangerousTypes:    allowDangerousTypes,
 		ignoreUnexportedFields: ignoreUnexportedFields,
+		featureGates:          featureGates,
 	}
 }
 
@@ -95,6 +97,7 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		schemaRequester:        c.schemaRequester,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
+		featureGates:          c.featureGates,
 	}
 }
 
@@ -426,6 +429,17 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
 			continue
+		}
+
+		// Check feature gate markers - skip field if feature gate is not enabled
+		if featureGateMarker := field.Markers.Get("kubebuilder:feature-gate"); featureGateMarker != nil {
+			if featureGate, ok := featureGateMarker.(crdmarkers.FeatureGate); ok {
+				gateName := string(featureGate)
+				if !ctx.featureGates.isEnabled(gateName) {
+					// Skip this field as its feature gate is not enabled
+					continue
+				}
+			}
 		}
 
 		jsonTag, hasTag := field.Tag.Lookup("json")
