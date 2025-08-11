@@ -30,7 +30,6 @@ updates:
   ignore:
   # Ignore k8s and its transitives modules as they are upgraded manually.
   - dependency-name: "k8s.io/*"
-    update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
   commit-message:
     prefix: ":seedling:"
   labels:

@@ -96,6 +96,7 @@ test-all:
 .PHONY: modules
 modules: ## Runs go mod to ensure modules are up to date.
 	go mod tidy
+	cd pkg/applyconfiguration/testdata/cronjob; go mod tidy
 
 .PHONY: verify-modules
 verify-modules: modules ## Verify go modules are up to date
