@@ -294,6 +294,10 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			Format: fmt,
 		}
 	}
+	if _, isInterface := typeInfo.(*types.Interface); isInterface {
+		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("cannot generate schema for interface type %s", ident.Name), ident))
+		return &apiext.JSONSchemaProps{}
+	}
 	// NB(directxman12): if there are dot imports, this might be an external reference,
 	// so use typechecking info to get the actual object
 	typeNameInfo := typeInfo.(interface{ Obj() *types.TypeName }).Obj()
