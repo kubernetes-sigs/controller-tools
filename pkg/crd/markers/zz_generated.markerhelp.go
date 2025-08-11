@@ -138,6 +138,17 @@ func (ExclusiveMinimum) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (FeatureGate) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD feature gates",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks a field to be conditionally included based on feature gate enablement.",
+			Details: "Fields marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Format) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

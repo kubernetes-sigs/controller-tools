@@ -26,6 +26,7 @@ import (
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -85,6 +86,16 @@ type Generator struct {
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
 
+	// FeatureGates specifies which feature gates are enabled for conditional field inclusion.
+	//
+	// Single gate format: "gatename=true"
+	// Multiple gates format: "gate1=true,gate2=false" (must use quoted strings for comma-separated values)
+	//
+	// Examples:
+	//   controller-gen crd:featureGates="alpha=true" paths=./api/...
+	//   controller-gen 'crd:featureGates="alpha=true,beta=false"' paths=./api/...
+	FeatureGates string `marker:",optional"`
+
 	// DeprecatedV1beta1CompatibilityPreserveUnknownFields indicates whether
 	// or not we should turn off field pruning for this resource.
 	//
@@ -124,6 +135,11 @@ func transformPreserveUnknownFields(value bool) func(map[string]interface{}) err
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
+	featureGates, err := featuregate.ParseFeatureGates(g.FeatureGates, true)
+	if err != nil {
+		return fmt.Errorf("invalid feature gates: %w", err)
+	}
+
 	parser := &Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
@@ -132,6 +148,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
 		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
+		FeatureGates:               featureGates,
 	}
 
 	AddKnownTypes(parser)

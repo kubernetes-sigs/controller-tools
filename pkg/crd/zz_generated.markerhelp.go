@@ -60,6 +60,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "specifies the year to substitute for \" YEAR\" in the header file.",
 				Details: "",
 			},
+			"FeatureGates": {
+				Summary: "specifies which feature gates are enabled for conditional field inclusion.",
+				Details: "Single gate format: \"gatename=true\"\nMultiple gates format: \"gate1=true,gate2=false\" (must use quoted strings for comma-separated values)\n\nExamples:\n  controller-gen crd:featureGates=\"alpha=true\" paths=./api/...\n  controller-gen 'crd:featureGates=\"alpha=true,beta=false\"' paths=./api/...",
+			},
 			"DeprecatedV1beta1CompatibilityPreserveUnknownFields": {
 				Summary: "indicates whether",
 				Details: "or not we should turn off field pruning for this resource.\n\nSpecifies spec.preserveUnknownFields value that is false and omitted by default.\nThis value can only be specified for CustomResourceDefinitions that were created with\n`apiextensions.k8s.io/v1beta1`.\n\nThe field can be set for compatibility reasons, although strongly discouraged, resource\nauthors should move to a structural OpenAPI schema instead.\n\nSee https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#field-pruning\nfor more information about field pruning and v1beta1 resources compatibility.",

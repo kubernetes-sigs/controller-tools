@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -160,6 +161,13 @@ type Config struct {
 	// The URL configuration should be between quotes.
 	// `url` cannot be specified when `path` is specified.
 	URL string `marker:"url,optional"`
+
+	// FeatureGate specifies the feature gate(s) that control this webhook.
+	// If not set, the webhook is always included.
+	// If set to a single gate (e.g., "alpha"), the webhook is included when that gate is enabled.
+	// If set to multiple gates separated by "|" (e.g., "alpha|beta"), the webhook is included when ANY of the gates are enabled (OR logic).
+	// If set to multiple gates separated by "&" (e.g., "alpha&beta"), the webhook is included when ALL of the gates are enabled (AND logic).
+	FeatureGate string `marker:"featureGate,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -427,6 +435,12 @@ type Generator struct {
 
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
+
+	// FeatureGates is a comma-separated list of feature gates to enable (e.g., "alpha=true,beta=false").
+	// Only webhook configurations with matching feature gates will be included in the generated output.
+	// Feature gates not explicitly listed are treated as disabled.
+	// Usage: controller-gen 'webhook:featureGates="alpha=true,beta=false"' paths=./...
+	FeatureGates string `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -448,6 +462,13 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
 	var mutatingWebhookCfgs admissionregv1.MutatingWebhookConfiguration
 	var validatingWebhookCfgs admissionregv1.ValidatingWebhookConfiguration
+
+	// Parse feature gates from the CLI parameter using centralized package
+	enabledGates, err := featuregate.ParseFeatureGates(g.FeatureGates, false)
+	if err != nil {
+		return err
+	}
+	evaluator := featuregate.NewFeatureGateEvaluator(enabledGates)
 
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
@@ -490,6 +511,17 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 
 		for _, cfg := range cfgs {
 			cfg := cfg.(Config)
+
+			// Validate feature gate syntax if specified using centralized package
+			if err := featuregate.ValidateFeatureGateExpression(cfg.FeatureGate, nil, false); err != nil {
+				return fmt.Errorf("invalid feature gate for webhook %s: %w", cfg.Name, err)
+			}
+
+			// Check if this webhook should be included based on feature gates using centralized evaluator
+			if !evaluator.EvaluateExpression(cfg.FeatureGate) {
+				continue
+			}
+
 			webhookVersions, err := cfg.webhookVersions()
 			if err != nil {
 				return err

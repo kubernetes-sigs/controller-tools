@@ -138,6 +138,9 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(Title{}.Help()),
 	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesType, Title{})).
 		WithHelp(Title{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesField, FeatureGate(""))).
+		WithHelp(FeatureGate("").Help()),
 }
 
 func init() {
