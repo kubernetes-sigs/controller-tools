@@ -132,6 +132,13 @@ var ValidationIshMarkers = []*definitionWithHelp{
 func init() {
 	AllDefinitions = append(AllDefinitions, ValidationMarkers...)
 
+	// Add FeatureGate markers
+	featureGateMarkers := []*definitionWithHelp{
+		must(markers.MakeDefinition("kubebuilder:feature-gate", markers.DescribesField, FeatureGate(""))).WithHelp(FeatureGate("").Help()),
+		must(markers.MakeDefinition("kubebuilder:feature-gate", markers.DescribesType, FeatureGate(""))).WithHelp(FeatureGate("").Help()),
+	}
+	AllDefinitions = append(AllDefinitions, featureGateMarkers...)
+
 	for _, def := range ValidationMarkers {
 		typDef := def.clone()
 		typDef.Target = markers.DescribesType

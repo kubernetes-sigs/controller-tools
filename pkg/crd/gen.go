@@ -32,6 +32,47 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/version"
 )
 
+// FeatureGateMap represents a map of feature gate names to their enabled status.
+type FeatureGateMap map[string]bool
+
+// parseFeatureGates parses a feature gates string in the format "gate1=true,gate2=false"
+// and returns a FeatureGateMap. Supports comma-separated key=value pairs.
+// and returns a FeatureGateMap.
+func parseFeatureGates(featureGatesStr string) (FeatureGateMap, error) {
+	gates := make(FeatureGateMap)
+	if featureGatesStr == "" {
+		return gates, nil
+	}
+
+	pairs := strings.Split(featureGatesStr, ",")
+	for _, pair := range pairs {
+		parts := strings.Split(strings.TrimSpace(pair), "=")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid feature gate format: %s (expected format: gate1=true,gate2=false)", pair)
+		}
+
+		name := strings.TrimSpace(parts[0])
+		valueStr := strings.TrimSpace(parts[1])
+
+		switch valueStr {
+		case "true":
+			gates[name] = true
+		case "false":
+			gates[name] = false
+		default:
+			return nil, fmt.Errorf("invalid feature gate value for %s: %s (must be 'true' or 'false')", name, valueStr)
+		}
+	}
+
+	return gates, nil
+}
+
+// isFeatureGateEnabled checks if a feature gate is enabled.
+func (fg FeatureGateMap) isEnabled(gateName string) bool {
+	enabled, exists := fg[gateName]
+	return exists && enabled
+}
+
 // The identifier for v1 CustomResourceDefinitions.
 const v1 = "v1"
 
@@ -85,6 +126,16 @@ type Generator struct {
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
 
+	// FeatureGates specifies which feature gates are enabled for conditional field inclusion.
+	//
+	// Single gate format: "gatename=true"
+	// Multiple gates format: "gate1=true,gate2=false" (must use quoted strings for comma-separated values)
+	//
+	// Examples:
+	//   controller-gen crd:featureGates="alpha=true" paths=./api/...
+	//   controller-gen 'crd:featureGates="alpha=true,beta=false"' paths=./api/...
+	FeatureGates string `marker:",optional"`
+
 	// DeprecatedV1beta1CompatibilityPreserveUnknownFields indicates whether
 	// or not we should turn off field pruning for this resource.
 	//
@@ -124,6 +175,11 @@ func transformPreserveUnknownFields(value bool) func(map[string]interface{}) err
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
+	featureGates, err := parseFeatureGates(g.FeatureGates)
+	if err != nil {
+		return fmt.Errorf("invalid feature gates: %w", err)
+	}
+
 	parser := &Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
@@ -132,6 +188,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
 		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
+		FeatureGates:               featureGates,
 	}
 
 	AddKnownTypes(parser)

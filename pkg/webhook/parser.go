@@ -159,6 +159,13 @@ type Config struct {
 	// The URL configuration should be between quotes.
 	// `url` cannot be specified when `path` is specified.
 	URL string `marker:"url,optional"`
+
+	// FeatureGate specifies the feature gate(s) that control this webhook.
+	// If not set, the webhook is always included.
+	// If set to a single gate (e.g., "alpha"), the webhook is included when that gate is enabled.
+	// If set to multiple gates separated by "|" (e.g., "alpha|beta"), the webhook is included when ANY of the gates are enabled (OR logic).
+	// If set to multiple gates separated by "&" (e.g., "alpha&beta"), the webhook is included when ALL of the gates are enabled (AND logic).
+	FeatureGate string `marker:"featureGate,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -426,6 +433,12 @@ type Generator struct {
 
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
+
+	// FeatureGates is a comma-separated list of feature gates to enable (e.g., "alpha=true,beta=false").
+	// Only webhook configurations with matching feature gates will be included in the generated output.
+	// Feature gates not explicitly listed are treated as disabled.
+	// Usage: controller-gen 'webhook:featureGates="alpha=true,beta=false"' paths=./...
+	FeatureGates string `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -440,6 +453,98 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
+// FeatureGateMap represents enabled feature gates as a map for efficient lookup
+type FeatureGateMap map[string]bool
+
+// parseFeatureGates parses a comma-separated feature gate string into a map
+// Format: "gate1=true,gate2=false,gate3=true"
+func parseFeatureGates(featureGates string) FeatureGateMap {
+	gates := make(FeatureGateMap)
+	if featureGates == "" {
+		return gates
+	}
+
+	pairs := strings.Split(featureGates, ",")
+	for _, pair := range pairs {
+		parts := strings.Split(strings.TrimSpace(pair), "=")
+		if len(parts) != 2 {
+			continue
+		}
+		gateName := strings.TrimSpace(parts[0])
+		gateValue := strings.TrimSpace(parts[1])
+		gates[gateName] = gateValue == "true"
+	}
+	return gates
+}
+
+// validateFeatureGateExpression validates the syntax of a feature gate expression
+func validateFeatureGateExpression(expr string) error {
+	if expr == "" {
+		return nil
+	}
+
+	// Check for invalid characters (only allow alphanumeric, hyphens, underscores, &, |)
+	for _, char := range expr {
+		//nolint:staticcheck // De Morgan's law suggestion ignored for readability
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') || char == '-' || char == '_' ||
+			char == '&' || char == '|') {
+			return fmt.Errorf("invalid character '%c' in feature gate expression: %s", char, expr)
+		}
+	}
+
+	// Check for mixing AND and OR operators
+	hasAnd := strings.Contains(expr, "&")
+	hasOr := strings.Contains(expr, "|")
+	if hasAnd && hasOr {
+		return fmt.Errorf("cannot mix '&' and '|' operators in feature gate expression: %s", expr)
+	}
+
+	return nil
+}
+
+// shouldIncludeWebhook determines if a webhook should be included based on feature gates
+// Supports multiple gate logic:
+// - Single gate: "alpha" - included if alpha=true
+// - OR logic: "alpha|beta" - included if either alpha=true OR beta=true
+// - AND logic: "alpha&beta" - included if both alpha=true AND beta=true
+func shouldIncludeWebhook(config *Config, enabledGates FeatureGateMap) bool {
+	if config.FeatureGate == "" {
+		// No feature gate specified, always include
+		return true
+	}
+
+	featureGateExpr := config.FeatureGate
+
+	// Handle AND logic (all gates must be enabled)
+	if strings.Contains(featureGateExpr, "&") {
+		gates := strings.Split(featureGateExpr, "&")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; !exists || !enabled {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Handle OR logic (any gate can be enabled)
+	if strings.Contains(featureGateExpr, "|") {
+		gates := strings.Split(featureGateExpr, "|")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; exists && enabled {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Single gate logic
+	enabled, exists := enabledGates[featureGateExpr]
+	return exists && enabled
+}
+
 //gocyclo:ignore
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	supportedWebhookVersions := supportedWebhookVersions()
@@ -447,6 +552,9 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	validatingCfgs := make(map[string][]admissionregv1.ValidatingWebhook, len(supportedWebhookVersions))
 	var mutatingWebhookCfgs admissionregv1.MutatingWebhookConfiguration
 	var validatingWebhookCfgs admissionregv1.ValidatingWebhookConfiguration
+
+	// Parse feature gates from the CLI parameter
+	enabledGates := parseFeatureGates(g.FeatureGates)
 
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
@@ -489,6 +597,17 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 
 		for _, cfg := range cfgs {
 			cfg := cfg.(Config)
+
+			// Validate feature gate syntax if specified
+			if err := validateFeatureGateExpression(cfg.FeatureGate); err != nil {
+				return fmt.Errorf("invalid feature gate for webhook %s: %w", cfg.Name, err)
+			}
+
+			// Check if this webhook should be included based on feature gates
+			if !shouldIncludeWebhook(&cfg, enabledGates) {
+				continue
+			}
+
 			webhookVersions, err := cfg.webhookVersions()
 			if err != nil {
 				return err
