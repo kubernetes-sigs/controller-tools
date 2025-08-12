@@ -223,9 +223,10 @@ func validateFeatureGateExpression(expr string) error {
 
 	// Check for invalid characters (only allow alphanumeric, hyphens, underscores, &, |)
 	for _, char := range expr {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || char == '-' || char == '_' || 
-			 char == '&' || char == '|') {
+		//nolint:staticcheck // De Morgan's law suggestion ignored for readability
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') || char == '-' || char == '_' ||
+			char == '&' || char == '|') {
 			return fmt.Errorf("invalid character '%c' in feature gate expression: %s", char, expr)
 		}
 	}
@@ -296,17 +297,17 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string, featureGates 
 		// group RBAC markers by namespace and separate by resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
-			
+
 			// Validate feature gate expression syntax
 			if err := validateFeatureGateExpression(rule.FeatureGate); err != nil {
 				return nil, fmt.Errorf("invalid feature gate expression in RBAC rule: %w", err)
 			}
-			
+
 			// Apply feature gate filtering
 			if !shouldIncludeRule(&rule, enabledGates) {
 				continue
 			}
-			
+
 			if len(rule.Resources) == 0 {
 				// Add a rule without any resource if Resources is empty.
 				r := Rule{

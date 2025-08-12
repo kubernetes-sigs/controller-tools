@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
-	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 func TestAdvancedFeatureGates(t *testing.T) {
@@ -21,59 +21,59 @@ func TestAdvancedFeatureGates(t *testing.T) {
 	// Set up generation context
 	reg := &markers.Registry{}
 	g.Expect(reg.Register(RuleDefinition)).To(gomega.Succeed())
-	
+
 	ctx := &genall.GenerationContext{
 		Collector: &markers.Collector{Registry: reg},
 		Roots:     pkgs,
 	}
 
 	tests := []struct {
-		name           string
-		featureGates   string
-		expectedRules  int
-		shouldContain  []string
+		name             string
+		featureGates     string
+		expectedRules    int
+		shouldContain    []string
 		shouldNotContain []string
 	}{
 		{
-			name:         "OR logic - alpha enabled",
-			featureGates: "alpha=true,beta=false",
-			expectedRules: 3, // always-on + OR rule (alpha|beta)
-			shouldContain: []string{"pods", "configmaps", "secrets"},
+			name:             "OR logic - alpha enabled",
+			featureGates:     "alpha=true,beta=false",
+			expectedRules:    3, // always-on + OR rule (alpha|beta)
+			shouldContain:    []string{"pods", "configmaps", "secrets"},
 			shouldNotContain: []string{"services"},
 		},
 		{
-			name:         "OR logic - beta enabled",
-			featureGates: "alpha=false,beta=true",
-			expectedRules: 3, // always-on + OR rule (alpha|beta)
-			shouldContain: []string{"pods", "configmaps", "secrets"},
+			name:             "OR logic - beta enabled",
+			featureGates:     "alpha=false,beta=true",
+			expectedRules:    3, // always-on + OR rule (alpha|beta)
+			shouldContain:    []string{"pods", "configmaps", "secrets"},
 			shouldNotContain: []string{"services"},
 		},
 		{
-			name:         "OR logic - both enabled",
-			featureGates: "alpha=true,beta=true",
-			expectedRules: 4, // always-on + OR rule + AND rule
-			shouldContain: []string{"pods", "configmaps", "secrets", "services"},
+			name:             "OR logic - both enabled",
+			featureGates:     "alpha=true,beta=true",
+			expectedRules:    4, // always-on + OR rule + AND rule
+			shouldContain:    []string{"pods", "configmaps", "secrets", "services"},
 			shouldNotContain: []string{},
 		},
 		{
-			name:         "OR logic - neither enabled",
-			featureGates: "alpha=false,beta=false",
-			expectedRules: 2, // only always-on
-			shouldContain: []string{"pods", "configmaps"},
+			name:             "OR logic - neither enabled",
+			featureGates:     "alpha=false,beta=false",
+			expectedRules:    2, // only always-on
+			shouldContain:    []string{"pods", "configmaps"},
 			shouldNotContain: []string{"secrets", "services"},
 		},
 		{
-			name:         "AND logic - only alpha enabled",
-			featureGates: "alpha=true,beta=false",
-			expectedRules: 3, // always-on + OR rule (alpha|beta)
-			shouldContain: []string{"pods", "configmaps", "secrets"},
+			name:             "AND logic - only alpha enabled",
+			featureGates:     "alpha=true,beta=false",
+			expectedRules:    3, // always-on + OR rule (alpha|beta)
+			shouldContain:    []string{"pods", "configmaps", "secrets"},
 			shouldNotContain: []string{"services"},
 		},
 		{
-			name:         "AND logic - both enabled",
-			featureGates: "alpha=true,beta=true",
-			expectedRules: 4, // always-on + OR rule + AND rule
-			shouldContain: []string{"pods", "configmaps", "secrets", "services"},
+			name:             "AND logic - both enabled",
+			featureGates:     "alpha=true,beta=true",
+			expectedRules:    4, // always-on + OR rule + AND rule
+			shouldContain:    []string{"pods", "configmaps", "secrets", "services"},
 			shouldNotContain: []string{},
 		},
 	}
@@ -81,7 +81,7 @@ func TestAdvancedFeatureGates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
-			
+
 			objs, err := GenerateRoles(ctx, "test-role", tt.featureGates)
 			g.Expect(err).NotTo(gomega.HaveOccurred())
 			g.Expect(objs).To(gomega.HaveLen(1))
@@ -97,7 +97,7 @@ func TestAdvancedFeatureGates(t *testing.T) {
 			}
 
 			for _, resource := range tt.shouldContain {
-				g.Expect(rulesStr).To(gomega.ContainSubstring(resource), 
+				g.Expect(rulesStr).To(gomega.ContainSubstring(resource),
 					"Expected resource %s to be present", resource)
 			}
 

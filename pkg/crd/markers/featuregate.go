@@ -24,7 +24,7 @@ import (
 
 // FeatureGate marks a field to be conditionally included based on feature gate enablement.
 // Fields marked with +kubebuilder:feature-gate will only be included in generated CRDs
-// when the specified feature gate is enabled via --feature-gates flag.
+// when the specified feature gate is enabled via the crd:featureGates parameter.
 type FeatureGate string
 
 // ApplyToSchema does nothing for feature gates - they are processed by the generator

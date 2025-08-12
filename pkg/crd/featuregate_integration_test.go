@@ -17,28 +17,28 @@ limitations under the License.
 package crd_test
 
 import (
-"bytes"
-"io"
-"os"
-"path/filepath"
+	"bytes"
+	"io"
+	"os"
+	"path/filepath"
 
-"github.com/google/go-cmp/cmp"
-. "github.com/onsi/ginkgo"
-. "github.com/onsi/gomega"
-"sigs.k8s.io/controller-tools/pkg/crd"
-crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
-"sigs.k8s.io/controller-tools/pkg/genall"
-"sigs.k8s.io/controller-tools/pkg/loader"
-"sigs.k8s.io/controller-tools/pkg/markers"
+	"github.com/google/go-cmp/cmp"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-tools/pkg/crd"
+	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/genall"
+	"sigs.k8s.io/controller-tools/pkg/loader"
+	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
 var _ = Describe("CRD Feature Gate Generation", func() {
 	var (
-ctx                *genall.GenerationContext
-out                *featureGateOutputRule
-featureGateDir     string
-originalWorkingDir string
-)
+		ctx                *genall.GenerationContext
+		out                *featureGateOutputRule
+		featureGateDir     string
+		originalWorkingDir string
+	)
 
 	BeforeEach(func() {
 		var err error
