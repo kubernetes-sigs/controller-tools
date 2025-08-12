@@ -60,9 +60,11 @@ type Rule struct {
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
 	Namespace string `marker:",optional"`
-	// FeatureGate specifies the feature gate that controls this RBAC rule.
+	// FeatureGate specifies the feature gate(s) that control this RBAC rule.
 	// If not set, the rule is always included.
-	// If set, the rule is only included when the specified feature gate is enabled.
+	// If set to a single gate (e.g., "alpha"), the rule is included when that gate is enabled.
+	// If set to multiple gates separated by "|" (e.g., "alpha|beta"), the rule is included when ANY of the gates are enabled (OR logic).
+	// If set to multiple gates separated by "&" (e.g., "alpha&beta"), the rule is included when ALL of the gates are enabled (AND logic).
 	FeatureGate string `marker:"featureGate,optional"`
 }
 
@@ -176,6 +178,8 @@ type Generator struct {
 
 	// FeatureGates is a comma-separated list of feature gates to enable (e.g., "alpha=true,beta=false").
 	// Only RBAC rules with matching feature gates will be included in the generated output.
+	// Feature gates not explicitly listed are treated as disabled.
+	// Usage: controller-gen 'rbac:roleName=manager,featureGates="alpha=true,beta=false"' paths=./...
 	FeatureGates string `marker:",optional"`
 }
 
@@ -211,15 +215,70 @@ func parseFeatureGates(featureGates string) FeatureGateMap {
 	return gates
 }
 
+// validateFeatureGateExpression validates the syntax of a feature gate expression
+func validateFeatureGateExpression(expr string) error {
+	if expr == "" {
+		return nil
+	}
+
+	// Check for invalid characters (only allow alphanumeric, hyphens, underscores, &, |)
+	for _, char := range expr {
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || 
+			 (char >= '0' && char <= '9') || char == '-' || char == '_' || 
+			 char == '&' || char == '|') {
+			return fmt.Errorf("invalid character '%c' in feature gate expression: %s", char, expr)
+		}
+	}
+
+	// Check for mixing AND and OR operators
+	hasAnd := strings.Contains(expr, "&")
+	hasOr := strings.Contains(expr, "|")
+	if hasAnd && hasOr {
+		return fmt.Errorf("cannot mix '&' and '|' operators in feature gate expression: %s", expr)
+	}
+
+	return nil
+}
+
 // shouldIncludeRule determines if an RBAC rule should be included based on feature gates
+// Supports multiple gate logic:
+// - Single gate: "alpha" - included if alpha=true
+// - OR logic: "alpha|beta" - included if either alpha=true OR beta=true
+// - AND logic: "alpha&beta" - included if both alpha=true AND beta=true
 func shouldIncludeRule(rule *Rule, enabledGates FeatureGateMap) bool {
 	if rule.FeatureGate == "" {
 		// No feature gate specified, always include
 		return true
 	}
 
-	// Check if the feature gate is enabled
-	enabled, exists := enabledGates[rule.FeatureGate]
+	featureGateExpr := rule.FeatureGate
+
+	// Handle AND logic (all gates must be enabled)
+	if strings.Contains(featureGateExpr, "&") {
+		gates := strings.Split(featureGateExpr, "&")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; !exists || !enabled {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Handle OR logic (any gate can be enabled)
+	if strings.Contains(featureGateExpr, "|") {
+		gates := strings.Split(featureGateExpr, "|")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; exists && enabled {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Single gate logic
+	enabled, exists := enabledGates[featureGateExpr]
 	return exists && enabled
 }
 
@@ -237,6 +296,11 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string, featureGates 
 		// group RBAC markers by namespace and separate by resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
+			
+			// Validate feature gate expression syntax
+			if err := validateFeatureGateExpression(rule.FeatureGate); err != nil {
+				return nil, fmt.Errorf("invalid feature gate expression in RBAC rule: %w", err)
+			}
 			
 			// Apply feature gate filtering
 			if !shouldIncludeRule(&rule, enabledGates) {
