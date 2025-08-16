@@ -14,13 +14,28 @@ limitations under the License.
 */
 
 //go:generate ../../../.run-controller-gen.sh webhook paths=. output:dir=.
+//go:generate ../../../.run-controller-gen.sh object paths=. output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
+// +k8s:deepcopy-gen=package
 package cronjob
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
+)
+
+var (
+	// GroupVersion is group version used to register these objects
+	GroupVersion = schema.GroupVersion{Group: "testdata.kubebuilder.io", Version: "v1"}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

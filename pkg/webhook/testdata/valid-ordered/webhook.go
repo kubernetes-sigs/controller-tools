@@ -49,7 +49,7 @@ func (v cronJobValidator) ValidateDelete(ctx context.Context, obj runtime.Object
 
 // +kubebuilder:webhook:webhookVersions=v1,verbs=create;update,path=/validate-testdata-kubebuilder-io-v1-cronjoblist,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=testdata.kubebuilder.io,resources=cronjoblist,versions=v1,name=cronjoblist.testdata.kubebuilder.io,sideEffects=None,admissionReviewVersions=v1;v1beta1,reinvocationPolicy=Never
 
-type cronjobListValidator struct {
+type cronJobListValidator struct {
 	client client.Client
 }
 
