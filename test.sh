@@ -119,14 +119,4 @@ make lint
 
 header_text "running go test"
 
-for dir in $(find . -name go.mod -exec dirname {} \;); do
-  # Includes "BadDeepCopy" types that are not supposed to result in
-  # valid code generation
-  if [[ "$dir" == "./pkg/deepcopy/testdata" ]]; then continue; fi
-
-  # https://github.com/kubernetes-sigs/controller-tools/issues/1227
-  if [[ "$dir" == "./pkg/webhook/testdata" ]]; then continue; fi
-
-  echo "Testing module in $dir"
-  (cd "$dir" && go test -race ./... -parallel 4)
-done
+go test -race ./pkg/... ./cmd/... -parallel 4
