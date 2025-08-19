@@ -52,7 +52,7 @@ const (
 )
 
 // This enum type tests for whether when both "+enum" and
-// "+kubebuilder:validation:Enum" are defined the former takes precedence.
+// "+kubebuilder:validation:Enum" are defined the latter takes precedence.
 // It should.
 //
 // +enum
