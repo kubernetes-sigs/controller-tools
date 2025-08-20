@@ -194,7 +194,7 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 				posRel, err := filepath.Rel(filepath.Join(wd, genDir), pkgError.Pos)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(posRel).To(Equal("iface/iface_types.go:32:6"))
-				Expect(pkgError.Msg).To(Equal("cannot generate schema for interface type any"))
+				Expect(pkgError.Msg).To(Equal("cannot generate schema for any"))
 				matches++
 			}
 		}

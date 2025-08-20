@@ -270,8 +270,9 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 	if aliasInfo, isAlias := typeInfo.(*types.Alias); isAlias {
 		typeInfo = aliasInfo.Rhs()
 	}
-	if basicInfo, isBasic := typeInfo.(*types.Basic); isBasic {
-		typ, fmt, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
+	switch typeInfo := typeInfo.(type) {
+	case *types.Basic:
+		typ, fmt, err := builtinToType(typeInfo, ctx.allowDangerousTypes)
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
@@ -280,7 +281,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		// > For gotypesalias=1, alias declarations produce an Alias type.
 		// > Otherwise, the alias information is only in the type name, which
 		// > points directly to the actual (aliased) type.
-		if basicInfo.Name() != ident.Name {
+		if typeInfo.Name() != ident.Name {
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
 			return &apiext.JSONSchemaProps{
@@ -293,23 +294,24 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			Type:   typ,
 			Format: fmt,
 		}
-	}
-	if _, isInterface := typeInfo.(*types.Interface); isInterface {
-		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("cannot generate schema for interface type %s", ident.Name), ident))
+	case interface{ Obj() *types.TypeName }:
+		// NB(directxman12): if there are dot imports, this might be an external reference,
+		// so use typechecking info to get the actual object
+		typeNameInfo := typeInfo.Obj()
+		pkg := typeNameInfo.Pkg()
+		pkgPath := loader.NonVendorPath(pkg.Path())
+		if pkg == ctx.pkg.Types {
+			pkgPath = ""
+		}
+		ctx.requestSchema(pkgPath, typeNameInfo.Name())
+		link := TypeRefLink(pkgPath, typeNameInfo.Name())
+		return &apiext.JSONSchemaProps{
+			Ref: &link,
+		}
+	default:
+		// This happens for type any, and other scenarios.
+		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("cannot generate schema for %s", ident.Name), ident))
 		return &apiext.JSONSchemaProps{}
-	}
-	// NB(directxman12): if there are dot imports, this might be an external reference,
-	// so use typechecking info to get the actual object
-	typeNameInfo := typeInfo.(interface{ Obj() *types.TypeName }).Obj()
-	pkg := typeNameInfo.Pkg()
-	pkgPath := loader.NonVendorPath(pkg.Path())
-	if pkg == ctx.pkg.Types {
-		pkgPath = ""
-	}
-	ctx.requestSchema(pkgPath, typeNameInfo.Name())
-	link := TypeRefLink(pkgPath, typeNameInfo.Name())
-	return &apiext.JSONSchemaProps{
-		Ref: &link,
 	}
 }
 
