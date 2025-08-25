@@ -60,6 +60,12 @@ type Rule struct {
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
 	Namespace string `marker:",optional"`
+	// FeatureGate specifies the feature gate(s) that control this RBAC rule.
+	// If not set, the rule is always included.
+	// If set to a single gate (e.g., "alpha"), the rule is included when that gate is enabled.
+	// If set to multiple gates separated by "|" (e.g., "alpha|beta"), the rule is included when ANY of the gates are enabled (OR logic).
+	// If set to multiple gates separated by "&" (e.g., "alpha&beta"), the rule is included when ALL of the gates are enabled (AND logic).
+	FeatureGate string `marker:"featureGate,optional"`
 }
 
 // ruleKey represents the resources and non-resources a Rule applies.
@@ -169,6 +175,12 @@ type Generator struct {
 
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
+
+	// FeatureGates is a comma-separated list of feature gates to enable (e.g., "alpha=true,beta=false").
+	// Only RBAC rules with matching feature gates will be included in the generated output.
+	// Feature gates not explicitly listed are treated as disabled.
+	// Usage: controller-gen 'rbac:roleName=manager,featureGates="alpha=true,beta=false"' paths=./...
+	FeatureGates string `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -179,9 +191,102 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
+// FeatureGateMap represents enabled feature gates as a map for efficient lookup
+type FeatureGateMap map[string]bool
+
+// parseFeatureGates parses a comma-separated feature gate string into a map
+// Format: "gate1=true,gate2=false,gate3=true"
+func parseFeatureGates(featureGates string) FeatureGateMap {
+	gates := make(FeatureGateMap)
+	if featureGates == "" {
+		return gates
+	}
+
+	pairs := strings.Split(featureGates, ",")
+	for _, pair := range pairs {
+		parts := strings.Split(strings.TrimSpace(pair), "=")
+		if len(parts) != 2 {
+			continue
+		}
+		gateName := strings.TrimSpace(parts[0])
+		gateValue := strings.TrimSpace(parts[1])
+		gates[gateName] = gateValue == "true"
+	}
+	return gates
+}
+
+// validateFeatureGateExpression validates the syntax of a feature gate expression
+func validateFeatureGateExpression(expr string) error {
+	if expr == "" {
+		return nil
+	}
+
+	// Check for invalid characters (only allow alphanumeric, hyphens, underscores, &, |)
+	for _, char := range expr {
+		//nolint:staticcheck // De Morgan's law suggestion ignored for readability
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') || char == '-' || char == '_' ||
+			char == '&' || char == '|') {
+			return fmt.Errorf("invalid character '%c' in feature gate expression: %s", char, expr)
+		}
+	}
+
+	// Check for mixing AND and OR operators
+	hasAnd := strings.Contains(expr, "&")
+	hasOr := strings.Contains(expr, "|")
+	if hasAnd && hasOr {
+		return fmt.Errorf("cannot mix '&' and '|' operators in feature gate expression: %s", expr)
+	}
+
+	return nil
+}
+
+// shouldIncludeRule determines if an RBAC rule should be included based on feature gates
+// Supports multiple gate logic:
+// - Single gate: "alpha" - included if alpha=true
+// - OR logic: "alpha|beta" - included if either alpha=true OR beta=true
+// - AND logic: "alpha&beta" - included if both alpha=true AND beta=true
+func shouldIncludeRule(rule *Rule, enabledGates FeatureGateMap) bool {
+	if rule.FeatureGate == "" {
+		// No feature gate specified, always include
+		return true
+	}
+
+	featureGateExpr := rule.FeatureGate
+
+	// Handle AND logic (all gates must be enabled)
+	if strings.Contains(featureGateExpr, "&") {
+		gates := strings.Split(featureGateExpr, "&")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; !exists || !enabled {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Handle OR logic (any gate can be enabled)
+	if strings.Contains(featureGateExpr, "|") {
+		gates := strings.Split(featureGateExpr, "|")
+		for _, gate := range gates {
+			gate = strings.TrimSpace(gate)
+			if enabled, exists := enabledGates[gate]; exists && enabled {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Single gate logic
+	enabled, exists := enabledGates[featureGateExpr]
+	return exists && enabled
+}
+
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
-func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{}, error) {
+func GenerateRoles(ctx *genall.GenerationContext, roleName string, featureGates string) ([]interface{}, error) {
+	enabledGates := parseFeatureGates(featureGates)
 	rulesByNSResource := make(map[string][]*Rule)
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
@@ -192,6 +297,17 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 		// group RBAC markers by namespace and separate by resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
+
+			// Validate feature gate expression syntax
+			if err := validateFeatureGateExpression(rule.FeatureGate); err != nil {
+				return nil, fmt.Errorf("invalid feature gate expression in RBAC rule: %w", err)
+			}
+
+			// Apply feature gate filtering
+			if !shouldIncludeRule(&rule, enabledGates) {
+				continue
+			}
+
 			if len(rule.Resources) == 0 {
 				// Add a rule without any resource if Resources is empty.
 				r := Rule{
@@ -201,6 +317,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 					URLs:          rule.URLs,
 					Namespace:     rule.Namespace,
 					Verbs:         rule.Verbs,
+					FeatureGate:   rule.FeatureGate,
 				}
 				namespace := r.Namespace
 				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
@@ -214,6 +331,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 					URLs:          rule.URLs,
 					Namespace:     rule.Namespace,
 					Verbs:         rule.Verbs,
+					FeatureGate:   rule.FeatureGate,
 				}
 				namespace := r.Namespace
 				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
@@ -367,7 +485,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
-	objs, err := GenerateRoles(ctx, g.RoleName)
+	objs, err := GenerateRoles(ctx, g.RoleName, g.FeatureGates)
 	if err != nil {
 		return err
 	}
