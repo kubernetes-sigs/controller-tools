@@ -163,7 +163,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	// TODO: allow selecting a specific object
-	kubeKinds := FindKubeKinds(parser, metav1Pkg)
+	kubeKinds := FindKubeKinds(parser, metav1Pkg, featureGates)
 	if len(kubeKinds) == 0 {
 		// no objects in the roots
 		return nil
@@ -281,8 +281,8 @@ func FindMetav1(roots []*loader.Package) *loader.Package {
 
 // FindKubeKinds locates all types that contain TypeMeta and ObjectMeta
 // (and thus may be a Kubernetes object), and returns the corresponding
-// group-kinds.
-func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind {
+// group-kinds that are not filtered out by feature gates.
+func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package, featureGates featuregate.FeatureGateMap) []schema.GroupKind {
 	// TODO(directxman12): technically, we should be finding metav1 per-package
 	kubeKinds := map[schema.GroupKind]struct{}{}
 	for typeIdent, info := range parser.Types {
@@ -332,6 +332,19 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 
 		if !hasObjectMeta || !hasTypeMeta {
 			continue
+		}
+
+		// Check type-level feature gate marker
+		if featureGateMarker := info.Markers.Get("kubebuilder:featuregate"); featureGateMarker != nil {
+			if typeFeatureGate, ok := featureGateMarker.(crdmarkers.TypeFeatureGate); ok {
+				gateName := string(typeFeatureGate)
+				// Create evaluator to handle complex expressions (OR/AND logic)
+				evaluator := featuregate.NewFeatureGateEvaluator(featureGates)
+				if !evaluator.EvaluateExpression(gateName) {
+					// Skip this type as its feature gate expression is not satisfied
+					continue
+				}
+			}
 		}
 
 		groupKind := schema.GroupKind{
