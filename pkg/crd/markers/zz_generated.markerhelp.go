@@ -540,6 +540,17 @@ func (Type) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (TypeFeatureGate) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD feature gates",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks an entire CRD type to be conditionally generated based on feature gate enablement.",
+			Details: "Types marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.\n\nSingle gate format: +kubebuilder:featuregate=alpha\nOR expression: +kubebuilder:featuregate=alpha|beta\nAND expression: +kubebuilder:featuregate=alpha&beta\nComplex expression: +kubebuilder:featuregate=(alpha&beta)|gamma",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (UniqueItems) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

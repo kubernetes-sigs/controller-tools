@@ -1,0 +1,60 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: betagateds.
+spec:
+  group: ""
+  names:
+    kind: BetaGated
+    listKind: BetaGatedList
+    plural: betagateds
+    singular: betagated
+  scope: Namespace
+  versions:
+  - name: ""
+    schema:
+      openAPIV3Schema:
+        description: BetaGated is only generated when beta feature gate is enabled
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BetaGatedSpec defines a CRD that's only generated when beta
+              gate is enabled
+            properties:
+              betaField:
+                type: string
+            required:
+            - betaField
+            type: object
+          status:
+            description: BetaGatedStatus defines the observed state of BetaGated
+            properties:
+              betaReady:
+                type: boolean
+            required:
+            - betaReady
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
