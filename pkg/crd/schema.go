@@ -436,7 +436,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		}
 
 		// Check feature gate markers - skip field if feature gate is not enabled
-		if featureGateMarker := field.Markers.Get("kubebuilder:feature-gate"); featureGateMarker != nil {
+		if featureGateMarker := field.Markers.Get("kubebuilder:featuregate"); featureGateMarker != nil {
 			if featureGate, ok := featureGateMarker.(crdmarkers.FeatureGate); ok {
 				gateName := string(featureGate)
 				// Create evaluator to handle complex expressions (OR/AND logic)

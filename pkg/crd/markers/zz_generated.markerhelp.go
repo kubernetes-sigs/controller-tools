@@ -149,6 +149,26 @@ func (FeatureGate) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (FeatureGateValidation) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation feature gates",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks a validation constraint to be conditionally applied based on feature gate enablement.",
+			Details: "This allows validation rules to be enabled/disabled based on feature gates.\nThe validation parameter accepts the same values as standard kubebuilder:validation markers.\n\nExamples:\n  - +kubebuilder:validation:featureGate=alpha,rule=\"Maximum=100\"\n  - +kubebuilder:validation:featureGate=alpha|beta,rule=\"MinLength=5\"\n  - +kubebuilder:validation:featureGate=(alpha&beta)|gamma,rule=\"Pattern=^[a-z]+$\"",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"FeatureGate": {
+				Summary: "specifies the feature gate expression that must be satisfied",
+				Details: "for this validation rule to be applied. Supports complex expressions with\nAND (&), OR (|) operators and parentheses for precedence.",
+			},
+			"Rule": {
+				Summary: "specifies the validation rule to apply when the feature gate is enabled.",
+				Details: "This should be a valid validation marker rule (e.g., \"Maximum=100\", \"MinLength=5\").",
+			},
+		},
+	}
+}
+
 func (Format) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

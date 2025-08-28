@@ -44,21 +44,6 @@ spec:
                 description: Alpha-gated field - only included when alpha gate is
                   enabled
                 type: string
-              andFeature:
-                description: AND-gated field - included only when both alpha AND beta
-                  gates are enabled
-                type: string
-              betaFeature:
-                description: Beta-gated field - only included when beta gate is enabled
-                type: string
-              complexAndFeature:
-                description: Complex precedence field - included when (alpha OR beta)
-                  AND gamma is enabled
-                type: string
-              complexOrFeature:
-                description: Complex precedence field - included when (alpha AND beta)
-                  OR gamma is enabled
-                type: string
               name:
                 description: Standard field - always included
                 type: string
@@ -75,21 +60,6 @@ spec:
             properties:
               alphaStatus:
                 description: Alpha-gated status field
-                type: string
-              andStatus:
-                description: AND-gated status field - included only when both alpha
-                  AND beta gates are enabled
-                type: string
-              betaStatus:
-                description: Beta-gated status field
-                type: string
-              complexAndStatus:
-                description: Complex precedence status field - included when (alpha
-                  OR beta) AND gamma is enabled
-                type: string
-              complexOrStatus:
-                description: Complex precedence status field - included when (alpha
-                  AND beta) OR gamma is enabled
                 type: string
               orStatus:
                 description: OR-gated status field - included when either alpha OR

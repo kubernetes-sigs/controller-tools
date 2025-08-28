@@ -51,10 +51,6 @@ spec:
               betaFeature:
                 description: Beta-gated field - only included when beta gate is enabled
                 type: string
-              complexAndFeature:
-                description: Complex precedence field - included when (alpha OR beta)
-                  AND gamma is enabled
-                type: string
               complexOrFeature:
                 description: Complex precedence field - included when (alpha AND beta)
                   OR gamma is enabled
@@ -82,10 +78,6 @@ spec:
                 type: string
               betaStatus:
                 description: Beta-gated status field
-                type: string
-              complexAndStatus:
-                description: Complex precedence status field - included when (alpha
-                  OR beta) AND gamma is enabled
                 type: string
               complexOrStatus:
                 description: Complex precedence status field - included when (alpha

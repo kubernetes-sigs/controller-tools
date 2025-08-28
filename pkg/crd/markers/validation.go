@@ -141,6 +141,9 @@ var ValidationIshMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesField, FeatureGate(""))).
 		WithHelp(FeatureGate("").Help()),
+
+	must(markers.MakeDefinition("kubebuilder:validation:featureGate", markers.DescribesField, FeatureGateValidation{})).
+		WithHelp(markers.SimpleHelp("CRD validation feature gates", "applies validation rules conditionally based on feature gate enablement.")),
 }
 
 func init() {
@@ -750,4 +753,47 @@ func fieldsToOneOfCelRuleStr(fields []string) string {
 	}
 	list.WriteString("].filter(x,x==true).size()")
 	return list.String()
+}
+
+// +controllertools:marker:generateHelp:category="CRD validation feature gates"
+
+// FeatureGateValidation marks a validation constraint to be conditionally applied based on feature gate enablement.
+// This allows validation rules to be enabled/disabled based on feature gates.
+// The validation parameter accepts the same values as standard kubebuilder:validation markers.
+//
+// Examples:
+//   - +kubebuilder:validation:featureGate=alpha,rule="Maximum=100"
+//   - +kubebuilder:validation:featureGate=alpha|beta,rule="MinLength=5"
+//   - +kubebuilder:validation:featureGate=(alpha&beta)|gamma,rule="Pattern=^[a-z]+$"
+type FeatureGateValidation struct {
+	// FeatureGate specifies the feature gate expression that must be satisfied
+	// for this validation rule to be applied. Supports complex expressions with
+	// AND (&), OR (|) operators and parentheses for precedence.
+	FeatureGate string `marker:"featureGate"`
+
+	// Rule specifies the validation rule to apply when the feature gate is enabled.
+	// This should be a valid validation marker rule (e.g., "Maximum=100", "MinLength=5").
+	Rule string `marker:"rule"`
+}
+
+// ApplyToSchema applies the validation rule to the schema if the feature gate is enabled.
+func (f FeatureGateValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	// This will be called by the schema generation with access to the context
+	// The actual feature gate evaluation will be handled by the caller
+	return fmt.Errorf("FeatureGateValidation cannot be applied directly - use feature gate context")
+}
+
+// SupportsFeatureGate indicates this marker supports feature gates
+func (f FeatureGateValidation) SupportsFeatureGate() bool {
+	return true
+}
+
+// GetFeatureGate returns the feature gate expression
+func (f FeatureGateValidation) GetFeatureGate() string {
+	return f.FeatureGate
+}
+
+// GetValidationRule returns the validation rule to apply
+func (f FeatureGateValidation) GetValidationRule() string {
+	return f.Rule
 }
