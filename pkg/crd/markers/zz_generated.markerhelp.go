@@ -127,6 +127,17 @@ func (ExclusiveMinimum) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (FeatureGate) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD feature gates",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks a field to be conditionally included based on feature gate enablement.",
+			Details: "Fields marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Format) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
@@ -513,6 +524,17 @@ func (Type) Help() *markers.DefinitionHelp {
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "overrides the type for this field (which defaults to the equivalent of the Go type).",
 			Details: "This generally must be paired with custom serialization.  For example, the\nmetav1.Time field would be marked as \"type: string\" and \"format: date-time\".",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (TypeFeatureGate) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD feature gates",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks an entire CRD type to be conditionally generated based on feature gate enablement.",
+			Details: "Types marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.\n\nSingle gate format: +kubebuilder:featuregate=alpha\nOR expression: +kubebuilder:featuregate=alpha|beta\nAND expression: +kubebuilder:featuregate=alpha&beta\nComplex expression: +kubebuilder:featuregate=(alpha&beta)|gamma",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
