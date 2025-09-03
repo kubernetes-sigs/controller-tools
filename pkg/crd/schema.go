@@ -271,7 +271,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		typeInfo = aliasInfo.Rhs()
 	}
 	if basicInfo, isBasic := typeInfo.(*types.Basic); isBasic {
-		typ, fmt, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
+		typ, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
 		if err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err, ident))
 		}
@@ -284,14 +284,12 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
 			return &apiext.JSONSchemaProps{
-				Type:   typ,
-				Format: fmt,
-				Ref:    &link,
+				Type: typ,
+				Ref:  &link,
 			}
 		}
 		return &apiext.JSONSchemaProps{
-			Type:   typ,
-			Format: fmt,
+			Type: typ,
 		}
 	}
 	// NB(directxman12): if there are dot imports, this might be an external reference,
@@ -554,7 +552,7 @@ func validateOneOfValues(fields ...string) error {
 // builtinToType converts builtin basic types to their equivalent JSON schema form.
 // It *only* handles types allowed by the kubernetes API standards. Floats are not
 // allowed unless allowDangerousTypes is true
-func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, format string, err error) {
+func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, err error) {
 	// NB(directxman12): formats from OpenAPI v3 are slightly different than those defined
 	// in JSONSchema.  This'll use the OpenAPI v3 ones, since they're useful for bounding our
 	// non-string types.
@@ -570,20 +568,13 @@ func builtinToType(basic *types.Basic, allowDangerousTypes bool) (typ string, fo
 		if allowDangerousTypes {
 			typ = "number"
 		} else {
-			return "", "", errors.New("found float, the usage of which is highly discouraged, as support for them varies across languages. Please consider serializing your float as string instead. If you are really sure you want to use them, re-run with crd:allowDangerousTypes=true")
+			return "", errors.New("found float, the usage of which is highly discouraged, as support for them varies across languages. Please consider serializing your float as string instead. If you are really sure you want to use them, re-run with crd:allowDangerousTypes=true")
 		}
 	default:
-		return "", "", fmt.Errorf("unsupported type %q", basic.String())
+		return "", fmt.Errorf("unsupported type %q", basic.String())
 	}
 
-	switch basic.Kind() {
-	case types.Int32, types.Uint32:
-		format = "int32"
-	case types.Int64, types.Uint64:
-		format = "int64"
-	}
-
-	return typ, format, nil
+	return typ, nil
 }
 
 // Open coded go/types representation of encoding/json.Marshaller

@@ -41,7 +41,6 @@ spec:
             properties:
               count:
                 description: Count is the number of times a job may be executed.
-                format: int32
                 maximum: 10
                 minimum: 0
                 type: integer
@@ -49,7 +48,6 @@ spec:
                 description: CronJob is the spec for the related CrongJob.
                 properties:
                   int32WithValidations:
-                    format: int32
                     maximum: 2
                     minimum: -2
                     multipleOf: 2
