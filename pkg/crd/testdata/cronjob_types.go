@@ -238,6 +238,10 @@ type CronJobSpec struct {
 	// +optional
 	ExplicitlyOptionalKubernetes string `json:"explicitlyOptionalKubernetes"`
 
+	// This tests explicitly optional k8s fields
+	// +k8s:optional
+	ExplicitlyOptionalK8s string `json:"explicitlyOptionalK8s"`
+
 	// This tests explicitly required kubebuilder fields
 	// +kubebuilder:validation:Required
 	ExplicitlyRequiredKubebuilder string `json:"explicitlyRequiredKubebuilder,omitempty"`
@@ -245,6 +249,10 @@ type CronJobSpec struct {
 	// This tests explicitly required kubernetes fields
 	// +required
 	ExplicitlyRequiredKubernetes string `json:"explicitlyRequiredKubernetes,omitempty"`
+
+	// This tests explicitly required k8s fields
+	// +k8s:required
+	ExplicitlyRequiredK8s string `json:"explicitlyRequiredK8s,omitempty"`
 
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
