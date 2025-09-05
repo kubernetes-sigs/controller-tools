@@ -389,6 +389,30 @@ type CronJobSpec struct {
 	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
 	// +kubebuilder:validation:XValidation:rule="oldSelf.hasValue() || self == 0",message="must be set to 0 on creation. can be set to any value on an update.",optionalOldSelf=true
 	OnlyAllowSettingOnUpdate int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
+
+	// This tests that unmarkered types are handled correctly.
+	// When markers are applied at the field level instead of the type level.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10
+	LocallyBoundedInteger UnmarkeredInteger `json:"locallyBoundedInteger,omitempty"`
+
+	// This tests that unmarkered types are handled correctly.
+	// When markers are applied at the field level instead of the type level.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=10
+	LocallyBoundedString UnmarkeredString `json:"locallyBoundedString,omitempty"`
+
+	// This tests that field-level overrides are handled correctly
+	// for local type aliases.
+	// +kubebuilder:validation:MinLength=10
+	// +kubebuilder:validation:MaxLength=10
+	FieldLevelAliasOverride StringAliasWithValidation `json:"fieldLevelAliasOverride,omitempty"`
+
+	// This tests that field-level overrides are handled correctly
+	// for local type declarations.
+	// +kubebuilder:validation:MinLength=10
+	// +kubebuilder:validation:MaxLength=10
+	FieldLevelLocalDeclarationOverride LongerString `json:"fieldLevelLocalDeclarationOverride,omitempty"`
 }
 
 type InlineAlias = EmbeddedStruct
@@ -517,6 +541,14 @@ type TotallyABool bool
 // +kubebuilder:validation:items:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?([.][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
 // +listType=set
 type Hosts []string
+
+// This tests that unmarkered types are handled correctly.
+// When markers are applied at the field level instead of the type level.
+type UnmarkeredInteger int32
+
+// This tests that unmarkered types are handled correctly.
+// When markers are applied at the field level instead of the type level.
+type UnmarkeredString string
 
 func (t TotallyABool) MarshalJSON() ([]byte, error) {
 	if t {
