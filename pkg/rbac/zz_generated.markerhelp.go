@@ -48,6 +48,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "specifies the year to substitute for \" YEAR\" in the header file.",
 				Details: "",
 			},
+			"FeatureGates": {
+				Summary: "is a comma-separated list of feature gates to enable (e.g., \"alpha=true,beta=false\").",
+				Details: "Only RBAC rules with matching feature gates will be included in the generated output.\nFeature gates not explicitly listed are treated as disabled.\nUsage: controller-gen 'rbac:roleName=manager,featureGates=\"alpha=true,beta=false\"' paths=./...",
+			},
 		},
 	}
 }
@@ -83,6 +87,10 @@ func (Rule) Help() *markers.DefinitionHelp {
 			"Namespace": {
 				Summary: "specifies the scope of the Rule.",
 				Details: "If not set, the Rule belongs to the generated ClusterRole.\nIf set, the Rule belongs to a Role, whose namespace is specified by this field.",
+			},
+			"FeatureGate": {
+				Summary: "specifies the feature gate(s) that control this RBAC rule.",
+				Details: "If not set, the rule is always included.\nIf set to a single gate (e.g., \"alpha\"), the rule is included when that gate is enabled.\nIf set to multiple gates separated by \"|\" (e.g., \"alpha|beta\"), the rule is included when ANY of the gates are enabled (OR logic).\nIf set to multiple gates separated by \"&\" (e.g., \"alpha&beta\"), the rule is included when ALL of the gates are enabled (AND logic).",
 			},
 		},
 	}

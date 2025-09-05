@@ -28,6 +28,7 @@ import (
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -72,17 +73,19 @@ type schemaContext struct {
 
 	allowDangerousTypes    bool
 	ignoreUnexportedFields bool
+	featureGates           featuregate.FeatureGateMap
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
 // It must have type info added before use via ForInfo.
-func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool) *schemaContext {
+func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool, featureGates featuregate.FeatureGateMap) *schemaContext {
 	pkg.NeedTypesInfo()
 	return &schemaContext{
 		pkg:                    pkg,
 		schemaRequester:        req,
 		allowDangerousTypes:    allowDangerousTypes,
 		ignoreUnexportedFields: ignoreUnexportedFields,
+		featureGates:           featureGates,
 	}
 }
 
@@ -95,6 +98,7 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		schemaRequester:        c.schemaRequester,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
+		featureGates:           c.featureGates,
 	}
 }
 
@@ -426,6 +430,19 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
 			continue
+		}
+
+		// Check feature gate markers - skip field if feature gate is not enabled
+		if featureGateMarker := field.Markers.Get("kubebuilder:feature-gate"); featureGateMarker != nil {
+			if featureGate, ok := featureGateMarker.(crdmarkers.FeatureGate); ok {
+				gateName := string(featureGate)
+				// Create evaluator to handle complex expressions (OR/AND logic)
+				evaluator := featuregate.NewFeatureGateEvaluator(ctx.featureGates)
+				if !evaluator.EvaluateExpression(gateName) {
+					// Skip this field as its feature gate expression is not satisfied
+					continue
+				}
+			}
 		}
 
 		jsonTag, hasTag := field.Tag.Lookup("json")
