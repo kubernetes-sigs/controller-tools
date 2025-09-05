@@ -46,6 +46,20 @@ spec:
                   This tests that alias imported from a package is handled correctly. The
                   corev1.IPFamilyPolicyType is just reused since it's available from
                   imported package. We can create our own in a separate package if needed.
+                enum:
+                - SingleStack
+                - PreferDualStack
+                - RequireDualStack
+                type: string
+              anotherEnumValue:
+                description: |-
+                  This enum type tests for whether when both "+enum" and
+                  "+kubebuilder:validation:Enum" are defined the former takes precedence.
+                  It should.
+                enum:
+                - Allow
+                - Forbid
+                - Replace
                 type: string
               array:
                 description: Checks that fixed-length arrays work
@@ -201,6 +215,12 @@ spec:
                   - 3
                   type: integer
                 type: array
+              enumValue:
+                enum:
+                - one
+                - two
+                - three
+                type: string
               explicitlyOptionalKubebuilder:
                 description: This tests explicitly optional kubebuilder fields
                 type: string
@@ -364,6 +384,9 @@ spec:
                           If the Job controller observes a mode that it doesn't recognize, which
                           is possible during upgrades due to version skew, the controller
                           skips updates for the Job.
+                        enum:
+                        - NonIndexed
+                        - Indexed
                         type: string
                       completions:
                         description: |-
@@ -465,6 +488,11 @@ spec:
                                       counter towards the .backoffLimit is incremented.
                                     Additional values are considered to be added in the future. Clients should
                                     react to an unknown action by skipping the rule.
+                                  enum:
+                                  - FailJob
+                                  - FailIndex
+                                  - Ignore
+                                  - Count
                                   type: string
                                 onExitCodes:
                                   description: Represents the requirement on the container
@@ -491,6 +519,9 @@ spec:
                                           by the 'containerName' field) is not in the set of specified values.
                                         Additional values are considered to be added in the future. Clients should
                                         react to an unknown operator by assuming the requirement is not satisfied.
+                                      enum:
+                                      - In
+                                      - NotIn
                                       type: string
                                     values:
                                       description: |-
@@ -556,6 +587,9 @@ spec:
                           TerminatingOrFailed and Failed are allowed values when podFailurePolicy is not in use.
                           This is an beta field. To use this, enable the JobPodReplacementPolicy feature toggle.
                           This is on by default.
+                        enum:
+                        - TerminatingOrFailed
+                        - Failed
                         type: string
                       selector:
                         description: |-
@@ -741,6 +775,13 @@ spec:
                                                         description: |-
                                                           Represents a key's relationship to a set of values.
                                                           Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                                        enum:
+                                                        - In
+                                                        - NotIn
+                                                        - Exists
+                                                        - DoesNotExist
+                                                        - Gt
+                                                        - Lt
                                                         type: string
                                                       values:
                                                         description: |-
@@ -776,6 +817,13 @@ spec:
                                                         description: |-
                                                           Represents a key's relationship to a set of values.
                                                           Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                                        enum:
+                                                        - In
+                                                        - NotIn
+                                                        - Exists
+                                                        - DoesNotExist
+                                                        - Gt
+                                                        - Lt
                                                         type: string
                                                       values:
                                                         description: |-
@@ -842,6 +890,13 @@ spec:
                                                         description: |-
                                                           Represents a key's relationship to a set of values.
                                                           Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                                        enum:
+                                                        - In
+                                                        - NotIn
+                                                        - Exists
+                                                        - DoesNotExist
+                                                        - Gt
+                                                        - Lt
                                                         type: string
                                                       values:
                                                         description: |-
@@ -877,6 +932,13 @@ spec:
                                                         description: |-
                                                           Represents a key's relationship to a set of values.
                                                           Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                                        enum:
+                                                        - In
+                                                        - NotIn
+                                                        - Exists
+                                                        - DoesNotExist
+                                                        - Gt
+                                                        - Lt
                                                         type: string
                                                       values:
                                                         description: |-
@@ -1889,6 +1951,10 @@ spec:
                                         Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
                                         Cannot be updated.
                                         More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+                                      enum:
+                                      - Always
+                                      - Never
+                                      - IfNotPresent
                                       type: string
                                     lifecycle:
                                       description: |-
@@ -1968,6 +2034,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -2087,6 +2156,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -2229,6 +2301,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -2341,6 +2416,10 @@ spec:
                                             description: |-
                                               Protocol for port. Must be UDP, TCP, or SCTP.
                                               Defaults to "TCP".
+                                            enum:
+                                            - TCP
+                                            - UDP
+                                            - SCTP
                                             type: string
                                         required:
                                         - containerPort
@@ -2450,6 +2529,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -2654,6 +2736,10 @@ spec:
                                                   Localhost - a profile pre-loaded on the node.
                                                   RuntimeDefault - the container runtime's default profile.
                                                   Unconfined - no AppArmor enforcement.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -2695,6 +2781,9 @@ spec:
                                             readonly paths and masked paths.
                                             This requires the ProcMountType feature flag to be enabled.
                                             Note that this field cannot be set when spec.os.name is windows.
+                                          enum:
+                                          - Default
+                                          - Unmasked
                                           type: string
                                         readOnlyRootFilesystem:
                                           description: |-
@@ -2776,6 +2865,10 @@ spec:
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -2917,6 +3010,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -3016,6 +3112,9 @@ spec:
                                         The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
                                         Defaults to File.
                                         Cannot be updated.
+                                      enum:
+                                      - File
+                                      - FallbackToLogsOnError
                                       type: string
                                     tty:
                                       description: |-
@@ -3067,6 +3166,10 @@ spec:
                                               This field is beta in 1.10.
                                               When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
                                               (which defaults to None).
+                                            enum:
+                                            - None
+                                            - HostToContainer
+                                            - Bidirectional
                                             type: string
                                           name:
                                             description: This must match the Name
@@ -3181,6 +3284,11 @@ spec:
                                   DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy.
                                   To have DNS options set along with hostNetwork, you have to specify DNS policy
                                   explicitly to 'ClusterFirstWithHostNet'.
+                                enum:
+                                - ClusterFirstWithHostNet
+                                - ClusterFirst
+                                - Default
+                                - None
                                 type: string
                               enableServiceLinks:
                                 description: |-
@@ -3434,6 +3542,10 @@ spec:
                                         Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
                                         Cannot be updated.
                                         More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+                                      enum:
+                                      - Always
+                                      - Never
+                                      - IfNotPresent
                                       type: string
                                     lifecycle:
                                       description: Lifecycle is not allowed for ephemeral
@@ -3512,6 +3624,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -3631,6 +3746,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -3770,6 +3888,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -3875,6 +3996,10 @@ spec:
                                             description: |-
                                               Protocol for port. Must be UDP, TCP, or SCTP.
                                               Defaults to "TCP".
+                                            enum:
+                                            - TCP
+                                            - UDP
+                                            - SCTP
                                             type: string
                                         required:
                                         - containerPort
@@ -3981,6 +4106,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -4172,6 +4300,10 @@ spec:
                                                   Localhost - a profile pre-loaded on the node.
                                                   RuntimeDefault - the container runtime's default profile.
                                                   Unconfined - no AppArmor enforcement.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -4213,6 +4345,9 @@ spec:
                                             readonly paths and masked paths.
                                             This requires the ProcMountType feature flag to be enabled.
                                             Note that this field cannot be set when spec.os.name is windows.
+                                          enum:
+                                          - Default
+                                          - Unmasked
                                           type: string
                                         readOnlyRootFilesystem:
                                           description: |-
@@ -4294,6 +4429,10 @@ spec:
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -4429,6 +4568,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -4537,6 +4679,9 @@ spec:
                                         The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
                                         Defaults to File.
                                         Cannot be updated.
+                                      enum:
+                                      - File
+                                      - FallbackToLogsOnError
                                       type: string
                                     tty:
                                       description: |-
@@ -4588,6 +4733,10 @@ spec:
                                               This field is beta in 1.10.
                                               When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
                                               (which defaults to None).
+                                            enum:
+                                            - None
+                                            - HostToContainer
+                                            - Bidirectional
                                             type: string
                                           name:
                                             description: This must match the Name
@@ -4984,6 +5133,10 @@ spec:
                                         Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
                                         Cannot be updated.
                                         More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+                                      enum:
+                                      - Always
+                                      - Never
+                                      - IfNotPresent
                                       type: string
                                     lifecycle:
                                       description: |-
@@ -5063,6 +5216,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -5182,6 +5338,9 @@ spec:
                                                   description: |-
                                                     Scheme to use for connecting to the host.
                                                     Defaults to HTTP.
+                                                  enum:
+                                                  - HTTP
+                                                  - HTTPS
                                                   type: string
                                               required:
                                               - port
@@ -5324,6 +5483,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -5436,6 +5598,10 @@ spec:
                                             description: |-
                                               Protocol for port. Must be UDP, TCP, or SCTP.
                                               Defaults to "TCP".
+                                            enum:
+                                            - TCP
+                                            - UDP
+                                            - SCTP
                                             type: string
                                         required:
                                         - containerPort
@@ -5545,6 +5711,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -5749,6 +5918,10 @@ spec:
                                                   Localhost - a profile pre-loaded on the node.
                                                   RuntimeDefault - the container runtime's default profile.
                                                   Unconfined - no AppArmor enforcement.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -5790,6 +5963,9 @@ spec:
                                             readonly paths and masked paths.
                                             This requires the ProcMountType feature flag to be enabled.
                                             Note that this field cannot be set when spec.os.name is windows.
+                                          enum:
+                                          - Default
+                                          - Unmasked
                                           type: string
                                         readOnlyRootFilesystem:
                                           description: |-
@@ -5871,6 +6047,10 @@ spec:
                                                 Localhost - a profile defined in a file on the node should be used.
                                                 RuntimeDefault - the container runtime default profile should be used.
                                                 Unconfined - no profile should be applied.
+                                              enum:
+                                              - Unconfined
+                                              - RuntimeDefault
+                                              - Localhost
                                               type: string
                                           required:
                                           - type
@@ -6012,6 +6192,9 @@ spec:
                                               description: |-
                                                 Scheme to use for connecting to the host.
                                                 Defaults to HTTP.
+                                              enum:
+                                              - HTTP
+                                              - HTTPS
                                               type: string
                                           required:
                                           - port
@@ -6111,6 +6294,9 @@ spec:
                                         The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
                                         Defaults to File.
                                         Cannot be updated.
+                                      enum:
+                                      - File
+                                      - FallbackToLogsOnError
                                       type: string
                                     tty:
                                       description: |-
@@ -6162,6 +6348,10 @@ spec:
                                               This field is beta in 1.10.
                                               When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
                                               (which defaults to None).
+                                            enum:
+                                            - None
+                                            - HostToContainer
+                                            - Bidirectional
                                             type: string
                                           name:
                                             description: This must match the Name
@@ -6307,6 +6497,9 @@ spec:
                                   PreemptionPolicy is the Policy for preempting pods with lower priority.
                                   One of Never, PreemptLowerPriority.
                                   Defaults to PreemptLowerPriority if unset.
+                                enum:
+                                - PreemptLowerPriority
+                                - Never
                                 type: string
                               priority:
                                 description: |-
@@ -6410,6 +6603,10 @@ spec:
                                   One of Always, OnFailure, Never. In some contexts, only a subset of those values may be permitted.
                                   Default to Always.
                                   More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy
+                                enum:
+                                - Always
+                                - OnFailure
+                                - Never
                                 type: string
                               runtimeClassName:
                                 description: |-
@@ -6471,6 +6668,10 @@ spec:
                                             Localhost - a profile pre-loaded on the node.
                                             RuntimeDefault - the container runtime's default profile.
                                             Unconfined - no AppArmor enforcement.
+                                        enum:
+                                        - Unconfined
+                                        - RuntimeDefault
+                                        - Localhost
                                         type: string
                                     required:
                                     - type
@@ -6498,6 +6699,9 @@ spec:
                                       and emptydir.
                                       Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
                                       Note that this field cannot be set when spec.os.name is windows.
+                                    enum:
+                                    - OnRootMismatch
+                                    - Always
                                     type: string
                                   runAsGroup:
                                     description: |-
@@ -6574,6 +6778,10 @@ spec:
                                           Localhost - a profile defined in a file on the node should be used.
                                           RuntimeDefault - the container runtime default profile should be used.
                                           Unconfined - no profile should be applied.
+                                        enum:
+                                        - Unconfined
+                                        - RuntimeDefault
+                                        - Localhost
                                         type: string
                                     required:
                                     - type
@@ -6601,6 +6809,9 @@ spec:
                                       (Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled
                                       and the container runtime must implement support for this feature.
                                       Note that this field cannot be set when spec.os.name is windows.
+                                    enum:
+                                    - Merge
+                                    - Strict
                                     type: string
                                   sysctls:
                                     description: |-
@@ -6710,6 +6921,10 @@ spec:
                                       description: |-
                                         Effect indicates the taint effect to match. Empty means match all taint effects.
                                         When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                                      enum:
+                                      - NoSchedule
+                                      - PreferNoSchedule
+                                      - NoExecute
                                       type: string
                                     key:
                                       description: |-
@@ -6722,6 +6937,9 @@ spec:
                                         Valid operators are Exists and Equal. Defaults to Equal.
                                         Exists is equivalent to wildcard for value, so that a pod can
                                         tolerate all taints of a particular category.
+                                      enum:
+                                      - Exists
+                                      - Equal
                                       type: string
                                     tolerationSeconds:
                                       description: |-
@@ -6867,6 +7085,9 @@ spec:
 
                                         If this value is nil, the behavior is equivalent to the Honor policy.
                                         This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
+                                      enum:
+                                      - Ignore
+                                      - Honor
                                       type: string
                                     nodeTaintsPolicy:
                                       description: |-
@@ -6878,6 +7099,9 @@ spec:
 
                                         If this value is nil, the behavior is equivalent to the Ignore policy.
                                         This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
+                                      enum:
+                                      - Ignore
+                                      - Honor
                                       type: string
                                     topologyKey:
                                       description: |-
@@ -6912,6 +7136,9 @@ spec:
                                         MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
                                         won't make it *more* imbalanced.
                                         It's a required field.
+                                      enum:
+                                      - DoNotSchedule
+                                      - ScheduleAnyway
                                       type: string
                                   required:
                                   - maxSkew
@@ -6974,6 +7201,10 @@ spec:
                                         cachingMode:
                                           description: 'cachingMode is the Host Caching
                                             mode: None, Read Only, Read Write.'
+                                          enum:
+                                          - None
+                                          - ReadOnly
+                                          - ReadWrite
                                           type: string
                                         diskName:
                                           description: diskName is the Name of the
@@ -6996,6 +7227,10 @@ spec:
                                             single blob disk per storage account  Managed:
                                             azure managed data disk (only in managed
                                             availability set). defaults to shared'
+                                          enum:
+                                          - Shared
+                                          - Dedicated
+                                          - Managed
                                           type: string
                                         readOnly:
                                           default: false
@@ -7435,6 +7670,11 @@ spec:
                                                     accessModes contains the desired access modes the volume should have.
                                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
                                                   items:
+                                                    enum:
+                                                    - ReadWriteOnce
+                                                    - ReadOnlyMany
+                                                    - ReadWriteMany
+                                                    - ReadWriteOncePod
                                                     type: string
                                                   type: array
                                                   x-kubernetes-list-type: atomic
@@ -7626,6 +7866,9 @@ spec:
                                                   description: |-
                                                     volumeMode defines what type of volume is required by the claim.
                                                     Value of Filesystem is implied when not included in claim spec.
+                                                  enum:
+                                                  - Block
+                                                  - Filesystem
                                                   type: string
                                                 volumeName:
                                                   description: volumeName is the binding
@@ -7843,6 +8086,15 @@ spec:
                                             type for HostPath Volume
                                             Defaults to ""
                                             More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+                                          enum:
+                                          - ""
+                                          - DirectoryOrCreate
+                                          - Directory
+                                          - FileOrCreate
+                                          - File
+                                          - Socket
+                                          - CharDevice
+                                          - BlockDevice
                                           type: string
                                       required:
                                       - path
@@ -7871,6 +8123,10 @@ spec:
                                             Never: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
                                             IfNotPresent: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
                                             Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+                                          enum:
+                                          - Always
+                                          - Never
+                                          - IfNotPresent
                                           type: string
                                         reference:
                                           description: |-
@@ -8971,6 +9227,17 @@ spec:
                   This flag is like suspend, but for when you really mean it.
                   It helps test the +kubebuilder:validation:Type marker.
                 type: string
+              oneMoreEnumValue:
+                allOf:
+                - enum:
+                  - one
+                  - two
+                  - three
+                - enum:
+                  - Allow
+                  - Forbid
+                  - Replace
+                type: string
               onlyAllowSettingOnUpdate:
                 description: Test that we can add a field that can only be set to
                   a non-default value on updates using XValidation OptionalOldSelf.
@@ -8991,6 +9258,10 @@ spec:
                   This tests that we can embed protocol correctly (without ending up with allOf).
                   Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
                   Defaults to "TCP".
+                enum:
+                - TCP
+                - UDP
+                - SCTP
                 type: string
               ptrData:
                 additionalProperties:
