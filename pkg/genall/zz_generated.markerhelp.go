@@ -35,6 +35,17 @@ func (InputPaths) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (LogLevel) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "sets the logging level for generator operations.",
+			Details: "Valid values are \"debug\", \"info\", \"warn\", \"error\".\nDefaults to \"info\" if not specified.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (OutputArtifacts) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "",

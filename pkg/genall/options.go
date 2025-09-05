@@ -18,6 +18,7 @@ package genall
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -26,6 +27,7 @@ import (
 
 var (
 	InputPathsMarker = markers.Must(markers.MakeDefinition("paths", markers.DescribesPackage, InputPaths(nil)))
+	LogLevelMarker   = markers.Must(markers.MakeDefinition("loglevel", markers.DescribesPackage, LogLevel("")))
 )
 
 // +controllertools:marker:generateHelp:category=""
@@ -35,15 +37,51 @@ var (
 // Multiple paths can be specified using "{path1, path2, path3}".
 type InputPaths []string
 
+// +controllertools:marker:generateHelp:category=""
+
+// LogLevel sets the logging level for generator operations.
+// Valid values are "debug", "info", "warn", "error".
+// Defaults to "info" if not specified.
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelWarn  LogLevel = "warn"
+	LogLevelError LogLevel = "error"
+)
+
+// ToSlogLevel converts the LogLevel to slog.Level
+func (l LogLevel) ToSlogLevel() slog.Level {
+	switch l {
+	case LogLevelDebug:
+		return slog.LevelDebug
+	case LogLevelInfo:
+		return slog.LevelInfo
+	case LogLevelWarn:
+		return slog.LevelWarn
+	case LogLevelError:
+		return slog.LevelError
+	default:
+		return slog.LevelInfo // default fallback
+	}
+}
+
 // RegisterOptionsMarkers registers "mandatory" options markers for FromOptions into the given registry.
-// At this point, that's just InputPaths.
+// At this point, that's just InputPaths and LogLevel.
 func RegisterOptionsMarkers(into *markers.Registry) error {
 	if err := into.Register(InputPathsMarker); err != nil {
+		return err
+	}
+	if err := into.Register(LogLevelMarker); err != nil {
 		return err
 	}
 	// NB(directxman12): we make this optional so we don't have a bootstrap problem with helpgen
 	if helpGiver, hasHelp := ((interface{})(InputPaths(nil))).(HasHelp); hasHelp {
 		into.AddHelp(InputPathsMarker, helpGiver.Help())
+	}
+	if helpGiver, hasHelp := ((interface{})(LogLevel(""))).(HasHelp); hasHelp {
+		into.AddHelp(LogLevelMarker, helpGiver.Help())
 	}
 	return nil
 }
@@ -90,6 +128,13 @@ func FromOptionsWithConfig(cfg *packages.Config, optionsRegistry *markers.Regist
 		return nil, err
 	}
 
+	// Set log level from the parsed options
+	if protoRt.LogLevel != "" {
+		genRuntime.LogLevel = protoRt.LogLevel.ToSlogLevel()
+	} else {
+		genRuntime.LogLevel = slog.LevelInfo // default
+	}
+
 	// attempt to figure out what the user wants without a lot of verbose specificity:
 	// if the user specifies a default rule, assume that they probably want to fall back
 	// to that.  Otherwise, assume that they just wanted to customize one option from the
@@ -117,6 +162,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 		ByGenerator: make(map[*Generator]OutputRule),
 	}
 	var paths []string
+	var logLevel LogLevel
 
 	// collect the generators first, so that we can key the output on the actual
 	// generator, which matters if there's settings in the gen object and it's not a pointer.
@@ -156,6 +202,8 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 			continue
 		case InputPaths:
 			paths = append(paths, val...)
+		case LogLevel:
+			logLevel = val
 		default:
 			return protoRuntime{}, fmt.Errorf("unknown option marker %q", defn.Name)
 		}
@@ -176,6 +224,7 @@ func protoFromOptions(optionsRegistry *markers.Registry, options []string) (prot
 		Generators:       gens,
 		OutputRules:      rules,
 		GeneratorsByName: gensByName,
+		LogLevel:         logLevel,
 	}, nil
 }
 
@@ -186,6 +235,7 @@ type protoRuntime struct {
 	Generators       Generators
 	OutputRules      OutputRules
 	GeneratorsByName map[string]*Generator
+	LogLevel         LogLevel
 }
 
 // splitOutputRuleOption splits a marker name of "output:rule:gen" or "output:rule"
