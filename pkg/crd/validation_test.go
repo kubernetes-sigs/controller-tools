@@ -111,6 +111,19 @@ spec:
 `,
 			wantErr: `spec.secondTypeWithExactOneof: Invalid value: "object": exactly one of the fields in [c d] must be set`,
 		},
+		{
+			name: "AtLeastOneOf constraint violated by not specifying field typeWithAllOneOf.e|f",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOneOf:
+    c: "c"
+`,
+			wantErr: `spec.typeWithAllOneOf: Invalid value: "object": at least one of the fields in [e f] must be set`,
+		},
 	}
 
 	validator, err := newValidator(t.Context(), "./testdata/testdata.kubebuilder.io_oneofs.yaml")

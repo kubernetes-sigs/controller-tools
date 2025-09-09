@@ -34,6 +34,7 @@ const (
 
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
+	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -84,6 +85,8 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtMostOneOf constraint.")),
 	must(markers.MakeDefinition(ValidationExactlyOneOfPrefix, markers.DescribesType, ExactlyOneOf(nil))).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
+	must(markers.MakeDefinition(ValidationAtLeastOneOfPrefix, markers.DescribesType, AtLeastOneOf(nil))).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
 }
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
@@ -375,6 +378,12 @@ type AtMostOneOf []string
 //
 // This marker may be repeated to specify multiple ExactlyOneOf constraints that are mutually exclusive.
 type ExactlyOneOf []string
+
+// +controllertools:marker:generateHelp:category="CRD validation"
+// AtLeastOneOf adds a validation constraint that allows at least one of the specified fields.
+//
+// This marker may be repeated to specify multiple AtLeastOneOf constraints that are mutually exclusive.
+type AtLeastOneOf []string
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
@@ -694,8 +703,25 @@ func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 }
 
 func (ExactlyOneOf) ApplyPriority() ApplyPriority {
-	// explicitly go after XValidation markers so that the ordering is deterministic
-	return XValidation{}.ApplyPriority() + 1
+	// explicitly go after AtMostOneOf markers so that the ordering is deterministic
+	return AtMostOneOf{}.ApplyPriority() + 1
+}
+
+func (fields AtLeastOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	rule := fieldsToOneOfCelRuleStr(fields)
+	xvalidation := XValidation{
+		Rule:    fmt.Sprintf("%s >= 1", rule),
+		Message: fmt.Sprintf("at least one of the fields in %v must be set", fields),
+	}
+	return xvalidation.ApplyToSchema(schema)
+}
+
+func (AtLeastOneOf) ApplyPriority() ApplyPriority {
+	// explicitly go after ExactlyOneOf markers so that the ordering is deterministic
+	return ExactlyOneOf{}.ApplyPriority() + 1
 }
 
 // fieldsToOneOfCelRuleStr converts a slice of field names to a string representation

@@ -32,6 +32,8 @@ type OneofSpec struct {
 
 	FirstTypeWithExactOneof  *TypeWithExactOneofs         `json:"firstTypeWithExactOneof,omitempty"`
 	SecondTypeWithExactOneof *TypeWithMultipleExactOneofs `json:"secondTypeWithExactOneof,omitempty"`
+
+	TypeWithAllOneOf *TypeWithAllOneofs `json:"typeWithAllOneOf,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:message="only one of foo|bar may be set",rule="!(has(self.foo) && has(self.bar))"
@@ -65,6 +67,20 @@ type TypeWithMultipleExactOneofs struct {
 
 	C *string `json:"c,omitempty"`
 	D *string `json:"d,omitempty"`
+}
+
+// +kubebuilder:validation:AtMostOneOf=a;b
+// +kubebuilder:validation:ExactlyOneOf=c;d
+// +kubebuilder:validation:AtLeastOneOf=e;f
+type TypeWithAllOneofs struct {
+	A *string `json:"a,omitempty"`
+	B *string `json:"b,omitempty"`
+
+	C *string `json:"c,omitempty"`
+	D *string `json:"d,omitempty"`
+
+	E *string `json:"e,omitempty"`
+	F *string `json:"f,omitempty"`
 }
 
 // Oneof is the Schema for the Oneof API
