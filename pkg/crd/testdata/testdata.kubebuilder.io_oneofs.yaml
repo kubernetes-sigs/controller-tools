@@ -114,6 +114,22 @@ spec:
                   rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 1'
                 - message: at least one of the fields in [e f] must be set
                   rule: '[has(self.e),has(self.f)].filter(x,x==true).size() >= 1'
+              typeWithMultipleAtLeastOneOf:
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at least one of the fields in [a b] must be set
+                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() >= 1'
+                - message: at least one of the fields in [c d] must be set
+                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() >= 1'
             type: object
         required:
         - spec
