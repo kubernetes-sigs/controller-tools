@@ -3,9 +3,9 @@ module sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob
 go 1.24.0
 
 require (
-	k8s.io/api v0.34.0
-	k8s.io/apimachinery v0.34.0
-	k8s.io/client-go v0.34.0
+	k8s.io/api v0.34.1
+	k8s.io/apimachinery v0.34.1
+	k8s.io/client-go v0.34.1
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0
 )
 
