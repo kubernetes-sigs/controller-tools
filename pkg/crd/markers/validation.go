@@ -52,6 +52,9 @@ var ValidationMarkers = mustMakeAllWithPrefix(validationPrefix, markers.Describe
 	ExclusiveMaximum(false),
 	ExclusiveMinimum(false),
 	MultipleOf(0),
+
+	// object markers
+
 	MinProperties(0),
 	MaxProperties(0),
 
@@ -61,7 +64,7 @@ var ValidationMarkers = mustMakeAllWithPrefix(validationPrefix, markers.Describe
 	MinLength(0),
 	Pattern(""),
 
-	// slice markers
+	// array markers
 
 	MaxItems(0),
 	MinItems(0),
@@ -114,9 +117,6 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition(SchemalessName, markers.DescribesField, Schemaless{})).
 		WithHelp(Schemaless{}.Help()),
-
-	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesField, Title{})).
-		WithHelp(Title{}.Help()),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -127,6 +127,11 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(XPreserveUnknownFields{}.Help()),
 	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesType, XPreserveUnknownFields{})).
 		WithHelp(XPreserveUnknownFields{}.Help()),
+
+	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesField, Title{})).
+		WithHelp(Title{}.Help()),
+	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesType, Title{})).
+		WithHelp(Title{}.Help()),
 }
 
 func init() {
