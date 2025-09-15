@@ -153,6 +153,11 @@ type FieldInfo struct {
 	RawField *ast.Field
 }
 
+type EnumMemberInfo struct {
+	Name string
+	*ast.ValueSpec
+}
+
 // TypeInfo contains marker values and commonly used information for a type declaration.
 type TypeInfo struct {
 	// Name is the name of the type.
@@ -167,6 +172,9 @@ type TypeInfo struct {
 	// Fields are all the fields associated with the type, if it's a struct.
 	// (if not, Fields will be nil).
 	Fields []FieldInfo
+
+	// Enum value list (nil if the field is not an enum).
+	EnumValues []EnumMemberInfo
 
 	// RawDecl contains the raw GenDecl that the type was declared as part of.
 	RawDecl *ast.GenDecl

@@ -18,12 +18,17 @@ package loader
 
 import (
 	"go/ast"
+	"go/token"
 	"reflect"
 	"strconv"
 )
 
 // TypeCallback is a callback called for each raw AST (gendecl, typespec) combo.
 type TypeCallback func(file *ast.File, decl *ast.GenDecl, spec *ast.TypeSpec)
+
+// A ConstCallback is used to iterate over constant definitions. It provides
+// the value spec only since it is the only thing needed yet.
+type ConstCallback func(spec *ast.ValueSpec)
 
 // EachType calls the given callback for each (gendecl, typespec) combo in the
 // given package.  Generally, using markers.EachType is better when working
@@ -37,6 +42,32 @@ func EachType(pkg *Package, cb TypeCallback) {
 		visitor.file = file
 		ast.Walk(visitor, file)
 	}
+}
+
+// EachConstDecl calls the given callback for each
+// *ast.ValueSpec associated with constant declarations.
+func EachConstDecl(pkg *Package, cb ConstCallback) {
+	pkg.NeedSyntax()
+	for _, file := range pkg.Syntax {
+		ast.Walk(cb, file)
+	}
+}
+
+// Visit visits all top-level constant declarations.
+func (v ConstCallback) Visit(node ast.Node) ast.Visitor {
+	if node == nil {
+		return v
+	}
+	var typedNode, ok = node.(*ast.GenDecl)
+	if !ok {
+		return v
+	}
+	if typedNode.Tok == token.CONST {
+		for i := range typedNode.Specs {
+			v(typedNode.Specs[i].(*ast.ValueSpec))
+		}
+	}
+	return nil
 }
 
 // typeVisitor visits all TypeSpecs, calling the given callback for each.

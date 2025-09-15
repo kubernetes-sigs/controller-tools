@@ -18,6 +18,7 @@ package crd
 
 import (
 	"fmt"
+	"go/ast"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -123,6 +124,21 @@ func (p *Parser) init() {
 	}
 }
 
+func (p *Parser) indexEnumMemberConstantDeclarations(pkg *loader.Package) {
+	loader.EachConstDecl(pkg, func(spec *ast.ValueSpec) {
+		if id, ok := spec.Type.(*ast.Ident); ok {
+			if typeinfo, ok := p.Types[TypeIdent{
+				pkg, id.Name,
+			}]; ok {
+				typeinfo.EnumValues = append(typeinfo.EnumValues, markers.EnumMemberInfo{
+					Name:      spec.Names[0].Name,
+					ValueSpec: spec,
+				})
+			}
+		}
+	})
+}
+
 // indexTypes loads all types in the package into Types.
 func (p *Parser) indexTypes(pkg *loader.Package) {
 	// autodetect
@@ -212,6 +228,7 @@ func (p *Parser) AddPackage(pkg *loader.Package) {
 		return
 	}
 	p.indexTypes(pkg)
+	p.indexEnumMemberConstantDeclarations(pkg)
 	p.Checker.Check(pkg)
 	p.packages[pkg] = struct{}{}
 }
