@@ -127,6 +127,9 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(XPreserveUnknownFields{}.Help()),
 	must(markers.MakeDefinition("kubebuilder:pruning:PreserveUnknownFields", markers.DescribesType, XPreserveUnknownFields{})).
 		WithHelp(XPreserveUnknownFields{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesField, FeatureGate(""))).
+		WithHelp(FeatureGate("").Help()),
 }
 
 func init() {
