@@ -219,6 +219,20 @@ spec:
                   This is a pointer to distinguish between explicit zero and not specified.
                 format: int32
                 type: integer
+              fieldLevelAliasOverride:
+                description: |-
+                  This tests that field-level overrides are handled correctly
+                  for local type aliases.
+                maxLength: 10
+                minLength: 10
+                type: string
+              fieldLevelLocalDeclarationOverride:
+                description: |-
+                  This tests that field-level overrides are handled correctly
+                  for local type declarations.
+                maxLength: 10
+                minLength: 10
+                type: string
               float64WithValidations:
                 maximum: 1.5
                 minimum: -0.5
@@ -8849,6 +8863,21 @@ spec:
                 default: forty-two
                 description: This tests that primitive defaulting can be performed.
                 type: string
+              locallyBoundedInteger:
+                description: |-
+                  This tests that unmarkered types are handled correctly.
+                  When markers are applied at the field level instead of the type level.
+                format: int32
+                maximum: 10
+                minimum: 1
+                type: integer
+              locallyBoundedString:
+                description: |-
+                  This tests that unmarkered types are handled correctly.
+                  When markers are applied at the field level instead of the type level.
+                maxLength: 10
+                minLength: 1
+                type: string
               longerStringArray:
                 description: This tests string alias slice item validation.
                 items:
@@ -9055,10 +9084,10 @@ spec:
                   and type.
                 type: string
                 x-kubernetes-validations:
-                - message: must have good prefix
-                  rule: self.startsWith('good-')
                 - message: must have even length
                   rule: self.size() % 2 == 0
+                - message: must have good prefix
+                  rule: self.startsWith('good-')
               stringWithEvenLengthAndMessageExpression:
                 description: Test of the expression-based validation with messageExpression
                   marker.

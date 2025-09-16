@@ -57,6 +57,9 @@ type applyFirstMarker interface {
 	ApplyFirst()
 }
 
+// schemaFetcher is a function that fetches a schema for a given type.
+type schemaFetcher func(TypeIdent) *apiext.JSONSchemaProps
+
 // schemaRequester knows how to marker that another schema (e.g. via an external reference) is necessary.
 type schemaRequester interface {
 	NeedSchemaFor(typ TypeIdent)
@@ -68,6 +71,7 @@ type schemaContext struct {
 	info *markers.TypeInfo
 
 	schemaRequester schemaRequester
+	schemaFetcher   schemaFetcher
 	PackageMarkers  markers.MarkerValues
 
 	allowDangerousTypes    bool
@@ -76,11 +80,12 @@ type schemaContext struct {
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
 // It must have type info added before use via ForInfo.
-func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool) *schemaContext {
+func newSchemaContext(pkg *loader.Package, req schemaRequester, fetcher schemaFetcher, allowDangerousTypes, ignoreUnexportedFields bool) *schemaContext {
 	pkg.NeedTypesInfo()
 	return &schemaContext{
 		pkg:                    pkg,
 		schemaRequester:        req,
+		schemaFetcher:          fetcher,
 		allowDangerousTypes:    allowDangerousTypes,
 		ignoreUnexportedFields: ignoreUnexportedFields,
 	}
@@ -93,6 +98,7 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		pkg:                    c.pkg,
 		info:                   info,
 		schemaRequester:        c.schemaRequester,
+		schemaFetcher:          c.schemaFetcher,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
 	}
@@ -234,7 +240,9 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiext.JSONSchemaProps 
 		return &apiext.JSONSchemaProps{}
 	}
 
-	props.Description = ctx.info.Doc
+	if ctx.info.Doc != "" {
+		props.Description = ctx.info.Doc
+	}
 
 	applyMarkers(ctx, ctx.info.Markers, props, rawType)
 
@@ -270,6 +278,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 	if aliasInfo, isAlias := typeInfo.(*types.Alias); isAlias {
 		typeInfo = aliasInfo.Rhs()
 	}
+
 	if basicInfo, isBasic := typeInfo.(*types.Basic); isBasic {
 		typ, fmt, err := builtinToType(basicInfo, ctx.allowDangerousTypes)
 		if err != nil {
@@ -281,32 +290,21 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		// > Otherwise, the alias information is only in the type name, which
 		// > points directly to the actual (aliased) type.
 		if basicInfo.Name() != ident.Name {
-			ctx.requestSchema("", ident.Name)
-			link := TypeRefLink("", ident.Name)
-			return &apiext.JSONSchemaProps{
-				Type:   typ,
-				Format: fmt,
-				Ref:    &link,
-			}
+			return ctx.schemaFetcher(TypeIdent{
+				Package: ctx.pkg,
+				Name:    ident.Name,
+			})
 		}
 		return &apiext.JSONSchemaProps{
 			Type:   typ,
 			Format: fmt,
 		}
 	}
-	// NB(directxman12): if there are dot imports, this might be an external reference,
-	// so use typechecking info to get the actual object
-	typeNameInfo := typeInfo.(interface{ Obj() *types.TypeName }).Obj()
-	pkg := typeNameInfo.Pkg()
-	pkgPath := loader.NonVendorPath(pkg.Path())
-	if pkg == ctx.pkg.Types {
-		pkgPath = ""
-	}
-	ctx.requestSchema(pkgPath, typeNameInfo.Name())
-	link := TypeRefLink(pkgPath, typeNameInfo.Name())
-	return &apiext.JSONSchemaProps{
-		Ref: &link,
-	}
+
+	return ctx.schemaFetcher(TypeIdent{
+		Package: ctx.pkg,
+		Name:    ident.Name,
+	})
 }
 
 // namedSchema creates a schema (ref) for an explicitly external type reference.
@@ -501,7 +499,9 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		} else {
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
 		}
-		propSchema.Description = field.Doc
+		if field.Doc != "" {
+			propSchema.Description = field.Doc
+		}
 
 		applyMarkers(ctx, field.Markers, propSchema, field.RawField)
 
@@ -512,6 +512,9 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 
 		props.Properties[fieldName] = *propSchema
 	}
+
+	// Ensure the required fields are always listed alphabetically.
+	sort.Strings(props.Required)
 
 	return props
 }
