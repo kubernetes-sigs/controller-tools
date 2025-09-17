@@ -352,8 +352,13 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MaxLength=255
 	StringAliasAddedValidation StringAlias `json:"stringAliasAddedValidation,omitempty"`
 
-	// This tests that validation on a the string alias type itself is handled correctly.
+	// This tests that validation on a string alias type itself is handled correctly.
 	StringAliasAlreadyValidated StringAliasWithValidation `json:"stringAliasAlreadyValidated,omitempty"`
+
+	// These test that title works on both a type and field, with field taking precedence.
+	// +kubebuilder:title="title on field"
+	StringAliasWithAddedTitle StringAliasWithTitle `json:"stringAliasWithAddedTitle,omitempty"`
+	StringAliasWithTitle      StringAliasWithTitle `json:"stringAliasWithTitle,omitempty"`
 
 	// This tests string slice validation.
 	// +kubebuilder:validation:MinItems=2
@@ -424,6 +429,9 @@ type EmbeddedStruct struct {
 }
 
 type StringAlias = string
+
+// +kubebuilder:title="title on type"
+type StringAliasWithTitle = string
 
 // +kubebuilder:validation:MinLength=1
 // +kubebuilder:validation:MaxLength=255

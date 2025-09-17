@@ -9050,12 +9050,20 @@ spec:
                 minLength: 1
                 type: string
               stringAliasAlreadyValidated:
-                description: This tests that validation on a the string alias type
-                  itself is handled correctly.
+                description: This tests that validation on a string alias type itself
+                  is handled correctly.
                 maxLength: 255
                 minLength: 1
                 type: string
               stringAliasPtr:
+                type: string
+              stringAliasWithAddedTitle:
+                description: These test that title works on both a type and field,
+                  with field taking precedence.
+                title: title on field
+                type: string
+              stringAliasWithTitle:
+                title: title on type
                 type: string
               stringPair:
                 description: This tests string slice validation.
