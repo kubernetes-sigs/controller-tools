@@ -552,15 +552,83 @@ func (m Nullable) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
+func coerceDefaultValueToSchema(val interface{}, schema *apiext.JSONSchemaProps) interface{} {
+	switch schema.Type {
+	case string(Array):
+		switch v := val.(type) {
+		case string:
+			s := strings.TrimSpace(v)
+			if s == "[]" || s == "{}" || s == "" {
+				return []interface{}{}
+			}
+			return v
+		case map[string]interface{}:
+			if len(v) == 0 {
+				return []interface{}{}
+			}
+			return v
+		case []interface{}:
+			if schema.Items != nil {
+				if schema.Items.Schema != nil {
+					for i := range v {
+						v[i] = coerceDefaultValueToSchema(v[i], schema.Items.Schema)
+					}
+				} else if len(schema.Items.JSONSchemas) > 0 {
+					for i := range v {
+						if i < len(schema.Items.JSONSchemas) {
+							v[i] = coerceDefaultValueToSchema(v[i], &schema.Items.JSONSchemas[i])
+						}
+					}
+				}
+			}
+			return v
+		default:
+			return val
+		}
+	case string(Object):
+		switch v := val.(type) {
+		case string:
+			if strings.TrimSpace(v) == "{}" {
+				return map[string]interface{}{}
+			}
+			return v
+		case map[string]interface{}:
+			for name, p := range schema.Properties {
+				if child, ok := v[name]; ok {
+					v[name] = coerceDefaultValueToSchema(child, &p)
+				}
+			}
+			if schema.AdditionalProperties != nil && schema.AdditionalProperties.Schema != nil {
+				for k, child := range v {
+					if _, known := schema.Properties[k]; known {
+						continue
+					}
+					v[k] = coerceDefaultValueToSchema(child, schema.AdditionalProperties.Schema)
+				}
+			}
+			return v
+		default:
+			return val
+		}
+	default:
+		return val
+	}
+}
+
 // Defaults are only valid CRDs created with the v1 API
 func (m Default) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	marshalledDefault, err := json.Marshal(m.Value)
+	val := m.Value
+	val = coerceDefaultValueToSchema(val, schema)
+
+	marshalledDefault, err := json.Marshal(val)
 	if err != nil {
 		return err
 	}
-	if schema.Type == "array" && string(marshalledDefault) == "{}" {
+
+	if schema.Type == string(Array) && string(marshalledDefault) == "{}" {
 		marshalledDefault = []byte("[]")
 	}
+
 	schema.Default = &apiext.JSON{Raw: marshalledDefault}
 	return nil
 }
