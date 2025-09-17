@@ -133,6 +133,31 @@ spec:
                   type: string
                 title: '{}'
                 type: array
+              defaultedNestedProfiles:
+                additionalProperties:
+                  description: |-
+                    NodeProfile is used to verify nested array defaulting inside an object.
+                    gpus is a slice; when default supplies {}, it must become [].
+                  properties:
+                    gpus:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                default:
+                  md0:
+                    gpus: []
+                description: 'Expect: default.md0.gpus == []'
+                type: object
+              defaultedNestedSliceMap:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                default:
+                  md0: []
+                description: 'Expect: default.md0 == []'
+                type: object
               defaultedObject:
                 default:
                 - nested:

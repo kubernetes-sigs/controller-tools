@@ -122,6 +122,14 @@ type CronJobSpec struct {
 	// +kubebuilder:title=DefaultedSlice
 	DefaultedSlice []string `json:"defaultedSlice"`
 
+	// +kubebuilder:default:={"md0":{"gpus":{}}}
+	// Expect: default.md0.gpus == []
+	DefaultedNestedProfiles Profiles `json:"defaultedNestedProfiles,omitempty"`
+
+	// +kubebuilder:default:={"md0":{}}
+	// Expect: default.md0 == []
+	DefaultedNestedSliceMap map[string][]string `json:"defaultedNestedSliceMap,omitempty"`
+
 	// This tests that slice and object defaulting can be performed.
 	// +kubebuilder:default={{nested: {foo: "baz", bar: true}},{nested: {foo: "qux", bar: false}}}
 	// +kubebuilder:example={{nested: {foo: "baz", bar: true}},{nested: {foo: "qux", bar: false}}}
@@ -419,6 +427,15 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MaxLength=10
 	FieldLevelLocalDeclarationOverride LongerString `json:"fieldLevelLocalDeclarationOverride,omitempty"`
 }
+
+// NodeProfile is used to verify nested array defaulting inside an object.
+// gpus is a slice; when default supplies {}, it must become [].
+type NodeProfile struct {
+	Gpus []string `json:"gpus,omitempty"`
+}
+
+// Profiles map verifies nested coercion under properties.
+type Profiles map[string]NodeProfile
 
 type InlineAlias = EmbeddedStruct
 
