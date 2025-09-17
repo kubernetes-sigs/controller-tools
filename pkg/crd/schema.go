@@ -419,6 +419,11 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		ctx.pkg.AddError(loader.ErrFromNode(err, structType))
 		return props
 	}
+	atLeastOneOf, err := oneOfValuesToSet(ctx.info.Markers[crdmarkers.ValidationAtLeastOneOfPrefix])
+	if err != nil {
+		ctx.pkg.AddError(loader.ErrFromNode(err, structType))
+		return props
+	}
 
 	for _, field := range ctx.info.Fields {
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
@@ -461,7 +466,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		case field.Markers.Get("kubebuilder:validation:Optional") != nil:
 			// explicitly optional - kubebuilder
 		case field.Markers.Get("kubebuilder:validation:Required") != nil:
-			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
 				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and cannot be marked as required", fieldName), structType))
 				return props
 			}
@@ -470,7 +475,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		case field.Markers.Get("optional") != nil:
 			// explicitly optional - kubernetes
 		case field.Markers.Get("required") != nil:
-			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+			if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
 				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and cannot be marked as required", fieldName), structType))
 				return props
 			}
@@ -481,7 +486,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 		case defaultMode == "required":
 			// ...everything that's not inline / omitempty is required
 			if !inline && !omitEmpty {
-				if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) {
+				if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
 					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty tag", fieldName), structType))
 					return props
 				}
@@ -531,6 +536,11 @@ func oneOfValuesToSet(oneOfGroups []any) (sets.Set[string], error) {
 		case crdmarkers.AtMostOneOf:
 			if err := validateOneOfValues(vals...); err != nil {
 				return nil, fmt.Errorf("%s: %w", crdmarkers.ValidationAtMostOneOfPrefix, err)
+			}
+			set.Insert(vals...)
+		case crdmarkers.AtLeastOneOf:
+			if err := validateOneOfValues(vals...); err != nil {
+				return nil, fmt.Errorf("%s: %w", crdmarkers.ValidationAtLeastOneOfPrefix, err)
 			}
 			set.Insert(vals...)
 		default:
