@@ -80,7 +80,7 @@ type RawArguments []byte
 type ArgumentType int
 
 const (
-	// Invalid represents a type that can't be parsed, and should never be used.
+	// InvalidType represents a type that can't be parsed, and should never be used.
 	InvalidType ArgumentType = iota
 	// IntType is an int
 	IntType
