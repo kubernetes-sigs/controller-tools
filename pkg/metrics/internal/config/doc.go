@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// config contains a copy of the types from k8s.io/kube-state-metrics/pkg/customresourcestate.
+// Package config contains a copy of the types from k8s.io/kube-state-metrics/pkg/customresourcestate.
 // The following modifications got applied:
 // For `config.go`:
 // * Rename the package to `config`.
