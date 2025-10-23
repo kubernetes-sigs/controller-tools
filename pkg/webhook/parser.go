@@ -514,8 +514,12 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	versionedWebhooks := make(map[string][]interface{}, len(supportedWebhookVersions))
+	//nolint:dupl
 	for _, version := range supportedWebhookVersions {
 		if cfgs, ok := mutatingCfgs[version]; ok {
+			sort.SliceStable(cfgs, func(i, j int) bool {
+				return cfgs[i].Name < cfgs[j].Name
+			})
 			var objRaw *admissionregv1.MutatingWebhookConfiguration
 			if mutatingWebhookCfgs.Name != "" {
 				objRaw = &mutatingWebhookCfgs
@@ -553,6 +557,9 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		if cfgs, ok := validatingCfgs[version]; ok {
+			sort.SliceStable(cfgs, func(i, j int) bool {
+				return cfgs[i].Name < cfgs[j].Name
+			})
 			var objRaw *admissionregv1.ValidatingWebhookConfiguration
 			if validatingWebhookCfgs.Name != "" {
 				objRaw = &validatingWebhookCfgs
