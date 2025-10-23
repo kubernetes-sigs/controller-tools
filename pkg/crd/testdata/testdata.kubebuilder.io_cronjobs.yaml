@@ -201,11 +201,17 @@ spec:
                   - 3
                   type: integer
                 type: array
+              explicitlyOptionalK8s:
+                description: This tests explicitly optional k8s fields
+                type: string
               explicitlyOptionalKubebuilder:
                 description: This tests explicitly optional kubebuilder fields
                 type: string
               explicitlyOptionalKubernetes:
                 description: This tests explicitly optional kubernetes fields
+                type: string
+              explicitlyRequiredK8s:
+                description: This tests explicitly required k8s fields
                 type: string
               explicitlyRequiredKubebuilder:
                 description: This tests explicitly required kubebuilder fields
@@ -9174,6 +9180,7 @@ spec:
             - defaultedString
             - doubleDefaultedString
             - embeddedResource
+            - explicitlyRequiredK8s
             - explicitlyRequiredKubebuilder
             - explicitlyRequiredKubernetes
             - float64WithValidations
