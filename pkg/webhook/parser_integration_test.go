@@ -433,58 +433,10 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(os.Chdir("./testdata/valid-crosspkg-stable")).To(Succeed()) // go modules are directory-sensitive
 		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
 
-		By("loading the roots in one order")
-		pkgsA, err := loader.LoadRoots("./v1", "./v1alpha1")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(pkgsA).To(HaveLen(2))
-
 		By("setting up the parser")
 		reg := &markers.Registry{}
 		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
-
-		By("generating manifests for order A")
-		outputDirA, err := os.MkdirTemp("", "webhook-integration-test-order-a")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDirA)
-		genCtxA := &genall.GenerationContext{
-			Collector:  &markers.Collector{Registry: reg},
-			Roots:      pkgsA,
-			OutputRule: genall.OutputToDirectory(outputDirA),
-		}
-		Expect(webhook.Generator{}.Generate(genCtxA)).To(Succeed())
-		for _, r := range genCtxA.Roots {
-			Expect(r.Errors).To(HaveLen(0))
-		}
-
-		By("loading the generated v1 YAML for order A")
-		actualFileA, err := os.ReadFile(path.Join(outputDirA, "manifests.yaml"))
-		Expect(err).NotTo(HaveOccurred())
-		actualManifestA := &admissionregv1.ValidatingWebhookConfiguration{}
-		Expect(yaml.UnmarshalStrict(actualFileA, actualManifestA)).To(Succeed())
-
-		By("loading the roots in the reverse order")
-		pkgsB := []*loader.Package{pkgsA[1], pkgsA[0]}
-
-		By("generating manifests for order B")
-		outputDirB, err := os.MkdirTemp("", "webhook-integration-test-order-b")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDirB)
-		genCtxB := &genall.GenerationContext{
-			Collector:  &markers.Collector{Registry: reg},
-			Roots:      pkgsB,
-			OutputRule: genall.OutputToDirectory(outputDirB),
-		}
-		Expect(webhook.Generator{}.Generate(genCtxB)).To(Succeed())
-		for _, r := range genCtxB.Roots {
-			Expect(r.Errors).To(HaveLen(0))
-		}
-
-		By("loading the generated v1 YAML for order B")
-		actualFileB, err := os.ReadFile(path.Join(outputDirB, "manifests.yaml"))
-		Expect(err).NotTo(HaveOccurred())
-		actualManifestB := &admissionregv1.ValidatingWebhookConfiguration{}
-		Expect(yaml.UnmarshalStrict(actualFileB, actualManifestB)).To(Succeed())
 
 		By("loading the desired v1 YAML")
 		expectedFile, err := os.ReadFile("manifests.yaml")
@@ -492,9 +444,56 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		expectedManifest := &admissionregv1.ValidatingWebhookConfiguration{}
 		Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
 
-		By("comparing manifests across orders and to expected")
-		assertSame(actualManifestA, actualManifestB)
-		assertSame(actualManifestA, expectedManifest)
+		rootsOrders := []struct {
+			name      string
+			outputDir string
+			roots     []string
+		}{
+			{
+				name:      "v1 first",
+				outputDir: "webhook-integration-test-order-a",
+				roots: []string{
+					"./v1",
+					"./v1alpha1",
+				}},
+			{
+				name:      "v1alpha1 first",
+				outputDir: "webhook-integration-test-order-b",
+				roots: []string{
+					"./v1alpha1",
+					"./v1",
+				}},
+		}
+
+		for _, rootsOrder := range rootsOrders {
+			By("loading the roots in order " + rootsOrder.name)
+			pkgs, err := loader.LoadRoots(rootsOrder.roots...)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pkgs).To(HaveLen(2))
+
+			By("requesting that the manifest be generated for order " + rootsOrder.name)
+			outputDir, err := os.MkdirTemp("", rootsOrder.outputDir)
+			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(outputDir)
+			genCtx := &genall.GenerationContext{
+				Collector:  &markers.Collector{Registry: reg},
+				Roots:      pkgs,
+				OutputRule: genall.OutputToDirectory(outputDir),
+			}
+			Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+			for _, r := range genCtx.Roots {
+				Expect(r.Errors).To(HaveLen(0))
+			}
+
+			By("loading the generated v1 YAML for order " + rootsOrder.name)
+			actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+			Expect(err).NotTo(HaveOccurred())
+			actualManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+			Expect(yaml.UnmarshalStrict(actualFile, actualManifest)).To(Succeed())
+
+			By("comparing the manifest for order " + rootsOrder.name)
+			assertSame(actualManifest, expectedManifest)
+		}
 	})
 
 	It("should fail to generate when there are multiple `kubebuilder:webhookconfiguration` markers of the same mutation type", func() {
