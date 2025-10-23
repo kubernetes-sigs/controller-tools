@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -124,6 +125,12 @@ func transformPreserveUnknownFields(value bool) func(map[string]interface{}) err
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
+	// Extract logger and use a discard logger if nil to avoid repeated nil checks
+	logger := ctx.Logger
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+
 	parser := &Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
@@ -134,22 +141,34 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
 	}
 
+	logger.Debug("starting CRD generation", "ignoreUnexported", parser.IgnoreUnexportedFields, "allowDangerous", parser.AllowDangerousTypes)
+
 	AddKnownTypes(parser)
 	for _, root := range ctx.Roots {
 		parser.NeedPackage(root)
+		logger.Debug("processing package", "package", root.PkgPath)
 	}
 
 	metav1Pkg := FindMetav1(ctx.Roots)
 	if metav1Pkg == nil {
 		// no objects in the roots, since nothing imported metav1
+		logger.Debug("no metav1 package found in roots, no CRDs to generate")
 		return nil
 	}
+
+	logger.Debug("found metav1 package", "package", metav1Pkg.PkgPath)
 
 	// TODO: allow selecting a specific object
 	kubeKinds := FindKubeKinds(parser, metav1Pkg)
 	if len(kubeKinds) == 0 {
 		// no objects in the roots
+		logger.Debug("no Kubernetes kinds found in packages")
 		return nil
+	}
+
+	logger.Info("found Kubernetes kinds for CRD generation", "count", len(kubeKinds))
+	for _, kind := range kubeKinds {
+		logger.Debug("processing Kubernetes kind", "group", kind.Group, "kind", kind.Kind)
 	}
 
 	crdVersions := g.CRDVersions
@@ -157,6 +176,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	if len(crdVersions) == 0 {
 		crdVersions = []string{defaultVersion}
 	}
+
+	logger.Debug("using CRD versions", "versions", crdVersions)
 
 	var headerText string
 
@@ -166,6 +187,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			return err
 		}
 		headerText = string(headerBytes)
+		logger.Debug("loaded header file", "file", g.HeaderFile, "size", len(headerBytes))
 	}
 	headerText = strings.ReplaceAll(headerText, " YEAR", " "+g.Year)
 
@@ -178,6 +200,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	for _, groupKind := range kubeKinds {
+		logger.Debug("generating CRD", "group", groupKind.Group, "kind", groupKind.Kind)
+
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
 		addAttribution(&crdRaw)
@@ -202,9 +226,14 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			} else {
 				fileName = fmt.Sprintf("%s_%s.%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural, crdVersions[i])
 			}
+
+			logger.Debug("writing CRD file", "filename", fileName, "group", groupKind.Group, "kind", groupKind.Kind)
+
 			if err := ctx.WriteYAML(fileName, headerText, []interface{}{crd}, yamlOpts...); err != nil {
 				return err
 			}
+
+			logger.Info("generated CRD", "filename", fileName, "group", groupKind.Group, "kind", groupKind.Kind)
 		}
 	}
 
