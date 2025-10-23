@@ -426,6 +426,77 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		assertSame(actualValidating, expectedValidating)
 	})
 
+	It("should keep webhook order stable across package traversal orders", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/valid-crosspkg-stable")).To(Succeed()) // go modules are directory-sensitive
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots in one order")
+		pkgsA, err := loader.LoadRoots("./v1", "./v1alpha1")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgsA).To(HaveLen(2))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("generating manifests for order A")
+		outputDirA, err := os.MkdirTemp("", "webhook-integration-test-order-a")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDirA)
+		genCtxA := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgsA,
+			OutputRule: genall.OutputToDirectory(outputDirA),
+		}
+		Expect(webhook.Generator{}.Generate(genCtxA)).To(Succeed())
+		for _, r := range genCtxA.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML for order A")
+		actualFileA, err := os.ReadFile(path.Join(outputDirA, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualManifestA := &admissionregv1.ValidatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(actualFileA, actualManifestA)).To(Succeed())
+
+		By("loading the roots in the reverse order")
+		pkgsB := []*loader.Package{pkgsA[1], pkgsA[0]}
+
+		By("generating manifests for order B")
+		outputDirB, err := os.MkdirTemp("", "webhook-integration-test-order-b")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDirB)
+		genCtxB := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgsB,
+			OutputRule: genall.OutputToDirectory(outputDirB),
+		}
+		Expect(webhook.Generator{}.Generate(genCtxB)).To(Succeed())
+		for _, r := range genCtxB.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML for order B")
+		actualFileB, err := os.ReadFile(path.Join(outputDirB, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualManifestB := &admissionregv1.ValidatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(actualFileB, actualManifestB)).To(Succeed())
+
+		By("loading the desired v1 YAML")
+		expectedFile, err := os.ReadFile("manifests.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
+
+		By("comparing manifests across orders and to expected")
+		assertSame(actualManifestA, actualManifestB)
+		assertSame(actualManifestA, expectedManifest)
+	})
+
 	It("should fail to generate when there are multiple `kubebuilder:webhookconfiguration` markers of the same mutation type", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
