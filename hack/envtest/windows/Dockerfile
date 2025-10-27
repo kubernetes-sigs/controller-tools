@@ -46,10 +46,15 @@ RUN /bin/bash -x -c ' \
       cp _output/local/bin/${KUBE_BUILD_PLATFORMS}/kubectl.exe $DEST; }'
 
 # etcd
-ENV ETCD_BASE_NAME=etcd-${ETCD_VERSION}-${OS}-${ARCH}
-RUN curl -sfLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.zip && \
-    unzip -o ${ETCD_BASE_NAME}.zip && \
-    cp ${ETCD_BASE_NAME}/etcd.exe $DEST
+RUN ETCD_DL_ARCH="$ARCH"; \
+        if [ "$ARCH" = "arm64" ]; then \
+            echo "WARNING: etcd for arm64 is not available, downloading amd64 version instead."; \
+            ETCD_DL_ARCH="amd64"; \
+        fi; \
+        ETCD_BASE_NAME="etcd-${ETCD_VERSION}-${OS}-${ETCD_DL_ARCH}"; \
+        curl -sfLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.zip && \
+        unzip -o ${ETCD_BASE_NAME}.zip && \
+        cp ${ETCD_BASE_NAME}/etcd.exe $DEST
 
 # Package into tarball.
 RUN tar -czvf /envtest-${KUBERNETES_VERSION}-${OS}-${ARCH}.tar.gz $DEST

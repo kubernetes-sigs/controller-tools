@@ -141,6 +141,7 @@ release-envtest: clean-release ## Build the envtest binaries by operating system
 	OS=darwin ARCH=amd64 $(MAKE) release-envtest-docker-build
 	OS=darwin ARCH=arm64 $(MAKE) release-envtest-docker-build
 	OS=windows ARCH=amd64 $(MAKE) release-envtest-docker-build
+	OS=windows ARCH=arm64 $(MAKE) release-envtest-docker-build
 	./hack/envtest/update-releases.sh
 
 .PHONY: release-envtest-docker-build
@@ -168,6 +169,7 @@ release-controller-gen: clean-release ## Build controller-gen binaries.
 	RELEASE_BINARY=controller-gen-darwin-amd64      GOOS=darwin  GOARCH=amd64   $(MAKE) release-binary
 	RELEASE_BINARY=controller-gen-darwin-arm64      GOOS=darwin  GOARCH=arm64   $(MAKE) release-binary
 	RELEASE_BINARY=controller-gen-windows-amd64.exe GOOS=windows GOARCH=amd64   $(MAKE) release-binary
+	RELEASE_BINARY=controller-gen-windows-arm64.exe GOOS=windows GOARCH=arm64   $(MAKE) release-binary
 
 .PHONY: release-binary
 release-binary: $(RELEASE_DIR)
