@@ -33,6 +33,7 @@ linters:
     - iotamixing
     - makezero
     - misspell
+    - modernize
     - nakedret
     - nilerr
     - nolintlint
