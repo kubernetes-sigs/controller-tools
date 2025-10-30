@@ -19,7 +19,7 @@ package deepcopy_test
 import (
 	"io"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
@@ -46,7 +46,7 @@ func (m outputToMap) fileList() []string {
 	for path := range m {
 		ret = append(ret, path)
 	}
-	sort.Strings(ret)
+	slices.Sort(ret)
 	return ret
 }
 
