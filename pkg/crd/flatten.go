@@ -38,7 +38,7 @@ type ErrorRecorder interface {
 
 // isOrNil checks if val is nil if val is of a nillable type, otherwise,
 // it compares val to valInt (which should probably be the zero value).
-func isOrNil(val reflect.Value, valInt interface{}, zeroInt interface{}) bool {
+func isOrNil(val reflect.Value, valInt any, zeroInt any) bool {
 	switch valKind := val.Kind(); valKind {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		return val.IsNil()

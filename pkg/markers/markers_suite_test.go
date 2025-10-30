@@ -40,7 +40,7 @@ var _ = BeforeSuite(func() {
 	modules := []pkgstest.Module{
 		{
 			Name: "sigs.k8s.io/controller-tools/pkg/markers/testdata",
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"file.go": `
 					package testdata
 

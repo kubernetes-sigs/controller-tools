@@ -45,11 +45,11 @@ func (t fakeT) Cleanup(f func()) {
 	t.g.Cleanup(f)
 }
 
-func (t fakeT) Error(args ...interface{}) {
+func (t fakeT) Error(args ...any) {
 	t.g.Error(args...)
 }
 
-func (t fakeT) Errorf(format string, args ...interface{}) {
+func (t fakeT) Errorf(format string, args ...any) {
 	t.g.Errorf(format, args...)
 }
 
@@ -65,11 +65,11 @@ func (t fakeT) Failed() bool {
 	return t.g.Failed()
 }
 
-func (t fakeT) Fatal(args ...interface{}) {
+func (t fakeT) Fatal(args ...any) {
 	t.g.Fatal(args...)
 }
 
-func (t fakeT) Fatalf(format string, args ...interface{}) {
+func (t fakeT) Fatalf(format string, args ...any) {
 	t.g.Fatalf(format, args...)
 }
 
@@ -77,11 +77,11 @@ func (t fakeT) Helper() {
 	t.g.Helper()
 }
 
-func (t fakeT) Log(args ...interface{}) {
+func (t fakeT) Log(args ...any) {
 	t.g.Log(args...)
 }
 
-func (t fakeT) Logf(format string, args ...interface{}) {
+func (t fakeT) Logf(format string, args ...any) {
 	t.g.Logf(format, args...)
 }
 
@@ -93,7 +93,7 @@ func (t fakeT) Setenv(key, value string) {
 	t.g.Setenv(key, value)
 }
 
-func (t fakeT) Skip(args ...interface{}) {
+func (t fakeT) Skip(args ...any) {
 	t.g.Skip(args...)
 }
 
@@ -101,7 +101,7 @@ func (t fakeT) SkipNow() {
 	t.g.SkipNow()
 }
 
-func (t fakeT) Skipf(format string, args ...interface{}) {
+func (t fakeT) Skipf(format string, args ...any) {
 	t.g.Skipf(format, args...)
 }
 

@@ -25,38 +25,38 @@ import (
 var _ = Describe("DeleteNode", func() {
 	tests := []struct {
 		name    string
-		obj     interface{}
+		obj     any
 		path    []string
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		/*
 			{name: "non-empty, unknown path",
-				obj: map[string]interface{}{
+				obj: map[string]any{
 					"bar": int64(42),
 				},
 				path:  []string{"foo"},
-				want: map[string]interface{}{
+				want: map[string]any{
 					"bar": int64(42),
 				},
 			},
 			{name: "non-empty, existing path",
-				obj: map[string]interface{}{
+				obj: map[string]any{
 					"bar": int64(42),
 				},
 				path:  []string{"bar"},
-				want: map[string]interface{}{},
+				want: map[string]any{},
 			},
 		*/
 		{name: "non-empty, long path",
-			obj: map[string]interface{}{
-				"foo": map[string]interface{}{
+			obj: map[string]any{
+				"foo": map[string]any{
 					"bar": int64(42),
 				},
 			},
 			path: []string{"foo", "bar"},
-			want: map[string]interface{}{
-				"foo": map[string]interface{}{},
+			want: map[string]any{
+				"foo": map[string]any{},
 			},
 		},
 	}
