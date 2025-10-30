@@ -25,61 +25,61 @@ import (
 var _ = Describe("SetNode", func() {
 	tests := []struct {
 		name    string
-		obj     interface{}
-		value   interface{}
+		obj     any
+		value   any
 		path    []string
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{name: "null"},
 		{name: "empty, null value",
-			obj:   map[string]interface{}{},
+			obj:   map[string]any{},
 			value: nil,
 			want:  nil,
 		},
 		{name: "empty, non-null value",
-			obj:   map[string]interface{}{},
+			obj:   map[string]any{},
 			value: int64(64),
 			want:  int64(64),
 		},
 		{name: "non-empty, unknown path",
-			obj: map[string]interface{}{
+			obj: map[string]any{
 				"bar": int64(42),
 			},
 			value: "foo",
 			path:  []string{"foo"},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"bar": int64(42),
 				"foo": "foo",
 			},
 		},
 		{name: "non-empty, existing path",
-			obj: map[string]interface{}{
+			obj: map[string]any{
 				"bar": int64(42),
 			},
 			value: "foo",
 			path:  []string{"bar"},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"bar": "foo",
 			},
 		},
 		{name: "non-empty, long path",
-			obj: map[string]interface{}{
-				"foo": map[string]interface{}{
+			obj: map[string]any{
+				"foo": map[string]any{
 					"bar": int64(42),
 				},
 			},
 			value: "foo",
 			path:  []string{"foo", "bar"},
-			want: map[string]interface{}{
-				"foo": map[string]interface{}{
+			want: map[string]any{
+				"foo": map[string]any{
 					"bar": "foo",
 				},
 			},
 		},
 		{name: "invalid type",
-			obj: map[string]interface{}{
-				"foo": []interface{}{int64(42)},
+			obj: map[string]any{
+				"foo": []any{int64(42)},
 			},
 			value:   "foo",
 			path:    []string{"foo", "bar"},

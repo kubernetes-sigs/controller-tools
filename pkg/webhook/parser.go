@@ -514,7 +514,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
-	versionedWebhooks := make(map[string][]interface{}, len(supportedWebhookVersions))
+	versionedWebhooks := make(map[string][]any, len(supportedWebhookVersions))
 	//nolint:dupl
 	for _, version := range supportedWebhookVersions {
 		if cfgs, ok := mutatingCfgs[version]; ok {

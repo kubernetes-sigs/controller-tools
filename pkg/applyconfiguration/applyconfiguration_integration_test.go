@@ -193,6 +193,9 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 			// Make sure the import paths are correct for the newly generated content.
 			content = []byte(strings.ReplaceAll(string(content), "testdata/cronjob/api/v1/applyconfiguration", filepath.Join("testdata/cronjob/api/v1", outputPackage)))
 
+			// Make sure the interface{} is replaced with any.
+			content = []byte(strings.ReplaceAll(string(content), "any", "interface{}"))
+
 			Expect(string(filesInOutput[name])).To(BeComparableTo(string(content)), "Generated files should match the checked in files, diff found in %s", name)
 		}
 	},

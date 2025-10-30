@@ -24,9 +24,9 @@ import (
 var _ = Describe("GetNode", func() {
 	tests := []struct {
 		name    string
-		obj     interface{}
+		obj     any
 		path    []string
-		want    interface{}
+		want    any
 		found   bool
 		wantErr bool
 	}{
@@ -34,18 +34,18 @@ var _ = Describe("GetNode", func() {
 			found: true,
 		},
 		{name: "empty",
-			obj:   map[string]interface{}{},
+			obj:   map[string]any{},
 			found: true,
-			want:  map[string]interface{}{},
+			want:  map[string]any{},
 		},
 		{name: "non-empty, wrong path",
-			obj: map[string]interface{}{
+			obj: map[string]any{
 				"bar": int64(42),
 			},
 			path: []string{"foo"},
 		},
 		{name: "non-empty, right path",
-			obj: map[string]interface{}{
+			obj: map[string]any{
 				"bar": int64(42),
 			},
 			path:  []string{"bar"},
@@ -53,8 +53,8 @@ var _ = Describe("GetNode", func() {
 			found: true,
 		},
 		{name: "non-empty, long path",
-			obj: map[string]interface{}{
-				"foo": map[string]interface{}{
+			obj: map[string]any{
+				"foo": map[string]any{
 					"bar": int64(42),
 				},
 			},
@@ -63,8 +63,8 @@ var _ = Describe("GetNode", func() {
 			found: true,
 		},
 		{name: "invalid type",
-			obj: map[string]interface{}{
-				"foo": []interface{}{int64(42)},
+			obj: map[string]any{
+				"foo": []any{int64(42)},
 			},
 			path:    []string{"foo", "bar"},
 			wantErr: true,

@@ -233,7 +233,7 @@ type MinProperties int
 
 // Enum specifies that this (scalar) field is restricted to the *exact* values specified here.
 // +controllertools:marker:generateHelp:category="CRD validation"
-type Enum []interface{}
+type Enum []any
 
 // Format specifies additional "complex" formatting for this field.
 //
@@ -265,7 +265,7 @@ type Nullable struct{}
 // submission of the containing CRD to an apiserver.
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Default struct {
-	Value interface{}
+	Value any
 }
 
 // Title sets the title for this field.
@@ -276,7 +276,7 @@ type Default struct {
 // important context about what the schema represents.
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Title struct {
-	Value interface{}
+	Value any
 }
 
 // KubernetesDefault sets the default value for this field.
@@ -290,7 +290,7 @@ type Title struct {
 // submission of the containing CRD to an apiserver.
 // +controllertools:marker:generateHelp:category="CRD validation"
 type KubernetesDefault struct {
-	Value interface{}
+	Value any
 }
 
 // Example sets the example value for this field.
@@ -303,7 +303,7 @@ type KubernetesDefault struct {
 // submission of the containing CRD to an apiserver.
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Example struct {
-	Value interface{}
+	Value any
 }
 
 // XPreserveUnknownFields stops the apiserver from pruning fields which are not specified.
