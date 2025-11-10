@@ -36,6 +36,9 @@ type OneofSpec struct {
 	TypeWithMultipleAtLeastOneofs *TypeWithMultipleAtLeastOneofs `json:"typeWithMultipleAtLeastOneOf,omitempty"`
 
 	TypeWithAllOneOf *TypeWithAllOneofs `json:"typeWithAllOneOf,omitempty"`
+
+	// The validation rule on TypeWithOneofs should not be duplicated.
+	SameTypeWithOneof *TypeWithOneofs `json:"sameTypeWithOneof,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:message="only one of foo|bar may be set",rule="!(has(self.foo) && has(self.bar))"
