@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"golang.org/x/tools/go/packages"
@@ -101,6 +102,9 @@ type Runtime struct {
 	OutputRules OutputRules
 	// ErrorWriter defines where to write error messages.
 	ErrorWriter io.Writer
+	// LogLevel sets the logging level for generator operations.
+	// Defaults to slog.LevelInfo if not specified.
+	LogLevel slog.Level
 }
 
 // GenerationContext defines the common information needed for each Generator
@@ -117,6 +121,8 @@ type GenerationContext struct {
 	// InputRule describes how to load associated boilerplate artifacts.
 	// It should *not* be used to load source files.
 	InputRule
+	// Logger is the logger for verbose output. If nil, logging is disabled.
+	Logger *slog.Logger
 }
 
 // WriteYAMLOptions implements the Options Pattern for WriteYAML.
@@ -261,16 +267,36 @@ func (r *Runtime) Run() bool {
 		return true
 	}
 
+	// Set up logging based on log level setting
+	var logger *slog.Logger
+
+	// Use the specified log level, defaulting to Info if not set
+	logLevel := r.LogLevel
+	if logLevel == 0 {
+		logLevel = slog.LevelInfo
+	}
+
+	logger = slog.New(slog.NewTextHandler(r.ErrorWriter, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	if logLevel <= slog.LevelDebug {
+		logger.Info("debug logging enabled")
+	}
+
 	hadErrs := false
 	for _, gen := range r.Generators {
 		ctx := r.GenerationContext // make a shallow copy
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
+		ctx.Logger = logger
 
 		// don't pass a typechecker to generators that don't provide a filter
 		// to avoid accidents
 		if _, needsChecking := (*gen).(NeedsTypeChecking); !needsChecking {
 			ctx.Checker = nil
 		}
+
+		logger.Debug("running generator", "generator", fmt.Sprintf("%T", *gen))
 
 		if err := (*gen).Generate(&ctx); err != nil {
 			fmt.Fprintln(r.ErrorWriter, err)
