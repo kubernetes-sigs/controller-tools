@@ -112,7 +112,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) (result error) {
 	}
 
 	// generate schemata for the types we care about, and save them to be written later.
-	for _, groupKind := range crdgen.FindKubeKinds(parser, metav1Pkg) {
+	for _, groupKind := range crdgen.FindKubeKinds(parser, metav1Pkg, nil) {
 		existingSet, wanted := partialCRDSets[groupKind]
 		if !wanted {
 			continue

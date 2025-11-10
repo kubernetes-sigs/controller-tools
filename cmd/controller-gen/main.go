@@ -65,10 +65,11 @@ var (
 	// - output:<generator>:<form> (per-generator output)
 	// - output:<form> (default output)
 	allOutputRules = map[string]genall.OutputRule{
-		"dir":       genall.OutputToDirectory(""),
-		"none":      genall.OutputToNothing,
-		"stdout":    genall.OutputToStdout,
-		"artifacts": genall.OutputArtifacts{},
+		"dir":             genall.OutputToDirectory(""),
+		"none":            genall.OutputToNothing,
+		"stdout":          genall.OutputToStdout,
+		"artifacts":       genall.OutputArtifacts{},
+		"featuregate-dir": genall.OutputToFeatureGateDirectories{},
 	}
 
 	// optionsRegistry contains all the marker definitions used to process command line options
@@ -208,6 +209,12 @@ func main() {
 		fmt.Fprintf(c.OutOrStderr(), "\n\nOptions\n\n")
 		return helpForLevels(c.OutOrStdout(), c.OutOrStderr(), helpLevel, optionsRegistry, help.SortByOption)
 	})
+
+	// Add workflow command for advanced multi-gate, multi-output generation patterns
+	if len(os.Args) > 1 && os.Args[1] == "workflow" {
+		workflowCmd := NewWorkflowCommand()
+		cmd.AddCommand(workflowCmd)
+	}
 
 	if err := cmd.Execute(); err != nil {
 		var errNoUsage noUsageError

@@ -104,6 +104,10 @@ func (Config) Help() *markers.DefinitionHelp {
 				Summary: "allows mutating webhooks configuration to specify an external URL when generating",
 				Details: "the manifests, instead of using the internal service communication. Should be in format of\nhttps://address:port/path\nWhen this option is specified, the serviceConfig.Service is removed from webhook the manifest.\nThe URL configuration should be between quotes.\n`url` cannot be specified when `path` is specified.",
 			},
+			"FeatureGate": {
+				Summary: "specifies the feature gate(s) that control this webhook.",
+				Details: "If not set, the webhook is always included.\nIf set to a single gate (e.g., \"alpha\"), the webhook is included when that gate is enabled.\nIf set to multiple gates separated by \"|\" (e.g., \"alpha|beta\"), the webhook is included when ANY of the gates are enabled (OR logic).\nIf set to multiple gates separated by \"&\" (e.g., \"alpha&beta\"), the webhook is included when ALL of the gates are enabled (AND logic).",
+			},
 		},
 	}
 }
@@ -123,6 +127,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 			"Year": {
 				Summary: "specifies the year to substitute for \" YEAR\" in the header file.",
 				Details: "",
+			},
+			"FeatureGates": {
+				Summary: "is a comma-separated list of feature gates to enable (e.g., \"alpha=true,beta=false\").",
+				Details: "Only webhook configurations with matching feature gates will be included in the generated output.\nFeature gates not explicitly listed are treated as disabled.\nUsage: controller-gen 'webhook:featureGates=\"alpha=true,beta=false\"' paths=./...",
 			},
 		},
 	}

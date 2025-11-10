@@ -26,6 +26,7 @@ import (
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -85,6 +86,16 @@ type Generator struct {
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
 
+	// FeatureGates specifies which feature gates are enabled for conditional field inclusion.
+	//
+	// Single gate format: "gatename=true"
+	// Multiple gates format: "gate1=true,gate2=false" (must use quoted strings for comma-separated values)
+	//
+	// Examples:
+	//   controller-gen crd:featureGates="alpha=true" paths=./api/...
+	//   controller-gen 'crd:featureGates="alpha=true,beta=false"' paths=./api/...
+	FeatureGates string `marker:",optional"`
+
 	// DeprecatedV1beta1CompatibilityPreserveUnknownFields indicates whether
 	// or not we should turn off field pruning for this resource.
 	//
@@ -124,6 +135,11 @@ func transformPreserveUnknownFields(value bool) func(map[string]interface{}) err
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
+	featureGates, err := featuregate.ParseFeatureGates(g.FeatureGates)
+	if err != nil {
+		return fmt.Errorf("invalid feature gates: %w", err)
+	}
+
 	parser := &Parser{
 		Collector: ctx.Collector,
 		Checker:   ctx.Checker,
@@ -132,6 +148,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
 		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
+		FeatureGates:               featureGates,
 	}
 
 	AddKnownTypes(parser)
@@ -146,7 +163,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	// TODO: allow selecting a specific object
-	kubeKinds := FindKubeKinds(parser, metav1Pkg)
+	kubeKinds := FindKubeKinds(parser, metav1Pkg, featureGates)
 	if len(kubeKinds) == 0 {
 		// no objects in the roots
 		return nil
@@ -264,8 +281,8 @@ func FindMetav1(roots []*loader.Package) *loader.Package {
 
 // FindKubeKinds locates all types that contain TypeMeta and ObjectMeta
 // (and thus may be a Kubernetes object), and returns the corresponding
-// group-kinds.
-func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind {
+// group-kinds that are not filtered out by feature gates.
+func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package, featureGates featuregate.FeatureGateMap) []schema.GroupKind {
 	// TODO(directxman12): technically, we should be finding metav1 per-package
 	kubeKinds := map[schema.GroupKind]struct{}{}
 	for typeIdent, info := range parser.Types {
@@ -315,6 +332,19 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 
 		if !hasObjectMeta || !hasTypeMeta {
 			continue
+		}
+
+		// Check type-level feature gate marker
+		if featureGateMarker := info.Markers.Get("kubebuilder:featuregate"); featureGateMarker != nil {
+			if featureGate, ok := featureGateMarker.(crdmarkers.FeatureGate); ok {
+				gateName := string(featureGate)
+				// Create evaluator to handle complex expressions (OR/AND logic)
+				evaluator := featuregate.NewFeatureGateEvaluator(featureGates)
+				if !evaluator.EvaluateExpression(gateName) {
+					// Skip this type as its feature gate expression is not satisfied
+					continue
+				}
+			}
 		}
 
 		groupKind := schema.GroupKind{

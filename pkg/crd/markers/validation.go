@@ -138,6 +138,12 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(Title{}.Help()),
 	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesType, Title{})).
 		WithHelp(Title{}.Help()),
+
+	// Feature gate markers for both fields and types (separate registrations)
+	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesField, FeatureGate(""))).
+		WithHelp(FeatureGate("").Help()),
+	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesType, FeatureGate(""))).
+		WithHelp(FeatureGate("").Help()),
 }
 
 func init() {
@@ -392,6 +398,31 @@ type ExactlyOneOf []string
 // This marker may be repeated to specify multiple AtLeastOneOf constraints that are mutually exclusive.
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
+
+// FeatureGate marks a field or type to be conditionally included based on feature gate enablement.
+//
+// Fields or types marked with +kubebuilder:featuregate will only be included in generated CRDs
+// when the specified feature gate expression evaluates to true via the crd:featureGates parameter.
+//
+// Supported formats:
+//   - Single gate: +kubebuilder:featuregate=alpha
+//   - OR expression: +kubebuilder:featuregate=alpha|beta (true if ANY gate is enabled)
+//   - AND expression: +kubebuilder:featuregate=alpha&beta (true if ALL gates are enabled)  
+//   - Mixed with precedence: +kubebuilder:featuregate=alpha&beta|gamma (equivalent to (alpha&beta)|gamma)
+//   - Explicit precedence: +kubebuilder:featuregate=(alpha|beta)&gamma
+//
+// Operator precedence follows standard conventions: & (AND) has higher precedence than | (OR).
+// Use parentheses for explicit grouping when needed.
+// +controllertools:marker:generateHelp:category="CRD feature gates"
+type FeatureGate string
+
+// ApplyToSchema does nothing for feature gates - they are processed by the generator
+// to conditionally include/exclude fields and types.
+func (FeatureGate) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+	// Feature gates don't modify the schema directly.
+	// They are processed by the generator to conditionally include/exclude fields.
+	return nil
+}
 
 func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
@@ -748,3 +779,5 @@ func fieldsToOneOfCelRuleStr(fields []string) string {
 	list.WriteString("].filter(x,x==true).size()")
 	return list.String()
 }
+
+// +controllertools:marker:generateHelp:category="CRD validation feature gates"

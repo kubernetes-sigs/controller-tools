@@ -21,6 +21,7 @@ import (
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/internal/crd"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -92,6 +93,9 @@ type Parser struct {
 
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta should be generated
 	GenerateEmbeddedObjectMeta bool
+
+	// FeatureGates specifies which feature gates are enabled for conditional field inclusion
+	FeatureGates featuregate.FeatureGateMap
 }
 
 func (p *Parser) init() {
@@ -177,7 +181,7 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 
 		props := p.Schemata[typ]
 		return &props
-	}, p.AllowDangerousTypes, p.IgnoreUnexportedFields)
+	}, p.AllowDangerousTypes, p.IgnoreUnexportedFields, p.FeatureGates)
 	ctxForInfo := schemaCtx.ForInfo(info)
 
 	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)

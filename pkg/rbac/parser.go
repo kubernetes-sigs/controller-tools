@@ -29,6 +29,8 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"sigs.k8s.io/controller-tools/pkg/featuregate"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -60,6 +62,12 @@ type Rule struct {
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
 	Namespace string `marker:",optional"`
+	// FeatureGate specifies the feature gate(s) that control this RBAC rule.
+	// If not set, the rule is always included.
+	// If set to a single gate (e.g., "alpha"), the rule is included when that gate is enabled.
+	// If set to multiple gates separated by "|" (e.g., "alpha|beta"), the rule is included when ANY of the gates are enabled (OR logic).
+	// If set to multiple gates separated by "&" (e.g., "alpha&beta"), the rule is included when ALL of the gates are enabled (AND logic).
+	FeatureGate string `marker:"featureGate,optional"`
 }
 
 // ruleKey represents the resources and non-resources a Rule applies.
@@ -169,6 +177,12 @@ type Generator struct {
 
 	// Year specifies the year to substitute for " YEAR" in the header file.
 	Year string `marker:",optional"`
+
+	// FeatureGates is a comma-separated list of feature gates to enable (e.g., "alpha=true,beta=false").
+	// Only RBAC rules with matching feature gates will be included in the generated output.
+	// Feature gates not explicitly listed are treated as disabled.
+	// Usage: controller-gen 'rbac:roleName=manager,featureGates="alpha=true,beta=false"' paths=./...
+	FeatureGates string `marker:",optional"`
 }
 
 func (Generator) RegisterMarkers(into *markers.Registry) error {
@@ -179,195 +193,261 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-// GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
-// The order of the objs in the returned slice is stable and determined by their namespaces.
-func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{}, error) {
+// normalizeRules merges Rule with the same ruleKey and sorts the Rules
+func normalizeRules(rules []*Rule) []rbacv1.PolicyRule {
+	ruleMap := normalizeRuleGroups(rules)
+	ruleMap = deduplicateResources(ruleMap)
+	ruleMap = deduplicateGroups(ruleMap)
+	ruleMap = deduplicateURLs(ruleMap)
+
+	return generateSortedPolicyRules(ruleMap)
+}
+
+// normalizeRuleGroups creates initial rule map and fixes group names
+func normalizeRuleGroups(rules []*Rule) map[ruleKey]*Rule {
+	ruleMap := make(map[ruleKey]*Rule)
+	for _, rule := range rules {
+		// fix the group name first, since letting people type "core" is nice
+		for i, name := range rule.Groups {
+			if name == "core" {
+				rule.Groups[i] = ""
+			}
+		}
+
+		key := rule.key()
+		if _, ok := ruleMap[key]; !ok {
+			ruleMap[key] = rule
+			continue
+		}
+		ruleMap[key].addVerbs(rule.Verbs)
+	}
+	return ruleMap
+}
+
+// deduplicateResources merges rules with same key except resources
+func deduplicateResources(ruleMap map[ruleKey]*Rule) map[ruleKey]*Rule {
+	ruleMapWithoutResources := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		key := rule.keyWithGroupResourceNamesURLsVerbs()
+		ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
+	}
+
+	newRuleMap := make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutResources {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.Resources = append(rule.Resources, mergeRule.Resources...)
+		}
+		key := rule.key()
+		newRuleMap[key] = rule
+	}
+	return newRuleMap
+}
+
+// deduplicateGroups merges rules with same key except groups
+func deduplicateGroups(ruleMap map[ruleKey]*Rule) map[ruleKey]*Rule {
+	ruleMapWithoutGroup := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		key := rule.keyWithResourcesResourceNamesURLsVerbs()
+		ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
+	}
+
+	newRuleMap := make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutGroup {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.Groups = append(rule.Groups, mergeRule.Groups...)
+		}
+		key := rule.key()
+		newRuleMap[key] = rule
+	}
+	return newRuleMap
+}
+
+// deduplicateURLs merges rules with same key except URLs
+func deduplicateURLs(ruleMap map[ruleKey]*Rule) map[ruleKey]*Rule {
+	ruleMapWithoutURLs := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		key := rule.keyWitGroupResourcesResourceNamesVerbs()
+		ruleMapWithoutURLs[key] = append(ruleMapWithoutURLs[key], rule)
+	}
+
+	newRuleMap := make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutURLs {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.URLs = append(rule.URLs, mergeRule.URLs...)
+		}
+		key := rule.key()
+		newRuleMap[key] = rule
+	}
+	return newRuleMap
+}
+
+// generateSortedPolicyRules sorts rules and normalizes verbs
+func generateSortedPolicyRules(ruleMap map[ruleKey]*Rule) []rbacv1.PolicyRule {
+	keys := make([]ruleKey, 0, len(ruleMap))
+	for key := range ruleMap {
+		keys = append(keys, key)
+	}
+	sort.Sort(ruleKeys(keys))
+
+	// Normalize rule verbs to "*" if any verb in the rule is an asterisk
+	for _, rule := range ruleMap {
+		for _, verb := range rule.Verbs {
+			if verb == "*" {
+				rule.Verbs = []string{"*"}
+				break
+			}
+		}
+	}
+
+	var policyRules []rbacv1.PolicyRule
+	for _, key := range keys {
+		policyRules = append(policyRules, ruleMap[key].ToRule())
+	}
+	return policyRules
+}
+
+// processRulesFromMarkers processes RBAC markers and groups them by namespace
+func processRulesFromMarkers(ctx *genall.GenerationContext, evaluator *featuregate.FeatureGateEvaluator) (map[string][]*Rule, error) {
 	rulesByNSResource := make(map[string][]*Rule)
+
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
 		if err != nil {
 			root.AddError(err)
 		}
 
-		// group RBAC markers by namespace and separate by resource
-		for _, markerValue := range markerSet[RuleDefinition.Name] {
-			rule := markerValue.(Rule)
-			if len(rule.Resources) == 0 {
-				// Add a rule without any resource if Resources is empty.
-				r := Rule{
-					Groups:        rule.Groups,
-					Resources:     []string{},
-					ResourceNames: rule.ResourceNames,
-					URLs:          rule.URLs,
-					Namespace:     rule.Namespace,
-					Verbs:         rule.Verbs,
-				}
-				namespace := r.Namespace
-				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
-				continue
-			}
-			for _, resource := range rule.Resources {
-				r := Rule{
-					Groups:        rule.Groups,
-					Resources:     []string{resource},
-					ResourceNames: rule.ResourceNames,
-					URLs:          rule.URLs,
-					Namespace:     rule.Namespace,
-					Verbs:         rule.Verbs,
-				}
-				namespace := r.Namespace
-				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
-			}
+		if err := processMarkersForRoot(markerSet, evaluator, rulesByNSResource); err != nil {
+			return nil, err
 		}
 	}
 
-	// NormalizeRules merge Rule with the same ruleKey and sort the Rules
-	NormalizeRules := func(rules []*Rule) []rbacv1.PolicyRule {
-		ruleMap := make(map[ruleKey]*Rule)
-		// all the Rules having the same ruleKey will be merged into the first Rule
-		for _, rule := range rules {
-			// fix the group name first, since letting people type "core" is nice
-			for i, name := range rule.Groups {
-				if name == "core" {
-					rule.Groups[i] = ""
-				}
-			}
+	return rulesByNSResource, nil
+}
 
-			key := rule.key()
-			if _, ok := ruleMap[key]; !ok {
-				ruleMap[key] = rule
-				continue
-			}
-			ruleMap[key].addVerbs(rule.Verbs)
+// processMarkersForRoot processes markers for a single root
+func processMarkersForRoot(markerSet markers.MarkerValues, evaluator *featuregate.FeatureGateEvaluator, rulesByNSResource map[string][]*Rule) error {
+	for _, markerValue := range markerSet[RuleDefinition.Name] {
+		rule := markerValue.(Rule)
+
+		if err := featuregate.ValidateFeatureGateExpression(rule.FeatureGate, nil, false); err != nil {
+			return fmt.Errorf("invalid feature gate expression in RBAC rule: %w", err)
 		}
 
-		// deduplicate resources
-		// 1. create map based on key without resources
-		ruleMapWithoutResources := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Resources
-			key := rule.keyWithGroupResourceNamesURLsVerbs()
-			ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
-		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutResources {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.Resources = append(rule.Resources, mergeRule.Resources...)
-			}
-
-			key := rule.key()
-			ruleMap[key] = rule
+		if !evaluator.EvaluateExpression(rule.FeatureGate) {
+			continue
 		}
 
-		// deduplicate groups
-		// 1. create map based on key without group
-		ruleMapWithoutGroup := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Group
-			key := rule.keyWithResourcesResourceNamesURLsVerbs()
-			ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
-		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutGroup {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.Groups = append(rule.Groups, mergeRule.Groups...)
-			}
-			key := rule.key()
-			ruleMap[key] = rule
-		}
+		addRuleToMap(rule, rulesByNSResource)
+	}
+	return nil
+}
 
-		// deduplicate URLs
-		// 1. create map based on key without URLs
-		ruleMapWithoutURLs := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Group
-			key := rule.keyWitGroupResourcesResourceNamesVerbs()
-			ruleMapWithoutURLs[key] = append(ruleMapWithoutURLs[key], rule)
+// addRuleToMap adds a rule to the namespace-indexed rule map
+func addRuleToMap(rule Rule, rulesByNSResource map[string][]*Rule) {
+	if len(rule.Resources) == 0 {
+		r := Rule{
+			Groups:        rule.Groups,
+			Resources:     []string{},
+			ResourceNames: rule.ResourceNames,
+			URLs:          rule.URLs,
+			Namespace:     rule.Namespace,
+			Verbs:         rule.Verbs,
+			FeatureGate:   rule.FeatureGate,
 		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutURLs {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.URLs = append(rule.URLs, mergeRule.URLs...)
-			}
-			key := rule.key()
-			ruleMap[key] = rule
-		}
-
-		// sort the Rules in rules according to their ruleKeys
-		keys := make([]ruleKey, 0, len(ruleMap))
-		for key := range ruleMap {
-			keys = append(keys, key)
-		}
-		sort.Sort(ruleKeys(keys))
-
-		// Normalize rule verbs to "*" if any verb in the rule is an asterisk
-		for _, rule := range ruleMap {
-			for _, verb := range rule.Verbs {
-				if verb == "*" {
-					rule.Verbs = []string{"*"}
-					break
-				}
-			}
-		}
-		var policyRules []rbacv1.PolicyRule
-		for _, key := range keys {
-			policyRules = append(policyRules, ruleMap[key].ToRule())
-		}
-		return policyRules
+		rulesByNSResource[r.Namespace] = append(rulesByNSResource[r.Namespace], &r)
+		return
 	}
 
-	// collect all the namespaces and sort them
+	for _, resource := range rule.Resources {
+		r := Rule{
+			Groups:        rule.Groups,
+			Resources:     []string{resource},
+			ResourceNames: rule.ResourceNames,
+			URLs:          rule.URLs,
+			Namespace:     rule.Namespace,
+			Verbs:         rule.Verbs,
+			FeatureGate:   rule.FeatureGate,
+		}
+		rulesByNSResource[r.Namespace] = append(rulesByNSResource[r.Namespace], &r)
+	}
+}
+
+// createRoleObjects creates Role and ClusterRole objects from rules
+func createRoleObjects(rulesByNSResource map[string][]*Rule, roleName string) []interface{} {
 	var namespaces []string
 	for ns := range rulesByNSResource {
 		namespaces = append(namespaces, ns)
 	}
 	sort.Strings(namespaces)
 
-	// process the items in rulesByNS by the order specified in `namespaces` to make sure that the Role order is stable
 	var objs []interface{}
 	for _, ns := range namespaces {
 		rules := rulesByNSResource[ns]
-		policyRules := NormalizeRules(rules)
+		policyRules := normalizeRules(rules)
 		if len(policyRules) == 0 {
 			continue
 		}
+
 		if ns == "" {
-			objs = append(objs, rbacv1.ClusterRole{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterRole",
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: roleName,
-				},
-				Rules: policyRules,
-			})
+			objs = append(objs, createClusterRole(roleName, policyRules))
 		} else {
-			objs = append(objs, rbacv1.Role{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Role",
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      roleName,
-					Namespace: ns,
-				},
-				Rules: policyRules,
-			})
+			objs = append(objs, createRole(roleName, ns, policyRules))
 		}
 	}
+	return objs
+}
 
-	return objs, nil
+// createClusterRole creates a ClusterRole object
+func createClusterRole(roleName string, policyRules []rbacv1.PolicyRule) rbacv1.ClusterRole {
+	return rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: roleName,
+		},
+		Rules: policyRules,
+	}
+}
+
+// createRole creates a Role object
+func createRole(roleName, namespace string, policyRules []rbacv1.PolicyRule) rbacv1.Role {
+	return rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      roleName,
+			Namespace: namespace,
+		},
+		Rules: policyRules,
+	}
+}
+
+// GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
+// The order of the objs in the returned slice is stable and determined by their namespaces.
+func GenerateRoles(ctx *genall.GenerationContext, roleName string, featureGates string) ([]interface{}, error) {
+	enabledGates, err := featuregate.ParseFeatureGates(featureGates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse feature gates: %w", err)
+	}
+	evaluator := featuregate.NewFeatureGateEvaluator(enabledGates)
+
+	rulesByNSResource, err := processRulesFromMarkers(ctx, evaluator)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRoleObjects(rulesByNSResource, roleName), nil
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
-	objs, err := GenerateRoles(ctx, g.RoleName)
+	objs, err := GenerateRoles(ctx, g.RoleName, g.FeatureGates)
 	if err != nil {
 		return err
 	}
