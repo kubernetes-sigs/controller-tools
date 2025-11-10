@@ -6,7 +6,7 @@ import (
 	"go/format"
 	"io"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 
 	flag "github.com/spf13/pflag"
@@ -152,7 +152,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		for typ := range byType {
 			typeNames = append(typeNames, typ)
 		}
-		sort.Strings(typeNames)
+		slices.Sort(typeNames)
 
 		outContent := new(bytes.Buffer)
 		if headerText == "" {

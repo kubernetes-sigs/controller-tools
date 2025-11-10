@@ -22,7 +22,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"sort"
+	"slices"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -173,10 +173,10 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 		}
 	}
 
-	cmpPriority := func(markers []schemaMarkerWithName, i, j int) bool {
+	cmpPriority := func(i, j schemaMarkerWithName) int {
 		var iPriority, jPriority crdmarkers.ApplyPriority
 
-		switch m := markers[i].SchemaMarker.(type) {
+		switch m := i.SchemaMarker.(type) {
 		case crdmarkers.ApplyPriorityMarker:
 			iPriority = m.ApplyPriority()
 		case applyFirstMarker:
@@ -185,7 +185,7 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			iPriority = crdmarkers.ApplyPriorityDefault
 		}
 
-		switch m := markers[j].SchemaMarker.(type) {
+		switch m := j.SchemaMarker.(type) {
 		case crdmarkers.ApplyPriorityMarker:
 			jPriority = m.ApplyPriority()
 		case applyFirstMarker:
@@ -194,10 +194,10 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			jPriority = crdmarkers.ApplyPriorityDefault
 		}
 
-		return iPriority < jPriority
+		return int(iPriority - jPriority)
 	}
-	sort.Slice(markers, func(i, j int) bool { return cmpPriority(markers, i, j) })
-	sort.Slice(itemsMarkers, func(i, j int) bool { return cmpPriority(itemsMarkers, i, j) })
+	slices.SortStableFunc(markers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
+	slices.SortStableFunc(itemsMarkers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 
 	for _, schemaMarker := range markers {
 		if err := schemaMarker.SchemaMarker.ApplyToSchema(props); err != nil {
@@ -519,7 +519,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 	}
 
 	// Ensure the required fields are always listed alphabetically.
-	sort.Strings(props.Required)
+	slices.Sort(props.Required)
 
 	return props
 }

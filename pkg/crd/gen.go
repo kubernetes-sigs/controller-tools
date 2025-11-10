@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"sort"
+	"slices"
 	"strings"
 
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -328,8 +328,8 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package) []schema.GroupKind
 	for groupKind := range kubeKinds {
 		groupKindList = append(groupKindList, groupKind)
 	}
-	sort.Slice(groupKindList, func(i, j int) bool {
-		return groupKindList[i].String() < groupKindList[j].String()
+	slices.SortStableFunc(groupKindList, func(a, b schema.GroupKind) int {
+		return strings.Compare(a.String(), b.String())
 	})
 
 	return groupKindList
