@@ -25,25 +25,25 @@ import (
 var _ = Describe("FeatureGates", func() {
 	Describe("ParseFeatureGates", func() {
 		It("should parse empty string", func() {
-			result, err := featuregate.ParseFeatureGates("", false)
+			result, err := featuregate.ParseFeatureGates("")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal(featuregate.FeatureGateMap{}))
 		})
 
 		It("should parse single gate enabled", func() {
-			result, err := featuregate.ParseFeatureGates("alpha=true", false)
+			result, err := featuregate.ParseFeatureGates("alpha=true")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal(featuregate.FeatureGateMap{"alpha": true}))
 		})
 
 		It("should parse single gate disabled", func() {
-			result, err := featuregate.ParseFeatureGates("alpha=false", false)
+			result, err := featuregate.ParseFeatureGates("alpha=false")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal(featuregate.FeatureGateMap{"alpha": false}))
 		})
 
 		It("should parse multiple gates", func() {
-			result, err := featuregate.ParseFeatureGates("alpha=true,beta=false,gamma=true", false)
+			result, err := featuregate.ParseFeatureGates("alpha=true,beta=false,gamma=true")
 			Expect(err).ToNot(HaveOccurred())
 			expected := featuregate.FeatureGateMap{
 				"alpha": true,
@@ -54,7 +54,7 @@ var _ = Describe("FeatureGates", func() {
 		})
 
 		It("should parse gates with spaces", func() {
-			result, err := featuregate.ParseFeatureGates(" alpha = true , beta = false ", false)
+			result, err := featuregate.ParseFeatureGates(" alpha = true , beta = false ")
 			Expect(err).ToNot(HaveOccurred())
 			expected := featuregate.FeatureGateMap{
 				"alpha": true,
@@ -63,14 +63,10 @@ var _ = Describe("FeatureGates", func() {
 			Expect(result).To(Equal(expected))
 		})
 
-		It("should ignore invalid format", func() {
-			result, err := featuregate.ParseFeatureGates("alpha=true,invalid,beta=false", false)
-			Expect(err).ToNot(HaveOccurred())
-			expected := featuregate.FeatureGateMap{
-				"alpha": true,
-				"beta":  false,
-			}
-			Expect(result).To(Equal(expected))
+		It("should reject invalid format", func() {
+			_, err := featuregate.ParseFeatureGates("alpha=true,invalid,beta=false")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid feature gate format"))
 		})
 	})
 
@@ -85,9 +81,9 @@ var _ = Describe("FeatureGates", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should reject mixed operators", func() {
+		It("should accept mixed operators with precedence", func() {
 			err := featuregate.ValidateFeatureGateExpression("alpha&beta|gamma", nil, false)
-			Expect(err).To(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should accept OR expression", func() {

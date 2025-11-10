@@ -57,9 +57,6 @@ var CRDMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("kubebuilder:selectablefield", markers.DescribesType, SelectableField{})).
 		WithHelp(SelectableField{}.Help()),
-
-	must(markers.MakeDefinition("kubebuilder:featuregate", markers.DescribesType, TypeFeatureGate(""))).
-		WithHelp(TypeFeatureGate("").Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -420,24 +417,5 @@ func (s SelectableField) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, ve
 		JSONPath: s.JSONPath,
 	})
 
-	return nil
-}
-
-// +controllertools:marker:generateHelp:category="CRD feature gates"
-
-// TypeFeatureGate marks an entire CRD type to be conditionally generated based on feature gate enablement.
-// Types marked with +kubebuilder:featuregate will only be included in generated CRDs
-// when the specified feature gate is enabled via the crd:featureGates parameter.
-//
-// Single gate format: +kubebuilder:featuregate=alpha
-// OR expression: +kubebuilder:featuregate=alpha|beta
-// AND expression: +kubebuilder:featuregate=alpha&beta
-// Complex expression: +kubebuilder:featuregate=(alpha&beta)|gamma
-type TypeFeatureGate string
-
-// ApplyToCRD does nothing for type feature gates - they are processed by the generator
-// to conditionally include/exclude entire CRDs during generation.
-func (TypeFeatureGate) ApplyToCRD(crd *apiext.CustomResourceDefinitionSpec, version string) error {
-	// Type feature gates are handled during CRD discovery/generation, not during CRD spec modification
 	return nil
 }

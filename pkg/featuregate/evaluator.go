@@ -69,23 +69,13 @@ func (fge *FeatureGateEvaluator) evaluateOrExpression(expr string) bool {
 	return false
 }
 
-// hasAndOperator checks if the expression contains AND operators.
-func hasAndOperator(expr string) bool {
-	return strings.Contains(expr, "&")
-}
-
-// hasOrOperator checks if the expression contains OR operators.
-func hasOrOperator(expr string) bool {
-	return strings.Contains(expr, "|")
-}
-
-// evaluateComplexExpression evaluates complex feature gate expressions with parentheses.
-// Supports expressions like "(alpha&beta)|gamma" with proper precedence.
-func (fge *FeatureGateEvaluator) evaluateComplexExpression(expr string) bool {
+// evaluateSimpleExpression evaluates feature gate expressions with support for parentheses,
+// OR operations (lower precedence), and AND operations (higher precedence).
+func (fge *FeatureGateEvaluator) evaluateSimpleExpression(expr string) bool {
 	// Remove all spaces for easier parsing
 	expr = strings.ReplaceAll(expr, " ", "")
 
-	// Handle the expression recursively by evaluating parentheses first
+	// Handle parentheses by evaluating them first (highest precedence)
 	for strings.Contains(expr, "(") {
 		// Find the innermost parentheses
 		start := -1
@@ -108,13 +98,6 @@ func (fge *FeatureGateEvaluator) evaluateComplexExpression(expr string) bool {
 		}
 	}
 
-	// Now evaluate the remaining expression (which should be simple)
-	return fge.evaluateSimpleExpression(expr)
-}
-
-// evaluateSimpleExpression evaluates a simple expression without parentheses.
-// Handles OR operations which have lower precedence than AND operations.
-func (fge *FeatureGateEvaluator) evaluateSimpleExpression(expr string) bool {
 	// Handle special boolean values from parenthetical evaluation
 	if expr == boolTrueStr {
 		return true

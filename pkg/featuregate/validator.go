@@ -1,8 +1,8 @@
 /*
 Copyright 2024 The Kubernetes Authors.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "	return nil
+}may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -38,11 +38,6 @@ func ValidateFeatureGateExpression(expr string, knownGates sets.Set[string], str
 		if !isValidCharacter(char) {
 			return fmt.Errorf("invalid character '%c' in feature gate expression: %s", char, expr)
 		}
-	}
-
-	// Check for mixing AND and OR operators without parentheses
-	if hasMixedOperatorsWithoutParentheses(expr) {
-		return fmt.Errorf("cannot mix '&' and '|' operators without parentheses in feature gate expression: %s", expr)
 	}
 
 	// Validate parentheses are balanced
@@ -100,19 +95,6 @@ func extractGateNames(expr string) []string {
 	}
 
 	return gates
-}
-
-// hasMixedOperatorsWithoutParentheses checks if expression has mixed operators without proper parentheses.
-func hasMixedOperatorsWithoutParentheses(expr string) bool {
-	// If no parentheses, mixed operators are not allowed
-	if !strings.Contains(expr, "(") && !strings.Contains(expr, ")") {
-		hasAnd := strings.Contains(expr, "&")
-		hasOr := strings.Contains(expr, "|")
-		return hasAnd && hasOr
-	}
-
-	// With parentheses, we allow mixed operators - they will be validated during parsing
-	return false
 }
 
 // validateParentheses checks if parentheses are properly balanced in the expression.

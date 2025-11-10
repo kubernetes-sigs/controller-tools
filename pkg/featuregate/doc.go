@@ -30,7 +30,7 @@ by providing a unified API for:
 
 The simplest way to use this package is:
 
-	gates, err := featuregate.ParseFeatureGates("alpha=true,beta=false", false)
+	gates, err := featuregate.ParseFeatureGates("alpha=true,beta=false")
 	if err != nil {
 		// handle error
 	}

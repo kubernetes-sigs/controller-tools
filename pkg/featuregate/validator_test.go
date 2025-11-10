@@ -77,12 +77,10 @@ func TestValidateFeatureGateExpression(t *testing.T) {
 			strict:     true,
 		},
 		{
-			name:          "mixed AND OR operators",
-			expr:          "alpha&beta|gamma",
-			knownGates:    knownGates,
-			strict:        true,
-			expectError:   true,
-			errorContains: "cannot mix '&' and '|' operators",
+			name:       "mixed AND OR operators - precedence: AND then OR",
+			expr:       "alpha&beta|gamma",
+			knownGates: knownGates,
+			strict:     true,
 		},
 		{
 			name:          "invalid character @",

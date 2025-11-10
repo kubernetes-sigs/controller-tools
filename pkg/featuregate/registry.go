@@ -43,7 +43,7 @@ func NewRegistry(knownGates []string, strict bool) *Registry {
 // ParseAndValidate parses feature gates and validates expressions in one step.
 func (r *Registry) ParseAndValidate(featureGatesStr string, expression string) (FeatureGateMap, error) {
 	// Parse the feature gates
-	gates, err := ParseFeatureGates(featureGatesStr, r.strict)
+	gates, err := ParseFeatureGates(featureGatesStr)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (r *Registry) ParseAndValidate(featureGatesStr string, expression string) (
 
 // CreateEvaluator creates a new FeatureGateEvaluator with the parsed gates.
 func (r *Registry) CreateEvaluator(featureGatesStr string) (*FeatureGateEvaluator, error) {
-	gates, err := ParseFeatureGates(featureGatesStr, r.strict)
+	gates, err := ParseFeatureGates(featureGatesStr)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +72,8 @@ func (r *Registry) ValidateExpression(expr string) error {
 	return ValidateFeatureGateExpression(expr, r.knownGates, r.strict)
 }
 
-// AddKnownGate adds a gate to the known gates set.
-func (r *Registry) AddKnownGate(gate string) {
-	r.knownGates.Insert(gate)
-}
-
 // AddKnownGates adds multiple gates to the known gates set.
-func (r *Registry) AddKnownGates(gates []string) {
+func (r *Registry) AddKnownGates(gates ...string) {
 	for _, gate := range gates {
 		r.knownGates.Insert(gate)
 	}

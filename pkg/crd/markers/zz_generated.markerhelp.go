@@ -142,30 +142,10 @@ func (FeatureGate) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD feature gates",
 		DetailedHelp: markers.DetailedHelp{
-			Summary: "marks a field to be conditionally included based on feature gate enablement.",
-			Details: "Fields marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.",
+			Summary: "marks a field or type to be conditionally included based on feature gate enablement.",
+			Details: "Fields or types marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.\n\nSingle gate format: +kubebuilder:featuregate=alpha\nOR expression: +kubebuilder:featuregate=alpha|beta\nAND expression: +kubebuilder:featuregate=alpha&beta\nComplex expression: +kubebuilder:featuregate=(alpha&beta)|gamma",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
-	}
-}
-
-func (FeatureGateValidation) Help() *markers.DefinitionHelp {
-	return &markers.DefinitionHelp{
-		Category: "CRD validation feature gates",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "marks a validation constraint to be conditionally applied based on feature gate enablement.",
-			Details: "This allows validation rules to be enabled/disabled based on feature gates.\nThe validation parameter accepts the same values as standard kubebuilder:validation markers.\n\nExamples:\n  - +kubebuilder:validation:featureGate=alpha,rule=\"Maximum=100\"\n  - +kubebuilder:validation:featureGate=alpha|beta,rule=\"MinLength=5\"\n  - +kubebuilder:validation:featureGate=(alpha&beta)|gamma,rule=\"Pattern=^[a-z]+$\"",
-		},
-		FieldHelp: map[string]markers.DetailedHelp{
-			"FeatureGate": {
-				Summary: "specifies the feature gate expression that must be satisfied",
-				Details: "for this validation rule to be applied. Supports complex expressions with\nAND (&), OR (|) operators and parentheses for precedence.",
-			},
-			"Rule": {
-				Summary: "specifies the validation rule to apply when the feature gate is enabled.",
-				Details: "This should be a valid validation marker rule (e.g., \"Maximum=100\", \"MinLength=5\").",
-			},
-		},
 	}
 }
 
@@ -555,17 +535,6 @@ func (Type) Help() *markers.DefinitionHelp {
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "overrides the type for this field (which defaults to the equivalent of the Go type).",
 			Details: "This generally must be paired with custom serialization.  For example, the\nmetav1.Time field would be marked as \"type: string\" and \"format: date-time\".",
-		},
-		FieldHelp: map[string]markers.DetailedHelp{},
-	}
-}
-
-func (TypeFeatureGate) Help() *markers.DefinitionHelp {
-	return &markers.DefinitionHelp{
-		Category: "CRD feature gates",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "marks an entire CRD type to be conditionally generated based on feature gate enablement.",
-			Details: "Types marked with +kubebuilder:featuregate will only be included in generated CRDs\nwhen the specified feature gate is enabled via the crd:featureGates parameter.\n\nSingle gate format: +kubebuilder:featuregate=alpha\nOR expression: +kubebuilder:featuregate=alpha|beta\nAND expression: +kubebuilder:featuregate=alpha&beta\nComplex expression: +kubebuilder:featuregate=(alpha&beta)|gamma",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}

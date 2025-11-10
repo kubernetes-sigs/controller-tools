@@ -464,7 +464,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	var validatingWebhookCfgs admissionregv1.ValidatingWebhookConfiguration
 
 	// Parse feature gates from the CLI parameter using centralized package
-	enabledGates, err := featuregate.ParseFeatureGates(g.FeatureGates, false)
+	enabledGates, err := featuregate.ParseFeatureGates(g.FeatureGates)
 	if err != nil {
 		return err
 	}

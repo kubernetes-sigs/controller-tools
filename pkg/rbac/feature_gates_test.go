@@ -218,7 +218,7 @@ func TestFeatureGateValidation(t *testing.T) {
 		{name: "single gate", expression: "alpha", shouldError: false},
 		{name: "OR expression", expression: "alpha|beta", shouldError: false},
 		{name: "AND expression", expression: "alpha&beta", shouldError: false},
-		{name: "mixed operators", expression: "alpha&beta|gamma", shouldError: true},
+		{name: "mixed operators", expression: "alpha&beta|gamma", shouldError: false}, // AND has higher precedence than OR
 		{name: "invalid character", expression: "alpha@beta", shouldError: true},
 		{name: "hyphenated gate", expression: "feature-alpha", shouldError: false},
 		{name: "underscore gate", expression: "feature_alpha", shouldError: false},

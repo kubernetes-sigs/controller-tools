@@ -135,7 +135,7 @@ func transformPreserveUnknownFields(value bool) func(map[string]interface{}) err
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
-	featureGates, err := featuregate.ParseFeatureGates(g.FeatureGates, true)
+	featureGates, err := featuregate.ParseFeatureGates(g.FeatureGates)
 	if err != nil {
 		return fmt.Errorf("invalid feature gates: %w", err)
 	}
@@ -336,8 +336,8 @@ func FindKubeKinds(parser *Parser, metav1Pkg *loader.Package, featureGates featu
 
 		// Check type-level feature gate marker
 		if featureGateMarker := info.Markers.Get("kubebuilder:featuregate"); featureGateMarker != nil {
-			if typeFeatureGate, ok := featureGateMarker.(crdmarkers.TypeFeatureGate); ok {
-				gateName := string(typeFeatureGate)
+			if featureGate, ok := featureGateMarker.(crdmarkers.FeatureGate); ok {
+				gateName := string(featureGate)
 				// Create evaluator to handle complex expressions (OR/AND logic)
 				evaluator := featuregate.NewFeatureGateEvaluator(featureGates)
 				if !evaluator.EvaluateExpression(gateName) {

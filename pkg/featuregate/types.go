@@ -16,8 +16,6 @@ limitations under the License.
 
 package featuregate
 
-import "strings"
-
 // FeatureGateMap represents enabled feature gates as a map for efficient lookup.
 // Key is the gate name, value indicates if the gate is enabled.
 type FeatureGateMap map[string]bool
@@ -53,21 +51,6 @@ func (fge *FeatureGateEvaluator) EvaluateExpression(expr string) bool {
 		return true
 	}
 
-	// Handle complex expressions with parentheses
-	if strings.Contains(expr, "(") {
-		return fge.evaluateComplexExpression(expr)
-	}
-
-	// Handle AND logic (all gates must be enabled)
-	if hasAndOperator(expr) {
-		return fge.evaluateAndExpression(expr)
-	}
-
-	// Handle OR logic (any gate can be enabled)
-	if hasOrOperator(expr) {
-		return fge.evaluateOrExpression(expr)
-	}
-
-	// Single gate logic
-	return fge.gates.IsEnabled(expr)
+	// Use the unified expression evaluator for all cases
+	return fge.evaluateSimpleExpression(expr)
 }

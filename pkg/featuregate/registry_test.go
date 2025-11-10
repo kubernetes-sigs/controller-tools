@@ -166,14 +166,14 @@ func TestRegistry_ValidateExpression(t *testing.T) {
 	}
 }
 
-func TestRegistry_AddKnownGate(t *testing.T) {
+func TestRegistry_AddKnownGates_Single(t *testing.T) {
 	g := gomega.NewWithT(t)
 	registry := NewRegistry([]string{"alpha"}, true)
 
 	g.Expect(registry.IsKnownGate("alpha")).To(gomega.BeTrue())
 	g.Expect(registry.IsKnownGate("beta")).To(gomega.BeFalse())
 
-	registry.AddKnownGate("beta")
+	registry.AddKnownGates("beta")
 
 	g.Expect(registry.IsKnownGate("alpha")).To(gomega.BeTrue())
 	g.Expect(registry.IsKnownGate("beta")).To(gomega.BeTrue())
@@ -185,7 +185,7 @@ func TestRegistry_AddKnownGates(t *testing.T) {
 
 	g.Expect(registry.knownGates.Len()).To(gomega.Equal(1))
 
-	registry.AddKnownGates([]string{"beta", "gamma"})
+	registry.AddKnownGates("beta", "gamma")
 
 	g.Expect(registry.knownGates.Len()).To(gomega.Equal(3))
 	g.Expect(registry.IsKnownGate("alpha")).To(gomega.BeTrue())

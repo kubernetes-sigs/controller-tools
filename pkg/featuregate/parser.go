@@ -24,12 +24,12 @@ import (
 // ParseFeatureGates parses a comma-separated feature gate string into a FeatureGateMap.
 // Format: "gate1=true,gate2=false,gate3=true"
 //
-// With strict validation enabled, this function will return an error for:
+// This function will return an error for:
 // - Invalid format (missing = or wrong number of parts)
 // - Invalid values (anything other than "true" or "false")
 //
-// Returns a FeatureGateMap and an error if parsing fails with strict validation.
-func ParseFeatureGates(featureGates string, strict bool) (FeatureGateMap, error) {
+// Returns a FeatureGateMap and an error if parsing fails.
+func ParseFeatureGates(featureGates string) (FeatureGateMap, error) {
 	gates := make(FeatureGateMap)
 	if featureGates == "" {
 		return gates, nil
@@ -39,11 +39,7 @@ func ParseFeatureGates(featureGates string, strict bool) (FeatureGateMap, error)
 	for _, pair := range pairs {
 		parts := strings.Split(strings.TrimSpace(pair), "=")
 		if len(parts) != 2 {
-			if strict {
-				return nil, fmt.Errorf("invalid feature gate format: %s (expected format: gate1=true,gate2=false)", pair)
-			}
-			// In non-strict mode, skip invalid entries
-			continue
+			return nil, fmt.Errorf("invalid feature gate format: %s (expected format: gate1=true,gate2=false)", pair)
 		}
 
 		gateName := strings.TrimSpace(parts[0])
@@ -55,11 +51,7 @@ func ParseFeatureGates(featureGates string, strict bool) (FeatureGateMap, error)
 		case "false":
 			gates[gateName] = false
 		default:
-			if strict {
-				return nil, fmt.Errorf("invalid feature gate value for %s: %s (must be 'true' or 'false')", gateName, gateValue)
-			}
-			// In non-strict mode, treat invalid values as false
-			gates[gateName] = false
+			return nil, fmt.Errorf("invalid feature gate value for %s: %s (must be 'true' or 'false')", gateName, gateValue)
 		}
 	}
 

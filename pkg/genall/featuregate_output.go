@@ -57,7 +57,7 @@ func (o OutputToFeatureGateDirectories) Open(pkg *loader.Package, itemPath strin
 	}
 
 	// Parse current feature gates
-	featureGateMap, err := featuregate.ParseFeatureGates(o.FeatureGates, false)
+	featureGateMap, err := featuregate.ParseFeatureGates(o.FeatureGates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse feature gates: %w", err)
 	}

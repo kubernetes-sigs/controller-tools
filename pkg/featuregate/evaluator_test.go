@@ -167,6 +167,19 @@ var _ = Describe("FeatureGate Evaluator", func() {
 				Expect(evaluator.EvaluateExpression("(alpha|gamma)&beta")).To(BeFalse())
 			})
 
+			It("should handle mixed operators without parentheses using precedence (AND before OR)", func() {
+				// alpha&gamma|beta = (alpha&gamma)|beta = (true&true)|false = true|false = true
+				Expect(evaluator.EvaluateExpression("alpha&gamma|beta")).To(BeTrue())
+				// alpha&beta|delta = (alpha&beta)|delta = (true&false)|false = false|false = false
+				Expect(evaluator.EvaluateExpression("alpha&beta|delta")).To(BeFalse())
+				// beta&delta|alpha = (beta&delta)|alpha = (false&false)|true = false|true = true
+				Expect(evaluator.EvaluateExpression("beta&delta|alpha")).To(BeTrue())
+				// More complex: alpha|beta&gamma = alpha|(beta&gamma) = true|(false&true) = true|false = true
+				Expect(evaluator.EvaluateExpression("alpha|beta&gamma")).To(BeTrue())
+				// More complex: beta|alpha&delta = beta|(alpha&delta) = false|(true&false) = false|false = false
+				Expect(evaluator.EvaluateExpression("beta|alpha&delta")).To(BeFalse())
+			})
+
 			It("should handle nested parentheses", func() {
 				// ((alpha&gamma)|beta)&delta = ((true&true)|false)&false = (true|false)&false = true&false = false
 				Expect(evaluator.EvaluateExpression("((alpha&gamma)|beta)&delta")).To(BeFalse())

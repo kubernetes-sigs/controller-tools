@@ -432,7 +432,7 @@ func createRole(roleName, namespace string, policyRules []rbacv1.PolicyRule) rba
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
 func GenerateRoles(ctx *genall.GenerationContext, roleName string, featureGates string) ([]interface{}, error) {
-	enabledGates, err := featuregate.ParseFeatureGates(featureGates, false)
+	enabledGates, err := featuregate.ParseFeatureGates(featureGates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse feature gates: %w", err)
 	}

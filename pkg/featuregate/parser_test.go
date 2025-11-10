@@ -26,7 +26,6 @@ func TestParseFeatureGates(t *testing.T) {
 	tests := []struct {
 		name          string
 		input         string
-		strict        bool
 		expected      FeatureGateMap
 		expectError   bool
 		errorContains string
@@ -34,29 +33,25 @@ func TestParseFeatureGates(t *testing.T) {
 		{
 			name:     "empty string",
 			input:    "",
-			strict:   true,
 			expected: FeatureGateMap{},
 		},
 		{
-			name:   "single gate enabled",
-			input:  "alpha=true",
-			strict: true,
+			name:  "single gate enabled",
+			input: "alpha=true",
 			expected: FeatureGateMap{
 				"alpha": true,
 			},
 		},
 		{
-			name:   "single gate disabled",
-			input:  "alpha=false",
-			strict: true,
+			name:  "single gate disabled",
+			input: "alpha=false",
 			expected: FeatureGateMap{
 				"alpha": false,
 			},
 		},
 		{
-			name:   "multiple gates",
-			input:  "alpha=true,beta=false,gamma=true",
-			strict: true,
+			name:  "multiple gates",
+			input: "alpha=true,beta=false,gamma=true",
 			expected: FeatureGateMap{
 				"alpha": true,
 				"beta":  false,
@@ -64,50 +59,28 @@ func TestParseFeatureGates(t *testing.T) {
 			},
 		},
 		{
-			name:   "gates with spaces",
-			input:  " alpha = true , beta = false ",
-			strict: true,
+			name:  "gates with spaces",
+			input: " alpha = true , beta = false ",
 			expected: FeatureGateMap{
 				"alpha": true,
 				"beta":  false,
 			},
 		},
 		{
-			name:          "invalid format strict mode",
+			name:          "invalid format",
 			input:         "alpha=true,invalid,beta=false",
-			strict:        true,
 			expectError:   true,
 			errorContains: "invalid feature gate format",
 		},
 		{
-			name:   "invalid format non-strict mode",
-			input:  "alpha=true,invalid,beta=false",
-			strict: false,
-			expected: FeatureGateMap{
-				"alpha": true,
-				"beta":  false,
-			},
-		},
-		{
-			name:          "invalid value strict mode",
+			name:          "invalid value",
 			input:         "alpha=true,beta=maybe",
-			strict:        true,
 			expectError:   true,
 			errorContains: "invalid feature gate value",
 		},
 		{
-			name:   "invalid value non-strict mode",
-			input:  "alpha=true,beta=maybe",
-			strict: false,
-			expected: FeatureGateMap{
-				"alpha": true,
-				"beta":  false, // Invalid values default to false
-			},
-		},
-		{
-			name:   "complex gate names",
-			input:  "v1beta1=true,my-feature=false,under_score=true",
-			strict: true,
+			name:  "complex gate names",
+			input: "v1beta1=true,my-feature=false,under_score=true",
 			expected: FeatureGateMap{
 				"v1beta1":     true,
 				"my-feature":  false,
@@ -119,7 +92,7 @@ func TestParseFeatureGates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := gomega.NewWithT(t)
-			result, err := ParseFeatureGates(tt.input, tt.strict)
+			result, err := ParseFeatureGates(tt.input)
 
 			if tt.expectError {
 				g.Expect(err).To(gomega.HaveOccurred())

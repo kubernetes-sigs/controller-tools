@@ -232,7 +232,7 @@ func runGenerationForCombination(featureGates string, outputPath string, paths [
 	fmt.Printf("  Generating: %s -> %s\n", featureGates, outputPath)
 
 	// Parse feature gates to validate them
-	_, err := featuregate.ParseFeatureGates(featureGates, false)
+	_, err := featuregate.ParseFeatureGates(featureGates)
 	if err != nil {
 		return fmt.Errorf("invalid feature gates %s: %w", featureGates, err)
 	}
