@@ -221,107 +221,6 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 		}
 	}
 
-	// NormalizeRules merge Rule with the same ruleKey and sort the Rules
-	NormalizeRules := func(rules []*Rule) []rbacv1.PolicyRule {
-		ruleMap := make(map[ruleKey]*Rule)
-		// all the Rules having the same ruleKey will be merged into the first Rule
-		for _, rule := range rules {
-			// fix the group name first, since letting people type "core" is nice
-			for i, name := range rule.Groups {
-				if name == "core" {
-					rule.Groups[i] = ""
-				}
-			}
-
-			key := rule.key()
-			if _, ok := ruleMap[key]; !ok {
-				ruleMap[key] = rule
-				continue
-			}
-			ruleMap[key].addVerbs(rule.Verbs)
-		}
-
-		// deduplicate resources
-		// 1. create map based on key without resources
-		ruleMapWithoutResources := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Resources
-			key := rule.keyWithGroupResourceNamesURLsVerbs()
-			ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
-		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutResources {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.Resources = append(rule.Resources, mergeRule.Resources...)
-			}
-
-			key := rule.key()
-			ruleMap[key] = rule
-		}
-
-		// deduplicate groups
-		// 1. create map based on key without group
-		ruleMapWithoutGroup := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Group
-			key := rule.keyWithResourcesResourceNamesURLsVerbs()
-			ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
-		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutGroup {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.Groups = append(rule.Groups, mergeRule.Groups...)
-			}
-			key := rule.key()
-			ruleMap[key] = rule
-		}
-
-		// deduplicate URLs
-		// 1. create map based on key without URLs
-		ruleMapWithoutURLs := make(map[string][]*Rule)
-		for _, rule := range ruleMap {
-			// get key without Group
-			key := rule.keyWitGroupResourcesResourceNamesVerbs()
-			ruleMapWithoutURLs[key] = append(ruleMapWithoutURLs[key], rule)
-		}
-		// 2. merge to ruleMap
-		ruleMap = make(map[ruleKey]*Rule)
-		for _, rules := range ruleMapWithoutURLs {
-			rule := rules[0]
-			for _, mergeRule := range rules[1:] {
-				rule.URLs = append(rule.URLs, mergeRule.URLs...)
-			}
-			key := rule.key()
-			ruleMap[key] = rule
-		}
-
-		// sort the Rules in rules according to their ruleKeys
-		keys := make([]ruleKey, 0, len(ruleMap))
-		for key := range ruleMap {
-			keys = append(keys, key)
-		}
-		sort.Sort(ruleKeys(keys))
-
-		// Normalize rule verbs to "*" if any verb in the rule is an asterisk
-		for _, rule := range ruleMap {
-			for _, verb := range rule.Verbs {
-				if verb == "*" {
-					rule.Verbs = []string{"*"}
-					break
-				}
-			}
-		}
-		var policyRules []rbacv1.PolicyRule
-		for _, key := range keys {
-			policyRules = append(policyRules, ruleMap[key].ToRule())
-		}
-		return policyRules
-	}
-
 	// collect all the namespaces and sort them
 	var namespaces []string
 	for ns := range rulesByNSResource {
@@ -392,4 +291,105 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	return ctx.WriteYAML(fileName, headerText, objs, genall.WithTransform(genall.TransformRemoveCreationTimestamp))
+}
+
+// NormalizeRules merge Rule with the same ruleKey and sort the Rules
+func NormalizeRules(rules []*Rule) []rbacv1.PolicyRule {
+	ruleMap := make(map[ruleKey]*Rule)
+	// all the Rules having the same ruleKey will be merged into the first Rule
+	for _, rule := range rules {
+		// fix the group name first, since letting people type "core" is nice
+		for i, name := range rule.Groups {
+			if name == "core" {
+				rule.Groups[i] = ""
+			}
+		}
+
+		key := rule.key()
+		if _, ok := ruleMap[key]; !ok {
+			ruleMap[key] = rule
+			continue
+		}
+		ruleMap[key].addVerbs(rule.Verbs)
+	}
+
+	// deduplicate resources
+	// 1. create map based on key without resources
+	ruleMapWithoutResources := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		// get key without Resources
+		key := rule.keyWithGroupResourceNamesURLsVerbs()
+		ruleMapWithoutResources[key] = append(ruleMapWithoutResources[key], rule)
+	}
+	// 2. merge to ruleMap
+	ruleMap = make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutResources {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.Resources = append(rule.Resources, mergeRule.Resources...)
+		}
+
+		key := rule.key()
+		ruleMap[key] = rule
+	}
+
+	// deduplicate groups
+	// 1. create map based on key without group
+	ruleMapWithoutGroup := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		// get key without Group
+		key := rule.keyWithResourcesResourceNamesURLsVerbs()
+		ruleMapWithoutGroup[key] = append(ruleMapWithoutGroup[key], rule)
+	}
+	// 2. merge to ruleMap
+	ruleMap = make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutGroup {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.Groups = append(rule.Groups, mergeRule.Groups...)
+		}
+		key := rule.key()
+		ruleMap[key] = rule
+	}
+
+	// deduplicate URLs
+	// 1. create map based on key without URLs
+	ruleMapWithoutURLs := make(map[string][]*Rule)
+	for _, rule := range ruleMap {
+		// get key without Group
+		key := rule.keyWitGroupResourcesResourceNamesVerbs()
+		ruleMapWithoutURLs[key] = append(ruleMapWithoutURLs[key], rule)
+	}
+	// 2. merge to ruleMap
+	ruleMap = make(map[ruleKey]*Rule)
+	for _, rules := range ruleMapWithoutURLs {
+		rule := rules[0]
+		for _, mergeRule := range rules[1:] {
+			rule.URLs = append(rule.URLs, mergeRule.URLs...)
+		}
+		key := rule.key()
+		ruleMap[key] = rule
+	}
+
+	// sort the Rules in rules according to their ruleKeys
+	keys := make([]ruleKey, 0, len(ruleMap))
+	for key := range ruleMap {
+		keys = append(keys, key)
+	}
+	sort.Sort(ruleKeys(keys))
+
+	// Normalize rule verbs to "*" if any verb in the rule is an asterisk
+	for _, rule := range ruleMap {
+		for _, verb := range rule.Verbs {
+			if verb == "*" {
+				rule.Verbs = []string{"*"}
+				break
+			}
+		}
+	}
+	var policyRules []rbacv1.PolicyRule
+	for _, key := range keys {
+		policyRules = append(policyRules, ruleMap[key].ToRule())
+	}
+	return policyRules
 }

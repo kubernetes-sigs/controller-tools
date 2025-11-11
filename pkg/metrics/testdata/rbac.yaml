@@ -1,0 +1,16 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    kube-state-metrics/aggregate-to-manager: "true"
+  name: manager-metrics-role
+rules:
+- apiGroups:
+  - bar.example.com
+  resources:
+  - foos
+  verbs:
+  - get
+  - list
+  - watch
