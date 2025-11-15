@@ -13,7 +13,7 @@ import (
 
 // ForKind returns an apply configuration type for the given GroupVersionKind, or nil if no
 // apply configuration type exists for the given GroupVersionKind.
-func ForKind(kind schema.GroupVersionKind) any {
+func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=testdata.kubebuilder.io, Version=v1
 	case v1.SchemeGroupVersion.WithKind("AssociativeType"):
