@@ -17,6 +17,8 @@ limitations under the License.
 package crd
 
 import (
+	"maps"
+
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -156,13 +158,9 @@ func AddKnownTypes(parser *Parser) {
 	// ensure everything is there before adding to PackageOverrides
 	// TODO(directxman12): this is a bit of a hack, maybe just use constructors?
 	parser.init()
-	for pkgName, override := range KnownPackages {
-		parser.PackageOverrides[pkgName] = override
-	}
+	maps.Copy(parser.PackageOverrides, KnownPackages)
 	// if we want to generate the embedded ObjectMeta in the CRD we need to add the ObjectMetaPackages
 	if parser.GenerateEmbeddedObjectMeta {
-		for pkgName, override := range ObjectMetaPackages {
-			parser.PackageOverrides[pkgName] = override
-		}
+		maps.Copy(parser.PackageOverrides, ObjectMetaPackages)
 	}
 }

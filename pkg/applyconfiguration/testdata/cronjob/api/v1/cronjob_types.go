@@ -26,6 +26,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/url"
 	"strconv"
 	"time"
@@ -412,8 +413,8 @@ type ContainsNestedMap struct {
 // +kubebuilder:validation:Type=object
 // +kubebuilder:pruning:PreserveUnknownFields
 type Preserved struct {
-	ConcreteField string                 `json:"concreteField"`
-	Rest          map[string]interface{} `json:"-"`
+	ConcreteField string         `json:"concreteField"`
+	Rest          map[string]any `json:"-"`
 }
 
 func (p *Preserved) UnmarshalJSON(data []byte) error {
@@ -434,10 +435,8 @@ func (p *Preserved) UnmarshalJSON(data []byte) error {
 }
 
 func (p *Preserved) MarshalJSON() ([]byte, error) {
-	full := make(map[string]interface{}, len(p.Rest)+1)
-	for k, v := range p.Rest {
-		full[k] = v
-	}
+	full := make(map[string]any, len(p.Rest)+1)
+	maps.Copy(full, p.Rest)
 	full["concreteField"] = p.ConcreteField
 	return json.Marshal(full)
 }

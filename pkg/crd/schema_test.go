@@ -39,7 +39,7 @@ func transform(t *testing.T, expr string) *apiext.JSONSchemaProps {
 	modules := []pkgstest.Module{
 		{
 			Name: moduleName,
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"test.go": `
 				package crd 
 				type Test ` + expr,
@@ -121,7 +121,7 @@ func Test_Schema_ApplyMarkers(t *testing.T) {
 	var invocations []string
 
 	applyMarkers(ctx, markers.MarkerValues{
-		"blah": []interface{}{
+		"blah": []any{
 			&testPriorityMarker{
 				priority: 0, callback: func() {
 					invocations = append(invocations, "0")
