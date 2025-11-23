@@ -25,7 +25,6 @@ package webhook
 import (
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -484,8 +483,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		cfgs := markerSet[ConfigDefinition.Name]
-		sort.SliceStable(cfgs, func(i, j int) bool {
-			return cfgs[i].(Config).Name < cfgs[j].(Config).Name
+		slices.SortStableFunc(cfgs, func(a, b any) int {
+			return strings.Compare(a.(Config).Name, b.(Config).Name)
 		})
 
 		for _, cfg := range cfgs {
