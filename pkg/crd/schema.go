@@ -60,6 +60,7 @@ type applyFirstMarker interface {
 // schemaRequester knows how to marker that another schema (e.g. via an external reference) is necessary.
 type schemaRequester interface {
 	NeedSchemaFor(typ TypeIdent)
+	LookupType(pkg *loader.Package, name string) *markers.TypeInfo
 }
 
 // schemaContext stores and provides information across a hierarchy of schema generation.
@@ -304,8 +305,26 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 	}
 	ctx.requestSchema(pkgPath, typeNameInfo.Name())
 	link := TypeRefLink(pkgPath, typeNameInfo.Name())
+
+	// In cases where we have a named type, apply the type and format from the named schema
+	// to allow markers that need this information to apply correctly.
+	var typ, fmt string
+	if namedInfo, isNamed := typeInfo.(*types.Named); isNamed {
+		// We don't want/need to do this for structs, maps, or arrays.
+		// These are already handled in infoToSchema if they have custom marshalling.
+		if _, isBasic := namedInfo.Underlying().(*types.Basic); isBasic {
+			namedTypeInfo := ctx.schemaRequester.LookupType(ctx.pkg, namedInfo.Obj().Name())
+
+			namedSchema := infoToSchema(ctx.ForInfo(namedTypeInfo))
+			typ = namedSchema.Type
+			fmt = namedSchema.Format
+		}
+	}
+
 	return &apiext.JSONSchemaProps{
-		Ref: &link,
+		Type:   typ,
+		Format: fmt,
+		Ref:    &link,
 	}
 }
 

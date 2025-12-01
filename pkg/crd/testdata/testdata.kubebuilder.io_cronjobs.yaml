@@ -226,18 +226,23 @@ spec:
                 format: int32
                 type: integer
               fieldLevelAliasOverride:
+                allOf:
+                - maxLength: 255
+                  minLength: 1
+                - maxLength: 10
+                  minLength: 10
                 description: |-
                   This tests that field-level overrides are handled correctly
                   for local type aliases.
-                maxLength: 10
-                minLength: 10
                 type: string
               fieldLevelLocalDeclarationOverride:
+                allOf:
+                - minLength: 4
+                - minLength: 10
                 description: |-
                   This tests that field-level overrides are handled correctly
                   for local type declarations.
                 maxLength: 10
-                minLength: 10
                 type: string
               float64WithValidations:
                 maximum: 1.5
@@ -9098,10 +9103,10 @@ spec:
                   and type.
                 type: string
                 x-kubernetes-validations:
-                - message: must have even length
-                  rule: self.size() % 2 == 0
                 - message: must have good prefix
                   rule: self.startsWith('good-')
+                - message: must have even length
+                  rule: self.size() % 2 == 0
               stringWithEvenLengthAndMessageExpression:
                 description: Test of the expression-based validation with messageExpression
                   marker.
