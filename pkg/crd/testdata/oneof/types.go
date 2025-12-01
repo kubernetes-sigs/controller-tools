@@ -37,8 +37,10 @@ type OneofSpec struct {
 
 	TypeWithAllOneOf *TypeWithAllOneofs `json:"typeWithAllOneOf,omitempty"`
 
-	// The validation rule on TypeWithOneofs should not be duplicated.
-	SameTypeWithOneof *TypeWithOneofs `json:"sameTypeWithOneof,omitempty"`
+	FirstCustomTypeAlias CustomTypeAlias `json:"firstCustomTypeAlias,omitempty"`
+
+	// This verifies if the custom type alias XValidation is not duplicated.
+	SecondCustomTypeAlias CustomTypeAlias `json:"secondCustomTypeAlias,omitempty"`
 }
 
 // +kubebuilder:validation:XValidation:message="only one of foo|bar may be set",rule="!(has(self.foo) && has(self.bar))"
@@ -97,6 +99,10 @@ type TypeWithAllOneofs struct {
 	E *string `json:"e,omitempty"`
 	F *string `json:"f,omitempty"`
 }
+
+// CustomTypeAlias is a custom alias
+// +kubebuilder:validation:XValidation:rule="self >= 100 && self <= 1000",message="invalid CustomTypeAlias value"
+type CustomTypeAlias *int32
 
 // Oneof is the Schema for the Oneof API
 type Oneof struct {

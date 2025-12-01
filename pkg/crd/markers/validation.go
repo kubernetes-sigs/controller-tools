@@ -666,14 +666,6 @@ func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		}
 	}
 
-	// Check if this validation rule already exists to prevent duplication
-	for _, existingRule := range schema.XValidations {
-		if existingRule.Rule == m.Rule {
-			// Rule already exists, don't add it again
-			return nil
-		}
-	}
-
 	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
 		Rule:              m.Rule,
 		Message:           m.Message,
