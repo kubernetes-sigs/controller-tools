@@ -36,6 +36,13 @@ spec:
           spec:
             description: OneofSpec is the spec for the oneofs API.
             properties:
+              firstCustomTypeAlias:
+                description: CustomTypeAlias is a custom alias
+                format: int32
+                type: integer
+                x-kubernetes-validations:
+                - message: invalid CustomTypeAlias value
+                  rule: self >= 100 && self <= 1000
               firstTypeWithExactOneof:
                 properties:
                   bar:
@@ -60,6 +67,14 @@ spec:
                 - message: at most one of the fields in [foo bar] may be set
                   rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() <=
                     1'
+              secondCustomTypeAlias:
+                description: This verifies if the custom type alias XValidation is
+                  not duplicated.
+                format: int32
+                type: integer
+                x-kubernetes-validations:
+                - message: invalid CustomTypeAlias value
+                  rule: self >= 100 && self <= 1000
               secondTypeWithExactOneof:
                 properties:
                   a:

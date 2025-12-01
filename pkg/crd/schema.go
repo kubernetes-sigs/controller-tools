@@ -231,7 +231,7 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiext.JSONSchemaProps 
 	case *ast.MapType:
 		props = mapToSchema(ctx, expr)
 	case *ast.StarExpr:
-		props = typeToSchema(ctx, expr.X)
+		props = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), expr.X)
 	case *ast.StructType:
 		props = structToSchema(ctx, expr)
 	default:
