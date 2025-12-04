@@ -27,7 +27,7 @@ import (
 	. "sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-func mustDefine(reg *Registry, name string, target TargetType, obj interface{}) {
+func mustDefine(reg *Registry, name string, target TargetType, obj any) {
 	Expect(reg.Define(name, target, obj)).To(Succeed())
 }
 
@@ -36,7 +36,7 @@ type multiFieldStruct struct {
 	Str          string
 	Int          int
 	Bool         bool
-	Any          interface{}
+	Any          any
 	PtrOpt       *string
 	NormalOpt    string `marker:",optional"`
 	DiffNamed    string `marker:"other"`
@@ -51,7 +51,7 @@ type allOptionalStruct struct {
 }
 
 type CustomType struct {
-	Value interface{}
+	Value any
 }
 
 var _ = Describe("Parsing", func() {
@@ -208,11 +208,11 @@ var _ = Describe("Parsing", func() {
 			It("should support delimitted slices of bare slices", argParseTestCase{arg: anyArg, raw: "{1;1,2;3,5;8}", output: sliceOSliceOut}.Run)
 			It("should support delimitted slices of delimitted slices", argParseTestCase{arg: anyArg, raw: "{{1,1},{2,3},{5,8}}", output: sliceOSliceOut}.Run)
 
-			complexMap := map[string]interface{}{
+			complexMap := map[string]any{
 				"text":     "abc",
 				"len":      3,
 				"as bytes": []int{97, 98, 99},
-				"props": map[string]interface{}{
+				"props": map[string]any{
 					"encoding": "ascii",
 					"nullsafe": true,
 					"tags":     []string{"triple", "in a row"},
@@ -226,7 +226,7 @@ var _ = Describe("Parsing", func() {
 type parseTestCase struct {
 	reg    **Registry
 	raw    string
-	output interface{}
+	output any
 	target TargetType // NB(directxman12): iota is DescribesPackage
 }
 
@@ -247,7 +247,7 @@ func (tc parseTestCase) Run() {
 type argParseTestCase struct {
 	arg    Argument
 	raw    string
-	output interface{}
+	output any
 }
 
 func (tc argParseTestCase) Run() {
@@ -260,7 +260,7 @@ func (tc argParseTestCase) Run() {
 
 	var actualOut reflect.Value
 	if tc.arg.Type == AnyType {
-		actualOut = reflect.Indirect(reflect.New(reflect.TypeOf((*interface{})(nil)).Elem()))
+		actualOut = reflect.Indirect(reflect.New(reflect.TypeFor[*any]().Elem()))
 	} else {
 		actualOut = reflect.Indirect(reflect.New(reflect.TypeOf(tc.output)))
 	}
