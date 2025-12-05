@@ -108,15 +108,15 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 }
 
 // transformRemoveCRDStatus ensures we do not write the CRD status field.
-func transformRemoveCRDStatus(obj map[string]interface{}) error {
+func transformRemoveCRDStatus(obj map[string]any) error {
 	delete(obj, "status")
 	return nil
 }
 
 // transformPreserveUnknownFields adds spec.preserveUnknownFields=value.
-func transformPreserveUnknownFields(value bool) func(map[string]interface{}) error {
-	return func(obj map[string]interface{}) error {
-		if spec, ok := obj["spec"].(map[interface{}]interface{}); ok {
+func transformPreserveUnknownFields(value bool) func(map[string]any) error {
+	return func(obj map[string]any) error {
+		if spec, ok := obj["spec"].(map[any]any); ok {
 			spec["preserveUnknownFields"] = value
 		}
 		return nil
@@ -185,7 +185,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		// Prevent the top level metadata for the CRD to be generate regardless of the intention in the arguments
 		FixTopLevelMetadata(crdRaw)
 
-		versionedCRDs := make([]interface{}, len(crdVersions))
+		versionedCRDs := make([]any, len(crdVersions))
 		for i, ver := range crdVersions {
 			conv, err := AsVersion(crdRaw, schema.GroupVersion{Group: apiextensionsv1.SchemeGroupVersion.Group, Version: ver})
 			if err != nil {
@@ -202,7 +202,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 			} else {
 				fileName = fmt.Sprintf("%s_%s.%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural, crdVersions[i])
 			}
-			if err := ctx.WriteYAML(fileName, headerText, []interface{}{crd}, yamlOpts...); err != nil {
+			if err := ctx.WriteYAML(fileName, headerText, []any{crd}, yamlOpts...); err != nil {
 				return err
 			}
 		}

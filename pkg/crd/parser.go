@@ -172,12 +172,7 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	// avoid tripping recursive schemata, like ManagedFields, by adding an empty WIP schema
 	p.Schemata[typ] = apiextensionsv1.JSONSchemaProps{}
 
-	schemaCtx := newSchemaContext(typ.Package, p, func(typ TypeIdent) *apiextensionsv1.JSONSchemaProps {
-		p.NeedSchemaFor(typ)
-
-		props := p.Schemata[typ]
-		return &props
-	}, p.AllowDangerousTypes, p.IgnoreUnexportedFields)
+	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes, p.IgnoreUnexportedFields)
 	ctxForInfo := schemaCtx.ForInfo(info)
 
 	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)

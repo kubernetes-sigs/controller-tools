@@ -174,7 +174,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
-func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{}, error) {
+func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error) {
 	rulesByNSResource := make(map[string][]*Rule)
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
@@ -303,11 +303,8 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 
 		// Normalize rule verbs to "*" if any verb in the rule is an asterisk
 		for _, rule := range ruleMap {
-			for _, verb := range rule.Verbs {
-				if verb == "*" {
-					rule.Verbs = []string{"*"}
-					break
-				}
+			if slices.Contains(rule.Verbs, "*") {
+				rule.Verbs = []string{"*"}
 			}
 		}
 		var policyRules []rbacv1.PolicyRule
@@ -325,7 +322,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]interface{
 	slices.Sort(namespaces)
 
 	// process the items in rulesByNS by the order specified in `namespaces` to make sure that the Role order is stable
-	var objs []interface{}
+	var objs []any
 	for _, ns := range namespaces {
 		rules := rulesByNSResource[ns]
 		policyRules := NormalizeRules(rules)

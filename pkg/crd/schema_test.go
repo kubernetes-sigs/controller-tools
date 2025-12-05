@@ -39,7 +39,7 @@ func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
 	modules := []pkgstest.Module{
 		{
 			Name: moduleName,
-			Files: map[string]interface{}{
+			Files: map[string]any{
 				"test.go": `
 				package crd 
 				type Test ` + expr,
@@ -64,7 +64,7 @@ func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
 	pkg.NeedTypesInfo()
 	failIfErrors(t, pkg.Errors)
 
-	schemaContext := newSchemaContext(pkg, nil, nil, true, false).ForInfo(&markers.TypeInfo{})
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
 	// yick: grab the only type definition
 	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
 	result := typeToSchema(schemaContext, definedType)
@@ -121,7 +121,7 @@ func Test_Schema_ApplyMarkers(t *testing.T) {
 	var invocations []string
 
 	applyMarkers(ctx, markers.MarkerValues{
-		"blah": []interface{}{
+		"blah": []any{
 			&testPriorityMarker{
 				priority: 0, callback: func() {
 					invocations = append(invocations, "0")

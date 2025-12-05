@@ -36,7 +36,7 @@ import (
 // now, we're trusting k/k's conversion code, though, which is probably
 // fine for the time being)
 var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", func() {
-	assertSame := func(actual, expected interface{}) {
+	assertSame := func(actual, expected any) {
 		ExpectWithOffset(1, actual).To(Equal(expected), "type not as expected, check pkg/webhook/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(actual, expected))
 	}
 
@@ -276,7 +276,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(outputDir)
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			genCtx := &genall.GenerationContext{
 				Collector:  &markers.Collector{Registry: reg},
 				Roots:      pkgs,
