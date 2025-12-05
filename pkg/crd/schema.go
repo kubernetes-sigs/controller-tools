@@ -284,7 +284,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		if basicInfo.Name() != ident.Name {
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
-			return &apiext.JSONSchemaProps{
+			return &apiextensionsv1.JSONSchemaProps{
 				Type:   typ,
 				Format: fmt,
 				Ref:    &link,
@@ -321,7 +321,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		}
 	}
 
-	return &apiext.JSONSchemaProps{
+	return &apiextensionsv1.JSONSchemaProps{
 		Type:   typ,
 		Format: fmt,
 		Ref:    &link,
