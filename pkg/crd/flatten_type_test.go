@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )
@@ -45,7 +45,7 @@ var _ = Describe("General Schema Flattening", func() {
 	BeforeEach(func() {
 		fl = &crd.Flattener{
 			Parser: &crd.Parser{
-				Schemata: map[crd.TypeIdent]apiext.JSONSchemaProps{},
+				Schemata: map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{},
 				PackageOverrides: map[string]crd.PackageOverride{
 					"root":  func(_ *crd.Parser, _ *loader.Package) {},
 					"other": func(_ *crd.Parser, _ *loader.Package) {},
@@ -78,9 +78,9 @@ var _ = Describe("General Schema Flattening", func() {
 			By("setting up a RootType, LeafAlias --> Alias --> Int")
 			toLeafAlias := crd.TypeRefLink("", leafAliasType.Name)
 			toLeaf := crd.TypeRefLink("other", leafType.Name)
-			fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+			fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 				rootType: {
-					Properties: map[string]apiext.JSONSchemaProps{
+					Properties: map[string]apiextensionsv1.JSONSchemaProps{
 						"refProp": {Ref: &toLeafAlias},
 					},
 				},
@@ -99,8 +99,8 @@ var _ = Describe("General Schema Flattening", func() {
 			Expect(otherPkg.Errors).To(HaveLen(0))
 
 			By("verifying that it was flattened to have no references")
-			Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-				Properties: map[string]apiext.JSONSchemaProps{
+			Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"refProp": {
 						Type: "string", Pattern: "^[abc]$",
 					},
@@ -112,9 +112,9 @@ var _ = Describe("General Schema Flattening", func() {
 			By("setting up a RootType, LeafAlias --> Alias --> LeafAlias")
 			toLeafAlias := crd.TypeRefLink("", leafAliasType.Name)
 			toLeaf := crd.TypeRefLink("", inPkgLeafType.Name)
-			fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+			fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 				rootType: {
-					Properties: map[string]apiext.JSONSchemaProps{
+					Properties: map[string]apiextensionsv1.JSONSchemaProps{
 						"refProp": {Ref: &toLeafAlias},
 					},
 				},
@@ -133,8 +133,8 @@ var _ = Describe("General Schema Flattening", func() {
 			Expect(otherPkg.Errors).To(HaveLen(0))
 
 			By("verifying that it was flattened to *something*")
-			Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-				Properties: map[string]apiext.JSONSchemaProps{
+			Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"refProp": {
 						Ref: &toLeafAlias,
 					},
@@ -147,15 +147,15 @@ var _ = Describe("General Schema Flattening", func() {
 		By("setting up a series of types RootType --> SubtypeWithRef --> LeafType")
 		toSubtype := crd.TypeRefLink("", subtypeWithRefs.Name)
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
-		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+		fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 			rootType: {
-				Properties: map[string]apiext.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"refProp": {Ref: &toSubtype},
 				},
 			},
 			subtypeWithRefs: {
-				AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
-					Schema: &apiext.JSONSchemaProps{
+				AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+					Schema: &apiextensionsv1.JSONSchemaProps{
 						Ref: &toLeaf,
 					},
 				},
@@ -172,14 +172,14 @@ var _ = Describe("General Schema Flattening", func() {
 		Expect(otherPkg.Errors).To(HaveLen(0))
 
 		By("verifying that it was flattened to have no references")
-		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-			Properties: map[string]apiext.JSONSchemaProps{
+		Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"refProp": {
-					AllOf: []apiext.JSONSchemaProps{
+					AllOf: []apiextensionsv1.JSONSchemaProps{
 						{
-							AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
-								Schema: &apiext.JSONSchemaProps{
-									AllOf: []apiext.JSONSchemaProps{
+							AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+								Schema: &apiextensionsv1.JSONSchemaProps{
+									AllOf: []apiextensionsv1.JSONSchemaProps{
 										{Type: "string", Pattern: "^[abc]$"},
 										{},
 									},
@@ -198,9 +198,9 @@ var _ = Describe("General Schema Flattening", func() {
 		defOne := int64(1)
 		defThree := int64(3)
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
-		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+		fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 			rootType: {
-				Properties: map[string]apiext.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"useWithOtherPattern": {
 						Ref:         &toLeaf,
 						Pattern:     "^[cde]$",
@@ -230,24 +230,24 @@ var _ = Describe("General Schema Flattening", func() {
 		Expect(otherPkg.Errors).To(HaveLen(0))
 
 		By("verifying that each use has its own properties set in allof branches")
-		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-			Properties: map[string]apiext.JSONSchemaProps{
+		Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"useWithOtherPattern": {
-					AllOf: []apiext.JSONSchemaProps{
+					AllOf: []apiextensionsv1.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{Pattern: "^[cde]$"},
 					},
 					Description: "has other pattern",
 				},
 				"useWithMinLen": {
-					AllOf: []apiext.JSONSchemaProps{
+					AllOf: []apiextensionsv1.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{MinLength: &defOne},
 					},
 					Description: "has min len",
 				},
 				"useWithMaxLen": {
-					AllOf: []apiext.JSONSchemaProps{
+					AllOf: []apiextensionsv1.JSONSchemaProps{
 						{Type: "string", Pattern: "^[abc]$"},
 						{MaxLength: &defThree},
 					},
@@ -260,9 +260,9 @@ var _ = Describe("General Schema Flattening", func() {
 	It("should copy over documentation for each use of a type", func() {
 		By("setting up a series of types RootType --> LeafType with 3 doc-only uses")
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
-		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+		fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 			rootType: {
-				Properties: map[string]apiext.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"hasTitle": {
 						Ref:         &toLeaf,
 						Description: "has title",
@@ -271,12 +271,12 @@ var _ = Describe("General Schema Flattening", func() {
 					"hasExample": {
 						Ref:         &toLeaf,
 						Description: "has example",
-						Example:     &apiext.JSON{Raw: []byte("[42]")},
+						Example:     &apiextensionsv1.JSON{Raw: []byte("[42]")},
 					},
 					"hasExternalDocs": {
 						Ref:         &toLeaf,
 						Description: "has external docs",
-						ExternalDocs: &apiext.ExternalDocumentation{
+						ExternalDocs: &apiextensionsv1.ExternalDocumentation{
 							Description: "somewhere else",
 							URL:         "https://example.com", // RFC 2606
 						},
@@ -295,22 +295,22 @@ var _ = Describe("General Schema Flattening", func() {
 		Expect(otherPkg.Errors).To(HaveLen(0))
 
 		By("verifying that each use has its own properties set in allof branches")
-		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-			Properties: map[string]apiext.JSONSchemaProps{
+		Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"hasTitle": {
-					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
+					AllOf:       []apiextensionsv1.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has title",
 					Title:       "some title",
 				},
 				"hasExample": {
-					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
+					AllOf:       []apiextensionsv1.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has example",
-					Example:     &apiext.JSON{Raw: []byte("[42]")},
+					Example:     &apiextensionsv1.JSON{Raw: []byte("[42]")},
 				},
 				"hasExternalDocs": {
-					AllOf:       []apiext.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
+					AllOf:       []apiextensionsv1.JSONSchemaProps{{Type: "string", Pattern: "^[abc]$"}, {}},
 					Description: "has external docs",
-					ExternalDocs: &apiext.ExternalDocumentation{
+					ExternalDocs: &apiextensionsv1.ExternalDocumentation{
 						Description: "somewhere else",
 						URL:         "https://example.com", // RFC 2606
 					},
@@ -323,9 +323,9 @@ var _ = Describe("General Schema Flattening", func() {
 		By("setting up a series of types RootType --> LeafType with non-ref properties")
 		toLeaf := crd.TypeRefLink("other", leafType.Name)
 		toSubtype := crd.TypeRefLink("", subtypeWithRefs.Name)
-		fl.Parser.Schemata = map[crd.TypeIdent]apiext.JSONSchemaProps{
+		fl.Parser.Schemata = map[crd.TypeIdent]apiextensionsv1.JSONSchemaProps{
 			rootType: {
-				Properties: map[string]apiext.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"isRef": {
 						Ref: &toSubtype,
 					},
@@ -335,7 +335,7 @@ var _ = Describe("General Schema Flattening", func() {
 				},
 			},
 			subtypeWithRefs: {
-				Properties: map[string]apiext.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"leafRef": {
 						Ref: &toLeaf,
 					},
@@ -356,14 +356,14 @@ var _ = Describe("General Schema Flattening", func() {
 		Expect(otherPkg.Errors).To(HaveLen(0))
 
 		By("verifying that each use has its own properties set in allof branches")
-		Expect(outSchema).To(Equal(&apiext.JSONSchemaProps{
-			Properties: map[string]apiext.JSONSchemaProps{
+		Expect(outSchema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"isRef": {
-					AllOf: []apiext.JSONSchemaProps{
+					AllOf: []apiextensionsv1.JSONSchemaProps{
 						{
-							Properties: map[string]apiext.JSONSchemaProps{
+							Properties: map[string]apiextensionsv1.JSONSchemaProps{
 								"leafRef": {
-									AllOf: []apiext.JSONSchemaProps{
+									AllOf: []apiextensionsv1.JSONSchemaProps{
 										{Type: "string", Pattern: "^[abc]$"}, {},
 									},
 								},

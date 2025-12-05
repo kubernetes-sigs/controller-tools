@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
@@ -117,7 +117,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 			By(fmt.Sprintf("parsing the desired %s YAML", kind))
-			var crd apiext.CustomResourceDefinition
+			var crd apiextensionsv1.CustomResourceDefinition
 			ExpectWithOffset(1, yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
 			// clear the version annotation -- we don't care about the attribution annotation
 			delete(crd.Annotations, "controller-gen.kubebuilder.io/version")
@@ -272,7 +272,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(err).NotTo(HaveOccurred())
 
 		By("parsing the desired YAML")
-		var crd apiext.CustomResourceDefinition
+		var crd apiextensionsv1.CustomResourceDefinition
 		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
 		// clear the annotations -- we don't care about the attribution annotation
 		crd.Annotations = nil
@@ -354,7 +354,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(err).NotTo(HaveOccurred())
 
 		By("parsing the desired YAML")
-		var crd apiext.CustomResourceDefinition
+		var crd apiextensionsv1.CustomResourceDefinition
 		Expect(yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
 		// clear the annotations -- we don't care about the attribution annotation
 		crd.Annotations = nil

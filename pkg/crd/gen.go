@@ -23,7 +23,7 @@ import (
 	"slices"
 	"strings"
 
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -187,7 +187,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 
 		versionedCRDs := make([]any, len(crdVersions))
 		for i, ver := range crdVersions {
-			conv, err := AsVersion(crdRaw, schema.GroupVersion{Group: apiext.SchemeGroupVersion.Group, Version: ver})
+			conv, err := AsVersion(crdRaw, schema.GroupVersion{Group: apiextensionsv1.SchemeGroupVersion.Group, Version: ver})
 			if err != nil {
 				return err
 			}
@@ -195,7 +195,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		for i, crd := range versionedCRDs {
-			removeDescriptionFromMetadata(crd.(*apiext.CustomResourceDefinition))
+			removeDescriptionFromMetadata(crd.(*apiextensionsv1.CustomResourceDefinition))
 			var fileName string
 			if i == 0 {
 				fileName = fmt.Sprintf("%s_%s.yaml", crdRaw.Spec.Group, crdRaw.Spec.Names.Plural)
@@ -211,7 +211,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	return nil
 }
 
-func removeDescriptionFromMetadata(crd *apiext.CustomResourceDefinition) {
+func removeDescriptionFromMetadata(crd *apiextensionsv1.CustomResourceDefinition) {
 	for _, versionSpec := range crd.Spec.Versions {
 		if versionSpec.Schema != nil {
 			removeDescriptionFromMetadataProps(versionSpec.Schema.OpenAPIV3Schema)
@@ -219,7 +219,7 @@ func removeDescriptionFromMetadata(crd *apiext.CustomResourceDefinition) {
 	}
 }
 
-func removeDescriptionFromMetadataProps(v *apiext.JSONSchemaProps) {
+func removeDescriptionFromMetadataProps(v *apiextensionsv1.JSONSchemaProps) {
 	if m, ok := v.Properties["metadata"]; ok {
 		meta := &m
 		if meta.Description != "" {
@@ -230,12 +230,12 @@ func removeDescriptionFromMetadataProps(v *apiext.JSONSchemaProps) {
 }
 
 // FixTopLevelMetadata resets the schema for the top-level metadata field which is needed for CRD validation
-func FixTopLevelMetadata(crd apiext.CustomResourceDefinition) {
+func FixTopLevelMetadata(crd apiextensionsv1.CustomResourceDefinition) {
 	for _, v := range crd.Spec.Versions {
 		if v.Schema != nil && v.Schema.OpenAPIV3Schema != nil && v.Schema.OpenAPIV3Schema.Properties != nil {
 			schemaProperties := v.Schema.OpenAPIV3Schema.Properties
 			if _, ok := schemaProperties["metadata"]; ok {
-				schemaProperties["metadata"] = apiext.JSONSchemaProps{Type: "object"}
+				schemaProperties["metadata"] = apiextensionsv1.JSONSchemaProps{Type: "object"}
 			}
 		}
 	}
@@ -243,7 +243,7 @@ func FixTopLevelMetadata(crd apiext.CustomResourceDefinition) {
 
 // addAttribution adds attribution info to indicate controller-gen tool was used
 // to generate this CRD definition along with the version info.
-func addAttribution(crd *apiext.CustomResourceDefinition) {
+func addAttribution(crd *apiextensionsv1.CustomResourceDefinition) {
 	if crd.ObjectMeta.Annotations == nil {
 		crd.ObjectMeta.Annotations = map[string]string{}
 	}

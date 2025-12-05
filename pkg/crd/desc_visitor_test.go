@@ -19,24 +19,24 @@ package crd_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-tools/pkg/crd"
 )
 
 var _ = Describe("TruncateDescription", func() {
 
 	It("should drop the description for all fields for zero value of maxLen", func() {
-		schema := &apiext.JSONSchemaProps{
+		schema := &apiextensionsv1.JSONSchemaProps{
 			Description: "top level description",
-			Properties: map[string]apiext.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"Spec": {
 					Description: "specification for the API type",
 				},
 			},
 		}
 		crd.TruncateDescription(schema, 0)
-		Expect(schema).To(Equal(&apiext.JSONSchemaProps{
-			Properties: map[string]apiext.JSONSchemaProps{
+		Expect(schema).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"Spec": {},
 			},
 		}))
@@ -44,9 +44,9 @@ var _ = Describe("TruncateDescription", func() {
 	})
 
 	It("should truncate the description only in cases where description exceeds maxLen", func() {
-		schema := &apiext.JSONSchemaProps{
+		schema := &apiextensionsv1.JSONSchemaProps{
 			Description: "top level description of the root object.",
-			Properties: map[string]apiext.JSONSchemaProps{
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"Spec": {
 					Description: "specification of a field",
 				},
@@ -58,21 +58,21 @@ var _ = Describe("TruncateDescription", func() {
 	})
 
 	It("should truncate the description at closest sentence boundary", func() {
-		schema := &apiext.JSONSchemaProps{
+		schema := &apiextensionsv1.JSONSchemaProps{
 			Description: `This is top level description. There is an empty schema. More to come`,
 		}
 		crd.TruncateDescription(schema, len(schema.Description)-5)
-		Expect(schema).To(Equal(&apiext.JSONSchemaProps{
+		Expect(schema).To(Equal(&apiextensionsv1.JSONSchemaProps{
 			Description: `This is top level description. There is an empty schema.`,
 		}))
 	})
 
 	It("should truncate the description at maxLen in absence of sentence boundary", func() {
-		schema := &apiext.JSONSchemaProps{
+		schema := &apiextensionsv1.JSONSchemaProps{
 			Description: `This is top level description of the root object`,
 		}
 		crd.TruncateDescription(schema, len(schema.Description)-2)
-		Expect(schema).To(Equal(&apiext.JSONSchemaProps{
+		Expect(schema).To(Equal(&apiextensionsv1.JSONSchemaProps{
 			Description: `This is top level description of the root...`,
 		}))
 	})

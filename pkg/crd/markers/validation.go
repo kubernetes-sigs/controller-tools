@@ -22,7 +22,7 @@ import (
 	"math"
 	"strings"
 
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
@@ -348,11 +348,11 @@ type XIntOrString struct{}
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Schemaless struct{}
 
-func hasNumericType(schema *apiext.JSONSchemaProps) bool {
+func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)
 }
 
-func hasTextualType(schema *apiext.JSONSchemaProps) bool {
+func hasTextualType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == "string" || schema.XIntOrString
 }
 
@@ -393,7 +393,7 @@ type ExactlyOneOf []string
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
 
-func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Maximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
 	}
@@ -407,7 +407,7 @@ func (m Maximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Minimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Minimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply minimum to a numeric value, found %s", schema.Type)
 	}
@@ -421,7 +421,7 @@ func (m Minimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m ExclusiveMaximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m ExclusiveMaximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply exclusivemaximum to a numeric value, found %s", schema.Type)
 	}
@@ -429,7 +429,7 @@ func (m ExclusiveMaximum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m ExclusiveMinimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m ExclusiveMinimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply exclusiveminimum to a numeric value, found %s", schema.Type)
 	}
@@ -438,7 +438,7 @@ func (m ExclusiveMinimum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MultipleOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MultipleOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply multipleof to a numeric value, found %s", schema.Type)
 	}
@@ -452,7 +452,7 @@ func (m MultipleOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MaxLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MaxLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply maxlength to a textual value, found type %q", schema.Type)
 	}
@@ -461,7 +461,7 @@ func (m MaxLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MinLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply minlength to a textual value, found type %q", schema.Type)
 	}
@@ -470,7 +470,7 @@ func (m MinLength) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Pattern) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply pattern to a textual value, found type %q", schema.Type)
 	}
@@ -478,7 +478,7 @@ func (m Pattern) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MaxItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MaxItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply maxitem to an array")
 	}
@@ -487,7 +487,7 @@ func (m MaxItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MinItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MinItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply minitems to an array")
 	}
@@ -496,7 +496,7 @@ func (m MinItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m UniqueItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m UniqueItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "array" {
 		return fmt.Errorf("must apply uniqueitems to an array")
 	}
@@ -504,7 +504,7 @@ func (m UniqueItems) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MinProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MinProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "object" {
 		return fmt.Errorf("must apply minproperties to an object")
 	}
@@ -513,7 +513,7 @@ func (m MinProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MaxProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m MaxProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "object" {
 		return fmt.Errorf("must apply maxproperties to an object")
 	}
@@ -522,10 +522,10 @@ func (m MaxProperties) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Enum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Enum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	// TODO(directxman12): this is a bit hacky -- we should
 	// probably support AnyType better + using the schema structure
-	vals := make([]apiext.JSON, len(m))
+	vals := make([]apiextensionsv1.JSON, len(m))
 	for i, val := range m {
 		// TODO(directxman12): check actual type with schema type?
 		// if we're expecting a string, marshal the string properly...
@@ -534,13 +534,13 @@ func (m Enum) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 		if err != nil {
 			return err
 		}
-		vals[i] = apiext.JSON{Raw: valMarshalled}
+		vals[i] = apiextensionsv1.JSON{Raw: valMarshalled}
 	}
 	schema.Enum = vals
 	return nil
 }
 
-func (m Format) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Format) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Format = string(m)
 	return nil
 }
@@ -550,7 +550,7 @@ func (m Format) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 // TODO(directxman12): find a less hacky way to do this
 // (we could preserve ordering of markers, but that feels bad in its own right).
 
-func (m Type) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Type) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Type = string(m)
 	return nil
 }
@@ -559,13 +559,13 @@ func (m Type) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault - 1
 }
 
-func (m Nullable) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Nullable) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Nullable = true
 	return nil
 }
 
 // ApplyToSchema defaults are only valid CRDs created with the v1 API
-func (m Default) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Default) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	marshalledDefault, err := json.Marshal(m.Value)
 	if err != nil {
 		return err
@@ -573,7 +573,7 @@ func (m Default) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if schema.Type == "array" && string(marshalledDefault) == "{}" {
 		marshalledDefault = []byte("[]")
 	}
-	schema.Default = &apiext.JSON{Raw: marshalledDefault}
+	schema.Default = &apiextensionsv1.JSON{Raw: marshalledDefault}
 	return nil
 }
 
@@ -582,7 +582,7 @@ func (m Default) ApplyPriority() ApplyPriority {
 	return 10
 }
 
-func (m Title) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Title) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if m.Value == nil {
 		// only apply to the schema if we have a non-nil title
 		return nil
@@ -605,7 +605,7 @@ func (m *KubernetesDefault) ParseMarker(_ string, _ string, restFields string) e
 }
 
 // ApplyToSchema defaults are only valid CRDs created with the v1 API
-func (m KubernetesDefault) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m KubernetesDefault) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if m.Value == nil {
 		// only apply to the schema if we have a non-nil default value
 		return nil
@@ -614,7 +614,7 @@ func (m KubernetesDefault) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 	if err != nil {
 		return err
 	}
-	schema.Default = &apiext.JSON{Raw: marshalledDefault}
+	schema.Default = &apiextensionsv1.JSON{Raw: marshalledDefault}
 	return nil
 }
 
@@ -623,22 +623,22 @@ func (m KubernetesDefault) ApplyPriority() ApplyPriority {
 	return 9
 }
 
-func (m Example) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m Example) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	marshalledExample, err := json.Marshal(m.Value)
 	if err != nil {
 		return err
 	}
-	schema.Example = &apiext.JSON{Raw: marshalledExample}
+	schema.Example = &apiextensionsv1.JSON{Raw: marshalledExample}
 	return nil
 }
 
-func (m XPreserveUnknownFields) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m XPreserveUnknownFields) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	defTrue := true
 	schema.XPreserveUnknownFields = &defTrue
 	return nil
 }
 
-func (m XEmbeddedResource) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m XEmbeddedResource) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.XEmbeddedResource = true
 	return nil
 }
@@ -646,7 +646,7 @@ func (m XEmbeddedResource) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
 // NB(JoelSpeed): we use this property in other markers here,
 // which means the "XIntOrString" marker *must* be applied first.
 
-func (m XIntOrString) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (m XIntOrString) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.XIntOrString = true
 	return nil
 }
@@ -655,18 +655,18 @@ func (m XIntOrString) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault - 1
 }
 
-func (m XValidation) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
-	var reason *apiext.FieldValueErrorReason
+func (m XValidation) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+	var reason *apiextensionsv1.FieldValueErrorReason
 	if m.Reason != "" {
 		switch m.Reason {
-		case string(apiext.FieldValueRequired), string(apiext.FieldValueInvalid), string(apiext.FieldValueForbidden), string(apiext.FieldValueDuplicate):
-			reason = (*apiext.FieldValueErrorReason)(&m.Reason)
+		case string(apiextensionsv1.FieldValueRequired), string(apiextensionsv1.FieldValueInvalid), string(apiextensionsv1.FieldValueForbidden), string(apiextensionsv1.FieldValueDuplicate):
+			reason = (*apiextensionsv1.FieldValueErrorReason)(&m.Reason)
 		default:
-			return fmt.Errorf("invalid reason %s, valid values are %s, %s, %s and %s", m.Reason, apiext.FieldValueRequired, apiext.FieldValueInvalid, apiext.FieldValueForbidden, apiext.FieldValueDuplicate)
+			return fmt.Errorf("invalid reason %s, valid values are %s, %s, %s and %s", m.Reason, apiextensionsv1.FieldValueRequired, apiextensionsv1.FieldValueInvalid, apiextensionsv1.FieldValueForbidden, apiextensionsv1.FieldValueDuplicate)
 		}
 	}
 
-	schema.XValidations = append(schema.XValidations, apiext.ValidationRule{
+	schema.XValidations = append(schema.XValidations, apiextensionsv1.ValidationRule{
 		Rule:              m.Rule,
 		Message:           m.Message,
 		MessageExpression: m.MessageExpression,
@@ -681,7 +681,7 @@ func (XValidation) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault
 }
 
-func (fields AtMostOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (fields AtMostOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -698,7 +698,7 @@ func (AtMostOneOf) ApplyPriority() ApplyPriority {
 	return XValidation{}.ApplyPriority() + 1
 }
 
-func (fields ExactlyOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (fields ExactlyOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -715,7 +715,7 @@ func (ExactlyOneOf) ApplyPriority() ApplyPriority {
 	return AtMostOneOf{}.ApplyPriority() + 1
 }
 
-func (fields AtLeastOneOf) ApplyToSchema(schema *apiext.JSONSchemaProps) error {
+func (fields AtLeastOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}

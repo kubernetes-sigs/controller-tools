@@ -25,7 +25,7 @@ import (
 	"slices"
 	"strings"
 
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/loader"
@@ -49,7 +49,7 @@ var byteType = types.Universe.Lookup("byte").Type()
 type SchemaMarker interface {
 	// ApplyToSchema is called after the rest of the schema for a given type
 	// or field is generated, to modify the schema appropriately.
-	ApplyToSchema(*apiext.JSONSchemaProps) error
+	ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error
 }
 
 // applyFirstMarker is applied before any other markers.  It's a bit of a hack.
@@ -113,14 +113,14 @@ func (c *schemaContext) requestSchema(pkgPath, typeName string) {
 }
 
 // infoToSchema creates a schema for the type in the given set of type information.
-func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
+func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 	if obj := ctx.pkg.Types.Scope().Lookup(ctx.info.Name); obj != nil {
 		switch {
 		// If the obj implements a JSON marshaler and has a marker, use the
 		// markers value and do not traverse as the marshaler could be doing
 		// anything. If there is no marker, fall back to traversing.
 		case implements(obj.Type(), jsonMarshaler):
-			schema := &apiext.JSONSchemaProps{}
+			schema := &apiextensionsv1.JSONSchemaProps{}
 			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
 			if schema.Type != "" {
 				return schema
@@ -128,7 +128,7 @@ func infoToSchema(ctx *schemaContext) *apiext.JSONSchemaProps {
 
 		// If the obj implements a text marshaler, encode it as a string.
 		case implements(obj.Type(), textMarshaler):
-			schema := &apiext.JSONSchemaProps{Type: "string"}
+			schema := &apiextensionsv1.JSONSchemaProps{Type: "string"}
 			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
 			if schema.Type != "string" {
 				err := fmt.Errorf("%q implements encoding.TextMarshaler but schema type is not string: %q", ctx.info.RawSpec.Name, schema.Type)
@@ -146,7 +146,7 @@ type schemaMarkerWithName struct {
 }
 
 // applyMarkers applies schema markers given their priority to the given schema
-func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiext.JSONSchemaProps, node ast.Node) {
+func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiextensionsv1.JSONSchemaProps, node ast.Node) {
 	markers := make([]schemaMarkerWithName, 0, len(markerSet))
 	itemsMarkers := make([]schemaMarkerWithName, 0, len(markerSet))
 
@@ -214,8 +214,8 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 }
 
 // typeToSchema creates a schema for the given AST type.
-func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiext.JSONSchemaProps {
-	var props *apiext.JSONSchemaProps
+func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiextensionsv1.JSONSchemaProps {
+	var props *apiextensionsv1.JSONSchemaProps
 	switch expr := rawType.(type) {
 	case *ast.Ident:
 		props = localNamedToSchema(ctx, expr)
@@ -232,7 +232,7 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiext.JSONSchemaProps 
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unsupported AST kind %T", expr), rawType))
 		// NB(directxman12): we explicitly don't handle interfaces
-		return &apiext.JSONSchemaProps{}
+		return &apiextensionsv1.JSONSchemaProps{}
 	}
 
 	props.Description = ctx.info.Doc
@@ -260,11 +260,11 @@ func TypeRefLink(pkgName, typeName string) string {
 
 // localNamedToSchema creates a schema (ref) for a *potentially* local type reference
 // (could be external from a dot-import).
-func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchemaProps {
+func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.JSONSchemaProps {
 	typeInfo := ctx.pkg.TypesInfo.TypeOf(ident)
 	if typeInfo == types.Typ[types.Invalid] {
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %s", ident.Name), ident))
-		return &apiext.JSONSchemaProps{}
+		return &apiextensionsv1.JSONSchemaProps{}
 	}
 	// This reproduces the behavior we had pre gotypesalias=1 (needed if this
 	// project is compiled with default settings and Go >= 1.23).
@@ -284,13 +284,13 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		if basicInfo.Name() != ident.Name {
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
-			return &apiext.JSONSchemaProps{
+			return &apiextensionsv1.JSONSchemaProps{
 				Type:   typ,
 				Format: fmt,
 				Ref:    &link,
 			}
 		}
-		return &apiext.JSONSchemaProps{
+		return &apiextensionsv1.JSONSchemaProps{
 			Type:   typ,
 			Format: fmt,
 		}
@@ -321,7 +321,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 		}
 	}
 
-	return &apiext.JSONSchemaProps{
+	return &apiextensionsv1.JSONSchemaProps{
 		Type:   typ,
 		Format: fmt,
 		Ref:    &link,
@@ -329,18 +329,18 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiext.JSONSchema
 }
 
 // namedSchema creates a schema (ref) for an explicitly external type reference.
-func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiext.JSONSchemaProps {
+func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1.JSONSchemaProps {
 	typeInfoRaw := ctx.pkg.TypesInfo.TypeOf(named)
 	if typeInfoRaw == types.Typ[types.Invalid] {
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %v.%s", named.X, named.Sel.Name), named))
-		return &apiext.JSONSchemaProps{}
+		return &apiextensionsv1.JSONSchemaProps{}
 	}
 	typeInfo := typeInfoRaw.(interface{ Obj() *types.TypeName })
 	typeNameInfo := typeInfo.Obj()
 	nonVendorPath := loader.NonVendorPath(typeNameInfo.Pkg().Path())
 	ctx.requestSchema(nonVendorPath, typeNameInfo.Name())
 	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
-	return &apiext.JSONSchemaProps{
+	return &apiextensionsv1.JSONSchemaProps{
 		Ref: &link,
 	}
 	// NB(directxman12): we special-case things like resource.Quantity during the "collapse" phase.
@@ -348,12 +348,12 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiext.JSONSche
 
 // arrayToSchema creates a schema for the items of the given array, dealing appropriately
 // with the special `[]byte` type (according to OpenAPI standards).
-func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiext.JSONSchemaProps {
+func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiextensionsv1.JSONSchemaProps {
 	eltType := ctx.pkg.TypesInfo.TypeOf(array.Elt)
 	if eltType == byteType && array.Len == nil {
 		// byte slices are represented as base64-encoded strings
 		// (the format is defined in OpenAPI v3, but not JSON Schema)
-		return &apiext.JSONSchemaProps{
+		return &apiextensionsv1.JSONSchemaProps{
 			Type:   "string",
 			Format: "byte",
 		}
@@ -361,15 +361,15 @@ func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiext.JSONSchemaP
 	// TODO(directxman12): backwards-compat would require access to markers from base info
 	items := typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), array.Elt)
 
-	return &apiext.JSONSchemaProps{
+	return &apiextensionsv1.JSONSchemaProps{
 		Type:  "array",
-		Items: &apiext.JSONSchemaPropsOrArray{Schema: items},
+		Items: &apiextensionsv1.JSONSchemaPropsOrArray{Schema: items},
 	}
 }
 
 // mapToSchema creates a schema for items of the given map.  Key types must eventually resolve
 // to string (other types aren't allowed by JSON, and thus the kubernetes API standards).
-func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaProps {
+func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSONSchemaProps {
 	keyInfo := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
 	// check that we've got a type that actually corresponds to a string
 	for keyInfo != nil {
@@ -377,19 +377,19 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 		case *types.Basic:
 			if typedKey.Info()&types.IsString == 0 {
 				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
-				return &apiext.JSONSchemaProps{}
+				return &apiextensionsv1.JSONSchemaProps{}
 			}
 			keyInfo = nil // stop iterating
 		case *types.Named:
 			keyInfo = typedKey.Underlying()
 		default:
 			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
-			return &apiext.JSONSchemaProps{}
+			return &apiextensionsv1.JSONSchemaProps{}
 		}
 	}
 
 	// TODO(directxman12): backwards-compat would require access to markers from base info
-	var valSchema *apiext.JSONSchemaProps
+	var valSchema *apiextensionsv1.JSONSchemaProps
 	switch val := mapType.Value.(type) {
 	case *ast.Ident:
 		valSchema = localNamedToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
@@ -403,12 +403,12 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("not a supported map value type: %T", mapType.Value), mapType.Value))
-		return &apiext.JSONSchemaProps{}
+		return &apiextensionsv1.JSONSchemaProps{}
 	}
 
-	return &apiext.JSONSchemaProps{
+	return &apiextensionsv1.JSONSchemaProps{
 		Type: "object",
-		AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
+		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
 			Schema: valSchema,
 			Allows: true, /* set automatically by serialization, but useful for testing */
 		},
@@ -419,10 +419,10 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiext.JSONSchemaPro
 // and can be flattened later with a Flattener.
 //
 //nolint:gocyclo
-func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSONSchemaProps {
-	props := &apiext.JSONSchemaProps{
+func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensionsv1.JSONSchemaProps {
+	props := &apiextensionsv1.JSONSchemaProps{
 		Type:       "object",
-		Properties: make(map[string]apiext.JSONSchemaProps),
+		Properties: make(map[string]apiextensionsv1.JSONSchemaProps),
 	}
 
 	if ctx.info.RawSpec.Type != structType {
@@ -519,9 +519,9 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiext.JSON
 			// implicitly optional
 		}
 
-		var propSchema *apiext.JSONSchemaProps
+		var propSchema *apiextensionsv1.JSONSchemaProps
 		if field.Markers.Get(crdmarkers.SchemalessName) != nil {
-			propSchema = &apiext.JSONSchemaProps{}
+			propSchema = &apiextensionsv1.JSONSchemaProps{}
 		} else {
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
 		}

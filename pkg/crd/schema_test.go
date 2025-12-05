@@ -24,13 +24,13 @@ import (
 	"github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-func transform(t *testing.T, expr string) *apiext.JSONSchemaProps {
+func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
 	// this is *very* hacky but I haven’t found a simple way
 	// to get an ast.Expr with all the associated metadata required
 	// to run typeToSchema upon it:
@@ -83,10 +83,10 @@ func failIfErrors(t *testing.T, errs []packages.Error) {
 	}
 }
 
-var arrayOfNumbersSchema *apiext.JSONSchemaProps = &apiext.JSONSchemaProps{
+var arrayOfNumbersSchema *apiextensionsv1.JSONSchemaProps = &apiextensionsv1.JSONSchemaProps{
 	Type: "array",
-	Items: &apiext.JSONSchemaPropsOrArray{
-		Schema: &apiext.JSONSchemaProps{
+	Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+		Schema: &apiextensionsv1.JSONSchemaProps{
 			Type: "number",
 		},
 	},
@@ -103,9 +103,9 @@ func Test_Schema_MapOfStringToArrayOfFloat32(t *testing.T) {
 	g := gomega.NewWithT(t)
 
 	output := transform(t, "map[string][]float32")
-	g.Expect(output).To(gomega.Equal(&apiext.JSONSchemaProps{
+	g.Expect(output).To(gomega.Equal(&apiextensionsv1.JSONSchemaProps{
 		Type: "object",
-		AdditionalProperties: &apiext.JSONSchemaPropsOrBool{
+		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
 			Allows: true,
 			Schema: arrayOfNumbersSchema,
 		},
@@ -115,7 +115,7 @@ func Test_Schema_MapOfStringToArrayOfFloat32(t *testing.T) {
 func Test_Schema_ApplyMarkers(t *testing.T) {
 	g := gomega.NewWithT(t)
 
-	props := &apiext.JSONSchemaProps{}
+	props := &apiextensionsv1.JSONSchemaProps{}
 	ctx := &schemaContext{}
 
 	var invocations []string
@@ -148,7 +148,7 @@ type defaultPriorityMarker struct {
 	callback func()
 }
 
-func (m *defaultPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+func (m *defaultPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -162,7 +162,7 @@ func (m *testPriorityMarker) ApplyPriority() crdmarkers.ApplyPriority {
 	return m.priority
 }
 
-func (m *testPriorityMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+func (m *testPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -172,7 +172,7 @@ type testapplyFirstMarker struct {
 }
 
 func (m *testapplyFirstMarker) ApplyFirst() {}
-func (m *testapplyFirstMarker) ApplyToSchema(*apiext.JSONSchemaProps) error {
+func (m *testapplyFirstMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
