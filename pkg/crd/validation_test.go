@@ -75,7 +75,7 @@ spec:
     a: "a"
     c: "c"
 `,
-			wantErr: `spec.firstTypeWithOneof: Invalid value: "object": at most one of the fields in [foo bar] may be set`,
+			wantErr: `spec.firstTypeWithOneof: Invalid value: at most one of the fields in [foo bar] may be set`,
 		},
 		{
 			name: "ExactlyOneOf constraint violated by specifying both fields secondTypeWithExactOneof.c&d",
@@ -94,7 +94,7 @@ spec:
     c: "c"
     d: "d"
 `,
-			wantErr: `spec.secondTypeWithExactOneof: Invalid value: "object": exactly one of the fields in [c d] must be set`,
+			wantErr: `spec.secondTypeWithExactOneof: Invalid value: exactly one of the fields in [c d] must be set`,
 		},
 		{
 			name: "ExactlyOneOf constraint violated by not specifying field secondTypeWithExactOneof.c|d",
@@ -109,7 +109,7 @@ spec:
   secondTypeWithExactOneof:
     a: "a"
 `,
-			wantErr: `spec.secondTypeWithExactOneof: Invalid value: "object": exactly one of the fields in [c d] must be set`,
+			wantErr: `spec.secondTypeWithExactOneof: Invalid value: exactly one of the fields in [c d] must be set`,
 		},
 		{
 			name: "AtLeastOneOf constraint violated by not specifying field typeWithAllOneOf.e|f",
@@ -122,7 +122,7 @@ spec:
   typeWithAllOneOf:
     c: "c"
 `,
-			wantErr: `spec.typeWithAllOneOf: Invalid value: "object": at least one of the fields in [e f] must be set`,
+			wantErr: `spec.typeWithAllOneOf: Invalid value: at least one of the fields in [e f] must be set`,
 		},
 	}
 

@@ -5,6 +5,7 @@ package v1
 // ExportedStructApplyConfiguration represents a declarative configuration of the ExportedStruct type for use
 // with apply.
 type ExportedStructApplyConfiguration struct {
+	// This tests that exported fields are not skipped in the schema generation
 	Baz *string `json:"baz,omitempty"`
 }
 

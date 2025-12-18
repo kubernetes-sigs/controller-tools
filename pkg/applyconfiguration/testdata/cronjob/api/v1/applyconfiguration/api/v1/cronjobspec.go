@@ -12,86 +12,178 @@ import (
 
 // CronJobSpecApplyConfiguration represents a declarative configuration of the CronJobSpec type for use
 // with apply.
+//
+// CronJobSpec defines the desired state of CronJob
 type CronJobSpecApplyConfiguration struct {
-	Schedule                                  *string                                          `json:"schedule,omitempty"`
-	StartingDeadlineSeconds                   *int64                                           `json:"startingDeadlineSeconds,omitempty"`
-	ConcurrencyPolicy                         *apiv1.ConcurrencyPolicy                         `json:"concurrencyPolicy,omitempty"`
-	Suspend                                   *bool                                            `json:"suspend,omitempty"`
-	NoReallySuspend                           *apiv1.TotallyABool                              `json:"noReallySuspend,omitempty"`
-	BinaryName                                []byte                                           `json:"binaryName,omitempty"`
-	CanBeNull                                 *string                                          `json:"canBeNull,omitempty"`
-	JobTemplate                               *v1beta1.JobTemplateSpec                         `json:"jobTemplate,omitempty"`
-	SuccessfulJobsHistoryLimit                *int32                                           `json:"successfulJobsHistoryLimit,omitempty"`
-	FailedJobsHistoryLimit                    *int32                                           `json:"failedJobsHistoryLimit,omitempty"`
-	ByteSliceData                             map[string][]byte                                `json:"byteSliceData,omitempty"`
-	StringSliceData                           map[string][]string                              `json:"stringSliceData,omitempty"`
-	PtrData                                   map[string]*string                               `json:"ptrData,omitempty"`
-	TwoOfAKindPart0                           *string                                          `json:"twoOfAKindPart0,omitempty"`
-	TwoOfAKindPart1                           *apiv1.LongerString                              `json:"twoOfAKindPart1,omitempty"`
-	DefaultedString                           *string                                          `json:"defaultedString,omitempty"`
-	DefaultedSlice                            []string                                         `json:"defaultedSlice,omitempty"`
-	DefaultedObject                           []RootObjectApplyConfiguration                   `json:"defaultedObject,omitempty"`
-	DefaultedEmptySlice                       []string                                         `json:"defaultedEmptySlice,omitempty"`
-	DefaultedEmptyMap                         map[string]string                                `json:"defaultedEmptyMap,omitempty"`
-	DefaultedEmptyObject                      *EmpiableObjectApplyConfiguration                `json:"defaultedEmptyObject,omitempty"`
-	DoubleDefaultedString                     *string                                          `json:"doubleDefaultedString,omitempty"`
-	KubernetesDefaultedString                 *string                                          `json:"kubernetesDefaultedString,omitempty"`
-	KubernetesDefaultedSlice                  []string                                         `json:"kubernetesDefaultedSlice,omitempty"`
-	KubernetesDefaultedObject                 []RootObjectApplyConfiguration                   `json:"kubernetesDefaultedObject,omitempty"`
-	KubernetesDefaultedEmptySlice             []string                                         `json:"kubernetesDefaultedEmptySlice,omitempty"`
-	KubernetesDefaultedEmptyMap               map[string]string                                `json:"kubernetesDefaultedEmptyMap,omitempty"`
-	KubernetesDefaultedEmptyObject            *EmpiableObjectApplyConfiguration                `json:"kubernetesDefaultedEmptyObject,omitempty"`
-	KubernetesDefaultedRef                    *string                                          `json:"kubernetesDefaultedRef,omitempty"`
-	PatternObject                             *string                                          `json:"patternObject,omitempty"`
-	EmbeddedResource                          *runtime.RawExtension                            `json:"embeddedResource,omitempty"`
-	UnprunedJSON                              *NestedObjectApplyConfiguration                  `json:"unprunedJSON,omitempty"`
-	UnprunedEmbeddedResource                  *runtime.RawExtension                            `json:"unprunedEmbeddedResource,omitempty"`
-	UnprunedFromType                          *PreservedApplyConfiguration                     `json:"unprunedFomType,omitempty"`
-	UnprunedFromTypeAndField                  *PreservedApplyConfiguration                     `json:"unprunedFomTypeAndField,omitempty"`
-	AssociativeList                           []AssociativeTypeApplyConfiguration              `json:"associativeList,omitempty"`
-	NestedAssociativeList                     *apiv1.NestedAssociativeList                     `json:"nestedassociativeList,omitempty"`
-	MapOfInfo                                 map[string][]byte                                `json:"mapOfInfo,omitempty"`
-	NestedMapOfInfo                           *apiv1.NestedMapOfInfo                           `json:"nestedMapOfInfo,omitempty"`
-	StructWithSeveralFields                   *NestedObjectApplyConfiguration                  `json:"structWithSeveralFields,omitempty"`
-	NestedStructWithSeveralFields             *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFields,omitempty"`
+	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	Schedule *string `json:"schedule,omitempty"`
+	// Optional deadline in seconds for starting the job if it misses scheduled
+	// time for any reason.  Missed jobs executions will be counted as failed ones.
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
+	// Specifies how to treat concurrent executions of a Job.
+	// Valid values are:
+	// - "Allow" (default): allows CronJobs to run concurrently;
+	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
+	// - "Replace": cancels currently running job and replaces it with a new one
+	ConcurrencyPolicy *apiv1.ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
+	// This flag tells the controller to suspend subsequent executions, it does
+	// not apply to already started executions.  Defaults to false.
+	Suspend *bool `json:"suspend,omitempty"`
+	// This flag is like suspend, but for when you really mean it.
+	// It helps test the +kubebuilder:validation:Type marker.
+	NoReallySuspend *apiv1.TotallyABool `json:"noReallySuspend,omitempty"`
+	// This tests byte slice schema generation.
+	BinaryName []byte `json:"binaryName,omitempty"`
+	// This tests that nullable works correctly
+	CanBeNull *string `json:"canBeNull,omitempty"`
+	// Specifies the job that will be created when executing a CronJob.
+	JobTemplate *v1beta1.JobTemplateSpec `json:"jobTemplate,omitempty"`
+	// The number of successful finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
+	// The number of failed finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
+	// This tests byte slices are allowed as map values.
+	ByteSliceData map[string][]byte `json:"byteSliceData,omitempty"`
+	// This tests string slices are allowed as map values.
+	StringSliceData map[string][]string `json:"stringSliceData,omitempty"`
+	// This tests pointers are allowed as map values.
+	PtrData map[string]*string `json:"ptrData,omitempty"`
+	// This tests that markers that are allowed on both fields and types are applied to fields
+	TwoOfAKindPart0 *string `json:"twoOfAKindPart0,omitempty"`
+	// This tests that markers that are allowed on both fields and types are applied to types
+	TwoOfAKindPart1 *apiv1.LongerString `json:"twoOfAKindPart1,omitempty"`
+	// This tests that primitive defaulting can be performed.
+	DefaultedString *string `json:"defaultedString,omitempty"`
+	// This tests that slice defaulting can be performed.
+	DefaultedSlice []string `json:"defaultedSlice,omitempty"`
+	// This tests that slice and object defaulting can be performed.
+	DefaultedObject []RootObjectApplyConfiguration `json:"defaultedObject,omitempty"`
+	// This tests that empty slice defaulting can be performed.
+	DefaultedEmptySlice []string `json:"defaultedEmptySlice,omitempty"`
+	// This tests that an empty object defaulting can be performed on a map.
+	DefaultedEmptyMap map[string]string `json:"defaultedEmptyMap,omitempty"`
+	// This tests that an empty object defaulting can be performed on an object.
+	DefaultedEmptyObject *EmpiableObjectApplyConfiguration `json:"defaultedEmptyObject,omitempty"`
+	// This tests that kubebuilder defaulting takes precedence.
+	DoubleDefaultedString *string `json:"doubleDefaultedString,omitempty"`
+	// This tests that primitive defaulting can be performed.
+	KubernetesDefaultedString *string `json:"kubernetesDefaultedString,omitempty"`
+	// This tests that slice defaulting can be performed.
+	KubernetesDefaultedSlice []string `json:"kubernetesDefaultedSlice,omitempty"`
+	// This tests that slice and object defaulting can be performed.
+	KubernetesDefaultedObject []RootObjectApplyConfiguration `json:"kubernetesDefaultedObject,omitempty"`
+	// This tests that empty slice defaulting can be performed.
+	KubernetesDefaultedEmptySlice []string `json:"kubernetesDefaultedEmptySlice,omitempty"`
+	// This tests that an empty object defaulting can be performed on a map.
+	KubernetesDefaultedEmptyMap map[string]string `json:"kubernetesDefaultedEmptyMap,omitempty"`
+	// This tests that an empty object defaulting can be performed on an object.
+	KubernetesDefaultedEmptyObject *EmpiableObjectApplyConfiguration `json:"kubernetesDefaultedEmptyObject,omitempty"`
+	// This tests that use of +default=ref(...) doesn't break generation
+	KubernetesDefaultedRef *string `json:"kubernetesDefaultedRef,omitempty"`
+	// This tests that pattern validator is properly applied.
+	PatternObject            *string                         `json:"patternObject,omitempty"`
+	EmbeddedResource         *runtime.RawExtension           `json:"embeddedResource,omitempty"`
+	UnprunedJSON             *NestedObjectApplyConfiguration `json:"unprunedJSON,omitempty"`
+	UnprunedEmbeddedResource *runtime.RawExtension           `json:"unprunedEmbeddedResource,omitempty"`
+	// This tests that a type-level pruning marker works.
+	UnprunedFromType *PreservedApplyConfiguration `json:"unprunedFomType,omitempty"`
+	// This tests that a type-level pruning marker combined with a field-level pruning marker works.
+	UnprunedFromTypeAndField *PreservedApplyConfiguration `json:"unprunedFomTypeAndField,omitempty"`
+	// This tests that associative lists work.
+	AssociativeList []AssociativeTypeApplyConfiguration `json:"associativeList,omitempty"`
+	// This tests that associative lists work via a nested type.
+	NestedAssociativeList *apiv1.NestedAssociativeList `json:"nestedassociativeList,omitempty"`
+	// A map that allows different actors to manage different fields
+	MapOfInfo map[string][]byte `json:"mapOfInfo,omitempty"`
+	// A map that allows different actors to manage different fields via a nested type.
+	NestedMapOfInfo *apiv1.NestedMapOfInfo `json:"nestedMapOfInfo,omitempty"`
+	// A struct that can only be entirely replaced
+	StructWithSeveralFields *NestedObjectApplyConfiguration `json:"structWithSeveralFields,omitempty"`
+	// A struct that can only be entirely replaced via a nested type.
+	NestedStructWithSeveralFields *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFields,omitempty"`
+	// A struct that can only be entirely replaced via a nested type and
+	// field markers.
 	NestedStructWithSeveralFieldsDoubleMarked *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFieldsDoubleMarked,omitempty"`
-	JustNestedObject                          *JustNestedObjectApplyConfiguration              `json:"justNestedObject,omitempty"`
-	ExplicitlyOptionalKubebuilder             *string                                          `json:"explicitlyOptionalKubebuilder,omitempty"`
-	ExplicitlyOptionalKubernetes              *string                                          `json:"explicitlyOptionalKubernetes,omitempty"`
-	ExplicitlyRequiredKubebuilder             *string                                          `json:"explicitlyRequiredKubebuilder,omitempty"`
-	ExplicitlyRequiredKubernetes              *string                                          `json:"explicitlyRequiredKubernetes,omitempty"`
-	MinMaxProperties                          *MinMaxObjectApplyConfiguration                  `json:"minMaxProperties,omitempty"`
-	Schemaless                                []byte                                           `json:"schemaless,omitempty"`
-	IntOrStringWithAPattern                   *intstr.IntOrString                              `json:"intOrStringWithAPattern,omitempty"`
-	NestedMap                                 map[string]map[string]string                     `json:"nestedMap,omitempty"`
-	NestedNestedMap                           map[string]map[string]map[string]string          `json:"nestedNestedMap,omitempty"`
-	ContainsNestedMapMap                      map[string]ContainsNestedMapApplyConfiguration   `json:"nestedMapInStruct,omitempty"`
-	MapOfArraysOfFloats                       map[string][]bool                                `json:"mapOfArraysOfFloats,omitempty"`
-	FloatWithValidations                      *float64                                         `json:"floatWithValidations,omitempty"`
-	Float64WithValidations                    *float64                                         `json:"float64WithValidations,omitempty"`
-	IntWithValidations                        *int                                             `json:"intWithValidations,omitempty"`
-	Int32WithValidations                      *int32                                           `json:"int32WithValidations,omitempty"`
-	ExportedStructApplyConfiguration          `json:",inline"`
-	StringWithEvenLength                      *string                `json:"stringWithEvenLength,omitempty"`
-	StringWithEvenLengthAndMessageExpression  *string                `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
-	StringWithEvenLengthAndGoodPrefix         *apiv1.StringEvenType  `json:"stringWithEvenLengthAndGoodPrefix,omitempty"`
-	ForbiddenInt                              *int                   `json:"forbiddenInt,omitempty"`
-	Array                                     *[3]int                `json:"array,omitempty"`
-	ArrayUsingCompositeLiteral                *[3]string             `json:"arrayUsingCompositeLiteral,omitempty"`
-	Hosts                                     []string               `json:"hosts,omitempty"`
-	EnumSlice                                 []int                  `json:"enumSlice,omitempty"`
-	HostsAlias                                *apiv1.Hosts           `json:"hostsAlias,omitempty"`
-	AliasFromPackage                          *corev1.IPFamilyPolicy `json:"aliasFromPackage,omitempty"`
-	StringAlias                               *string                `json:"stringAlias,omitempty"`
-	StringAliasPtr                            *string                `json:"stringAliasPtr,omitempty"`
-	StringAliasAddedValidation                *string                `json:"stringAliasAddedValidation,omitempty"`
-	StringAliasAlreadyValidated               *string                `json:"stringAliasAlreadyValidated,omitempty"`
-	StringPair                                []string               `json:"stringPair,omitempty"`
-	LongerStringArray                         []apiv1.LongerString   `json:"longerStringArray,omitempty"`
-	Protocol                                  *corev1.Protocol       `json:"protocol,omitempty"`
-	SelectableFieldString                     *string                `json:"selectableFieldString,omitempty"`
-	EmbeddedStructApplyConfiguration          `json:",inline"`
-	OnlyAllowSettingOnUpdate                  *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
+	// This tests that type references are properly flattened
+	JustNestedObject *JustNestedObjectApplyConfiguration `json:"justNestedObject,omitempty"`
+	// This tests explicitly optional kubebuilder fields
+	ExplicitlyOptionalKubebuilder *string `json:"explicitlyOptionalKubebuilder,omitempty"`
+	// This tests explicitly optional kubernetes fields
+	ExplicitlyOptionalKubernetes *string `json:"explicitlyOptionalKubernetes,omitempty"`
+	// This tests explicitly required kubebuilder fields
+	ExplicitlyRequiredKubebuilder *string `json:"explicitlyRequiredKubebuilder,omitempty"`
+	// This tests explicitly required kubernetes fields
+	ExplicitlyRequiredKubernetes *string `json:"explicitlyRequiredKubernetes,omitempty"`
+	// This tests that min/max properties work
+	MinMaxProperties *MinMaxObjectApplyConfiguration `json:"minMaxProperties,omitempty"`
+	// This tests that the schemaless marker works
+	Schemaless []byte `json:"schemaless,omitempty"`
+	// This tests that an IntOrString can also have string validation.
+	// This can be useful if you want to limit the string to a percentage or integer.
+	// The XIntOrString marker is a requirement for having a pattern on this type.
+	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
+	// Checks that nested maps work
+	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
+	// Checks that multiply-nested maps work
+	NestedNestedMap map[string]map[string]map[string]string `json:"nestedNestedMap,omitempty"`
+	// Checks that maps containing types that contain maps work
+	ContainsNestedMapMap map[string]ContainsNestedMapApplyConfiguration `json:"nestedMapInStruct,omitempty"`
+	// Maps of arrays of things-that-aren’t-strings are permitted
+	MapOfArraysOfFloats    map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
+	FloatWithValidations   *float64          `json:"floatWithValidations,omitempty"`
+	Float64WithValidations *float64          `json:"float64WithValidations,omitempty"`
+	IntWithValidations     *int              `json:"intWithValidations,omitempty"`
+	Int32WithValidations   *int32            `json:"int32WithValidations,omitempty"`
+	// This tests that both unexported and exported inline fields are not skipped in the schema generation
+	//
+	// This currently does not work
+	// unexportedStruct `json:",inline"`
+	ExportedStructApplyConfiguration `json:",inline"`
+	// Test of the expression-based validation rule marker, with optional message.
+	StringWithEvenLength *string `json:"stringWithEvenLength,omitempty"`
+	// Test of the expression-based validation with messageExpression marker.
+	StringWithEvenLengthAndMessageExpression *string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
+	// Test of the expression-based validation on both field and type.
+	StringWithEvenLengthAndGoodPrefix *apiv1.StringEvenType `json:"stringWithEvenLengthAndGoodPrefix,omitempty"`
+	// Test that we can add a forbidden field using XValidation Reason and FieldPath.
+	// The validation is applied to the spec struct itself and not the field.
+	ForbiddenInt *int `json:"forbiddenInt,omitempty"`
+	// Checks that fixed-length arrays work
+	Array *[3]int `json:"array,omitempty"`
+	// Checks that arrays work when the type contains a composite literal
+	ArrayUsingCompositeLiteral *[3]string `json:"arrayUsingCompositeLiteral,omitempty"`
+	// This tests string slice item validation.
+	Hosts []string `json:"hosts,omitempty"`
+	// This tests slice item validation with enum
+	EnumSlice  []int        `json:"enumSlice,omitempty"`
+	HostsAlias *apiv1.Hosts `json:"hostsAlias,omitempty"`
+	// This tests that alias imported from a package is handled correctly. The
+	// corev1.IPFamilyPolicyType is just reused since it's available from
+	// imported package. We can create our own in a separate package if needed.
+	AliasFromPackage *corev1.IPFamilyPolicy `json:"aliasFromPackage,omitempty"`
+	// This tests that string alias is handled correctly.
+	StringAlias    *string `json:"stringAlias,omitempty"`
+	StringAliasPtr *string `json:"stringAliasPtr,omitempty"`
+	// This tests that validation on a string alias type is handled correctly.
+	StringAliasAddedValidation *string `json:"stringAliasAddedValidation,omitempty"`
+	// This tests that validation on a the string alias type itself is handled correctly.
+	StringAliasAlreadyValidated *string `json:"stringAliasAlreadyValidated,omitempty"`
+	// This tests string slice validation.
+	StringPair []string `json:"stringPair,omitempty"`
+	// This tests string alias slice item validation.
+	LongerStringArray []apiv1.LongerString `json:"longerStringArray,omitempty"`
+	// This tests that we can embed protocol correctly (without ending up with allOf).
+	// Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
+	// Defaults to "TCP".
+	Protocol *corev1.Protocol `json:"protocol,omitempty"`
+	// This tests that selectable field.
+	SelectableFieldString *string `json:"selectableFieldString,omitempty"`
+	// This tests that embedded struct, which is an alias type, is handled correctly.
+	EmbeddedStructApplyConfiguration `json:",inline"`
+	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
+	OnlyAllowSettingOnUpdate *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with

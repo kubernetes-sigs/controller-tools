@@ -27,7 +27,7 @@ SHELL:=/usr/bin/env bash
 #
 # Go.
 #
-GO_VERSION ?= 1.24.0
+GO_VERSION ?= 1.25.0
 GOTOOLCHAIN = go$(GO_VERSION)
 export GOTOOLCHAIN
 

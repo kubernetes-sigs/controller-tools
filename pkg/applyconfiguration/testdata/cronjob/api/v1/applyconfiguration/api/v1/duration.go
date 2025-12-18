@@ -8,6 +8,10 @@ import (
 
 // DurationApplyConfiguration represents a declarative configuration of the Duration type for use
 // with apply.
+//
+// Duration has a custom Marshaler but no markers.
+// We want the CRD generation to infer type information
+// from the go types and ignore the presense of the Marshaler.
 type DurationApplyConfiguration struct {
 	Value *time.Duration `json:"value,omitempty"`
 }
