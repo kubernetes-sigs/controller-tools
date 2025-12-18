@@ -10,6 +10,8 @@ import (
 
 // CronJobApplyConfiguration represents a declarative configuration of the CronJob type for use
 // with apply.
+//
+// CronJob is the Schema for the cronjobs API
 type CronJobApplyConfiguration struct {
 	metav1.TypeMetaApplyConfiguration    `json:",inline"`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -27,6 +29,7 @@ func CronJob(name, namespace string) *CronJobApplyConfiguration {
 	b.WithAPIVersion("testdata.kubebuilder.io/v1")
 	return b
 }
+
 func (b CronJobApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

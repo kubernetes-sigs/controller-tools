@@ -10,16 +10,27 @@ import (
 
 // CronJobStatusApplyConfiguration represents a declarative configuration of the CronJobStatus type for use
 // with apply.
+//
+// CronJobStatus defines the observed state of CronJob
 type CronJobStatusApplyConfiguration struct {
-	Active                []corev1.ObjectReference    `json:"active,omitempty"`
-	LastScheduleTime      *metav1.Time                `json:"lastScheduleTime,omitempty"`
-	LastScheduleTime2     *apiv1.Time2                `json:"lastScheduleTime2,omitempty"`
-	LastScheduleMicroTime *metav1.MicroTime           `json:"lastScheduleMicroTime,omitempty"`
-	LastActiveLogURL      *apiv1.URL                  `json:"lastActiveLogURL,omitempty"`
-	LastActiveLogURL2     *apiv1.URL2                 `json:"lastActiveLogURL2,omitempty"`
-	LastActiveLogURL3     *apiv1.URL3                 `json:"lastActiveLogURL3,omitempty"`
-	LastActiveLogURL4     *apiv1.URL4                 `json:"lastActiveLogURL4,omitempty"`
-	Runtime               *DurationApplyConfiguration `json:"duration,omitempty"`
+	// A list of pointers to currently running jobs.
+	Active []corev1.ObjectReference `json:"active,omitempty"`
+	// Information when was the last time the job was successfully scheduled.
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
+	// Information when was the last time the job was successfully scheduled.
+	LastScheduleTime2 *apiv1.Time2 `json:"lastScheduleTime2,omitempty"`
+	// Information about the last time the job was successfully scheduled,
+	// with microsecond precision.
+	LastScheduleMicroTime *metav1.MicroTime `json:"lastScheduleMicroTime,omitempty"`
+	// LastActiveLogURL specifies the logging url for the last started job
+	LastActiveLogURL *apiv1.URL `json:"lastActiveLogURL,omitempty"`
+	// LastActiveLogURL2 specifies the logging url for the last started job
+	LastActiveLogURL2 *apiv1.URL2 `json:"lastActiveLogURL2,omitempty"`
+	// LastActiveLogURL3 specifies the logging url for the last started job
+	LastActiveLogURL3 *apiv1.URL3 `json:"lastActiveLogURL3,omitempty"`
+	// LastActiveLogURL4 specifies the logging url for the last started job
+	LastActiveLogURL4 *apiv1.URL4                 `json:"lastActiveLogURL4,omitempty"`
+	Runtime           *DurationApplyConfiguration `json:"duration,omitempty"`
 }
 
 // CronJobStatusApplyConfiguration constructs a declarative configuration of the CronJobStatus type for use with

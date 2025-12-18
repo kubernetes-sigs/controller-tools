@@ -4,7 +4,10 @@ package v1
 
 // EmbeddedStructApplyConfiguration represents a declarative configuration of the EmbeddedStruct type for use
 // with apply.
+//
+// EmbeddedStruct is for testing that embedded struct is handled correctly when it is used through an alias type.
 type EmbeddedStructApplyConfiguration struct {
+	// FromEmbedded is a field from the embedded struct that was used through an alias type.
 	FromEmbedded *string `json:"fromEmbedded,omitempty"`
 }
 
