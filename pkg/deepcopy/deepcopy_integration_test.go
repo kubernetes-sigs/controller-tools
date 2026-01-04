@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
@@ -100,6 +101,66 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		By("comparing the two")
 		Expect(string(outContents)).To(Equal(string(expectedFile)), "generated code not as expected, check pkg/deepcopy/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(outContents, expectedFile))
+
+		By("checking for errors")
+		Expect(hadErrs).To(BeFalse())
+	})
+
+	It("should not generate empty import blocks for types without external dependencies", func() {
+		By("switching into simpletypes testdata directory")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/simpletypes")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		output := make(outputToMap)
+
+		By("initializing the runtime")
+		optionsRegistry := &markers.Registry{}
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("object", markers.DescribesPackage, deepcopy.Generator{})))).To(Succeed())
+		rt, err := genall.FromOptions(optionsRegistry, []string{"object"})
+		Expect(err).NotTo(HaveOccurred())
+		rt.OutputRules = genall.OutputRules{Default: output}
+
+		By("running the generator and checking for errors")
+		hadErrs := rt.Run()
+
+		By("checking that we got output contents")
+		Expect(output.fileList()).To(ContainElement("zz_generated.deepcopy.go"))
+		outFile := output["zz_generated.deepcopy.go"]
+		Expect(outFile).NotTo(BeNil())
+		outContents := string(outFile.contents)
+
+		By("verifying no empty import block exists")
+		Expect(outContents).NotTo(ContainSubstring("import ()"), "generated code should not contain empty import block")
+		Expect(outContents).NotTo(ContainSubstring("import (\n)"), "generated code should not contain empty import block")
+
+		By("verifying no import block at all when no imports needed")
+		lines := strings.Split(outContents, "\n")
+		for i, line := range lines {
+			if strings.HasPrefix(line, "package ") {
+				// The line after package declaration should not be "import ("
+				if i+1 < len(lines) && i+2 < len(lines) {
+					// Allow for empty lines between package and first function
+					nextNonEmptyLine := ""
+					for j := i + 1; j < len(lines); j++ {
+						if strings.TrimSpace(lines[j]) != "" {
+							nextNonEmptyLine = lines[j]
+							break
+						}
+					}
+					Expect(nextNonEmptyLine).NotTo(HavePrefix("import"), "should not have import block when no imports are needed")
+				}
+				break
+			}
+		}
+
+		By("loading the expected code")
+		expectedFile, err := os.ReadFile("zz_generated.deepcopy.go")
+		Expect(err).NotTo(HaveOccurred())
+
+		By("comparing the generated output with expected")
+		Expect(outContents).To(Equal(string(expectedFile)), "generated code not as expected\n\nDiff:\n\n%s", cmp.Diff([]byte(outContents), expectedFile))
 
 		By("checking for errors")
 		Expect(hadErrs).To(BeFalse())
