@@ -124,6 +124,8 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		By("running the generator and checking for errors")
 		hadErrs := rt.Run()
+		By("checking for errors")
+		Expect(hadErrs).To(BeFalse())
 
 		By("checking that we got output contents")
 		Expect(output.fileList()).To(ContainElement("zz_generated.deepcopy.go"))
@@ -161,8 +163,5 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 
 		By("comparing the generated output with expected")
 		Expect(outContents).To(Equal(string(expectedFile)), "generated code not as expected\n\nDiff:\n\n%s", cmp.Diff([]byte(outContents), expectedFile))
-
-		By("checking for errors")
-		Expect(hadErrs).To(BeFalse())
 	})
 })

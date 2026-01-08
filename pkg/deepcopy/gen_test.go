@@ -109,7 +109,7 @@ func TestWriteHeader(t *testing.T) {
 			output := buf.String()
 
 			// Check for empty import block "import ()"
-			if strings.Contains(output, "import (\n)") {
+			if strings.Contains(output, "import ()") {
 				t.Error("generated code contains empty import block 'import ()'")
 			}
 
