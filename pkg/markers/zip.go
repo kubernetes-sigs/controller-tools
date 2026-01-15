@@ -77,20 +77,21 @@ func extractDoc(node ast.Node, decl *ast.GenDecl) string {
 
 	outLines := make([]string, 0, len(lines))
 	var insideCodeBlock bool
-	for i, line := range lines {
+	var currentParagraph []string
+
+	flushParagraph := func() {
+		if len(currentParagraph) > 0 {
+			outLines = append(outLines, strings.Join(currentParagraph, " "))
+			currentParagraph = currentParagraph[:0]
+		}
+	}
+
+	for _, line := range lines {
 		if isAsteriskComment {
 			// Trim any extranous whitespace,
 			// for handling /*…*/-style comments,
 			// which have whitespace preserved in go/ast:
 			line = strings.TrimSpace(line)
-		}
-
-		// Respect that double-newline means
-		// actual newline:
-		if line == "" {
-			lines[i] = "\n"
-		} else {
-			lines[i] = line
 		}
 
 		// Recognize markdown code blocks (``` or ~~~)
@@ -114,8 +115,19 @@ func extractDoc(node ast.Node, decl *ast.GenDecl) string {
 			}
 		}
 
-		outLines = append(outLines, line)
+		if line == "" {
+			flushParagraph()
+			outLines = append(outLines, "")
+		} else if insideCodeBlock {
+			flushParagraph()
+			outLines = append(outLines, line)
+		} else {
+			currentParagraph = append(currentParagraph, line)
+		}
 	}
+
+	flushParagraph()
+
 	return strings.Join(outLines, "\n")
 }
 
