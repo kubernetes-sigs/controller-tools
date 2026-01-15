@@ -17,9 +17,11 @@ limitations under the License.
 package markers
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -673,6 +675,11 @@ func (m XValidation) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) erro
 		Reason:            reason,
 		FieldPath:         m.FieldPath,
 		OptionalOldSelf:   m.OptionalOldSelf,
+	})
+	// Sort XValidations by rule to ensure deterministic output order.
+	// Markers are processed from a map with non-deterministic iteration order.
+	slices.SortFunc(schema.XValidations, func(a, b apiextensionsv1.ValidationRule) int {
+		return cmp.Compare(a.Rule, b.Rule)
 	})
 	return nil
 }
