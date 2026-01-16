@@ -115,10 +115,7 @@ func extractDoc(node ast.Node, decl *ast.GenDecl) string {
 			}
 		}
 
-		if line == "" {
-			flushParagraph()
-			outLines = append(outLines, "")
-		} else if insideCodeBlock {
+		if line == "" || insideCodeBlock {
 			flushParagraph()
 			outLines = append(outLines, line)
 		} else {
