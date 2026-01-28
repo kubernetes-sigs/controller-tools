@@ -82,7 +82,7 @@ func (Rule) Help() *markers.DefinitionHelp {
 			},
 			"Namespace": {
 				Summary: "specifies the scope of the Rule.",
-				Details: "If not set, the Rule belongs to the generated ClusterRole.\nIf set, the Rule belongs to a Role, whose namespace is specified by this field.",
+				Details: "If not set, the Rule belongs to the generated ClusterRole.\nIf set, the Rule belongs to a Role, whose namespace is specified by this field.\nThe generated Role name will be suffixed with the namespace (e.g., \"manager-role-namespace\")\nto ensure uniqueness when multiple namespace-scoped Roles are generated. This suffix is\nONLY applied to namespace-scoped Roles, not to ClusterRoles.",
 			},
 		},
 	}

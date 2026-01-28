@@ -37,3 +37,5 @@ package controller
 // +kubebuilder:rbac:groups=core;"";some-other-to-deduplicate-with-core,resources=me,verbs=list;get
 // +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=get;update;patch;create,namespace=here
 // +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=*,namespace=here
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,resources=deployments,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",namespace=users,resources=secrets,verbs=get;list;watch

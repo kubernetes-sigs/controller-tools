@@ -59,6 +59,9 @@ type Rule struct {
 	// Namespace specifies the scope of the Rule.
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
+	// The generated Role name will be suffixed with the namespace (e.g., "manager-role-namespace")
+	// to ensure uniqueness when multiple namespace-scoped Roles are generated. This suffix is
+	// ONLY applied to namespace-scoped Roles, not to ClusterRoles.
 	Namespace string `marker:",optional"`
 }
 
@@ -347,7 +350,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 					APIVersion: rbacv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      roleName,
+					Name:      fmt.Sprintf("%s-%s", roleName, ns),
 					Namespace: ns,
 				},
 				Rules: policyRules,
