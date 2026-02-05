@@ -128,7 +128,10 @@ func removeDupAndSort(strs []string) []string {
 		}
 	}
 
-	result := make([]string, 0, len(set))
+	var result []string
+	if len(set) > 0 {
+		result = make([]string, 0, len(set))
+	}
 	for str := range set {
 		result = append(result, str)
 	}
