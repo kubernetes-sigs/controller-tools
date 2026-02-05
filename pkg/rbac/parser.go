@@ -128,7 +128,7 @@ func removeDupAndSort(strs []string) []string {
 		}
 	}
 
-	var result []string
+	result := make([]string, 0, len(set))
 	for str := range set {
 		result = append(result, str)
 	}
@@ -307,7 +307,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 				rule.Verbs = []string{"*"}
 			}
 		}
-		var policyRules []rbacv1.PolicyRule
+		policyRules := make([]rbacv1.PolicyRule, 0, len(keys))
 		for _, key := range keys {
 			policyRules = append(policyRules, ruleMap[key].ToRule())
 		}
@@ -315,7 +315,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 	}
 
 	// collect all the namespaces and sort them
-	var namespaces []string
+	namespaces := make([]string, 0, len(rulesByNSResource))
 	for ns := range rulesByNSResource {
 		namespaces = append(namespaces, ns)
 	}

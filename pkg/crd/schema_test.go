@@ -74,7 +74,7 @@ func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
 
 func failIfErrors(t *testing.T, errs []packages.Error) {
 	if len(errs) > 0 {
-		var msgs []string
+		msgs := make([]string, 0, len(errs))
 		for _, e := range errs {
 			msgs = append(msgs, e.Msg)
 		}
