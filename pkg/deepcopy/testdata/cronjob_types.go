@@ -159,12 +159,28 @@ type SpecificCases struct {
 
 	// Case: kubernetes-sigs/controller-tools#1136
 	StringAliasPtr *StringAlias `json:"stringAliasPtr,omitempty"`
+
+	// Case: kubernetes-sigs/controller-tools#586, kubernetes-sigs/controller-tools#1312
+	NestedAliasSlices *Bars `json:"nestedAliasSlices,omitempty"`
+
+	// Case: kubernetes-sigs/controller-tools#1312
+	NestedAliasMaps *MapAlias `json:"nestedAliasMaps,omitempty"`
 }
 
 type StringAlias = string
 
 // Test aliases to basic types
 type TotallyAString string
+
+// Test nested pointer to type-aliased map
+type MapAlias map[string]string
+
+// Test nested pointer to type-aliased slices
+type Bars []*Bar
+
+type Bar struct {
+	Name string `json:"name,omitempty"`
+}
 
 // Tests manual DeepCopy with a pointer receiver
 type DeepCopyPtr struct{}
