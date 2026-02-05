@@ -121,6 +121,10 @@ func (r *Rule) normalize() {
 // removeDupAndSort removes duplicates in strs, sorts the items, and returns a
 // new slice of strings.
 func removeDupAndSort(strs []string) []string {
+	if len(strs) == 0 {
+		return nil
+	}
+
 	set := make(map[string]bool)
 	for _, str := range strs {
 		if _, ok := set[str]; !ok {
@@ -128,10 +132,7 @@ func removeDupAndSort(strs []string) []string {
 		}
 	}
 
-	var result []string
-	if len(set) > 0 {
-		result = make([]string, 0, len(set))
-	}
+	result := make([]string, 0, len(set))
 	for str := range set {
 		result = append(result, str)
 	}
