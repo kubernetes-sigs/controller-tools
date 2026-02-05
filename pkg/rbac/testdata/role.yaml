@@ -132,7 +132,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: manager-role
+  name: manager-role-here
   namespace: here
 rules:
 - apiGroups:
@@ -145,7 +145,24 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: manager-role
+  name: manager-role-infrastructure
+  namespace: infrastructure
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-park
   namespace: park
 rules:
 - apiGroups:
@@ -158,7 +175,22 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: manager-role
+  name: manager-role-users
+  namespace: users
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: manager-role-zoo
   namespace: zoo
 rules:
 - apiGroups:
@@ -168,4 +200,3 @@ rules:
   - jobs
   verbs:
   - get
-
