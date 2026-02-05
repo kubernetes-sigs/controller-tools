@@ -109,7 +109,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
 
 		rt, err := genall.FromOptions(optionsRegistry, []string{
-			"applyconfiguration",
+			"applyconfiguration:externalApplyConfigurations=sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external.ExternalData@sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/externalac",
 			"paths=./api/v1",
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -218,7 +218,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 		rt, err := genall.FromOptions(optionsRegistry, []string{
 			"crd:allowDangerousTypes=true,ignoreUnexportedFields=true", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
-			"applyconfiguration",
+			"applyconfiguration:externalApplyConfigurations=sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external.ExternalData@sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/externalac",
 			"paths=./api/v1",
 		})
 		Expect(err).NotTo(HaveOccurred())

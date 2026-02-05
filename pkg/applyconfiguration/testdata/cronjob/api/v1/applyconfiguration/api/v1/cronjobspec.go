@@ -184,6 +184,8 @@ type CronJobSpecApplyConfiguration struct {
 	EmbeddedStructApplyConfiguration `json:",inline"`
 	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
 	OnlyAllowSettingOnUpdate *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
+	// EmbeddedExternal tests the ExternalApplyConfigurations feature.
+	EmbeddedExternal *EmbeddedExternalSpecApplyConfiguration `json:"embeddedExternal,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with
@@ -916,5 +918,13 @@ func (b *CronJobSpecApplyConfiguration) WithFromEmbedded(value string) *CronJobS
 // If called multiple times, the OnlyAllowSettingOnUpdate field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithOnlyAllowSettingOnUpdate(value int32) *CronJobSpecApplyConfiguration {
 	b.OnlyAllowSettingOnUpdate = &value
+	return b
+}
+
+// WithEmbeddedExternal sets the EmbeddedExternal field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EmbeddedExternal field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithEmbeddedExternal(value *EmbeddedExternalSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.EmbeddedExternal = value
 	return b
 }

@@ -36,6 +36,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -390,6 +392,10 @@ type CronJobSpec struct {
 	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
 	// +kubebuilder:validation:XValidation:rule="oldSelf.hasValue() || self == 0",message="must be set to 0 on creation. can be set to any value on an update.",optionalOldSelf=true
 	OnlyAllowSettingOnUpdate int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
+
+	// EmbeddedExternal tests the ExternalApplyConfigurations feature.
+	// +optional
+	EmbeddedExternal *EmbeddedExternalSpec `json:"embeddedExternal,omitempty"`
 }
 
 type InlineAlias = EmbeddedStruct
@@ -765,4 +771,13 @@ type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CronJob `json:"items"`
+}
+
+// EmbeddedExternalSpec embeds an external type with json:",inline".
+// Used to test the ExternalApplyConfigurations feature.
+type EmbeddedExternalSpec struct {
+	external.ExternalData `json:",inline"`
+
+	// Extra is an additional field.
+	Extra string `json:"extra,omitempty"`
 }
