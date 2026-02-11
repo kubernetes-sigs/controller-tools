@@ -60,6 +60,19 @@ type Rule struct {
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
 	Namespace string `marker:",optional"`
+	// RoleName specifies a custom name for the Role or ClusterRole.
+	// If not set, uses the default roleName from the generator.
+	// Useful for avoiding name conflicts when the same roleName is used across multiple namespaces.
+	//
+	// Example: When using namespace-scoped RBAC markers with kustomize's global namespace transformation,
+	// multiple Roles might end up in the same namespace with identical names, causing an "ID conflict" error.
+	// Use roleName to ensure each Role has a unique name:
+	//
+	//   // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-manager,resources=deployments,verbs=get;list
+	//   // +kubebuilder:rbac:groups="",namespace=users,roleName=user-secrets,resources=secrets,verbs=get
+	//
+	// This generates Roles named "infra-manager" and "user-secrets" instead of both being "manager-role".
+	RoleName string `marker:"roleName,optional"`
 }
 
 // ruleKey represents the resources and non-resources a Rule applies.
@@ -179,16 +192,30 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 // GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
 // The order of the objs in the returned slice is stable and determined by their namespaces.
 func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error) {
-	rulesByNSResource := make(map[string][]*Rule)
+	// Group rules by namespace:roleName combination
+	// Key format: "namespace:roleName" or ":roleName" for ClusterRole
+	type nsRoleKey struct {
+		namespace string
+		roleName  string
+	}
+	rulesByNSRole := make(map[nsRoleKey][]*Rule)
+
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
 		if err != nil {
 			root.AddError(err)
 		}
 
-		// group RBAC markers by namespace and separate by resource
+		// group RBAC markers by namespace and roleName, separate by resource
 		for _, markerValue := range markerSet[RuleDefinition.Name] {
 			rule := markerValue.(Rule)
+			// Use custom roleName if specified, otherwise use default
+			effectiveRoleName := rule.RoleName
+			if effectiveRoleName == "" {
+				effectiveRoleName = roleName
+			}
+			key := nsRoleKey{namespace: rule.Namespace, roleName: effectiveRoleName}
+
 			if len(rule.Resources) == 0 {
 				// Add a rule without any resource if Resources is empty.
 				r := Rule{
@@ -197,10 +224,10 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 					ResourceNames: rule.ResourceNames,
 					URLs:          rule.URLs,
 					Namespace:     rule.Namespace,
+					RoleName:      effectiveRoleName,
 					Verbs:         rule.Verbs,
 				}
-				namespace := r.Namespace
-				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
+				rulesByNSRole[key] = append(rulesByNSRole[key], &r)
 				continue
 			}
 			for _, resource := range rule.Resources {
@@ -210,10 +237,10 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 					ResourceNames: rule.ResourceNames,
 					URLs:          rule.URLs,
 					Namespace:     rule.Namespace,
+					RoleName:      effectiveRoleName,
 					Verbs:         rule.Verbs,
 				}
-				namespace := r.Namespace
-				rulesByNSResource[namespace] = append(rulesByNSResource[namespace], &r)
+				rulesByNSRole[key] = append(rulesByNSRole[key], &r)
 			}
 		}
 	}
@@ -318,29 +345,35 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 		return policyRules
 	}
 
-	// collect all the namespaces and sort them
-	namespaces := make([]string, 0, len(rulesByNSResource))
-	for ns := range rulesByNSResource {
-		namespaces = append(namespaces, ns)
+	// collect all the namespace:roleName keys and sort them for stable output
+	keys := make([]nsRoleKey, 0, len(rulesByNSRole))
+	for key := range rulesByNSRole {
+		keys = append(keys, key)
 	}
-	slices.Sort(namespaces)
+	slices.SortFunc(keys, func(a, b nsRoleKey) int {
+		// Sort by namespace first, then by roleName
+		if a.namespace != b.namespace {
+			return strings.Compare(a.namespace, b.namespace)
+		}
+		return strings.Compare(a.roleName, b.roleName)
+	})
 
-	// process the items in rulesByNS by the order specified in `namespaces` to make sure that the Role order is stable
+	// process the items in rulesByNSRole by the sorted order to make sure the output is stable
 	var objs []any
-	for _, ns := range namespaces {
-		rules := rulesByNSResource[ns]
+	for _, key := range keys {
+		rules := rulesByNSRole[key]
 		policyRules := NormalizeRules(rules)
 		if len(policyRules) == 0 {
 			continue
 		}
-		if ns == "" {
+		if key.namespace == "" {
 			objs = append(objs, rbacv1.ClusterRole{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "ClusterRole",
 					APIVersion: rbacv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: roleName,
+					Name: key.roleName,
 				},
 				Rules: policyRules,
 			})
@@ -351,8 +384,8 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 					APIVersion: rbacv1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      roleName,
-					Namespace: ns,
+					Name:      key.roleName,
+					Namespace: key.namespace,
 				},
 				Rules: policyRules,
 			})
