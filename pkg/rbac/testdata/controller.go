@@ -37,3 +37,10 @@ package controller
 // +kubebuilder:rbac:groups=core;"";some-other-to-deduplicate-with-core,resources=me,verbs=list;get
 // +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=get;update;patch;create,namespace=here
 // +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=*,namespace=here
+// Test custom roleName to avoid conflicts
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=deployments,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",namespace=users,roleName=user-secrets-reader,resources=secrets,verbs=get;list;watch
+// Test multiple markers with same custom roleName in same namespace (should merge)
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=statefulsets,verbs=get;list
+// Test backward compatibility - no roleName specified (uses default)
+// +kubebuilder:rbac:groups=monitoring,namespace=observability,resources=prometheuses,verbs=get;list
