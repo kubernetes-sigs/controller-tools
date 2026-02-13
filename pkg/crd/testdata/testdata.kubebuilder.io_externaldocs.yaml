@@ -1,0 +1,65 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: externaldocs.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: ExternalDoc
+    listKind: ExternalDocList
+    plural: externaldocs
+    singular: externaldoc
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ExternalDoc is the Schema for the external docs API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExternalDocSpec defines the desired state of ExternalDoc
+            properties:
+              fieldWithExternalDoc:
+                description: This tests that external documentation can be attached
+                  to a field with url and description.
+                externalDocs:
+                  description: external docs description
+                  url: https://example.com/docs
+                type: string
+              fieldWithExternalDocURLOnly:
+                description: This tests that external documentation can be attached
+                  with only url.
+                externalDocs:
+                  url: https://example.com/docs
+                type: string
+              typeWithExternalDoc:
+                description: This tests that external documentation from a type is
+                  propagated.
+                externalDocs:
+                  description: type-level external docs
+                  url: https://example.com/type-docs
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true

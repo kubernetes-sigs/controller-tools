@@ -78,6 +78,26 @@ func (DeprecatedVersion) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (ExternalDoc) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "specifies external documentation for this field or type.",
+			Details: "The url is required and must be a valid URL. The description is optional\nand provides a short description of the external documentation.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"URL": {
+				Summary: "specifies the URL for the target documentation.",
+				Details: "",
+			},
+			"Description": {
+				Summary: "is a short description of the target documentation.",
+				Details: "",
+			},
+		},
+	}
+}
+
 func (Enum) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

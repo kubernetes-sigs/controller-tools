@@ -224,6 +224,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("ExternalDoc API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./external_docs/..."}
+				expPkgLen = 1
+			})
+			It("should successfully generate the CRD with external documentation", func() {
+				assertCRD(pkgs[0], "ExternalDoc", "testdata.kubebuilder.io_externaldocs.yaml")
+			})
+		})
+
 		Context("CronJob API without group", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./nogroup"}
