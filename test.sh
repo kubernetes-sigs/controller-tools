@@ -38,9 +38,7 @@ else
   reset=''
 fi
 
-k8s_version=1.11.0
-# keeping older version around to reproduce any issue (just in case)
-#k8s_version=1.10.1
+k8s_version=v1.35.0
 goarch=amd64
 goos="unknown"
 
@@ -56,7 +54,7 @@ if [[ "$goos" == "unknown" ]]; then
 fi
 
 tmp_root=/tmp
-kb_root_dir=$tmp_root/kubebuilder
+kb_root_dir=$tmp_root/controller-tools/envtest
 
 function header_text {
   echo "$header$*$reset"
@@ -78,11 +76,12 @@ function fetch_kb_tools {
   fi
 
   header_text "fetching tools"
-  kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
-  kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
-
+  kb_tools_archive_name="envtest-$k8s_version-$goos-$goarch.tar.gz"
+  kb_tools_download_url="https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-$k8s_version/$kb_tools_archive_name"
   kb_tools_archive_path="$tmp_root/$kb_tools_archive_name"
+
   if [ ! -f $kb_tools_archive_path ]; then
+    echo "Downloading $kb_tools_download_url to $kb_tools_archive_path"
     curl -sL ${kb_tools_download_url} -o "$kb_tools_archive_path"
   fi
   tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
@@ -92,9 +91,10 @@ function setup_envs {
   header_text "setting up env vars"
 
   # Setup env vars
-  export TEST_ASSET_KUBECTL=$kb_root_dir/bin/kubectl
-  export TEST_ASSET_KUBE_APISERVER=$kb_root_dir/bin/kube-apiserver
-  export TEST_ASSET_ETCD=$kb_root_dir/bin/etcd
+  export TEST_ASSET_KUBECTL=$kb_root_dir/kubectl
+  export TEST_ASSET_KUBE_APISERVER=$kb_root_dir/kube-apiserver
+  export TEST_ASSET_ETCD=$kb_root_dir/etcd
+  env | grep TEST_ASSET
 }
 
 header_text "using tools"
