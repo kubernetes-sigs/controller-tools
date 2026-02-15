@@ -104,6 +104,14 @@ func (Config) Help() *markers.DefinitionHelp {
 				Summary: "allows mutating webhooks configuration to specify an external URL when generating",
 				Details: "the manifests, instead of using the internal service communication. Should be in format of\nhttps://address:port/path\nWhen this option is specified, the serviceConfig.Service is removed from webhook the manifest.\nThe URL configuration should be between quotes.\n`url` cannot be specified when `path` is specified.",
 			},
+			"NamespaceSelector": {
+				Summary: "decides whether to run the webhook on a request based on the namespace labels.",
+				Details: "An object is selected if the namespace matches the selector.\n\nExamples:\n  // Match namespaces with a specific label\n  namespaceSelector=matchLabels~environment=production\n\n  // Exclude the control-plane namespace (solves webhook bootstrap problem)\n  namespaceSelector=matchExpressions~key=control-plane.operator=DoesNotExist\n\n  // Match multiple environments\n  namespaceSelector=matchExpressions~key=environment.operator=In.values=dev|staging|prod\n\n  // Combine label match with expression\n  namespaceSelector=matchLabels~team=platform&matchExpressions~key=tier.operator=NotIn.values=system\n\nOperators: In, NotIn, Exists, DoesNotExist\nSyntax: ~ separates selector type, . separates fields, & combines selectors, | separates values",
+			},
+			"ObjectSelector": {
+				Summary: "decides whether to run the webhook on a request based on the object's labels.",
+				Details: "An object is selected if it matches the selector.\n\nExamples:\n  // Only process objects managed by this operator\n  objectSelector=matchLabels~managed-by=my-operator\n\n  // Only process production workloads\n  objectSelector=matchLabels~environment=production.tier=critical\n\n  // Exclude objects with a specific label\n  objectSelector=matchExpressions~key=skip-validation.operator=DoesNotExist\n\n  // Target specific application types\n  objectSelector=matchExpressions~key=app-type.operator=In.values=web|api|worker\n\nOperators: In, NotIn, Exists, DoesNotExist\nSyntax: ~ separates selector type, . separates fields, & combines selectors, | separates values",
+			},
 		},
 	}
 }
