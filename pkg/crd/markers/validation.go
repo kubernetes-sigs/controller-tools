@@ -168,6 +168,12 @@ func init() {
 }
 
 // Maximum specifies the maximum numeric value that this field can have.
+//
+// Example:
+//
+//	// +kubebuilder:validation:Maximum=100
+//	Percentage int32
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Maximum float64
 
@@ -176,6 +182,12 @@ func (m Maximum) Value() float64 {
 }
 
 // Minimum specifies the minimum numeric value that this field can have. Negative numbers are supported.
+//
+// Example:
+//
+//	// +kubebuilder:validation:Minimum=0
+//	Replicas int32
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Minimum float64
 
@@ -184,14 +196,34 @@ func (m Minimum) Value() float64 {
 }
 
 // ExclusiveMinimum indicates that the minimum is "up to" but not including that value.
+//
+// Example (value must be greater than 0, not greater than or equal to 0):
+//
+//	// +kubebuilder:validation:Minimum=0
+//	// +kubebuilder:validation:ExclusiveMinimum=true
+//	PositiveNumber float64
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type ExclusiveMinimum bool
 
 // ExclusiveMaximum indicates that the maximum is "up to" but not including that value.
+//
+// Example (value must be less than 100, not less than or equal to 100):
+//
+//	// +kubebuilder:validation:Maximum=100
+//	// +kubebuilder:validation:ExclusiveMaximum=true
+//	Percentage float64
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type ExclusiveMaximum bool
 
 // MultipleOf specifies that this field must have a numeric value that's a multiple of this one.
+//
+// Example (value must be a multiple of 5):
+//
+//	// +kubebuilder:validation:MultipleOf=5
+//	Count int32
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MultipleOf float64
 
@@ -200,38 +232,92 @@ func (m MultipleOf) Value() float64 {
 }
 
 // MaxLength specifies the maximum length for this string.
+//
+// Example:
+//
+//	// +kubebuilder:validation:MaxLength=64
+//	Name string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MaxLength int
 
 // MinLength specifies the minimum length for this string.
+//
+// Example:
+//
+//	// +kubebuilder:validation:MinLength=1
+//	Name string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MinLength int
 
 // Pattern specifies that this string must match the given regular expression.
+//
+// Example (DNS subdomain):
+//
+//	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+//	DNSName string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Pattern string
 
 // MaxItems specifies the maximum length for this list.
+//
+// Example:
+//
+//	// +kubebuilder:validation:MaxItems=10
+//	Items []string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MaxItems int
 
 // MinItems specifies the minimum length for this list.
+//
+// Example:
+//
+//	// +kubebuilder:validation:MinItems=1
+//	Endpoints []string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MinItems int
 
 // UniqueItems specifies that all items in this list must be unique.
+//
+// Example:
+//
+//	// +kubebuilder:validation:UniqueItems=true
+//	Tags []string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type UniqueItems bool
 
 // MaxProperties restricts the number of keys in an object
+//
+// Example:
+//
+//	// +kubebuilder:validation:MaxProperties=10
+//	Labels map[string]string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MaxProperties int
 
 // MinProperties restricts the number of keys in an object
+//
+// Example:
+//
+//	// +kubebuilder:validation:MinProperties=1
+//	Metadata map[string]string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MinProperties int
 
 // Enum specifies that this (scalar) field is restricted to the *exact* values specified here.
+//
+// Example:
+//
+//	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer
+//	ServiceType string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Enum []any
 
@@ -239,6 +325,14 @@ type Enum []any
 //
 // For example, a date-time field would be marked as "type: string" and
 // "format: date-time".
+//
+// Common formats include: "int32", "int64", "float", "double", "byte", "date", "date-time", "password".
+//
+// Example:
+//
+//	// +kubebuilder:validation:Format=date-time
+//	CreatedAt string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Format string
 
@@ -246,12 +340,27 @@ type Format string
 //
 // This generally must be paired with custom serialization.  For example, the
 // metav1.Time field would be marked as "type: string" and "format: date-time".
+//
+// Common types include: "string", "number", "integer", "boolean", "array", "object".
+//
+// Example:
+//
+//	// +kubebuilder:validation:Type=string
+//	// +kubebuilder:validation:Format=date-time
+//	Time metav1.Time
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Type string
 
 // Nullable marks this field as allowing the "null" value.
 //
 // This is often not necessary, but may be helpful with custom serialization.
+//
+// Example:
+//
+//	// +nullable
+//	Description *string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Nullable struct{}
 
@@ -263,8 +372,32 @@ type Nullable struct{}
 // "delete"}`). Defaults should be defined in pruned form, and only best-effort
 // validation will be performed. Full validation of a default requires
 // submission of the containing CRD to an apiserver.
+//
+// Examples:
+//
+//	// String default
+//	// +kubebuilder:default="ClusterIP"
+//	ServiceType string
+//
+//	// Integer default
+//	// +kubebuilder:default=3
+//	Replicas int32
+//
+//	// Boolean default
+//	// +kubebuilder:default=true
+//	Enabled bool
+//
+//	// Array default
+//	// +kubebuilder:default={80,443}
+//	Ports []int
+//
+//	// Object default
+//	// +kubebuilder:default={replicas: 1}
+//	Config map[string]interface{}
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Default struct {
+	// Value is the default value. It can be any value valid for the field type.
 	Value any
 }
 
@@ -274,8 +407,20 @@ type Default struct {
 // making the schema more understandable when viewed in documentation tools.
 // It's a metadata field that doesn't affect validation but provides
 // important context about what the schema represents.
+//
+// Examples:
+//
+//	// Simple title
+//	// +kubebuilder:title="Replica Count"
+//	Replicas int32
+//
+//	// Descriptive title
+//	// +kubebuilder:title="Database Connection Configuration"
+//	DatabaseConfig DatabaseConfig
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Title struct {
+	// Value is the title text to be shown in OpenAPI documentation.
 	Value any
 }
 
@@ -288,8 +433,32 @@ type Title struct {
 // "delete"}`). Defaults should be defined in pruned form, and only best-effort
 // validation will be performed. Full validation of a default requires
 // submission of the containing CRD to an apiserver.
+//
+// Examples:
+//
+//	// String default (note the JSON quotes)
+//	// +default="ClusterIP"
+//	ServiceType string
+//
+//	// Integer default
+//	// +default=3
+//	Replicas int32
+//
+//	// Boolean default
+//	// +default=true
+//	Enabled bool
+//
+//	// Array default (JSON format)
+//	// +default=[80,443]
+//	Ports []int
+//
+//	// Object default (JSON format)
+//	// +default={"policy": "delete"}
+//	Config map[string]interface{}
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type KubernetesDefault struct {
+	// Value is the default value in JSON format. It can be any value valid for the field type.
 	Value any
 }
 
@@ -301,8 +470,34 @@ type KubernetesDefault struct {
 // "delete"}`). Examples should be defined in pruned form, and only best-effort
 // validation will be performed. Full validation of an example requires
 // submission of the containing CRD to an apiserver.
+//
+// Examples are shown in API documentation to help users understand the expected format.
+//
+// Usage Examples:
+//
+//	// String example
+//	// +kubebuilder:example="my-service"
+//	ServiceName string
+//
+//	// Integer example
+//	// +kubebuilder:example=5
+//	Replicas int32
+//
+//	// Boolean example
+//	// +kubebuilder:example=false
+//	Debug bool
+//
+//	// Array example
+//	// +kubebuilder:example={8080,8443}
+//	Ports []int
+//
+//	// Object example
+//	// +kubebuilder:example={cpu: "100m", memory: "128Mi"}
+//	Resources map[string]string
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Example struct {
+	// Value is the example value to be shown in API documentation.
 	Value any
 }
 
@@ -318,6 +513,12 @@ type Example struct {
 // NB: The kubebuilder:validation:XPreserveUnknownFields variant is deprecated
 // in favor of the kubebuilder:pruning:PreserveUnknownFields variant.  They function
 // identically.
+//
+// Example:
+//
+//	// +kubebuilder:pruning:PreserveUnknownFields
+//	RawConfig map[string]interface{}
+//
 // +controllertools:marker:generateHelp:category="CRD processing"
 type XPreserveUnknownFields struct{}
 
@@ -327,6 +528,12 @@ type XPreserveUnknownFields struct{}
 // They are validated implicitly according to the semantics of the currently
 // running apiserver. It is not necessary to add any additional schema for these
 // field, yet it is possible. This can be combined with PreserveUnknownFields.
+//
+// Example:
+//
+//	// +kubebuilder:validation:EmbeddedResource
+//	Template runtime.RawExtension
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type XEmbeddedResource struct{}
 
@@ -335,6 +542,13 @@ type XEmbeddedResource struct{}
 // This is required when applying patterns or other validations to an IntOrString
 // field. Known information about the type is applied during the collapse phase
 // and as such is not normally available during marker application.
+//
+// Example:
+//
+//	// +kubebuilder:validation:XIntOrString
+//	// +kubebuilder:validation:Pattern="^(\\d+|\\d+%|)$"
+//	Port intstr.IntOrString
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type XIntOrString struct{}
 
@@ -345,6 +559,12 @@ type XIntOrString struct{}
 // tag is for embedding fields that hold JSONSchema typed objects.
 // Because this field disables all type checking, it is recommended
 // to be used only as a last resort.
+//
+// Example:
+//
+//	// +kubebuilder:validation:Schemaless
+//	JSONSchema apiextensionsv1.JSONSchemaProps
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Schemaless struct{}
 
@@ -365,6 +585,18 @@ func isIntegral(value float64) bool {
 //
 // This marker may be repeated to specify multiple expressions, all of
 // which must evaluate to true.
+//
+// Examples:
+//
+//	// Basic field validation
+//	// +kubebuilder:validation:XValidation:rule="self.minReplicas <= self.replicas && self.replicas <= self.maxReplicas",message="replicas must be between minReplicas and maxReplicas"
+//
+//	// Validation with custom reason
+//	// +kubebuilder:validation:XValidation:rule="self.x <= self.maxX",message="x cannot be greater than maxX",reason="FieldValueInvalid"
+//
+//	// Immutability check
+//	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type XValidation struct {
 	Rule              string
@@ -378,18 +610,47 @@ type XValidation struct {
 // AtMostOneOf adds a validation constraint that allows at most one of the specified fields.
 //
 // This marker may be repeated to specify multiple AtMostOneOf constraints that are mutually exclusive.
+//
+// Example:
+//
+//	// +kubebuilder:validation:AtMostOneOf=configMapRef;secretRef
+//	type MyType struct {
+//	    ConfigMapRef *ConfigMapRef
+//	    SecretRef *SecretRef
+//	}
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtMostOneOf []string
 
 // ExactlyOneOf adds a validation constraint that allows at exactly one of the specified fields.
 //
 // This marker may be repeated to specify multiple ExactlyOneOf constraints that are mutually exclusive.
+//
+// Example:
+//
+//	// +kubebuilder:validation:ExactlyOneOf=http;https;grpc
+//	type Protocol struct {
+//	    HTTP *HTTPConfig
+//	    HTTPS *HTTPSConfig
+//	    GRPC *GRPCConfig
+//	}
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type ExactlyOneOf []string
 
 // AtLeastOneOf adds a validation constraint that allows at least one of the specified fields.
 //
 // This marker may be repeated to specify multiple AtLeastOneOf constraints that are mutually exclusive.
+//
+// Example:
+//
+//	// +kubebuilder:validation:AtLeastOneOf=email;phone;address
+//	type Contact struct {
+//	    Email *string
+//	    Phone *string
+//	    Address *string
+//	}
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
 
