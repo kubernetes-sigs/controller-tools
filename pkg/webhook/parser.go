@@ -159,6 +159,46 @@ type Config struct {
 	// The URL configuration should be between quotes.
 	// `url` cannot be specified when `path` is specified.
 	URL string `marker:"url,optional"`
+
+	// NamespaceSelector decides whether to run the webhook on a request based on the namespace labels.
+	// An object is selected if the namespace matches the selector.
+	//
+	// Examples:
+	//   // Match namespaces with a specific label
+	//   namespaceSelector=matchLabels~environment=production
+	//
+	//   // Exclude the control-plane namespace (solves webhook bootstrap problem)
+	//   namespaceSelector=matchExpressions~key=control-plane.operator=DoesNotExist
+	//
+	//   // Match multiple environments
+	//   namespaceSelector=matchExpressions~key=environment.operator=In.values=dev|staging|prod
+	//
+	//   // Combine label match with expression
+	//   namespaceSelector=matchLabels~team=platform&matchExpressions~key=tier.operator=NotIn.values=system
+	//
+	// Operators: In, NotIn, Exists, DoesNotExist
+	// Syntax: ~ separates selector type, . separates fields, & combines selectors, | separates values
+	NamespaceSelector string `marker:"namespaceSelector,optional"`
+
+	// ObjectSelector decides whether to run the webhook on a request based on the object's labels.
+	// An object is selected if it matches the selector.
+	//
+	// Examples:
+	//   // Only process objects managed by this operator
+	//   objectSelector=matchLabels~managed-by=my-operator
+	//
+	//   // Only process production workloads
+	//   objectSelector=matchLabels~environment=production.tier=critical
+	//
+	//   // Exclude objects with a specific label
+	//   objectSelector=matchExpressions~key=skip-validation.operator=DoesNotExist
+	//
+	//   // Target specific application types
+	//   objectSelector=matchExpressions~key=app-type.operator=In.values=web|api|worker
+	//
+	// Operators: In, NotIn, Exists, DoesNotExist
+	// Syntax: ~ separates selector type, . separates fields, & combines selectors, | separates values
+	ObjectSelector string `marker:"objectSelector,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -178,6 +218,100 @@ func verbToAPIVariant(verbRaw string) admissionregv1.OperationType {
 	default:
 		return admissionregv1.OperationType(verbRaw)
 	}
+}
+
+// parseLabelSelector parses a label selector string into a metav1.LabelSelector.
+// Format examples:
+// - matchLabels: "matchLabels~key1=value1.key2=value2"
+// - matchExpressions: "matchExpressions~key=env.operator=In.values=dev|prod"
+// - combined: "matchLabels~key1=value1&matchExpressions~key=env.operator=In.values=dev|prod"
+func parseLabelSelector(selectorStr string) (*metav1.LabelSelector, error) {
+	if selectorStr == "" {
+		return nil, nil
+	}
+
+	selector := &metav1.LabelSelector{}
+
+	// Split by ampersand to handle matchLabels and matchExpressions (if combined)
+	for part := range strings.SplitSeq(selectorStr, "&") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		// Check if this is a matchLabels part
+		if labelsStr, ok := strings.CutPrefix(part, "matchLabels~"); ok {
+			if selector.MatchLabels == nil {
+				selector.MatchLabels = make(map[string]string)
+			}
+
+			// Parse key=value pairs separated by dots
+			for pair := range strings.SplitSeq(labelsStr, ".") {
+				pair = strings.TrimSpace(pair)
+				if pair == "" {
+					continue
+				}
+				kv := strings.SplitN(pair, "=", 2)
+				if len(kv) != 2 {
+					return nil, fmt.Errorf("invalid matchLabels format: %q, expected key=value", pair)
+				}
+				selector.MatchLabels[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+			}
+			continue
+		}
+
+		// Check if this is a matchExpressions part
+		if exprStr, ok := strings.CutPrefix(part, "matchExpressions~"); ok {
+			// Parse the match expression fields separated by dots
+			expr := &metav1.LabelSelectorRequirement{}
+
+			for field := range strings.SplitSeq(exprStr, ".") {
+				field = strings.TrimSpace(field)
+				if field == "" {
+					continue
+				}
+
+				kv := strings.SplitN(field, "=", 2)
+				if len(kv) != 2 {
+					return nil, fmt.Errorf("invalid matchExpression field format: %q, expected key=value", field)
+				}
+
+				key := strings.TrimSpace(kv[0])
+				value := strings.TrimSpace(kv[1])
+
+				switch key {
+				case "key":
+					expr.Key = value
+				case "operator":
+					expr.Operator = metav1.LabelSelectorOperator(value)
+				case "values":
+					expr.Values = strings.Split(value, "|")
+				default:
+					return nil, fmt.Errorf("unknown matchExpression field: %q", key)
+				}
+			}
+
+			// Validate required fields
+			if expr.Key == "" {
+				return nil, fmt.Errorf("matchExpression missing required 'key' field")
+			}
+			if expr.Operator == "" {
+				return nil, fmt.Errorf("matchExpression missing required 'operator' field")
+			}
+
+			selector.MatchExpressions = append(selector.MatchExpressions, *expr)
+			continue
+		}
+
+		return nil, fmt.Errorf("unexpected selector format: %q, expected matchLabels~ or matchExpressions~", part)
+	}
+
+	// Validate that we have at least one selector
+	if selector.MatchLabels == nil && len(selector.MatchExpressions) == 0 {
+		return nil, fmt.Errorf("label selector must have at least matchLabels or matchExpressions")
+	}
+
+	return selector, nil
 }
 
 // ToMutatingWebhookConfiguration converts this WebhookConfig to its Kubernetes API form.
@@ -222,6 +356,16 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		return admissionregv1.MutatingWebhook{}, err
 	}
 
+	namespaceSelector, err := c.namespaceSelector()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, fmt.Errorf("invalid namespaceSelector: %w", err)
+	}
+
+	objectSelector, err := c.objectSelector()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, fmt.Errorf("invalid objectSelector: %w", err)
+	}
+
 	return admissionregv1.MutatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -232,6 +376,8 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
 		ReinvocationPolicy:      c.reinvocationPolicy(),
+		NamespaceSelector:       namespaceSelector,
+		ObjectSelector:          objectSelector,
 	}, nil
 }
 
@@ -251,6 +397,16 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		return admissionregv1.ValidatingWebhook{}, err
 	}
 
+	namespaceSelector, err := c.namespaceSelector()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, fmt.Errorf("invalid namespaceSelector: %w", err)
+	}
+
+	objectSelector, err := c.objectSelector()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, fmt.Errorf("invalid objectSelector: %w", err)
+	}
+
 	return admissionregv1.ValidatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -260,6 +416,8 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		SideEffects:             c.sideEffects(),
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
+		NamespaceSelector:       namespaceSelector,
+		ObjectSelector:          objectSelector,
 	}, nil
 }
 
@@ -400,6 +558,16 @@ func (c Config) reinvocationPolicy() *admissionregv1.ReinvocationPolicyType {
 		return nil
 	}
 	return &reinvocationPolicy
+}
+
+// namespaceSelector returns the parsed namespaceSelector config for a webhook.
+func (c Config) namespaceSelector() (*metav1.LabelSelector, error) {
+	return parseLabelSelector(c.NamespaceSelector)
+}
+
+// objectSelector returns the parsed objectSelector config for a webhook.
+func (c Config) objectSelector() (*metav1.LabelSelector, error) {
+	return parseLabelSelector(c.ObjectSelector)
 }
 
 // webhookVersions returns the target API versions of the {Mutating,Validating}WebhookConfiguration objects for a webhook.
