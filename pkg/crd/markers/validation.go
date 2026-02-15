@@ -365,14 +365,71 @@ func isIntegral(value float64) bool {
 //
 // This marker may be repeated to specify multiple expressions, all of
 // which must evaluate to true.
+//
+// CEL expressions have access to the following variables:
+// 'self' - The current value of the field or object being validated.
+// 'oldSelf' - The previous value of the field or object (available during updates, null on create).
+//
+// All validation rules are scoped to the location of the x-kubernetes-validations extension in the schema.
+// The `self` variable in the CEL expression is bound to the scoped value.
+//
+// Examples:
+//
+//	// Basic field validation using self
+//	// +kubebuilder:validation:XValidation:rule="self.minReplicas <= self.replicas && self.replicas <= self.maxReplicas",message="replicas must be between minReplicas and maxReplicas"
+//
+//	// Validation with custom reason
+//	// +kubebuilder:validation:XValidation:rule="self.x <= self.maxX",message="x cannot be greater than maxX",reason="FieldValueInvalid"
+//
+//	// Immutability check using oldSelf
+//	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+//
+//	// Complex immutability check on nested field
+//	// +kubebuilder:validation:XValidation:rule="self.type == oldSelf.type",message="type is immutable"
+//
+//	// Validation with field path for better error reporting
+//	// +kubebuilder:validation:XValidation:rule="self >= 1",message="value must be at least 1",fieldPath=".spec.replicas"
+//
 // +controllertools:marker:generateHelp:category="CRD validation"
 type XValidation struct {
-	Rule              string
-	Message           string `marker:",optional"`
+	// Rule represents the expression which will be evaluated by CEL.
+	// The Rule is scoped to the location of the XValidation in the schema.
+	// The `self` variable in the CEL expression is bound to the scoped value.
+	// Example: Rule="self.minReplicas <= self.replicas && self.replicas <= self.maxReplicas"
+	Rule string
+
+	// Message represents the message displayed when validation fails.
+	// If message is unset, a generic default validation message will be provided.
+	// Message may be up to 256 characters in length.
+	// Example: Message="replicas must be between minReplicas and maxReplicas"
+	Message string `marker:",optional"`
+
+	// MessageExpression declares a CEL expression that evaluates to the validation failure message.
+	// MessageExpression and Message are mutually exclusive. MessageExpression must produce a string.
+	// If both are set, MessageExpression will be used. If neither is set, the default message is used.
+	// The expression has access to the same CEL variables as the Rule.
+	// Example: MessageExpression="'replicas must be between ' + string(self.minReplicas) + ' and ' + string(self.maxReplicas)"
 	MessageExpression string `marker:"messageExpression,optional"`
-	Reason            string `marker:"reason,optional"`
-	FieldPath         string `marker:"fieldPath,optional"`
-	OptionalOldSelf   *bool  `marker:"optionalOldSelf,optional"`
+
+	// Reason provides a machine-readable validation failure reason that is returned to the caller
+	// when a request fails this validation rule. HTTP clients can distinguish between different
+	// validation failures based on the reason. Currently supported reasons are: "FieldValueInvalid",
+	// "FieldValueForbidden", "FieldValueRequired", "FieldValueDuplicate".
+	// If not set, a generic "Invalid" reason will be used.
+	// Example: Reason="FieldValueInvalid"
+	Reason string `marker:"reason,optional"`
+
+	// FieldPath represents the path from the validation failure back to the object's field.
+	// It is used to indicate which field in the validated object caused the failure.
+	// Example: FieldPath=".spec.replicas"
+	FieldPath string `marker:"fieldPath,optional"`
+
+	// OptionalOldSelf indicates that the oldSelf value is made optional. This is useful for
+	// validation rules that need to work both on create and update operations without having
+	// to check if oldSelf is set. When OptionalOldSelf is set to true, the rule will be
+	// evaluated only when oldSelf is non-null.
+	// Example: OptionalOldSelf=true
+	OptionalOldSelf *bool `marker:"optionalOldSelf,optional"`
 }
 
 // AtMostOneOf adds a validation constraint that allows at most one of the specified fields.
