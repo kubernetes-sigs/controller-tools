@@ -42,24 +42,76 @@ var (
 // +controllertools:marker:generateHelp:category=RBAC
 
 // Rule specifies an RBAC rule to all access to some resources or non-resource URLs.
+//
+// RBAC markers are used to generate ClusterRole or Role manifests.
+// Multiple markers can be combined to build comprehensive RBAC policies.
+//
+// Examples:
+//
+//	// Basic resource access
+//	// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch
+//
+//	// Core API group (use empty string)
+//	// +kubebuilder:rbac:groups="",resources=pods;services,verbs=get;list;watch
+//
+//	// Multiple API groups and resources
+//	// +kubebuilder:rbac:groups=apps;batch,resources=deployments;jobs,verbs=get;list;watch;create;update;patch;delete
+//
+//	// Access to resource status or scale subresources
+//	// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
+//	// +kubebuilder:rbac:groups=apps,resources=deployments/scale,verbs=get;update
+//
+//	// Access to specific resource instances by name
+//	// +kubebuilder:rbac:groups="",resources=configmaps,resourceNames=my-config,verbs=get
+//
+//	// Non-resource URLs (for metrics, healthz, etc.)
+//	// +kubebuilder:rbac:urls=/metrics;/healthz,verbs=get
+//
+//	// Namespace-scoped Role instead of ClusterRole
+//	// +kubebuilder:rbac:groups="",namespace=my-namespace,resources=secrets,verbs=get;list;watch
+//
+//	// Custom role name
+//	// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,roleName=deployment-reader
 type Rule struct {
 	// Groups specifies the API groups that this rule encompasses.
+	// Use empty string ("") for the core API group.
+	// Multiple groups can be specified separated by semicolons.
+	// Example: "apps;batch" or "" (for core group).
 	Groups []string `marker:",optional"`
+
 	// Resources specifies the API resources that this rule encompasses.
+	// Multiple resources can be specified separated by semicolons.
+	// Subresources can be specified with a slash (e.g., "deployments/status").
+	// Example: "deployments;pods" or "deployments/status".
 	Resources []string `marker:",optional"`
+
 	// ResourceNames specifies the names of the API resources that this rule encompasses.
 	//
 	// Create requests cannot be restricted by resourcename, as the object's name
 	// is not known at authorization time.
+	// Multiple names can be specified separated by semicolons.
+	// Example: "my-config;my-secret".
 	ResourceNames []string `marker:",optional"`
+
 	// Verbs specifies the (lowercase) kubernetes API verbs that this rule encompasses.
+	// Common verbs: "get", "list", "watch", "create", "update", "patch", "delete".
+	// Use "*" for all verbs.
+	// Multiple verbs must be specified separated by semicolons.
+	// Example: "get;list;watch".
 	Verbs []string
+
 	// URL specifies the non-resource URLs that this rule encompasses.
+	// Non-resource URLs are paths that don't represent resources, like "/metrics" or "/healthz".
+	// Multiple URLs can be specified separated by semicolons.
+	// Example: "/metrics;/healthz".
 	URLs []string `marker:"urls,optional"`
+
 	// Namespace specifies the scope of the Rule.
 	// If not set, the Rule belongs to the generated ClusterRole.
 	// If set, the Rule belongs to a Role, whose namespace is specified by this field.
+	// Example: "my-namespace".
 	Namespace string `marker:",optional"`
+
 	// RoleName specifies a custom name for the Role or ClusterRole.
 	// If not set, uses the default roleName from the generator.
 	// Useful for avoiding name conflicts when the same roleName is used across multiple namespaces.
