@@ -281,6 +281,15 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 		return err
 	}
 
+	schemaFile, err := ctx.buildOpenAPISchema(root, gv)
+	if err != nil {
+		return fmt.Errorf("failed to build OpenAPI schema: %w", err)
+	}
+	if schemaFile != "" {
+		defer os.Remove(schemaFile)
+		arguments.OpenAPISchemaFilePath = schemaFile
+	}
+
 	targets := generators.GetTargets(c, arguments)
 	if err := c.ExecuteTargets(targets); err != nil {
 		return fmt.Errorf("failed executing generator: %w", err)
