@@ -956,7 +956,7 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: type
       type:
         namedType: io.k8s.api.core.v1.HostPathType
-- name: io.k8s.api.core.v1.IPFamilyPolicy
+- name: io.k8s.api.core.v1.IPFamilyPolicyType
   scalar: string
 - name: io.k8s.api.core.v1.ISCSIVolumeSource
   map:
@@ -2978,6 +2978,15 @@ var schemaYAML = typed.YAMLObject(`types:
     elementType:
       scalar: string
     elementRelationship: associative
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.JustNestedObject
+  map:
+    fields:
+    - name: bar
+      type:
+        scalar: boolean
+    - name: foo
+      type:
+        scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.LongerString
   scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.MinMaxObject
@@ -3014,6 +3023,16 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: foo
       type:
         scalar: string
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NestedStructWithSeveralFields
+  map:
+    fields:
+    - name: bar
+      type:
+        scalar: boolean
+    - name: foo
+      type:
+        scalar: string
+    elementRelationship: atomic
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.Preserved
   map:
     elementType:

@@ -19,7 +19,9 @@ package applyconfiguration
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
+	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,8 +35,9 @@ import (
 // buildOpenAPISchema generates a minimal OpenAPI v2 Swagger document containing
 // schemas for every type referenced by root CRD types in the package. Types are
 // represented as separate definitions with $ref links between them, producing
-// namedType entries when processed by schemaconv. The definition keys match the
-// convention used by code-generator (via kube-openapi util.ToRESTFriendlyName).
+// namedType entries in the structured-merge-diff schema. The definition keys
+// match the convention used by code-generator (via kube-openapi
+// util.ToRESTFriendlyName).
 func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.GroupVersion) (string, error) {
 	p := &crd.Parser{
 		Collector:              ctx.Collector,
@@ -133,6 +136,8 @@ func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.Grou
 
 		definitions[key] = schemaMap
 	}
+
+	resolveRefDefinitions(definitions)
 
 	swagger := map[string]any{
 		"swagger": "2.0",
@@ -259,6 +264,48 @@ func convertRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loader.Pac
 	}
 	if schema.AdditionalProperties != nil && schema.AdditionalProperties.Schema != nil {
 		convertRefs(schema.AdditionalProperties.Schema, contextPkg)
+	}
+}
+
+// resolveRefDefinitions resolves top-level swagger definitions that are just a
+// $ref to another definition. Such definitions arise from Go type definitions
+// like `type Foo Bar` where the schema for Foo is a $ref to Bar.
+// structured-merge-diff does not create separate named types for pure $ref
+// definitions, so we resolve them by copying the target definition's schema and
+// preserving any additional extensions (like x-kubernetes-map-type).
+func resolveRefDefinitions(definitions map[string]any) {
+	const refPrefix = "#/definitions/"
+	for key, def := range definitions {
+		defMap, ok := def.(map[string]any)
+		if !ok {
+			continue
+		}
+		ref, hasRef := defMap["$ref"].(string)
+		if !hasRef {
+			continue
+		}
+		// Resolve the $ref to the target definition.
+		targetKey := strings.TrimPrefix(ref, refPrefix)
+		targetDef, found := definitions[targetKey]
+		if !found {
+			continue
+		}
+		targetMap, ok := targetDef.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		// Copy the target definition and merge any extra extensions
+		// (e.g., x-kubernetes-map-type) from the original.
+		resolved := make(map[string]any, len(targetMap)+len(defMap))
+		maps.Copy(resolved, targetMap)
+		for k, v := range defMap {
+			if k == "$ref" {
+				continue
+			}
+			resolved[k] = v
+		}
+		definitions[key] = resolved
 	}
 }
 

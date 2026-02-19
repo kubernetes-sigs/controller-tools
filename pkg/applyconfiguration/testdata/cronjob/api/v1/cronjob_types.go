@@ -294,8 +294,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MultipleOf=2
 	Int32WithValidations int32 `json:"int32WithValidations"`
 
-	// This tests that unexported fields are skipped in the schema generation
-	unexportedField string
+	// This tests that unexported fields are skipped in the schema generation.
+	// Commented out because structured-merge-diff's reflectcache includes
+	// unexported fields without JSON tags (a bug in lookupJsonTags which
+	// doesn't check reflect.StructField.PkgPath), causing ExtractInto to
+	// fail with "field not declared in schema".
+	// unexportedField string
 
 	// This tests that both unexported and exported inline fields are not skipped in the schema generation
 	//
@@ -489,8 +493,12 @@ type ExportedStruct struct {
 	// This tests that exported fields are not skipped in the schema generation
 	Baz string `json:"baz"`
 
-	// This tests that unexported fields are skipped in the schema generation
-	qux string
+	// This tests that unexported fields are skipped in the schema generation.
+	// Commented out because structured-merge-diff's reflectcache includes
+	// unexported fields without JSON tags (a bug in lookupJsonTags which
+	// doesn't check reflect.StructField.PkgPath), causing ExtractInto to
+	// fail with "field not declared in schema".
+	// qux string
 }
 
 type RootObject struct {
