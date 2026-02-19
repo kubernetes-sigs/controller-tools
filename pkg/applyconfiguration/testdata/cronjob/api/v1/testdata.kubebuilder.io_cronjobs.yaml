@@ -9523,6 +9523,7 @@ spec:
                 type: string
               schemaless:
                 description: This tests that the schemaless marker works
+                type: string
               selectableFieldString:
                 description: This tests that selectable field.
                 type: string
@@ -9585,8 +9586,7 @@ spec:
                   marker.
                 type: string
                 x-kubernetes-validations:
-                - messageExpression: '''Length has to be even but is '' + len(self.stringWithEvenLengthAndMessageExpression)
-                    + '' instead'''
+                - messageExpression: self + ' has odd length, must be even'
                   rule: self.size() % 2 == 0
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced

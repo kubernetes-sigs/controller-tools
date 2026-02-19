@@ -250,6 +250,7 @@ type CronJobSpec struct {
 
 	// This tests that the schemaless marker works
 	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=string
 	Schemaless []byte `json:"schemaless,omitempty"`
 
 	// This tests that an IntOrString can also have string validation.
@@ -308,7 +309,7 @@ type CronJobSpec struct {
 	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
 
 	// Test of the expression-based validation with messageExpression marker.
-	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="'Length has to be even but is ' + len(self.stringWithEvenLengthAndMessageExpression) + ' instead'"
+	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="self + ' has odd length, must be even'"
 	StringWithEvenLengthAndMessageExpression string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
 
 	// Test of the expression-based validation on both field and type.
