@@ -116,6 +116,44 @@ func (Example) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Enum) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "specifies that this (scalar) field is restricted to the *exact* values specified here.",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (ExactlyOneOf) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "adds a validation constraint that allows at exactly one of the specified fields.",
+			Details: "This marker may be repeated to specify multiple ExactlyOneOf constraints that are mutually exclusive.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
+func (Example) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "sets the example value for this field.",
+			Details: "An example value will be accepted as any value valid for the\nfield. Formatting for common types include: boolean: `true`, string:\n`Cluster`, numerical: `1.24`, array: `{1,2}`, object: `{policy:\n\"delete\"}`). Examples should be defined in pruned form, and only best-effort\nvalidation will be performed. Full validation of an example requires\nsubmission of the containing CRD to an apiserver.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"Value": {
+				Summary: "",
+				Details: "",
+			},
+		},
+	}
+}
+
 func (ExclusiveMaximum) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
