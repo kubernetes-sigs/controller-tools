@@ -309,6 +309,9 @@ type CronJobSpec struct {
 	StringWithEvenLength string `json:"stringWithEvenLength,omitempty"`
 
 	// Test of the expression-based validation with messageExpression marker.
+	// Due to a bug in the cost calculation we can not include the lenght in the message expression:
+	// https://github.com/kubernetes/kubernetes/issues/124234
+	//
 	// +kubebuilder:validation:XValidation:rule="self.size() % 2 == 0",messageExpression="self + ' has odd length, must be even'"
 	StringWithEvenLengthAndMessageExpression string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
 
@@ -321,10 +324,12 @@ type CronJobSpec struct {
 	ForbiddenInt int `json:"forbiddenInt,omitempty"`
 
 	// Checks that fixed-length arrays work
-	Array [3]int `json:"array,omitempty"`
+	// Disabled as it causes a panic: https://github.com/kubernetes-sigs/structured-merge-diff/issues/311
+	// Array [3]int `json:"array,omitempty"`
 
 	// Checks that arrays work when the type contains a composite literal
-	ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
+	// Disabled as it causes a panic: https://github.com/kubernetes-sigs/structured-merge-diff/issues/311
+	// ArrayUsingCompositeLiteral [len(struct{ X [3]int }{}.X)]string `json:"arrayUsingCompositeLiteral,omitempty"`
 
 	// This tests string slice item validation.
 	// +kubebuilder:validation:MinItems=1
@@ -827,6 +832,22 @@ type ClusterScopedResource struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec ClusterScopedResourceSpec `json:"spec,omitempty"`
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *ClusterScopedResource) DeepCopyObject() runtime.Object {
+	if in == nil {
+		return nil
+	}
+	out := new(CronJob)
+	buf, err := json.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(buf, out); err != nil {
+		panic(err)
+	}
+	return out
 }
 
 // +kubebuilder:object:root=true

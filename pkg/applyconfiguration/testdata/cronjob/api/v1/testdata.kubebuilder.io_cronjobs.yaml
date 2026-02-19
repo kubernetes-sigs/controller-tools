@@ -47,17 +47,6 @@ spec:
                   corev1.IPFamilyPolicyType is just reused since it's available from
                   imported package. We can create our own in a separate package if needed.
                 type: string
-              array:
-                description: Checks that fixed-length arrays work
-                items:
-                  type: integer
-                type: array
-              arrayUsingCompositeLiteral:
-                description: Checks that arrays work when the type contains a composite
-                  literal
-                items:
-                  type: string
-                type: array
               associativeList:
                 description: This tests that associative lists work.
                 items:
@@ -9582,8 +9571,10 @@ spec:
                 - message: must have even length
                   rule: self.size() % 2 == 0
               stringWithEvenLengthAndMessageExpression:
-                description: Test of the expression-based validation with messageExpression
-                  marker.
+                description: |-
+                  Test of the expression-based validation with messageExpression marker.
+                  Due to a bug in the cost calculation we can not include the lenght in the message expression:
+                  https://github.com/kubernetes/kubernetes/issues/124234
                 type: string
                 x-kubernetes-validations:
                 - messageExpression: self + ' has odd length, must be even'

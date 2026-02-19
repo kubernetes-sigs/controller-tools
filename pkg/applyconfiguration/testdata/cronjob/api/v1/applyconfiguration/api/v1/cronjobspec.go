@@ -144,16 +144,14 @@ type CronJobSpecApplyConfiguration struct {
 	// Test of the expression-based validation rule marker, with optional message.
 	StringWithEvenLength *string `json:"stringWithEvenLength,omitempty"`
 	// Test of the expression-based validation with messageExpression marker.
+	// Due to a bug in the cost calculation we can not include the lenght in the message expression:
+	// https://github.com/kubernetes/kubernetes/issues/124234
 	StringWithEvenLengthAndMessageExpression *string `json:"stringWithEvenLengthAndMessageExpression,omitempty"`
 	// Test of the expression-based validation on both field and type.
 	StringWithEvenLengthAndGoodPrefix *apiv1.StringEvenType `json:"stringWithEvenLengthAndGoodPrefix,omitempty"`
 	// Test that we can add a forbidden field using XValidation Reason and FieldPath.
 	// The validation is applied to the spec struct itself and not the field.
 	ForbiddenInt *int `json:"forbiddenInt,omitempty"`
-	// Checks that fixed-length arrays work
-	Array *[3]int `json:"array,omitempty"`
-	// Checks that arrays work when the type contains a composite literal
-	ArrayUsingCompositeLiteral *[3]string `json:"arrayUsingCompositeLiteral,omitempty"`
 	// This tests string slice item validation.
 	Hosts []string `json:"hosts,omitempty"`
 	// This tests slice item validation with enum
@@ -782,22 +780,6 @@ func (b *CronJobSpecApplyConfiguration) WithStringWithEvenLengthAndGoodPrefix(va
 // If called multiple times, the ForbiddenInt field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithForbiddenInt(value int) *CronJobSpecApplyConfiguration {
 	b.ForbiddenInt = &value
-	return b
-}
-
-// WithArray sets the Array field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Array field is set to the value of the last call.
-func (b *CronJobSpecApplyConfiguration) WithArray(value [3]int) *CronJobSpecApplyConfiguration {
-	b.Array = &value
-	return b
-}
-
-// WithArrayUsingCompositeLiteral sets the ArrayUsingCompositeLiteral field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ArrayUsingCompositeLiteral field is set to the value of the last call.
-func (b *CronJobSpecApplyConfiguration) WithArrayUsingCompositeLiteral(value [3]string) *CronJobSpecApplyConfiguration {
-	b.ArrayUsingCompositeLiteral = &value
 	return b
 }
 

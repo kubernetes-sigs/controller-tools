@@ -2519,6 +2519,33 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: secondary
       type:
         scalar: numeric
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ClusterScopedResource
+  map:
+    fields:
+    - name: apiVersion
+      type:
+        scalar: string
+    - name: kind
+      type:
+        scalar: string
+    - name: metadata
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta
+    - name: spec
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ClusterScopedResourceSpec
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ClusterScopedResourceSpec
+  map:
+    elementType:
+      scalar: untyped
+      list:
+        elementType:
+          namedType: __untyped_atomic_
+        elementRelationship: atomic
+      map:
+        elementType:
+          namedType: __untyped_deduced_
+        elementRelationship: separable
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ConcurrencyPolicy
   scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ContainsNestedMap
@@ -2553,18 +2580,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: aliasFromPackage
       type:
         namedType: io.k8s.api.core.v1.IPFamilyPolicyType
-    - name: array
-      type:
-        list:
-          elementType:
-            scalar: numeric
-          elementRelationship: atomic
-    - name: arrayUsingCompositeLiteral
-      type:
-        list:
-          elementType:
-            scalar: string
-          elementRelationship: atomic
     - name: associativeList
       type:
         list:
@@ -2638,6 +2653,9 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: kubebuilder-default
+    - name: embeddedExternal
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedExternalSpec
     - name: embeddedResource
       type:
         namedType: __untyped_atomic_
@@ -2824,15 +2842,7 @@ var schemaYAML = typed.YAMLObject(`types:
         scalar: string
     - name: schemaless
       type:
-        scalar: untyped
-        list:
-          elementType:
-            namedType: __untyped_atomic_
-          elementRelationship: atomic
-        map:
-          elementType:
-            namedType: __untyped_deduced_
-          elementRelationship: separable
+        scalar: string
     - name: selectableFieldString
       type:
         scalar: string
@@ -2941,6 +2951,18 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         namedType: Duration.time
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedExternalSpec
+  map:
+    fields:
+    - name: extra
+      type:
+        scalar: string
+    - name: key
+      type:
+        scalar: string
+    - name: value
+      type:
+        scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmpiableObject
   map:
     fields:

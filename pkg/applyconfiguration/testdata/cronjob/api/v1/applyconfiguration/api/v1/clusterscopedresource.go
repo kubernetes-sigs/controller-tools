@@ -5,8 +5,10 @@ package v1
 import (
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
+	managedfields "k8s.io/apimachinery/pkg/util/managedfields"
 	metav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	apiv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
+	internal "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/internal"
 )
 
 // ClusterScopedResourceApplyConfiguration represents a declarative configuration of the ClusterScopedResource type for use
@@ -27,6 +29,40 @@ func ClusterScopedResource(name string) *ClusterScopedResourceApplyConfiguration
 	b.WithKind("ClusterScopedResource")
 	b.WithAPIVersion("testdata.kubebuilder.io/v1")
 	return b
+}
+
+// ExtractClusterScopedResourceFrom extracts the applied configuration owned by fieldManager from
+// clusterScopedResource for the specified subresource. Pass an empty string for subresource to extract
+// the main resource. Common subresources include "status", "scale", etc.
+// clusterScopedResource must be a unmodified ClusterScopedResource API object that was retrieved from the Kubernetes API.
+// ExtractClusterScopedResourceFrom provides a way to perform a extract/modify-in-place/apply workflow.
+// Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
+// applied if another fieldManager has updated or force applied any of the previously applied fields.
+func ExtractClusterScopedResourceFrom(clusterScopedResource *apiv1.ClusterScopedResource, fieldManager string, subresource string) (*ClusterScopedResourceApplyConfiguration, error) {
+	b := &ClusterScopedResourceApplyConfiguration{}
+	err := managedfields.ExtractInto(clusterScopedResource, internal.Parser().Type("io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.ClusterScopedResource"), fieldManager, b, subresource)
+	if err != nil {
+		return nil, err
+	}
+	b.WithName(clusterScopedResource.Name)
+
+	b.WithKind("ClusterScopedResource")
+	b.WithAPIVersion("testdata.kubebuilder.io/v1")
+	return b, nil
+}
+
+// ExtractClusterScopedResource extracts the applied configuration owned by fieldManager from
+// clusterScopedResource. If no managedFields are found in clusterScopedResource for fieldManager, a
+// ClusterScopedResourceApplyConfiguration is returned with only the Name, Namespace (if applicable),
+// APIVersion and Kind populated. It is possible that no managed fields were found for because other
+// field managers have taken ownership of all the fields previously owned by fieldManager, or because
+// the fieldManager never owned fields any fields.
+// clusterScopedResource must be a unmodified ClusterScopedResource API object that was retrieved from the Kubernetes API.
+// ExtractClusterScopedResource provides a way to perform a extract/modify-in-place/apply workflow.
+// Note that an extracted apply configuration will contain fewer fields than what the fieldManager previously
+// applied if another fieldManager has updated or force applied any of the previously applied fields.
+func ExtractClusterScopedResource(clusterScopedResource *apiv1.ClusterScopedResource, fieldManager string) (*ClusterScopedResourceApplyConfiguration, error) {
+	return ExtractClusterScopedResourceFrom(clusterScopedResource, fieldManager, "")
 }
 
 func (b ClusterScopedResourceApplyConfiguration) IsApplyConfiguration() {}
