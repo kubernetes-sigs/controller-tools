@@ -406,6 +406,9 @@ type CronJobSpec struct {
 	// EmbeddedExternal tests the ExternalApplyConfigurations feature.
 	// +optional
 	EmbeddedExternal *EmbeddedExternalSpec `json:"embeddedExternal,omitempty"`
+
+	StructSlice []RootObject            `json:"structSlice,omitempty"`
+	StructMap   map[string]RootObject   `json:"structMap,omitempty"`
 }
 
 type InlineAlias = EmbeddedStruct

@@ -9579,6 +9579,40 @@ spec:
                 x-kubernetes-validations:
                 - messageExpression: self + ' has odd length, must be even'
                   rule: self.size() % 2 == 0
+              structMap:
+                additionalProperties:
+                  properties:
+                    nested:
+                      properties:
+                        bar:
+                          type: boolean
+                        foo:
+                          type: string
+                      required:
+                      - bar
+                      - foo
+                      type: object
+                  required:
+                  - nested
+                  type: object
+                type: object
+              structSlice:
+                items:
+                  properties:
+                    nested:
+                      properties:
+                        bar:
+                          type: boolean
+                        foo:
+                          type: string
+                      required:
+                      - bar
+                      - foo
+                      type: object
+                  required:
+                  - nested
+                  type: object
+                type: array
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:

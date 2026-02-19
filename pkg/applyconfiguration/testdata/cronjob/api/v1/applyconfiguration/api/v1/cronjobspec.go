@@ -184,6 +184,8 @@ type CronJobSpecApplyConfiguration struct {
 	OnlyAllowSettingOnUpdate *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
 	// EmbeddedExternal tests the ExternalApplyConfigurations feature.
 	EmbeddedExternal *EmbeddedExternalSpecApplyConfiguration `json:"embeddedExternal,omitempty"`
+	StructSlice      []RootObjectApplyConfiguration          `json:"structSlice,omitempty"`
+	StructMap        map[string]RootObjectApplyConfiguration `json:"structMap,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with
@@ -908,5 +910,32 @@ func (b *CronJobSpecApplyConfiguration) WithOnlyAllowSettingOnUpdate(value int32
 // If called multiple times, the EmbeddedExternal field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithEmbeddedExternal(value *EmbeddedExternalSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
 	b.EmbeddedExternal = value
+	return b
+}
+
+// WithStructSlice adds the given value to the StructSlice field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the StructSlice field.
+func (b *CronJobSpecApplyConfiguration) WithStructSlice(values ...*RootObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithStructSlice")
+		}
+		b.StructSlice = append(b.StructSlice, *values[i])
+	}
+	return b
+}
+
+// WithStructMap puts the entries into the StructMap field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the StructMap field,
+// overwriting an existing map entries in StructMap field with the same key.
+func (b *CronJobSpecApplyConfiguration) WithStructMap(entries map[string]RootObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
+	if b.StructMap == nil && len(entries) > 0 {
+		b.StructMap = make(map[string]RootObjectApplyConfiguration, len(entries))
+	}
+	for k, v := range entries {
+		b.StructMap[k] = v
+	}
 	return b
 }

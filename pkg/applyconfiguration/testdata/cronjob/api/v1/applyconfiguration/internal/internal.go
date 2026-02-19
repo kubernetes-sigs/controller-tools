@@ -2884,6 +2884,17 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: stringWithEvenLengthAndMessageExpression
       type:
         scalar: string
+    - name: structMap
+      type:
+        map:
+          elementType:
+            namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.RootObject
+    - name: structSlice
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.RootObject
+          elementRelationship: atomic
     - name: structWithSeveralFields
       type:
         namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NestedObject
