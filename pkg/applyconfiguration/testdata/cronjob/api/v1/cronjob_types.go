@@ -764,13 +764,44 @@ type CronJob struct {
 	Status CronJobStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// DeepCopyObject implements runtime.Object. We
+// can not generate DeepCopies as the type
+// contains external types such as url.URL that
+// themselves do not have a DeepCopy method.
+func (in *CronJob) DeepCopyObject() runtime.Object {
+	if in == nil {
+		return nil
+	}
+	out := new(CronJob)
+	buf, err := json.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(buf, out); err != nil {
+		panic(err)
+	}
+	return out
+}
 
-// CronJobList contains a list of CronJob
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CronJob `json:"items"`
+}
+
+func (in *CronJobList) DeepCopyObject() runtime.Object {
+	if in == nil {
+		return nil
+	}
+	out := new(CronJobList)
+	buf, err := json.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(buf, out); err != nil {
+		panic(err)
+	}
+	return out
 }
 
 // EmbeddedExternalSpec embeds an external type with json:",inline".
