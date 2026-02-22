@@ -446,6 +446,8 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		return props
 	}
 
+	var immutableFields []string
+
 	for _, field := range ctx.info.Fields {
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
@@ -534,11 +536,28 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			continue
 		}
 
+		if field.Markers.Get("k8s:immutable") != nil {
+			immutableFields = append(immutableFields, fieldName)
+		}
+
 		props.Properties[fieldName] = *propSchema
 	}
 
 	// Ensure the required fields are always listed alphabetically.
 	slices.Sort(props.Required)
+
+	// For optional immutable fields, add a parent-level validation rule to prevent
+	// clearing the field once set. The field-level rule prevents value changes, but
+	// when an optional field is removed, the field-level rule doesn't execute.
+	for _, fieldName := range immutableFields {
+		if slices.Contains(props.Required, fieldName) {
+			continue
+		}
+		props.XValidations = append(props.XValidations, apiextensionsv1.ValidationRule{
+			Rule:    fmt.Sprintf("!has(oldSelf.%s) || has(self.%s)", fieldName, fieldName),
+			Message: fmt.Sprintf("field %s is immutable once set", fieldName),
+		})
+	}
 
 	return props
 }

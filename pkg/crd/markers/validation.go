@@ -123,6 +123,9 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition(SchemalessName, markers.DescribesField, Schemaless{})).
 		WithHelp(Schemaless{}.Help()),
+
+	must(markers.MakeDefinition("k8s:immutable", markers.DescribesField, Immutable{})).
+		WithHelp(Immutable{}.Help()),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -567,6 +570,33 @@ type XIntOrString struct{}
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Schemaless struct{}
+
+// Immutable marks a field as immutable. Once set, the value cannot be changed.
+// For optional fields, a single transition from unset to set is allowed.
+//
+// Note that immutable fields that are nested below optional fields can still be
+// updated by unsetting the optional parent field and re-setting it again.
+//
+// Examples:
+//
+//	// +k8s:immutable
+//	// +required
+//	Port intstr.IntOrString
+//
+//	// +k8s:immutable
+//	// +optional
+//	TargetPort intstr.IntOrString
+//
+// +controllertools:marker:generateHelp:category="CRD validation"
+type Immutable struct{}
+
+func (m Immutable) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+	schema.XValidations = append(schema.XValidations, apiextensionsv1.ValidationRule{
+		Rule:    "self == oldSelf",
+		Message: "field is immutable",
+	})
+	return nil
+}
 
 func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)
