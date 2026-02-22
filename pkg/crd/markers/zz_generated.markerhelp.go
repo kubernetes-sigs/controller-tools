@@ -169,6 +169,17 @@ func (Format) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Immutable) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks a field as immutable. Once set, the value cannot be changed.",
+			Details: "For optional fields, a single transition from unset to set is allowed.\n\nNote that immutable fields that are nested below optional fields can still be\nupdated by unsetting the optional parent field and re-setting it again.\n\nExamples:\n\n\t// +k8s:immutable\n\t// +required\n\tPort intstr.IntOrString\n\n\t// +k8s:immutable\n\t// +optional\n\tTargetPort intstr.IntOrString",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (KubernetesDefault) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

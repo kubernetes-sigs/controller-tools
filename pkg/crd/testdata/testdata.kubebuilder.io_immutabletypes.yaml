@@ -1,0 +1,148 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: immutabletypes.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: ImmutableType
+    listKind: ImmutableTypeList
+    plural: immutabletypes
+    singular: immutabletype
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              mutableString:
+                type: string
+              optionalLiteralString:
+                type: string
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              optionalMap:
+                additionalProperties:
+                  type: string
+                type: object
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              optionalOmitZeroStruct:
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - key
+                - value
+                type: object
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              optionalSlice:
+                items:
+                  type: string
+                type: array
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              optionalString:
+                type: string
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              optionalStruct:
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - key
+                - value
+                type: object
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              requiredMap:
+                additionalProperties:
+                  type: string
+                type: object
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              requiredSlice:
+                items:
+                  type: string
+                type: array
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              requiredString:
+                type: string
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              requiredStruct:
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - key
+                - value
+                type: object
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+            required:
+            - mutableString
+            - requiredMap
+            - requiredSlice
+            - requiredString
+            - requiredStruct
+            type: object
+            x-kubernetes-validations:
+            - message: field optionalString is immutable once set
+              rule: '!has(oldSelf.optionalString) || has(self.optionalString)'
+            - message: field optionalLiteralString is immutable once set
+              rule: '!has(oldSelf.optionalLiteralString) || has(self.optionalLiteralString)'
+            - message: field optionalStruct is immutable once set
+              rule: '!has(oldSelf.optionalStruct) || has(self.optionalStruct)'
+            - message: field optionalOmitZeroStruct is immutable once set
+              rule: '!has(oldSelf.optionalOmitZeroStruct) || has(self.optionalOmitZeroStruct)'
+            - message: field optionalSlice is immutable once set
+              rule: '!has(oldSelf.optionalSlice) || has(self.optionalSlice)'
+            - message: field optionalMap is immutable once set
+              rule: '!has(oldSelf.optionalMap) || has(self.optionalMap)'
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true

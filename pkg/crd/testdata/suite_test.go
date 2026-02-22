@@ -37,11 +37,10 @@ func TestCRD(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	testEnv = &envtest.Environment{
-		CRDInstallOptions: envtest.CRDInstallOptions{
-			Paths: []string{"testdata.kubebuilder.io_enums.yaml"},
-		},
-	}
+	testEnv = &envtest.Environment{CRDInstallOptions: envtest.CRDInstallOptions{Paths: []string{
+		"testdata.kubebuilder.io_enums.yaml",
+		"testdata.kubebuilder.io_immutabletypes.yaml",
+	}}}
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
