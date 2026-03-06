@@ -9340,6 +9340,59 @@ spec:
                 - bar
                 - foo
                 type: object
+              k8sAssociativeList:
+                description: This tests that associative lists work using the +k8s:listType
+                  alias.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              k8sAtomicList:
+                description: This tests that +k8s:listType=atomic works.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
+              k8sNestedAssociativeList:
+                description: This tests that associative lists work via a nested type
+                  using the +k8s:listType alias.
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
+              k8sSetList:
+                description: This tests that +k8s:listType=set works.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
               kubernetesDefaultedEmptyMap:
                 additionalProperties:
                   type: string
@@ -9727,6 +9780,8 @@ spec:
             - int32WithValidations
             - intWithValidations
             - jobTemplate
+            - k8sAssociativeList
+            - k8sNestedAssociativeList
             - kubernetesDefaultedEmptyMap
             - kubernetesDefaultedEmptyObject
             - kubernetesDefaultedEmptySlice
