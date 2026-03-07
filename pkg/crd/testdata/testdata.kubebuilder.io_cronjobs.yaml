@@ -235,6 +235,27 @@ spec:
                   This tests that field-level overrides are handled correctly
                   for local type aliases.
                 type: string
+              fieldLevelListType:
+                description: 'This tests that +listType can be applied at the field
+                  level for type aliases (issue #988).'
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - secondary
+                x-kubernetes-list-type: map
               fieldLevelLocalDeclarationOverride:
                 allOf:
                 - minLength: 4
@@ -9721,6 +9742,7 @@ spec:
             - explicitlyRequiredK8s
             - explicitlyRequiredKubebuilder
             - explicitlyRequiredKubernetes
+            - fieldLevelListType
             - float64WithValidations
             - floatWithValidations
             - foo
