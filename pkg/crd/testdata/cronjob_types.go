@@ -215,9 +215,26 @@ type CronJobSpec struct {
 	// This tests that associative lists work via a nested type.
 	NestedAssociativeList NestedAssociativeList `json:"nestedassociativeList"`
 
+	// This tests that +listType can be applied at the field level for type aliases (issue #988).
+	// +listType=map
+	// +listMapKey=name
+	// +listMapKey=secondary
+	FieldLevelListType ConditionsWithoutMarker `json:"fieldLevelListType"`
+
+	// This tests that a field-level +listType combined with a type-level +listType
+	// is preserved at the top level instead of being wiped into allOf (issue #988).
+	// +listType=map
+	// +listMapKey=name
+	// +listMapKey=secondary
+	ListTypeFromTypeAndField NestedAssociativeList `json:"listTypeFromTypeAndField"`
+
 	// A map that allows different actors to manage different fields
 	// +mapType=granular
 	MapOfInfo map[string][]byte `json:"mapOfInfo"`
+
+	// This tests that +mapType can be applied at the field level for type aliases (issue #988).
+	// +mapType=granular
+	FieldLevelMapType MapWithoutMarker `json:"fieldLevelMapType"`
 
 	// A map that allows different actors to manage different fields via a nested type.
 	NestedMapOfInfo NestedMapOfInfo `json:"nestedMapOfInfo"`
@@ -561,6 +578,14 @@ type NestedAssociativeList []AssociativeType
 
 // +mapType=granular
 type NestedMapOfInfo map[string][]byte
+
+// ConditionsWithoutMarker is a type alias to a slice without type-level markers.
+// This tests that +listType can be applied at the field level (issue #988).
+type ConditionsWithoutMarker []AssociativeType
+
+// MapWithoutMarker is a type alias to a map without type-level markers.
+// This tests that +mapType can be applied at the field level (issue #988).
+type MapWithoutMarker map[string][]byte
 
 // +kubebuilder:validation:MinLength=4
 // This tests that markers that are allowed on both fields and types are applied to types
