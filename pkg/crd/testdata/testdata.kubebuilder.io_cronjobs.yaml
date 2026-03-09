@@ -9542,6 +9542,12 @@ spec:
                   This flag is like suspend, but for when you really mean it.
                   It helps test the +kubebuilder:validation:Type marker.
                 type: string
+              nonOpaqueField:
+                description: This tests that without +k8s:opaque, type-level validations
+                  from LongerString are inherited.
+                maxLength: 5
+                minLength: 4
+                type: string
               onlyAllowSettingOnUpdate:
                 description: Test that we can add a field that can only be set to
                   a non-default value on updates using XValidation OptionalOldSelf.
@@ -9552,6 +9558,11 @@ spec:
                     an update.
                   optionalOldSelf: true
                   rule: oldSelf.hasValue() || self == 0
+              opaqueField:
+                description: This tests that +k8s:opaque suppresses type-level validation
+                  from LongerString (MinLength=4).
+                maxLength: 5
+                type: string
               patternObject:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
