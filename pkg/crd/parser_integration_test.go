@@ -234,6 +234,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("InterfaceField API with any/interface{} types", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./iface/..."}
+				expPkgLen = 1
+			})
+			It("should error on any type", func() {
+				assertError(pkgs[0], "InterfaceField", "cannot generate schema for any")
+			})
+		})
+
 		Context("CronJob API without group", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./nogroup"}
