@@ -23,6 +23,7 @@ limitations under the License.
 package webhook
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -200,6 +201,26 @@ type Config struct {
 	// The URL configuration should be between quotes.
 	// `url` cannot be specified when `path` is specified.
 	URL string `marker:"url,optional"`
+
+	// NamespaceSelector limits which namespaces trigger this webhook. The webhook runs only for
+	// requests in namespaces that match the selector. Value is a JSON object with the same shape
+	// as the Kubernetes LabelSelector (matchLabels and/or matchExpressions).
+	//
+	// Example:
+	//
+	//	// +kubebuilder:webhook:...,namespaceSelector=`{"matchLabels":{"webhook-enabled":"true"}}`
+	//	// +kubebuilder:webhook:...,namespaceSelector=`{"matchExpressions":[{"key":"environment","operator":"In","values":["dev","staging","prod"]}]}`
+	NamespaceSelector string `marker:"namespaceSelector,optional"`
+
+	// ObjectSelector limits which objects trigger this webhook. The webhook runs only for requests
+	// whose object matches the selector. Value is a JSON object with the same shape as the
+	// Kubernetes LabelSelector (matchLabels and/or matchExpressions).
+	//
+	// Example:
+	//
+	//	// +kubebuilder:webhook:...,objectSelector=`{"matchLabels":{"managed-by":"my-operator"}}`
+	//	// +kubebuilder:webhook:...,objectSelector=`{"matchExpressions":[{"key":"app-type","operator":"In","values":["web","api","worker"]}]}`
+	ObjectSelector string `marker:"objectSelector,optional"`
 }
 
 // verbToAPIVariant converts a marker's verb to the proper value for the API.
@@ -219,6 +240,26 @@ func verbToAPIVariant(verbRaw string) admissionregv1.OperationType {
 	default:
 		return admissionregv1.OperationType(verbRaw)
 	}
+}
+
+// parseLabelSelector parses a JSON string into a LabelSelector. The JSON must match the
+// Kubernetes LabelSelector type (matchLabels and/or matchExpressions). It returns nil for empty input.
+func parseLabelSelector(selectorStr string) (*metav1.LabelSelector, error) {
+	selectorStr = strings.TrimSpace(selectorStr)
+	if selectorStr == "" {
+		return nil, nil
+	}
+
+	var selector metav1.LabelSelector
+	if err := json.Unmarshal([]byte(selectorStr), &selector); err != nil {
+		return nil, fmt.Errorf("label selector must be valid JSON (e.g. {\"matchLabels\":{\"key\":\"value\"}}): %w", err)
+	}
+
+	if selector.MatchLabels == nil && len(selector.MatchExpressions) == 0 {
+		return nil, fmt.Errorf("label selector must specify at least one of matchLabels or matchExpressions")
+	}
+
+	return &selector, nil
 }
 
 // ToMutatingWebhookConfiguration converts this WebhookConfig to its Kubernetes API form.
@@ -263,6 +304,16 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		return admissionregv1.MutatingWebhook{}, err
 	}
 
+	namespaceSelector, err := c.namespaceSelector()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, fmt.Errorf("invalid namespaceSelector: %w", err)
+	}
+
+	objectSelector, err := c.objectSelector()
+	if err != nil {
+		return admissionregv1.MutatingWebhook{}, fmt.Errorf("invalid objectSelector: %w", err)
+	}
+
 	return admissionregv1.MutatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -273,6 +324,8 @@ func (c Config) ToMutatingWebhook() (admissionregv1.MutatingWebhook, error) {
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
 		ReinvocationPolicy:      c.reinvocationPolicy(),
+		NamespaceSelector:       namespaceSelector,
+		ObjectSelector:          objectSelector,
 	}, nil
 }
 
@@ -292,6 +345,16 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		return admissionregv1.ValidatingWebhook{}, err
 	}
 
+	namespaceSelector, err := c.namespaceSelector()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, fmt.Errorf("invalid namespaceSelector: %w", err)
+	}
+
+	objectSelector, err := c.objectSelector()
+	if err != nil {
+		return admissionregv1.ValidatingWebhook{}, fmt.Errorf("invalid objectSelector: %w", err)
+	}
+
 	return admissionregv1.ValidatingWebhook{
 		Name:                    c.Name,
 		Rules:                   c.rules(),
@@ -301,6 +364,8 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 		SideEffects:             c.sideEffects(),
 		TimeoutSeconds:          c.timeoutSeconds(),
 		AdmissionReviewVersions: c.AdmissionReviewVersions,
+		NamespaceSelector:       namespaceSelector,
+		ObjectSelector:          objectSelector,
 	}, nil
 }
 
@@ -441,6 +506,16 @@ func (c Config) reinvocationPolicy() *admissionregv1.ReinvocationPolicyType {
 		return nil
 	}
 	return &reinvocationPolicy
+}
+
+// namespaceSelector returns the LabelSelector for the webhook's namespace filter, or nil if unset.
+func (c Config) namespaceSelector() (*metav1.LabelSelector, error) {
+	return parseLabelSelector(c.NamespaceSelector)
+}
+
+// objectSelector returns the LabelSelector for the webhook's object filter, or nil if unset.
+func (c Config) objectSelector() (*metav1.LabelSelector, error) {
+	return parseLabelSelector(c.ObjectSelector)
 }
 
 // webhookVersions returns the target API versions of the {Mutating,Validating}WebhookConfiguration objects for a webhook.

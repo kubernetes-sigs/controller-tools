@@ -104,6 +104,14 @@ func (Config) Help() *markers.DefinitionHelp {
 				Summary: "allows mutating webhooks configuration to specify an external URL when generating",
 				Details: "the manifests, instead of using the internal service communication. Should be in format of\nhttps://address:port/path\nWhen this option is specified, the serviceConfig.Service is removed from webhook the manifest.\nThe URL configuration should be between quotes.\n`url` cannot be specified when `path` is specified.",
 			},
+			"NamespaceSelector": {
+				Summary: "limits which namespaces trigger this webhook.",
+				Details: "The webhook runs only for requests in namespaces that match the selector.\nThe value is a JSON object with the same shape as the Kubernetes LabelSelector\n(matchLabels and/or matchExpressions). Use backticks around the JSON so you do not\nneed to escape quotes, e.g. namespaceSelector=`{\"matchLabels\":{\"key\":\"value\"}}`.",
+			},
+			"ObjectSelector": {
+				Summary: "limits which objects trigger this webhook.",
+				Details: "The webhook runs only for requests whose object matches the selector.\nThe value is a JSON object with the same shape as the Kubernetes LabelSelector\n(matchLabels and/or matchExpressions). Use backticks around the JSON so you do not\nneed to escape quotes, e.g. objectSelector=`{\"matchLabels\":{\"key\":\"value\"}}`.",
+			},
 		},
 	}
 }

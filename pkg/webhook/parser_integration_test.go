@@ -526,6 +526,146 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("should properly generate webhook definition with namespaceSelector", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/valid-namespaceselector")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+		for _, r := range genCtx.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML")
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(actualFile, actualManifest)).To(Succeed())
+
+		By("loading the desired v1 YAML")
+		expectedFile, err := os.ReadFile("manifests.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
+
+		By("comparing the two")
+		assertSame(actualManifest, expectedManifest)
+	})
+
+	It("should properly generate webhook definition with objectSelector", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/valid-objectselector")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+		for _, r := range genCtx.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML")
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualManifest := &admissionregv1.MutatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(actualFile, actualManifest)).To(Succeed())
+
+		By("loading the desired v1 YAML")
+		expectedFile, err := os.ReadFile("manifests.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedManifest := &admissionregv1.MutatingWebhookConfiguration{}
+		Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
+
+		By("comparing the two")
+		assertSame(actualManifest, expectedManifest)
+	})
+
+	It("should properly generate webhook definition with matchExpressions in selectors", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/valid-selectors-matchexpressions")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+		By("requesting that the manifest be generated")
+		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(outputDir)
+		genCtx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			OutputRule: genall.OutputToDirectory(outputDir),
+		}
+		Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+		for _, r := range genCtx.Roots {
+			Expect(r.Errors).To(HaveLen(0))
+		}
+
+		By("loading the generated v1 YAML")
+		actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		actualMutating, actualValidating := unmarshalBothV1(actualFile)
+
+		By("loading the desired v1 YAML")
+		expectedFile, err := os.ReadFile("manifests.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		expectedMutating, expectedValidating := unmarshalBothV1(expectedFile)
+
+		By("comparing the two")
+		assertSame(actualMutating, expectedMutating)
+		assertSame(actualValidating, expectedValidating)
+	})
+
 })
 
 func unmarshalBothV1(in []byte) (mutating admissionregv1.MutatingWebhookConfiguration, validating admissionregv1.ValidatingWebhookConfiguration) {
