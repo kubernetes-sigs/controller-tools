@@ -88,6 +88,10 @@ func (Rule) Help() *markers.DefinitionHelp {
 				Summary: "specifies a custom name for the Role or ClusterRole.",
 				Details: "If not set, uses the default roleName from the generator.\nUseful for avoiding name conflicts when the same roleName is used across multiple namespaces.\n\nExample: When using namespace-scoped RBAC markers with kustomize's global namespace transformation,\nmultiple Roles might end up in the same namespace with identical names, causing an \"ID conflict\" error.\nUse roleName to ensure each Role has a unique name:\n\n  // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-manager,resources=deployments,verbs=get;list\n  // +kubebuilder:rbac:groups=\"\",namespace=users,roleName=user-secrets,resources=secrets,verbs=get\n\nThis generates Roles named \"infra-manager\" and \"user-secrets\" instead of both being \"manager-role\".",
 			},
+			"RoleName": {
+				Summary: "specifies a custom name for the Role or ClusterRole.",
+				Details: "If not set, uses the default roleName from the generator.\nUseful for avoiding name conflicts when the same roleName is used across multiple namespaces.\n\nExample: When using namespace-scoped RBAC markers with kustomize's global namespace transformation,\nmultiple Roles might end up in the same namespace with identical names, causing an \"ID conflict\" error.\nUse roleName to ensure each Role has a unique name:\n\n  // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-manager,resources=deployments,verbs=get;list\n  // +kubebuilder:rbac:groups=\"\",namespace=users,roleName=user-secrets,resources=secrets,verbs=get\n\nThis generates Roles named \"infra-manager\" and \"user-secrets\" instead of both being \"manager-role\".",
+			},
 		},
 	}
 }
