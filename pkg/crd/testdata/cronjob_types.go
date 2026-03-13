@@ -204,8 +204,24 @@ type CronJobSpec struct {
 	// +listMapKey=secondary
 	AssociativeList []AssociativeType `json:"associativeList"`
 
+	// This tests that associative lists work using the +k8s:listType alias.
+	// +k8s:listType=map
+	// +k8s:listMapKey=name
+	K8sAssociativeList []AssociativeType `json:"k8sAssociativeList"`
+
+	// This tests that +k8s:listType=set works.
+	// +k8s:listType=set
+	K8sSetList []string `json:"k8sSetList,omitempty"`
+
+	// This tests that +k8s:listType=atomic works.
+	// +k8s:listType=atomic
+	K8sAtomicList []string `json:"k8sAtomicList,omitempty"`
+
 	// This tests that associative lists work via a nested type.
 	NestedAssociativeList NestedAssociativeList `json:"nestedassociativeList"`
+
+	// This tests that associative lists work via a nested type using the +k8s:listType alias.
+	K8sNestedAssociativeList K8sNestedAssociativeList `json:"k8sNestedAssociativeList"`
 
 	// A map that allows different actors to manage different fields
 	// +mapType=granular
@@ -540,6 +556,11 @@ type AssociativeType struct {
 // +listMapKey=name
 // +listMapKey=secondary
 type NestedAssociativeList []AssociativeType
+
+// +k8s:listType=map
+// +k8s:listMapKey=name
+// +k8s:listMapKey=secondary
+type K8sNestedAssociativeList []AssociativeType
 
 // +mapType=granular
 type NestedMapOfInfo map[string][]byte
