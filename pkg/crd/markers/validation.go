@@ -35,6 +35,9 @@ const (
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
+
+	// K8sEnumTag indicates that the given type is an enum; all const values of this type are considered values in the enum
+	K8sEnumTag = "k8s:enum"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -90,6 +93,8 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
 	must(markers.MakeDefinition(ValidationAtLeastOneOfPrefix, markers.DescribesType, AtLeastOneOf(nil))).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
+	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesType, struct{}{})).
+		WithHelp(markers.SimpleHelp("CRD", "indicates that the given type is an enum; all const values of this type are considered values in the enum")),
 }
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
