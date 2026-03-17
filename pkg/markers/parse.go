@@ -265,7 +265,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		maybeItem := guessType(scanner, raw, false)
 
 		subRaw := raw[scanner.Pos().Offset:]
-		subScanner := parserScanner(subRaw, scanner.Error)
+		subScanner := parserScanner(subRaw, func(*sc.Scanner, string) {})
 
 		var tok rune
 		for {
@@ -291,7 +291,8 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 	// (so we don't consume our scanner tokens until we actually
 	// go to use this -- Go doesn't like scanners that can be rewound).
 	subRaw := raw[scanner.Pos().Offset:]
-	subScanner := parserScanner(subRaw, scanner.Error)
+	var hadScanError bool
+	subScanner := parserScanner(subRaw, func(*sc.Scanner, string) { hadScanError = true })
 
 	// skip whitespace
 	hint := peekNoSpace(subScanner)
@@ -361,11 +362,17 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 			nextTok = subScanner.Scan()
 		}
 
-		if nextTok == sc.Int {
-			return &Argument{Type: IntType}
-		}
-		if nextTok == sc.Float {
-			return &Argument{Type: NumberType}
+		// Only treat as a numeric type if the scanner did not emit errors while
+		// tokenising (e.g. invalid octal "087bdd" produces sc.Int but also
+		// triggers an error).  In that case fall through to the bare-string
+		// path so the value is treated as a string.
+		if !hadScanError {
+			if nextTok == sc.Int {
+				return &Argument{Type: IntType}
+			}
+			if nextTok == sc.Float {
+				return &Argument{Type: NumberType}
+			}
 		}
 	}
 

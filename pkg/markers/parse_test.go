@@ -219,6 +219,9 @@ var _ = Describe("Parsing", func() {
 				},
 			}
 			It("should support non-uniform, nested maps (and always guess as such)", argParseTestCase{arg: anyArg, raw: `{text: "abc", len: 3, "as bytes": 97;98;99, props: {encoding: ascii, nullsafe: true, tags: {"triple", "in a row"}}}`, output: complexMap}.Run)
+
+			It("should parse number-ish strings with invalid octal prefix as string", argParseTestCase{arg: anyArg, raw: `087bdd`, output: "087bdd"}.Run)
+			It("should parse path-like strings as string", argParseTestCase{arg: anyArg, raw: `/tmp/tmp.4paHkdEcpK`, output: "/tmp/tmp.4paHkdEcpK"}.Run)
 		})
 	})
 })
