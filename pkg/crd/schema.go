@@ -73,6 +73,7 @@ type schemaContext struct {
 
 	allowDangerousTypes    bool
 	ignoreUnexportedFields bool
+	opaque                 bool
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
@@ -97,6 +98,16 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
 	}
+}
+
+// ForInfoOpaque produces a new schemaContext with containing the same information
+// as this one, except with the given type information and marked as opaque.
+// An opaque context prevents the emission of $ref to the type's schema, suppressing
+// inherited type-level validations.
+func (c *schemaContext) ForInfoOpaque(info *markers.TypeInfo) *schemaContext {
+	ctx := c.ForInfo(info)
+	ctx.opaque = true
+	return ctx
 }
 
 // requestSchema asks for the schema for a type in the package with the
@@ -285,6 +296,12 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		// > Otherwise, the alias information is only in the type name, which
 		// > points directly to the actual (aliased) type.
 		if typeInfo.Name() != ident.Name {
+			if ctx.opaque {
+				return &apiextensionsv1.JSONSchemaProps{
+					Type:   typ,
+					Format: fmt,
+				}
+			}
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
 			return &apiextensionsv1.JSONSchemaProps{
@@ -309,8 +326,6 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		if pkg == ctx.pkg.Types {
 			pkgPath = ""
 		}
-		ctx.requestSchema(pkgPath, typeNameInfo.Name())
-		link := TypeRefLink(pkgPath, typeNameInfo.Name())
 
 		// In cases where we have a named type, apply the type and format from the named schema
 		// to allow markers that need this information to apply correctly.
@@ -327,11 +342,18 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 			}
 		}
 
-		return &apiextensionsv1.JSONSchemaProps{
+		props := &apiextensionsv1.JSONSchemaProps{
 			Type:   typ,
 			Format: fmt,
-			Ref:    &link,
 		}
+
+		if !ctx.opaque {
+			ctx.requestSchema(pkgPath, typeNameInfo.Name())
+			link := TypeRefLink(pkgPath, typeNameInfo.Name())
+			props.Ref = &link
+		}
+
+		return props
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unsupported type %T for identifier %s", typeInfo, ident.Name), ident))
 		return &apiextensionsv1.JSONSchemaProps{}
@@ -537,9 +559,12 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		}
 
 		var propSchema *apiextensionsv1.JSONSchemaProps
-		if field.Markers.Get(crdmarkers.SchemalessName) != nil {
+		switch {
+		case field.Markers.Get(crdmarkers.SchemalessName) != nil:
 			propSchema = &apiextensionsv1.JSONSchemaProps{}
-		} else {
+		case field.Markers.Get(crdmarkers.OpaqueFieldName) != nil:
+			propSchema = typeToSchema(ctx.ForInfoOpaque(&markers.TypeInfo{}), field.RawField.Type)
+		default:
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
 		}
 		propSchema.Description = field.Doc
