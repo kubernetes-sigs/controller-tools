@@ -359,6 +359,17 @@ func (Nullable) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Opaque) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "instructs the CRD generator to suppress inheritance of type-level",
+			Details: "validation for this field. Field-level markers still apply.",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Pattern) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
