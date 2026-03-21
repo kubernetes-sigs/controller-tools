@@ -9563,6 +9563,12 @@ spec:
                   from LongerString (MinLength=4).
                 maxLength: 5
                 type: string
+              opaqueMinLengthField:
+                description: |-
+                  This tests that +k8s:opaque allows a field to completely replace a type-level validation.
+                  LongerString has MinLength=4. This field should have only MinLength=2.
+                minLength: 2
+                type: string
               patternObject:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$

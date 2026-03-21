@@ -42,7 +42,7 @@ var _ = Describe("CronJob CRD", func() {
 	})
 
 	Context("validating opaque markers", func() {
-		applyCronJob := func(ctx context.Context, name, opaqueVal, nonOpaqueVal string) error {
+		applyCronJob := func(ctx context.Context, name, opaqueVal, nonOpaqueVal, opaqueMinLengthVal string) error {
 			obj := &unstructured.Unstructured{}
 			obj.SetGroupVersionKind(schema.GroupVersionKind{
 				Group:   "testdata.kubebuilder.io",
@@ -51,7 +51,6 @@ var _ = Describe("CronJob CRD", func() {
 			})
 			obj.SetName(name)
 			obj.SetNamespace("default")
-
 			spec := map[string]interface{}{
 				"schedule":                      "*/5 * * * *", // required field
 				"foo":                           "bar",
@@ -104,6 +103,9 @@ var _ = Describe("CronJob CRD", func() {
 			if nonOpaqueVal != "" {
 				spec["nonOpaqueField"] = nonOpaqueVal
 			}
+			if opaqueMinLengthVal != "" {
+				spec["opaqueMinLengthField"] = opaqueMinLengthVal
+			}
 			obj.Object["spec"] = spec
 
 			return k8sClient.Create(ctx, obj)
@@ -115,23 +117,32 @@ var _ = Describe("CronJob CRD", func() {
 
 			By("allowing opaqueField with length 3 (suppresses type-level MinLength=4)")
 			Eventually(func() error {
-				return applyCronJob(ctx, "test-opaque-short", "abc", "")
+				return applyCronJob(ctx, "test-opaque-short", "abc", "", "")
 			}, 5*time.Second, 1*time.Second).Should(Succeed())
 
 			By("rejecting nonOpaqueField with length 3 (inherits type-level MinLength=4)")
-			err := applyCronJob(ctx, "test-non-opaque-short", "", "abc")
+			err := applyCronJob(ctx, "test-non-opaque-short", "", "abc", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("should be at least 4 chars long"))
 
 			By("rejecting opaqueField with length 6 (applies field-level MaxLength=5)")
-			err = applyCronJob(ctx, "test-opaque-long", "abcdef", "")
+			err = applyCronJob(ctx, "test-opaque-long", "abcdef", "", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Too long"))
 
 			By("rejecting nonOpaqueField with length 6 (applies field-level MaxLength=5)")
-			err = applyCronJob(ctx, "test-non-opaque-long", "", "abcdef")
+			err = applyCronJob(ctx, "test-non-opaque-long", "", "abcdef", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Too long"))
+
+			By("allowing opaqueMinLengthField with length 2 (suppresses type-level MinLength=4, uses field-level MinLength=2)")
+			err = applyCronJob(ctx, "test-opaque-min-2", "", "", "ab")
+			Expect(err).ToNot(HaveOccurred())
+
+			By("rejecting opaqueMinLengthField with length 1 (uses field-level MinLength=2)")
+			err = applyCronJob(ctx, "test-opaque-min-1", "", "", "a")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("should be at least 2 chars long"))
 		})
 	})
 })
