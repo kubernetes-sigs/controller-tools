@@ -201,6 +201,21 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("OneOf API with missing omitempty/omitzero tag", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./oneof_missing_tag_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error when OneOf field lacks omitempty or omitzero tag", func() {
+				kind := "Oneof"
+				groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "field foo is part of OneOf constraint and must have omitempty or omitzero tag"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
 		Context("CronJob API with Wrong Annotation Format", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./wrong_annotation_format"}

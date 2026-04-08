@@ -487,7 +487,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			switch opt {
 			case "inline":
 				inline = true
-			case "omitempty":
+			case "omitempty", "omitzero":
 				omitEmpty = true
 			}
 		}
@@ -522,10 +522,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 
 		// if this package isn't set to optional default...
 		case defaultMode == "required":
-			// ...everything that's not inline / omitempty is required
+			// ...everything that's not inline / omitempty / omitzero is required
 			if !inline && !omitEmpty {
 				if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
-					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty tag", fieldName), structType))
+					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty or omitzero tag", fieldName), structType))
 					return props
 				}
 				props.Required = append(props.Required, fieldName)
