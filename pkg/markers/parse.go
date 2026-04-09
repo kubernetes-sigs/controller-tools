@@ -812,7 +812,20 @@ func (d *Definition) loadFields() error {
 func parserScanner(raw string, err func(*sc.Scanner, string)) *sc.Scanner {
 	scanner := &sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(raw))
-	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
+
+	// Base scanning modes we always want enabled.
+	mode := sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.SkipComments
+
+	// ScanRawStrings causes the scanner to treat backticks (`) as raw string delimiters.
+	// If the input contains an unbalanced (odd) number of backticks the scanner will
+	// report "literal not terminated". To avoid that error for annotations that may
+	// include unpaired backticks, only enable ScanRawStrings when the number of
+	// backticks is even (i.e. balanced).
+	if strings.Count(raw, "`")%2 == 0 {
+		mode |= sc.ScanRawStrings
+	}
+
+	scanner.Mode = uint(mode)
 	scanner.Error = err
 
 	return scanner
