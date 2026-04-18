@@ -319,6 +319,19 @@ spec:
                 minLength: 2
                 pattern: ^((100|[0-9]{1,2})%|[0-9]+)$
                 x-kubernetes-int-or-string: true
+              intOrStringWithEnum:
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  This tests that an IntOrString can have enum validation.
+                  The XIntOrString marker is required for applying enum to IntOrString.
+                enum:
+                - 1
+                - 2
+                - foo
+                - bar
+                x-kubernetes-int-or-string: true
               intWithValidations:
                 maximum: 2
                 minimum: -2

@@ -271,6 +271,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
 
+	// This tests that an IntOrString can have enum validation.
+	// The XIntOrString marker is required for applying enum to IntOrString.
+	// +kubebuilder:validation:XIntOrString
+	// +kubebuilder:validation:Enum=1;2;"foo";"bar"
+	IntOrStringWithEnum *intstr.IntOrString `json:"intOrStringWithEnum,omitempty"`
+
 	// Checks that nested maps work
 	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
 
