@@ -557,7 +557,7 @@ type ExternalDocs struct {
 	Description string `marker:",optional"`
 }
 
-func (m ExternalDocs) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m ExternalDocs) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if _, err := url.ParseRequestURI(m.URL); err != nil {
 		return fmt.Errorf("invalid url %q in kubebuilder:externalDocs marker: %w", m.URL, err)
 	}

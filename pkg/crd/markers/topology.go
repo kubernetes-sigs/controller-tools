@@ -177,7 +177,7 @@ type MapType string
 //	}
 type StructType string
 
-func (l ListType) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (l ListType) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply listType to an array, found %s", schema.Type)
 	}
@@ -193,7 +193,7 @@ func (l ListType) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault - 1
 }
 
-func (l ListMapKey) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (l ListMapKey) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply listMapKey to an array, found %s", schema.Type)
 	}
@@ -204,7 +204,7 @@ func (l ListMapKey) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error
 	return nil
 }
 
-func (m MapType) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MapType) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Object) {
 		return fmt.Errorf("must apply mapType to an object")
 	}
@@ -219,7 +219,7 @@ func (m MapType) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (s StructType) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (s StructType) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Object) && schema.Type != "" {
 		return fmt.Errorf("must apply structType to an object; either explicitly set or defaulted through an empty schema type")
 	}

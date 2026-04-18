@@ -148,7 +148,7 @@ type defaultPriorityMarker struct {
 	callback func()
 }
 
-func (m *defaultPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *defaultPriorityMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -162,7 +162,7 @@ func (m *testPriorityMarker) ApplyPriority() crdmarkers.ApplyPriority {
 	return m.priority
 }
 
-func (m *testPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *testPriorityMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -172,7 +172,7 @@ type testapplyFirstMarker struct {
 }
 
 func (m *testapplyFirstMarker) ApplyFirst() {}
-func (m *testapplyFirstMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }

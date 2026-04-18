@@ -49,7 +49,7 @@ var byteType = types.Universe.Lookup("byte").Type()
 type SchemaMarker interface {
 	// ApplyToSchema is called after the rest of the schema for a given type
 	// or field is generated, to modify the schema appropriately.
-	ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error
+	ApplyToSchema(ctx *crdmarkers.SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error
 }
 
 // applyFirstMarker is applied before any other markers.  It's a bit of a hack.
@@ -114,9 +114,6 @@ func (c *schemaContext) requestSchema(pkgPath, typeName string) {
 
 // infoToSchema creates a schema for the type in the given set of type information.
 func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
-	if ctx.info.Markers.Get(crdmarkers.K8sEnumTag) != nil {
-		return enumToSchema(ctx)
-	}
 	if obj := ctx.pkg.Types.Scope().Lookup(ctx.info.Name); obj != nil {
 		switch {
 		// If the obj implements a JSON marshaler and has a marker, use the
@@ -141,61 +138,6 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 		}
 	}
 	return typeToSchema(ctx, ctx.info.RawSpec.Type)
-}
-
-func enumToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
-	rawType := ctx.info.RawSpec.Type
-	typeDef := ctx.pkg.TypesInfo.Defs[ctx.info.RawSpec.Name]
-	if typeDef == nil {
-		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown enum type %s", ctx.info.Name), rawType))
-		return &apiextensionsv1.JSONSchemaProps{}
-	}
-	typeInfo := typeDef.Type()
-	if basicInfo, isBasic := typeInfo.Underlying().(*types.Basic); !isBasic || basicInfo.Info()&types.IsString == 0 {
-		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("enum type must be a string, not %s", typeInfo.String()), rawType))
-		return &apiextensionsv1.JSONSchemaProps{}
-	}
-
-	var enumValues []apiextensionsv1.JSON
-	for _, file := range ctx.pkg.Syntax {
-		for _, decl := range file.Decls {
-			genDecl, ok := decl.(*ast.GenDecl)
-			if !ok || genDecl.Tok != token.CONST {
-				continue
-			}
-			for _, spec := range genDecl.Specs {
-				valueSpec, ok := spec.(*ast.ValueSpec)
-				if !ok {
-					continue
-				}
-				for i, name := range valueSpec.Names {
-					obj := ctx.pkg.TypesInfo.Defs[name]
-					if obj == nil || obj.Type() != typeInfo {
-						continue
-					}
-					val := valueSpec.Values[i]
-					basicLit, ok := val.(*ast.BasicLit)
-					if !ok || basicLit.Kind != token.STRING {
-						continue
-					}
-					// trim quotes
-					value := basicLit.Value[1 : len(basicLit.Value)-1]
-					enumValues = append(enumValues, apiextensionsv1.JSON{Raw: []byte(`"` + value + `"`)})
-				}
-			}
-		}
-	}
-
-	slices.SortFunc(enumValues, func(a, b apiextensionsv1.JSON) int {
-		return strings.Compare(string(a.Raw), string(b.Raw))
-	})
-
-	schema := &apiextensionsv1.JSONSchemaProps{
-		Type: "string",
-		Enum: enumValues,
-	}
-	applyMarkers(ctx, ctx.info.Markers, schema, rawType)
-	return schema
 }
 
 type schemaMarkerWithName struct {
@@ -252,8 +194,9 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	slices.SortStableFunc(markers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 	slices.SortStableFunc(itemsMarkers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 
+	schemaCtx := &crdmarkers.SchemaContext{Package: ctx.pkg, TypeInfo: ctx.info}
 	for _, schemaMarker := range markers {
-		if err := schemaMarker.SchemaMarker.ApplyToSchema(props); err != nil {
+		if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, props); err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
@@ -264,7 +207,7 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			ctx.pkg.AddError(loader.ErrFromNode(err, node))
 		} else {
 			itemsSchema := props.Items.Schema
-			if err := schemaMarker.SchemaMarker.ApplyToSchema(itemsSchema); err != nil {
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, itemsSchema); err != nil {
 				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 			}
 		}
