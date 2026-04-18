@@ -35,6 +35,8 @@ const (
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
+
+	OpaqueFieldName = "k8s:opaque"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -123,6 +125,9 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition(SchemalessName, markers.DescribesField, Schemaless{})).
 		WithHelp(Schemaless{}.Help()),
+
+	must(markers.MakeDefinition(OpaqueFieldName, markers.DescribesField, Opaque{})).
+		WithHelp(markers.SimpleHelp("CRD validation", "suppresses type-level validation inheritance for this field; field-level markers still apply.")),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -567,6 +572,10 @@ type XIntOrString struct{}
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Schemaless struct{}
+
+// Opaque instructs the CRD generator to suppress inheritance of type-level
+// validation for this field. Field-level markers still apply.
+type Opaque struct{}
 
 func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)
