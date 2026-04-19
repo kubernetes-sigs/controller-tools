@@ -196,6 +196,20 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Enum API with marker on field", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./enum_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error when k8s:enum is set on a field", func() {
+				groupKind := schema.GroupKind{Kind: "EnumError", Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "k8s:enum must be set on a type, not a field"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
 		Context("OneOf API with invalid marker", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./oneof_error/..."}

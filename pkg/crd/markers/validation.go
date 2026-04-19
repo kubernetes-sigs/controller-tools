@@ -99,6 +99,7 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
 	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesType, K8sEnum{})).
 		WithHelp(markers.SimpleHelp("CRD", "indicates that the given type is an enum; all const values of this type are considered values in the enum")),
+	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesField, K8sEnumField{})),
 }
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
@@ -1017,6 +1018,15 @@ func fieldsToOneOfCelRuleStr(fields []string) string {
 	}
 	list.WriteString("].filter(x,x==true).size()")
 	return list.String()
+}
+
+// K8sEnumField exists solely to reject the k8s:enum marker when placed on a
+// field. The marker is only meaningful on a type declaration; without this
+// registration a field-level use would be silently ignored.
+type K8sEnumField struct{}
+
+func (K8sEnumField) ApplyToSchema(*SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
+	return fmt.Errorf("k8s:enum must be set on a type, not a field")
 }
 
 // K8sEnum marks a type as an enum; the schema's Enum values are populated
