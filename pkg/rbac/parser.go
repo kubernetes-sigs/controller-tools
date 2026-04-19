@@ -72,6 +72,12 @@ var (
 //
 //	// Custom role name
 //	// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,roleName=deployment-reader
+//
+//	// Generate ClusterRoleBinding (must specify both serviceAccountName and serviceAccountNamespace)
+//	// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,serviceAccountName=controller-manager,serviceAccountNamespace=system
+//
+//	// Generate RoleBinding (serviceAccountNamespace defaults to role's namespace "my-namespace")
+//	// +kubebuilder:rbac:groups="",namespace=my-namespace,resources=secrets,verbs=get,serviceAccountName=my-controller
 type Rule struct {
 	// Groups specifies the API groups that this rule encompasses.
 	// Use empty string ("") for the core API group.
@@ -125,6 +131,16 @@ type Rule struct {
 	//
 	// This generates Roles named "infra-manager" and "user-secrets" instead of both being "manager-role".
 	RoleName string `marker:"roleName,optional"`
+
+	// ServiceAccountName specifies the ServiceAccount to bind to this role.
+	// Generates ClusterRoleBinding (cluster-scoped) or RoleBinding (namespace-scoped).
+	// For namespace-scoped roles, ServiceAccountNamespace defaults to the role's namespace.
+	// For cluster-scoped roles, ServiceAccountNamespace must be explicitly specified.
+	ServiceAccountName string `marker:"serviceAccountName,optional"`
+
+	// ServiceAccountNamespace specifies the ServiceAccount's namespace.
+	// Required for cluster-scoped roles, optional for namespace-scoped (defaults to role namespace).
+	ServiceAccountNamespace string `marker:"serviceAccountNamespace,optional"`
 }
 
 // ruleKey represents the resources and non-resources a Rule applies.
@@ -218,13 +234,16 @@ func (r *Rule) ToRule() rbacv1.PolicyRule {
 
 // +controllertools:marker:generateHelp
 
-// Generator generates ClusterRole objects.
+// Generator generates ClusterRole and Role objects, and optionally their bindings.
 type Generator struct {
 	// RoleName sets the name of the generated ClusterRole.
 	RoleName string
 
 	// FileName sets the file name for the generated manifest(s). If not set, defaults to "role.yaml".
 	FileName string `marker:",optional"`
+
+	// BindingFileName sets the file name for the generated binding manifest(s). If not set, defaults to "role_binding.yaml".
+	BindingFileName string `marker:",optional"`
 
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
 	HeaderFile string `marker:",optional"`
@@ -241,9 +260,50 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-// GenerateRoles generate a slice of objs representing either a ClusterRole or a Role object
-// The order of the objs in the returned slice is stable and determined by their namespaces.
-func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error) {
+// BindingInfo contains ServiceAccount information for generating role bindings.
+type BindingInfo struct {
+	ServiceAccountName      string
+	ServiceAccountNamespace string
+}
+
+// trackBindingInfo records binding information for roles that specify serviceAccountName.
+func trackBindingInfo(rule *Rule, effectiveRoleName string, bindingsByRole map[string]BindingInfo) error {
+	if rule.ServiceAccountName == "" {
+		if rule.ServiceAccountNamespace != "" {
+			return fmt.Errorf("serviceAccountNamespace cannot be specified without serviceAccountName")
+		}
+		return nil
+	}
+
+	saNamespace := rule.ServiceAccountNamespace
+	if saNamespace == "" {
+		if rule.Namespace == "" {
+			return fmt.Errorf("serviceAccountNamespace must be specified for cluster-scoped roles")
+		}
+		saNamespace = rule.Namespace
+	}
+
+	roleKey := fmt.Sprintf("%s:%s", rule.Namespace, effectiveRoleName)
+	if existing, exists := bindingsByRole[roleKey]; exists {
+		if existing.ServiceAccountName != rule.ServiceAccountName || existing.ServiceAccountNamespace != saNamespace {
+			return fmt.Errorf(
+				"role %q already has a binding to ServiceAccount %s/%s, cannot bind to different ServiceAccount %s/%s. Use a different roleName for each ServiceAccount",
+				effectiveRoleName,
+				existing.ServiceAccountNamespace, existing.ServiceAccountName,
+				saNamespace, rule.ServiceAccountName,
+			)
+		}
+	}
+
+	bindingsByRole[roleKey] = BindingInfo{
+		ServiceAccountName:      rule.ServiceAccountName,
+		ServiceAccountNamespace: saNamespace,
+	}
+	return nil
+}
+
+// GenerateRoles generates a slice of objs representing either a ClusterRole or a Role object and binding info when marker is specified.
+func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, map[string]BindingInfo, error) {
 	// Group rules by namespace:roleName combination
 	// Key format: "namespace:roleName" or ":roleName" for ClusterRole
 	type nsRoleKey struct {
@@ -251,6 +311,7 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 		roleName  string
 	}
 	rulesByNSRole := make(map[nsRoleKey][]*Rule)
+	bindingsByRole := make(map[string]BindingInfo)
 
 	for _, root := range ctx.Roots {
 		markerSet, err := markers.PackageMarkers(ctx.Collector, root)
@@ -267,6 +328,9 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 				effectiveRoleName = roleName
 			}
 			key := nsRoleKey{namespace: rule.Namespace, roleName: effectiveRoleName}
+			if err := trackBindingInfo(&rule, effectiveRoleName, bindingsByRole); err != nil {
+				return nil, nil, err
+			}
 
 			if len(rule.Resources) == 0 {
 				// Add a rule without any resource if Resources is empty.
@@ -444,11 +508,78 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 		}
 	}
 
-	return objs, nil
+	return objs, bindingsByRole, nil
+}
+
+// GenerateBindings generates ClusterRoleBinding and RoleBinding objects from binding information.
+func GenerateBindings(roles []any, bindingsByRole map[string]BindingInfo) []any {
+	var bindings []any
+
+	for _, role := range roles {
+		switch r := role.(type) {
+		case rbacv1.ClusterRole:
+			roleKey := fmt.Sprintf(":%s", r.Name)
+			bindingInfo, ok := bindingsByRole[roleKey]
+			if !ok {
+				continue
+			}
+			bindings = append(bindings, rbacv1.ClusterRoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ClusterRoleBinding",
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: r.Name + "binding",
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "ClusterRole",
+					Name:     r.Name,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      bindingInfo.ServiceAccountName,
+						Namespace: bindingInfo.ServiceAccountNamespace,
+					},
+				},
+			})
+
+		case rbacv1.Role:
+			roleKey := fmt.Sprintf("%s:%s", r.Namespace, r.Name)
+			bindingInfo, ok := bindingsByRole[roleKey]
+			if !ok {
+				continue
+			}
+			bindings = append(bindings, rbacv1.RoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "RoleBinding",
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.Name + "binding",
+					Namespace: r.Namespace,
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "Role",
+					Name:     r.Name,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      bindingInfo.ServiceAccountName,
+						Namespace: bindingInfo.ServiceAccountNamespace,
+					},
+				},
+			})
+		}
+	}
+	return bindings
 }
 
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
-	objs, err := GenerateRoles(ctx, g.RoleName)
+	objs, bindingsByRole, err := GenerateRoles(ctx, g.RoleName)
 	if err != nil {
 		return err
 	}
@@ -472,5 +603,23 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		fileName = g.FileName
 	}
 
-	return ctx.WriteYAML(fileName, headerText, objs, genall.WithTransform(genall.TransformRemoveCreationTimestamp))
+	if err := ctx.WriteYAML(fileName, headerText, objs, genall.WithTransform(genall.TransformRemoveCreationTimestamp)); err != nil {
+		return err
+	}
+
+	// Generate bindings if any roles have bind markers
+	if len(bindingsByRole) > 0 {
+		bindings := GenerateBindings(objs, bindingsByRole)
+		if len(bindings) > 0 {
+			bindingFileName := "role_binding.yaml"
+			if g.BindingFileName != "" {
+				bindingFileName = g.BindingFileName
+			}
+			if err := ctx.WriteYAML(bindingFileName, headerText, bindings, genall.WithTransform(genall.TransformRemoveCreationTimestamp)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

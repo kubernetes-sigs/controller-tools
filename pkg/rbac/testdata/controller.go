@@ -1,15 +1,15 @@
 package controller
 
-// +kubebuilder:rbac:groups=batch.io,resources=cronjobs,verbs=get;watch;create
+// +kubebuilder:rbac:groups=batch.io,resources=cronjobs,verbs=get;watch;create,serviceAccountName=controller-manager,serviceAccountNamespace=system
 // +kubebuilder:rbac:groups=batch.io,resources=cronjobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get
-// +kubebuilder:rbac:groups=wave,resources=jobs,verbs=get,namespace=zoo
+// +kubebuilder:rbac:groups=wave,resources=jobs,verbs=get,namespace=zoo,serviceAccountName=controller-manager,serviceAccountNamespace=system
 // +kubebuilder:rbac:groups=batch;batch;batch,resources=jobs/status,verbs=watch
 // +kubebuilder:rbac:groups=batch;cron,resources=jobs/status,verbs=create;get
 // +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=zoo
 // +kubebuilder:rbac:groups=cron;batch,resources=jobs/status,verbs=get;create
 // +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=watch;watch
-// +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=park
+// +kubebuilder:rbac:groups=art,resources=jobs,verbs=get,namespace=park,serviceAccountName=controller-manager,serviceAccountNamespace=system
 // +kubebuilder:rbac:groups=batch.io,resources=cronjobs,resourceNames=foo;bar;baz,verbs=get;watch
 // +kubebuilder:rbac:groups=deduplicate-verbs,resources=some,verbs=get;list
 // +kubebuilder:rbac:groups=deduplicate-verbs,resources=some,verbs=get
@@ -35,12 +35,12 @@ package controller
 // +kubebuilder:rbac:groups=core,resources=deduplicate,verbs=list
 // +kubebuilder:rbac:groups="",resources=me,verbs=list
 // +kubebuilder:rbac:groups=core;"";some-other-to-deduplicate-with-core,resources=me,verbs=list;get
-// +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=get;update;patch;create,namespace=here
+// +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=get;update;patch;create,namespace=here,serviceAccountName=controller-manager,serviceAccountNamespace=system
 // +kubebuilder:rbac:groups=deduplicate-groups5,resources=abc,verbs=*,namespace=here
 // Test custom roleName to avoid conflicts
-// +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=deployments,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups="",namespace=users,roleName=user-secrets-reader,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=deployments,verbs=get;list;watch;update;patch,serviceAccountName=controller-manager,serviceAccountNamespace=system
+// +kubebuilder:rbac:groups="",namespace=users,roleName=user-secrets-reader,resources=secrets,verbs=get;list;watch,serviceAccountName=controller-manager,serviceAccountNamespace=system
 // Test multiple markers with same custom roleName in same namespace (should merge)
 // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=statefulsets,verbs=get;list
 // Test backward compatibility - no roleName specified (uses default)
-// +kubebuilder:rbac:groups=monitoring,namespace=observability,resources=prometheuses,verbs=get;list
+// +kubebuilder:rbac:groups=monitoring,namespace=observability,resources=prometheuses,verbs=get;list,serviceAccountName=controller-manager,serviceAccountNamespace=system

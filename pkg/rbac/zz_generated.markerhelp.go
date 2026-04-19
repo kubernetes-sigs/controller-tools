@@ -28,7 +28,7 @@ func (Generator) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "",
 		DetailedHelp: markers.DetailedHelp{
-			Summary: "generates ClusterRole objects.",
+			Summary: "generates ClusterRole and Role objects, and optionally their bindings.",
 			Details: "",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
@@ -38,6 +38,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 			},
 			"FileName": {
 				Summary: "sets the file name for the generated manifest(s). If not set, defaults to \"role.yaml\".",
+				Details: "",
+			},
+			"BindingFileName": {
+				Summary: "sets the file name for the generated binding manifest(s). If not set, defaults to \"role_binding.yaml\".",
 				Details: "",
 			},
 			"HeaderFile": {
@@ -57,7 +61,7 @@ func (Rule) Help() *markers.DefinitionHelp {
 		Category: "RBAC",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies an RBAC rule to all access to some resources or non-resource URLs.",
-			Details: "RBAC markers are used to generate ClusterRole or Role manifests.\nMultiple markers can be combined to build comprehensive RBAC policies.\n\nExamples:\n\n\t// Basic resource access\n\t// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch\n\n\t// Core API group (use empty string)\n\t// +kubebuilder:rbac:groups=\"\",resources=pods;services,verbs=get;list;watch\n\n\t// Multiple API groups and resources\n\t// +kubebuilder:rbac:groups=apps;batch,resources=deployments;jobs,verbs=get;list;watch;create;update;patch;delete\n\n\t// Access to resource status or scale subresources\n\t// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch\n\t// +kubebuilder:rbac:groups=apps,resources=deployments/scale,verbs=get;update\n\n\t// Access to specific resource instances by name\n\t// +kubebuilder:rbac:groups=\"\",resources=configmaps,resourceNames=my-config,verbs=get\n\n\t// Non-resource URLs (for metrics, healthz, etc.)\n\t// +kubebuilder:rbac:urls=/metrics;/healthz,verbs=get\n\n\t// Namespace-scoped Role instead of ClusterRole\n\t// +kubebuilder:rbac:groups=\"\",namespace=my-namespace,resources=secrets,verbs=get;list;watch\n\n\t// Custom role name\n\t// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,roleName=deployment-reader",
+			Details: "RBAC markers are used to generate ClusterRole or Role manifests.\nMultiple markers can be combined to build comprehensive RBAC policies.\n\nExamples:\n\n\t// Basic resource access\n\t// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch\n\n\t// Core API group (use empty string)\n\t// +kubebuilder:rbac:groups=\"\",resources=pods;services,verbs=get;list;watch\n\n\t// Multiple API groups and resources\n\t// +kubebuilder:rbac:groups=apps;batch,resources=deployments;jobs,verbs=get;list;watch;create;update;patch;delete\n\n\t// Access to resource status or scale subresources\n\t// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch\n\t// +kubebuilder:rbac:groups=apps,resources=deployments/scale,verbs=get;update\n\n\t// Access to specific resource instances by name\n\t// +kubebuilder:rbac:groups=\"\",resources=configmaps,resourceNames=my-config,verbs=get\n\n\t// Non-resource URLs (for metrics, healthz, etc.)\n\t// +kubebuilder:rbac:urls=/metrics;/healthz,verbs=get\n\n\t// Namespace-scoped Role instead of ClusterRole\n\t// +kubebuilder:rbac:groups=\"\",namespace=my-namespace,resources=secrets,verbs=get;list;watch\n\n\t// Custom role name\n\t// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,roleName=deployment-reader\n\n\t// Generate ClusterRoleBinding (must specify both serviceAccountName and serviceAccountNamespace)\n\t// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list,serviceAccountName=controller-manager,serviceAccountNamespace=system\n\n\t// Generate RoleBinding (serviceAccountNamespace defaults to role's namespace \"my-namespace\")\n\t// +kubebuilder:rbac:groups=\"\",namespace=my-namespace,resources=secrets,verbs=get,serviceAccountName=my-controller",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Groups": {
@@ -87,6 +91,14 @@ func (Rule) Help() *markers.DefinitionHelp {
 			"RoleName": {
 				Summary: "specifies a custom name for the Role or ClusterRole.",
 				Details: "If not set, uses the default roleName from the generator.\nUseful for avoiding name conflicts when the same roleName is used across multiple namespaces.\n\nExample: When using namespace-scoped RBAC markers with kustomize's global namespace transformation,\nmultiple Roles might end up in the same namespace with identical names, causing an \"ID conflict\" error.\nUse roleName to ensure each Role has a unique name:\n\n  // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-manager,resources=deployments,verbs=get;list\n  // +kubebuilder:rbac:groups=\"\",namespace=users,roleName=user-secrets,resources=secrets,verbs=get\n\nThis generates Roles named \"infra-manager\" and \"user-secrets\" instead of both being \"manager-role\".",
+			},
+			"ServiceAccountName": {
+				Summary: "specifies the ServiceAccount to bind to this role.",
+				Details: "Generates ClusterRoleBinding (cluster-scoped) or RoleBinding (namespace-scoped).\nFor namespace-scoped roles, ServiceAccountNamespace defaults to the role's namespace.\nFor cluster-scoped roles, ServiceAccountNamespace must be explicitly specified.",
+			},
+			"ServiceAccountNamespace": {
+				Summary: "specifies the ServiceAccount's namespace.",
+				Details: "Required for cluster-scoped roles, optional for namespace-scoped (defaults to role namespace).",
 			},
 		},
 	}
