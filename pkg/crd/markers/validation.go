@@ -40,6 +40,7 @@ const (
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
+	ValidationAllOfPrefix        = validationPrefix + "AllOf"
 
 	// K8sEnumTag indicates that the given type is an enum; all const values of this type are considered values in the enum
 	K8sEnumTag = "k8s:enum"
@@ -98,6 +99,8 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
 	must(markers.MakeDefinition(ValidationAtLeastOneOfPrefix, markers.DescribesType, AtLeastOneOf(nil))).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
+	must(markers.MakeDefinition(ValidationAllOfPrefix, markers.DescribesType, AllOf(nil))).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must all be set.")),
 	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesType, K8sEnum{})).
 		WithHelp(markers.SimpleHelp("CRD", "indicates that the given type is an enum; all const values of this type are considered values in the enum")),
 	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesField, K8sEnumField{})),
@@ -665,6 +668,22 @@ type ExactlyOneOf []string
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
 
+// AllOf adds a validation constraint that requires all specified fields to be set.
+//
+// This marker may be repeated to specify multiple AllOf constraints.
+//
+// Example:
+//
+//	// +kubebuilder:validation:AllOf=host;port;protocol
+//	type ServerConfig struct {
+//	    Host *string
+//	    Port *int
+//	    Protocol *string
+//	}
+//
+// +controllertools:marker:generateHelp:category="CRD validation"
+type AllOf []string
+
 func (m Maximum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
@@ -1004,6 +1023,23 @@ func (AtLeastOneOf) ApplyPriority() ApplyPriority {
 	return ExactlyOneOf{}.ApplyPriority() + 1
 }
 
+func (fields AllOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	rule := fieldsToOneOfCelRuleStr(fields)
+	xvalidation := XValidation{
+		Rule:    fmt.Sprintf("%s == %d", rule, len(fields)),
+		Message: fmt.Sprintf("all fields in %v must be set", fields),
+	}
+	return xvalidation.ApplyToSchema(ctx, schema)
+}
+
+func (AllOf) ApplyPriority() ApplyPriority {
+	// explicitly go after AtLeastOneOf markers so that the ordering is deterministic
+	return AtLeastOneOf{}.ApplyPriority() + 1
+}
+
 // fieldsToOneOfCelRuleStr converts a slice of field names to a string representation
 // [has(self.field1),has(self.field1),...].filter(x, x == true).size()
 func fieldsToOneOfCelRuleStr(fields []string) string {
@@ -1026,7 +1062,7 @@ func fieldsToOneOfCelRuleStr(fields []string) string {
 // registration a field-level use would be silently ignored.
 type K8sEnumField struct{}
 
-func (K8sEnumField) ApplyToSchema(*SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
+func (K8sEnumField) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	return fmt.Errorf("k8s:enum must be set on a type, not a field")
 }
 
