@@ -63,6 +63,9 @@ var CRDMarkers = []*definitionWithHelp{
 		WithHelp(ExternalDocs{}.Help()),
 	must(markers.MakeDefinition("kubebuilder:externalDocs", markers.DescribesType, ExternalDocs{})).
 		WithHelp(ExternalDocs{}.Help()),
+
+	must(markers.MakeDefinition("kubebuilder:skip:description", markers.DescribesField, SkipDescription{})).
+		WithHelp(SkipDescription{}.Help()),
 }
 
 // TODO: categories and singular used to be annotations types
@@ -565,5 +568,30 @@ func (m ExternalDocs) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) err
 		URL:         m.URL,
 		Description: m.Description,
 	}
+	return nil
+}
+
+// +controllertools:marker:generateHelp:category=CRD
+
+// SkipDescription omits spec descriptions from generated schemas.
+//
+// Reduces CRD size when types have extensive docs.
+// Apply to specific specs or at package level to skip all.
+//
+// Example:
+//
+//	type MyCRD struct {
+//	    // +kubebuilder:skip:description
+//	    LargeField ComplexType `json:"largeField"`
+//	}
+//
+// Package level:
+//
+//	// +kubebuilder:skip:description
+//	package v1alpha1
+type SkipDescription struct{}
+
+func (s SkipDescription) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+	schema.Description = ""
 	return nil
 }

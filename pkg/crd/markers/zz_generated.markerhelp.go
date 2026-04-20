@@ -454,6 +454,17 @@ func (SelectableField) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (SkipDescription) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "omits spec descriptions from generated schemas.",
+			Details: "Reduces CRD size when types have extensive docs.\nApply to specific specs or at package level to skip all.\n\nExample:\n\n\ttype MyCRD struct {\n\t    // +kubebuilder:skip:description\n\t    LargeField ComplexType `json:\"largeField\"`\n\t}\n\nPackage level:\n\n\t// +kubebuilder:skip:description\n\tpackage v1alpha1",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (SkipVersion) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD",
