@@ -108,6 +108,18 @@ spec:
                   rule: (has(self.a)?1:0)+(has(self.b)?1:0) <= 1
                 - message: at most one of the fields in [c d] may be set
                   rule: (has(self.c)?1:0)+(has(self.d)?1:0) <= 1
+              typeWithAllOf:
+                properties:
+                  host:
+                    type: string
+                  path:
+                    type: string
+                  port:
+                    type: integer
+                required:
+                - host
+                - port
+                type: object
               typeWithAllOneOf:
                 properties:
                   a:
@@ -130,6 +142,22 @@ spec:
                   rule: (has(self.c)?1:0)+(has(self.d)?1:0) == 1
                 - message: at least one of the fields in [e f] must be set
                   rule: has(self.e)||has(self.f)
+              typeWithMultipleAllOf:
+                properties:
+                  host:
+                    type: string
+                  password:
+                    type: string
+                  port:
+                    type: integer
+                  username:
+                    type: string
+                required:
+                - host
+                - password
+                - port
+                - username
+                type: object
               typeWithMultipleAtLeastOneOf:
                 properties:
                   a:
@@ -156,6 +184,16 @@ spec:
                 x-kubernetes-validations:
                 - message: at most one of the fields in [foo bar] may be set
                   rule: (has(self.foo)?1:0)+(has(self.bar)?1:0) <= 1
+              typeWithOmitZeroAllOf:
+                properties:
+                  password:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - password
+                - username
+                type: object
               typeWithOmitZeroAtLeastOneOf:
                 properties:
                   c:
@@ -176,6 +214,22 @@ spec:
                 x-kubernetes-validations:
                 - message: exactly one of the fields in [a b] must be set
                   rule: (has(self.a)?1:0)+(has(self.b)?1:0) == 1
+              typeWithOverlappingAllOf:
+                description: |-
+                  TypeWithOverlappingAllOf verifies that a field shared between repeated AllOf
+                  markers is required only once (deduplicated in the required list).
+                properties:
+                  host:
+                    type: string
+                  port:
+                    type: integer
+                  protocol:
+                    type: string
+                required:
+                - host
+                - port
+                - protocol
+                type: object
             type: object
         required:
         - spec
