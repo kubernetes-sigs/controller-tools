@@ -187,4 +187,71 @@ var _ = Describe("Loader parsing root module", func() {
 			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
 		})
 	})
+
+	Context("with roots=[./testmod/dummy.go]", func() {
+		It("should load one package from individual file", func() {
+			By("loading individual file path")
+			pkgs, err := loader.LoadRoots("./testmod/dummy.go")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(1))
+			By("verifying package ID is command-line-arguments for individual files")
+			Expect(pkgs[0].ID).To(Equal("command-line-arguments"))
+			Expect(pkgs[0].Name).To(Equal("dummy"))
+		})
+	})
+
+	Context("with roots=[./testmod/submod1/dummy.go]", func() {
+		It("should load one package from individual file", func() {
+			By("loading individual file from subdirectory")
+			pkgs, err := loader.LoadRoots("./testmod/submod1/dummy.go")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(1))
+			By("verifying package ID is command-line-arguments for individual files")
+			Expect(pkgs[0].ID).To(Equal("command-line-arguments"))
+			Expect(pkgs[0].Name).To(Equal("dummy"))
+		})
+	})
+
+	Context("with roots=[./testmod/subdir1/dummy.go]", func() {
+		It("should load one package from individual file in subdirectory", func() {
+			By("loading individual file from nested subdirectory")
+			pkgs, err := loader.LoadRoots("./testmod/subdir1/dummy.go")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(1))
+			Expect(pkgs[0].ID).To(Equal("command-line-arguments"))
+			Expect(pkgs[0].Name).To(Equal("dummy"))
+		})
+	})
+
+	Context("with roots=[./testmod/dummy.go, ./testmod/submod1]", func() {
+		It("should load packages from both file and directory", func() {
+			By("loading mixed file and directory paths")
+			pkgs, err := loader.LoadRoots("./testmod/dummy.go", "./testmod/submod1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(2))
+			By("verifying first package from individual file")
+			Expect(pkgs[0].ID).To(Equal("command-line-arguments"))
+			Expect(pkgs[0].Name).To(Equal("dummy"))
+			By("verifying second package from directory")
+			assertPkgExists(testmodPkg+"/submod1", pkgs)
+		})
+	})
+
+	Context("with roots=[./testmod/subdir1/../dummy.go]", func() {
+		It("should load one package from individual file with relative path", func() {
+			pkgs, err := loader.LoadRoots("./testmod/subdir1/../dummy.go")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(1))
+			Expect(pkgs[0].ID).To(Equal("command-line-arguments"))
+			Expect(pkgs[0].Name).To(Equal("dummy"))
+		})
+	})
+
+	Context("with roots=[./testmod/nonexistent.go]", func() {
+		It("should return error for non-existent file", func() {
+			_, err := loader.LoadRoots("./testmod/nonexistent.go")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unable to stat path"))
+		})
+	})
 })
