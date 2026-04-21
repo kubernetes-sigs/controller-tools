@@ -396,6 +396,14 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:items:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringArrayWithAPattern []*intstr.IntOrString `json:"intOrStringArrayWithAPattern,omitempty"`
 
+	// This tests that a slice of  IntOrString can also have enum validation.
+	// The XIntOrString marker is required for applying enum to IntOrString.
+	// +kubebuilder:validation:items:XIntOrString
+	// +kubebuilder:validation:items:MaxLength=3
+	// +kubebuilder:validation:items:MinLength=1
+	// +kubebuilder:validation:items:Enum=1;2;"foo";"bar"
+	IntOrStringWithEnumSlice []*intstr.IntOrString `json:"intOrStringWithEnumSlice,omitempty"`
+
 	// This tests that we can embed protocol correctly (without ending up with allOf).
 	// Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
 	// Defaults to "TCP".
