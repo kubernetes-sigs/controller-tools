@@ -24,6 +24,7 @@ import (
 	"go/types"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -1071,9 +1072,15 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 					if !ok || basicLit.Kind != token.STRING {
 						continue
 					}
-					// trim quotes
-					value := basicLit.Value[1 : len(basicLit.Value)-1]
-					enumValues = append(enumValues, apiextensionsv1.JSON{Raw: []byte(`"` + value + `"`)})
+					unquoted, err := strconv.Unquote(basicLit.Value)
+					if err != nil {
+						return fmt.Errorf("failed to unquote enum value %q: %w", basicLit.Value, err)
+					}
+					raw, err := json.Marshal(unquoted)
+					if err != nil {
+						return fmt.Errorf("failed to json marshal enum value %q: %w", unquoted, err)
+					}
+					enumValues = append(enumValues, apiextensionsv1.JSON{Raw: raw})
 				}
 			}
 		}
@@ -1082,6 +1089,10 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 	slices.SortFunc(enumValues, func(a, b apiextensionsv1.JSON) int {
 		return strings.Compare(string(a.Raw), string(b.Raw))
 	})
+
+	if len(enumValues) == 0 {
+		return fmt.Errorf("no enum values found for type %s", info.Name)
+	}
 
 	schema.Type = "string"
 	schema.Enum = enumValues
