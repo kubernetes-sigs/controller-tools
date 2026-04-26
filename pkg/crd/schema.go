@@ -49,7 +49,7 @@ var byteType = types.Universe.Lookup("byte").Type()
 type SchemaMarker interface {
 	// ApplyToSchema is called after the rest of the schema for a given type
 	// or field is generated, to modify the schema appropriately.
-	ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error
+	ApplyToSchema(ctx *crdmarkers.SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error
 }
 
 // applyFirstMarker is applied before any other markers.  It's a bit of a hack.
@@ -194,8 +194,9 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	slices.SortStableFunc(markers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 	slices.SortStableFunc(itemsMarkers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 
+	schemaCtx := &crdmarkers.SchemaContext{Package: ctx.pkg, TypeInfo: ctx.info}
 	for _, schemaMarker := range markers {
-		if err := schemaMarker.SchemaMarker.ApplyToSchema(props); err != nil {
+		if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, props); err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
@@ -206,7 +207,7 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			ctx.pkg.AddError(loader.ErrFromNode(err, node))
 		} else {
 			itemsSchema := props.Items.Schema
-			if err := schemaMarker.SchemaMarker.ApplyToSchema(itemsSchema); err != nil {
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, itemsSchema); err != nil {
 				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 			}
 		}

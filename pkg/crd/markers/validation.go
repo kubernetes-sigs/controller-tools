@@ -19,7 +19,12 @@ package markers
 import (
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/token"
+	"go/types"
 	"math"
+	"slices"
+	"strconv"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -35,6 +40,9 @@ const (
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
+
+	// K8sEnumTag indicates that the given type is an enum; all const values of this type are considered values in the enum
+	K8sEnumTag = "k8s:enum"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -90,6 +98,9 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
 	must(markers.MakeDefinition(ValidationAtLeastOneOfPrefix, markers.DescribesType, AtLeastOneOf(nil))).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
+	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesType, K8sEnum{})).
+		WithHelp(markers.SimpleHelp("CRD", "indicates that the given type is an enum; all const values of this type are considered values in the enum")),
+	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesField, K8sEnumField{})),
 }
 
 // FieldOnlyMarkers list field-specific validation markers (i.e. those markers that don't make
@@ -654,7 +665,7 @@ type ExactlyOneOf []string
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
 
-func (m Maximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Maximum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
 	}
@@ -668,7 +679,7 @@ func (m Maximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Minimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Minimum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply minimum to a numeric value, found %s", schema.Type)
 	}
@@ -682,7 +693,7 @@ func (m Minimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m ExclusiveMaximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m ExclusiveMaximum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply exclusivemaximum to a numeric value, found %s", schema.Type)
 	}
@@ -690,7 +701,7 @@ func (m ExclusiveMaximum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps)
 	return nil
 }
 
-func (m ExclusiveMinimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m ExclusiveMinimum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply exclusiveminimum to a numeric value, found %s", schema.Type)
 	}
@@ -699,7 +710,7 @@ func (m ExclusiveMinimum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps)
 	return nil
 }
 
-func (m MultipleOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MultipleOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply multipleof to a numeric value, found %s", schema.Type)
 	}
@@ -713,7 +724,7 @@ func (m MultipleOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error
 	return nil
 }
 
-func (m MaxLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MaxLength) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply maxlength to a textual value, found type %q", schema.Type)
 	}
@@ -722,7 +733,7 @@ func (m MaxLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error 
 	return nil
 }
 
-func (m MinLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MinLength) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply minlength to a textual value, found type %q", schema.Type)
 	}
@@ -731,7 +742,7 @@ func (m MinLength) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error 
 	return nil
 }
 
-func (m Pattern) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Pattern) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasTextualType(schema) {
 		return fmt.Errorf("must apply pattern to a textual value, found type %q", schema.Type)
 	}
@@ -739,7 +750,7 @@ func (m Pattern) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MaxItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MaxItems) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply maxitem to an array")
 	}
@@ -748,7 +759,7 @@ func (m MaxItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m MinItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MinItems) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != string(Array) {
 		return fmt.Errorf("must apply minitems to an array")
 	}
@@ -757,7 +768,7 @@ func (m MinItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m UniqueItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m UniqueItems) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "array" {
 		return fmt.Errorf("must apply uniqueitems to an array")
 	}
@@ -765,7 +776,7 @@ func (m UniqueItems) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) erro
 	return nil
 }
 
-func (m MinProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MinProperties) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "object" {
 		return fmt.Errorf("must apply minproperties to an object")
 	}
@@ -774,7 +785,7 @@ func (m MinProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) er
 	return nil
 }
 
-func (m MaxProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m MaxProperties) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if schema.Type != "object" {
 		return fmt.Errorf("must apply maxproperties to an object")
 	}
@@ -783,7 +794,7 @@ func (m MaxProperties) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) er
 	return nil
 }
 
-func (m Enum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Enum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	// TODO(directxman12): this is a bit hacky -- we should
 	// probably support AnyType better + using the schema structure
 	vals := make([]apiextensionsv1.JSON, len(m))
@@ -801,7 +812,7 @@ func (m Enum) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m Format) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Format) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Format = string(m)
 	return nil
 }
@@ -811,7 +822,7 @@ func (m Format) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 // TODO(directxman12): find a less hacky way to do this
 // (we could preserve ordering of markers, but that feels bad in its own right).
 
-func (m Type) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Type) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Type = string(m)
 	return nil
 }
@@ -820,13 +831,13 @@ func (m Type) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault - 1
 }
 
-func (m Nullable) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Nullable) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.Nullable = true
 	return nil
 }
 
 // ApplyToSchema defaults are only valid CRDs created with the v1 API
-func (m Default) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Default) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	marshalledDefault, err := json.Marshal(m.Value)
 	if err != nil {
 		return err
@@ -843,7 +854,7 @@ func (m Default) ApplyPriority() ApplyPriority {
 	return 10
 }
 
-func (m Title) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Title) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if m.Value == nil {
 		// only apply to the schema if we have a non-nil title
 		return nil
@@ -866,7 +877,7 @@ func (m *KubernetesDefault) ParseMarker(_ string, _ string, restFields string) e
 }
 
 // ApplyToSchema defaults are only valid CRDs created with the v1 API
-func (m KubernetesDefault) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m KubernetesDefault) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if m.Value == nil {
 		// only apply to the schema if we have a non-nil default value
 		return nil
@@ -884,7 +895,7 @@ func (m KubernetesDefault) ApplyPriority() ApplyPriority {
 	return 9
 }
 
-func (m Example) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m Example) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	marshalledExample, err := json.Marshal(m.Value)
 	if err != nil {
 		return err
@@ -893,13 +904,13 @@ func (m Example) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
 	return nil
 }
 
-func (m XPreserveUnknownFields) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m XPreserveUnknownFields) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	defTrue := true
 	schema.XPreserveUnknownFields = &defTrue
 	return nil
 }
 
-func (m XEmbeddedResource) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m XEmbeddedResource) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.XEmbeddedResource = true
 	return nil
 }
@@ -907,7 +918,7 @@ func (m XEmbeddedResource) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps
 // NB(JoelSpeed): we use this property in other markers here,
 // which means the "XIntOrString" marker *must* be applied first.
 
-func (m XIntOrString) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m XIntOrString) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	schema.XIntOrString = true
 	return nil
 }
@@ -916,7 +927,7 @@ func (m XIntOrString) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault - 1
 }
 
-func (m XValidation) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (m XValidation) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	var reason *apiextensionsv1.FieldValueErrorReason
 	if m.Reason != "" {
 		switch m.Reason {
@@ -942,7 +953,7 @@ func (XValidation) ApplyPriority() ApplyPriority {
 	return ApplyPriorityDefault
 }
 
-func (fields AtMostOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (fields AtMostOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -951,7 +962,7 @@ func (fields AtMostOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps)
 		Rule:    fmt.Sprintf("%s <= 1", rule),
 		Message: fmt.Sprintf("at most one of the fields in %v may be set", fields),
 	}
-	return xvalidation.ApplyToSchema(schema)
+	return xvalidation.ApplyToSchema(ctx, schema)
 }
 
 func (AtMostOneOf) ApplyPriority() ApplyPriority {
@@ -959,7 +970,7 @@ func (AtMostOneOf) ApplyPriority() ApplyPriority {
 	return XValidation{}.ApplyPriority() + 1
 }
 
-func (fields ExactlyOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (fields ExactlyOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -968,7 +979,7 @@ func (fields ExactlyOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps
 		Rule:    fmt.Sprintf("%s == 1", rule),
 		Message: fmt.Sprintf("exactly one of the fields in %v must be set", fields),
 	}
-	return xvalidation.ApplyToSchema(schema)
+	return xvalidation.ApplyToSchema(ctx, schema)
 }
 
 func (ExactlyOneOf) ApplyPriority() ApplyPriority {
@@ -976,7 +987,7 @@ func (ExactlyOneOf) ApplyPriority() ApplyPriority {
 	return AtMostOneOf{}.ApplyPriority() + 1
 }
 
-func (fields AtLeastOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps) error {
+func (fields AtLeastOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -985,7 +996,7 @@ func (fields AtLeastOneOf) ApplyToSchema(schema *apiextensionsv1.JSONSchemaProps
 		Rule:    fmt.Sprintf("%s >= 1", rule),
 		Message: fmt.Sprintf("at least one of the fields in %v must be set", fields),
 	}
-	return xvalidation.ApplyToSchema(schema)
+	return xvalidation.ApplyToSchema(ctx, schema)
 }
 
 func (AtLeastOneOf) ApplyPriority() ApplyPriority {
@@ -1008,4 +1019,82 @@ func fieldsToOneOfCelRuleStr(fields []string) string {
 	}
 	list.WriteString("].filter(x,x==true).size()")
 	return list.String()
+}
+
+// K8sEnumField exists solely to reject the k8s:enum marker when placed on a
+// field. The marker is only meaningful on a type declaration; without this
+// registration a field-level use would be silently ignored.
+type K8sEnumField struct{}
+
+func (K8sEnumField) ApplyToSchema(*SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
+	return fmt.Errorf("k8s:enum must be set on a type, not a field")
+}
+
+// K8sEnum marks a type as an enum; the schema's Enum values are populated
+// from the string const declarations of this type in the same package.
+type K8sEnum struct{}
+
+func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
+	if ctx == nil || ctx.Package == nil || ctx.TypeInfo == nil {
+		return fmt.Errorf("k8s:enum requires type context")
+	}
+	pkg := ctx.Package
+	info := ctx.TypeInfo
+	typeDef := pkg.TypesInfo.Defs[info.RawSpec.Name]
+	if typeDef == nil {
+		return fmt.Errorf("unknown enum type %s", info.Name)
+	}
+	typeInfo := typeDef.Type()
+	basicInfo, isBasic := typeInfo.Underlying().(*types.Basic)
+	if !isBasic || basicInfo.Info()&types.IsString == 0 {
+		return fmt.Errorf("enum type must be a string, not %s", typeInfo.String())
+	}
+
+	var enumValues []apiextensionsv1.JSON
+	for _, file := range pkg.Syntax {
+		for _, decl := range file.Decls {
+			genDecl, ok := decl.(*ast.GenDecl)
+			if !ok || genDecl.Tok != token.CONST {
+				continue
+			}
+			for _, spec := range genDecl.Specs {
+				valueSpec, ok := spec.(*ast.ValueSpec)
+				if !ok {
+					continue
+				}
+				for i, name := range valueSpec.Names {
+					obj := pkg.TypesInfo.Defs[name]
+					if obj == nil || obj.Type() != typeInfo {
+						continue
+					}
+					val := valueSpec.Values[i]
+					basicLit, ok := val.(*ast.BasicLit)
+					if !ok || basicLit.Kind != token.STRING {
+						continue
+					}
+					unquoted, err := strconv.Unquote(basicLit.Value)
+					if err != nil {
+						return fmt.Errorf("failed to unquote enum value %q: %w", basicLit.Value, err)
+					}
+					raw, err := json.Marshal(unquoted)
+					if err != nil {
+						return fmt.Errorf("failed to json marshal enum value %q: %w", unquoted, err)
+					}
+					enumValues = append(enumValues, apiextensionsv1.JSON{Raw: raw})
+				}
+			}
+		}
+	}
+
+	slices.SortFunc(enumValues, func(a, b apiextensionsv1.JSON) int {
+		return strings.Compare(string(a.Raw), string(b.Raw))
+	})
+
+	if len(enumValues) == 0 {
+		return fmt.Errorf("no enum values found for type %s", info.Name)
+	}
+
+	schema.Type = "string"
+	schema.Enum = enumValues
+	return nil
 }
