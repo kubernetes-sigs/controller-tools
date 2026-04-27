@@ -424,6 +424,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 	}
 
 	return &apiextensionsv1.JSONSchemaProps{
+		//nolint:goconst // this is a constant, but it's more readable to have it here
 		Type: "object",
 		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
 			Schema: valSchema,
