@@ -443,6 +443,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		Properties: make(map[string]apiextensionsv1.JSONSchemaProps),
 	}
 
+	if ctx.info.RawSpec == nil {
+		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("inline struct types are not supported, use a named type instead"), structType))
+		return props
+	}
 	if ctx.info.RawSpec.Type != structType {
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("encountered non-top-level struct (possibly embedded), those aren't allowed"), structType))
 		return props
