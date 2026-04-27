@@ -417,6 +417,9 @@ type CronJobSpec struct {
 	// This tests that embedded struct, which is an alias type, is handled correctly.
 	InlineAlias `json:",inline"`
 
+	// Tests pointer embedded struct with inline tag.
+	*InlinePointerStruct `json:",inline"`
+
 	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
 	// +kubebuilder:validation:XValidation:rule="oldSelf.hasValue() || self == 0",message="must be set to 0 on creation. can be set to any value on an update.",optionalOldSelf=true
 	OnlyAllowSettingOnUpdate int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
@@ -452,6 +455,11 @@ type InlineAlias = EmbeddedStruct
 type EmbeddedStruct struct {
 	// FromEmbedded is a field from the embedded struct that was used through an alias type.
 	FromEmbedded string `json:"fromEmbedded,omitempty"`
+}
+
+// InlinePointerStruct tests pointer embedded struct with inline tag.
+type InlinePointerStruct struct {
+	FromPointer string `json:"fromPointer,omitempty"`
 }
 
 type StringAlias = string

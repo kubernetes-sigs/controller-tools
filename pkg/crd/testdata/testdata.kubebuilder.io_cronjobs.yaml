@@ -267,6 +267,8 @@ spec:
                 description: FromEmbedded is a field from the embedded struct that
                   was used through an alias type.
                 type: string
+              fromPointer:
+                type: string
               hosts:
                 description: This tests string slice item validation.
                 items:
