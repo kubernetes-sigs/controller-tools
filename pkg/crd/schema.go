@@ -102,14 +102,48 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 // requestSchema asks for the schema for a type in the package with the
 // given import path.
 func (c *schemaContext) requestSchema(pkgPath, typeName string) {
+	c.requestSchemaWithPkg(pkgPath, typeName, nil)
+}
+
+func (c *schemaContext) requestSchemaWithPkg(pkgPath, typeName string, typesPkg *types.Package) {
 	pkg := c.pkg
 	if pkgPath != "" {
 		pkg = c.pkg.Imports()[pkgPath]
+		if pkg == nil && typesPkg != nil {
+			pkg = c.findPackageRecursive(typesPkg.Path())
+		}
+		if pkg == nil {
+			c.pkg.AddError(fmt.Errorf("unable to find package %q for type %s (not in direct imports)", pkgPath, typeName))
+			return
+		}
 	}
 	c.schemaRequester.NeedSchemaFor(TypeIdent{
 		Package: pkg,
 		Name:    typeName,
 	})
+}
+
+func (c *schemaContext) findPackageRecursive(pkgPath string) *loader.Package {
+	visited := make(map[*loader.Package]bool)
+	queue := []*loader.Package{c.pkg}
+
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		if visited[current] {
+			continue
+		}
+		visited[current] = true
+
+		for importPath, importPkg := range current.Imports() {
+			if loader.NonVendorPath(importPath) == loader.NonVendorPath(pkgPath) {
+				return importPkg
+			}
+			queue = append(queue, importPkg)
+		}
+	}
+	return nil
 }
 
 // infoToSchema creates a schema for the type in the given set of type information.
@@ -310,7 +344,7 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		if pkg == ctx.pkg.Types {
 			pkgPath = ""
 		}
-		ctx.requestSchema(pkgPath, typeNameInfo.Name())
+		ctx.requestSchemaWithPkg(pkgPath, typeNameInfo.Name(), pkg)
 		link := TypeRefLink(pkgPath, typeNameInfo.Name())
 
 		// In cases where we have a named type, apply the type and format from the named schema
@@ -352,8 +386,9 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 	}
 	typeInfo := typeInfoRaw.(interface{ Obj() *types.TypeName })
 	typeNameInfo := typeInfo.Obj()
-	nonVendorPath := loader.NonVendorPath(typeNameInfo.Pkg().Path())
-	ctx.requestSchema(nonVendorPath, typeNameInfo.Name())
+	typesPkg := typeNameInfo.Pkg()
+	nonVendorPath := loader.NonVendorPath(typesPkg.Path())
+	ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
 	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
 	return &apiextensionsv1.JSONSchemaProps{
 		Ref: &link,

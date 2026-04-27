@@ -277,6 +277,29 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 				assertCRDForGroupKind(pkgs[0], schema.GroupKind{Kind: "CronJob"}, "testdata._cronjobs.yaml")
 			})
 		})
+
+		Context("Type Alias API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./typealias_indirect"}
+				expPkgLen = 1
+			})
+			It("should handle types from indirectly imported packages via type aliases", func() {
+				By("verifying no errors occurred during package loading and parsing")
+				Expect(packageErrors(pkgs[0])).NotTo(HaveOccurred())
+
+				By("requesting schema for type with indirect alias")
+				typeIdent := crd.TypeIdent{
+					Package: pkgs[0],
+					Name:    "IndirectAliasSpec",
+				}
+				parser.NeedSchemaFor(typeIdent)
+
+				By("verifying the schema includes properties from the base type")
+				schema, found := parser.Schemata[typeIdent]
+				Expect(found).To(BeTrue(), "schema for IndirectAliasSpec should be generated")
+				Expect(schema.Properties).To(HaveKey("field"), "should have field property")
+			})
+		})
 	})
 
 	It("should generate plural words for Kind correctly", func() {
