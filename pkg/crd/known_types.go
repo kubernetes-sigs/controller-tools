@@ -106,16 +106,22 @@ var KnownPackages = map[string]PackageOverride{
 	},
 }
 
-// ObjectMetaPackages overrides the ObjectMeta in all types
+const (
+	// EmbeddedObjectMetaTypeName is the type name used for embedded ObjectMeta in CRD schemas.
+	EmbeddedObjectMetaTypeName = "EmbeddedObjectMeta"
+)
+
+// ObjectMetaPackages overrides ObjectMeta types to include only a minimal set of properties
+// when embedded in other types (name, namespace, labels, annotations, and finalizers).
 var ObjectMetaPackages = map[string]PackageOverride{
 	"k8s.io/apimachinery/pkg/apis/meta/v1": func(p *Parser, pkg *loader.Package) {
-		// execute the KnowPackages for `k8s.io/apimachinery/pkg/apis/meta/v1` if any
 		if f, ok := KnownPackages["k8s.io/apimachinery/pkg/apis/meta/v1"]; ok {
 			f(p, pkg)
 		}
-		// This is an allow-listed set of properties of ObjectMeta, other runtime properties are not part of this list
+
+		// Only writable fields are included; runtime fields like creationTimestamp are omitted
 		// See more discussion: https://github.com/kubernetes-sigs/controller-tools/pull/395#issuecomment-691919433
-		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
+		embeddedObjectMetaSchema := apiextensionsv1.JSONSchemaProps{
 			Type: "object",
 			Properties: map[string]apiextensionsv1.JSONSchemaProps{
 				"name": {
@@ -150,6 +156,9 @@ var ObjectMetaPackages = map[string]PackageOverride{
 				},
 			},
 		}
+
+		p.Schemata[TypeIdent{Name: EmbeddedObjectMetaTypeName, Package: pkg}] = embeddedObjectMetaSchema
+		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = embeddedObjectMetaSchema
 	},
 }
 
