@@ -222,6 +222,13 @@ var _ = Describe("Parsing", func() {
 
 			It("should parse number-ish strings with invalid octal prefix as string", argParseTestCase{arg: anyArg, raw: `087bdd`, output: "087bdd"}.Run)
 			It("should parse path-like strings as string", argParseTestCase{arg: anyArg, raw: `/tmp/tmp.4paHkdEcpK`, output: "/tmp/tmp.4paHkdEcpK"}.Run)
+			It("should parse numeric path as string", argParseTestCase{arg: anyArg, raw: `123/config`, output: "123/config"}.Run)
+			It("should parse invalid octal number as string", argParseTestCase{arg: anyArg, raw: `0987`, output: "0987"}.Run)
+			It("should parse resource quantity as string", argParseTestCase{arg: anyArg, raw: `100Mi`, output: "100Mi"}.Run)
+			It("should parse date-like string as string", argParseTestCase{arg: anyArg, raw: `2024-01-15`, output: "2024-01-15"}.Run)
+			It("should parse SHA prefix as string", argParseTestCase{arg: anyArg, raw: `sha256:08a7b`, output: "sha256:08a7b"}.Run)
+			It("should parse UUID-like string as string", argParseTestCase{arg: anyArg, raw: `00000000-1234-5678`, output: "00000000-1234-5678"}.Run)
+			It("should parse alphanumeric starting with number as string", argParseTestCase{arg: anyArg, raw: `123abc`, output: "123abc"}.Run)
 		})
 	})
 })
