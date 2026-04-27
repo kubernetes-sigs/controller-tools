@@ -105,7 +105,8 @@ spec:
                   on a map.
                 type: object
               defaultedEmptyObject:
-                default: {}
+                default:
+                  foo: forty-two
                 description: This tests that an empty object defaulting can be performed
                   on an object.
                 properties:
@@ -9302,7 +9303,8 @@ spec:
                   on a map.
                 type: object
               kubernetesDefaultedEmptyObject:
-                default: {}
+                default:
+                  foo: forty-two
                 description: This tests that an empty object defaulting can be performed
                   on an object.
                 properties:
