@@ -22,7 +22,7 @@ import (
 	"path"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-tools/pkg/genall"
@@ -58,9 +58,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -88,9 +86,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -120,9 +116,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -150,9 +144,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -180,9 +172,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -226,9 +216,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -272,9 +260,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 
 		for range 10 {
 			genCtx := &genall.GenerationContext{
@@ -322,9 +308,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -368,9 +352,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -398,9 +380,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,
@@ -472,9 +452,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 			Expect(pkgs).To(HaveLen(2))
 
 			By("requesting that the manifest be generated for order " + rootsOrder.name)
-			outputDir, err := os.MkdirTemp("", rootsOrder.outputDir)
-			Expect(err).NotTo(HaveOccurred())
-			defer os.RemoveAll(outputDir)
+			outputDir := GinkgoT().TempDir()
 			genCtx := &genall.GenerationContext{
 				Collector:  &markers.Collector{Registry: reg},
 				Roots:      pkgs,
@@ -514,9 +492,7 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
 
 		By("requesting that the manifest be generated")
-		outputDir, err := os.MkdirTemp("", "webhook-integration-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		genCtx := &genall.GenerationContext{
 			Collector:  &markers.Collector{Registry: reg},
 			Roots:      pkgs,

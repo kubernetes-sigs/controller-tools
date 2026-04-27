@@ -22,7 +22,7 @@ import (
 	"slices"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/deepcopy"

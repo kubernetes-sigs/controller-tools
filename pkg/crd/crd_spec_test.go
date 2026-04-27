@@ -17,7 +17,7 @@ limitations under the License.
 package crd_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("CRD Generation", func() {
