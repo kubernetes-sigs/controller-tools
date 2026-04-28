@@ -26,10 +26,11 @@ import (
 
 var _ = Describe("parserScanner backticks handling", func() {
 	// This tests the issue reported in https://github.com/kubernetes-sigs/controller-tools/issues/1084
-	// When a marker contains an odd number of backticks (e.g., Pattern=^[`a-zA-Z]+$),
-	// the scanner should NOT enable ScanRawStrings to avoid "literal not terminated" errors.
+	// When a marker contains backticks as literal characters (e.g. Pattern=^[`a-zA-Z]+$),
+	// the scanner should gracefully handle them without "literal not terminated" errors.
+	// The error recovery in Parse() retries without ScanRawStrings if needed.
 
-	It("should handle pattern with single backtick without error", func() {
+	It("should handle pattern with single backtick without error (rawStrings=false)", func() {
 		// Pattern with single backtick: ^[`a-zA-Z]+$
 		// This is the real-world case from issue #1084
 		raw := "^[`a-zA-Z]+$"
@@ -37,10 +38,7 @@ var _ = Describe("parserScanner backticks handling", func() {
 			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
 		}
 
-		scanner := parserScanner(raw, errFunc)
-
-		// With odd number of backticks (1), ScanRawStrings should be disabled
-		Expect(scanner.Mode&sc.ScanRawStrings).To(BeZero(), "ScanRawStrings should be disabled with odd backticks")
+		scanner := parserScanner(raw, errFunc, false)
 
 		// The scanner should be able to scan the pattern without errors
 		tokens := []rune{}
@@ -54,54 +52,99 @@ var _ = Describe("parserScanner backticks handling", func() {
 		Expect(tokens).NotTo(BeEmpty(), "should have scanned some tokens")
 	})
 
-	It("should handle kubebuilder validation items pattern with single backtick", func() {
+	It("should handle kubebuilder validation items pattern with single backtick (rawStrings=false)", func() {
 		// Full marker as it would appear in source code
 		raw := "+kubebuilder:validation:items:Pattern=^[`a-zA-Z]+$"
 		errFunc := func(s *sc.Scanner, msg string) {
 			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
 		}
 
-		scanner := parserScanner(raw, errFunc)
+		scanner := parserScanner(raw, errFunc, false)
 
-		// With 1 backtick (odd), ScanRawStrings should be disabled
-		Expect(scanner.Mode&sc.ScanRawStrings).To(BeZero(), "ScanRawStrings should be disabled with 1 backtick")
+		tokens := []rune{}
+		for {
+			tok := scanner.Scan()
+			if tok == sc.EOF {
+				break
+			}
+			tokens = append(tokens, tok)
+		}
+		Expect(tokens).NotTo(BeEmpty(), "should have scanned some tokens")
 	})
 
-	It("should handle pattern with two backticks (balanced)", func() {
-		// Pattern with two backticks (balanced)
+	It("should handle pattern with two backticks as raw string (rawStrings=true)", func() {
+		// Two backticks form a valid raw string: ^[`a-zA-Z`]+$
 		raw := "^[`a-zA-Z`]+$"
 		errFunc := func(s *sc.Scanner, msg string) {
 			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
 		}
 
-		scanner := parserScanner(raw, errFunc)
+		scanner := parserScanner(raw, errFunc, true)
 
-		// With 2 backticks (even), ScanRawStrings should be enabled
-		Expect(scanner.Mode&uint(sc.ScanRawStrings)).To(Equal(uint(sc.ScanRawStrings)), "ScanRawStrings should be enabled with even backticks")
+		Expect(scanner.Mode & sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
+			"ScanRawStrings should be enabled when rawStrings=true")
+
+		tokens := []rune{}
+		for {
+			tok := scanner.Scan()
+			if tok == sc.EOF {
+				break
+			}
+			tokens = append(tokens, tok)
+		}
+		Expect(tokens).NotTo(BeEmpty(), "should have scanned some tokens")
 	})
 
-	It("should handle pattern with three backticks (unbalanced)", func() {
-		// Pattern with three backticks (unbalanced)
+	It("should handle pattern with three backticks without error (rawStrings=false)", func() {
+		// Three backticks: odd count, fallback mode
 		raw := "^[`a-zA-Z`a-z`]+$"
 		errFunc := func(s *sc.Scanner, msg string) {
 			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
 		}
 
-		scanner := parserScanner(raw, errFunc)
+		scanner := parserScanner(raw, errFunc, false)
 
-		// With 3 backticks (odd), ScanRawStrings should be disabled
-		Expect(scanner.Mode&sc.ScanRawStrings).To(BeZero(), "ScanRawStrings should be disabled with 3 backticks")
+		tokens := []rune{}
+		for {
+			tok := scanner.Scan()
+			if tok == sc.EOF {
+				break
+			}
+			tokens = append(tokens, tok)
+		}
+		Expect(tokens).NotTo(BeEmpty(), "should have scanned some tokens")
 	})
 
-	It("should handle empty string without backticks", func() {
+	It("should handle empty string without error", func() {
 		raw := ""
 		errFunc := func(s *sc.Scanner, msg string) {
 			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
 		}
 
-		scanner := parserScanner(raw, errFunc)
+		scanner := parserScanner(raw, errFunc, true)
 
-		// With 0 backticks (even), ScanRawStrings should be enabled
-		Expect(scanner.Mode&uint(sc.ScanRawStrings)).To(Equal(uint(sc.ScanRawStrings)), "ScanRawStrings should be enabled with 0 backticks")
+		Expect(scanner.Mode & sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
+			"ScanRawStrings should be enabled when rawStrings=true")
+	})
+
+	It("should handle two literal backticks inside regex character class (rawStrings=false)", func() {
+		// Backticks as literal regex characters, not raw string delimiters:
+		// ^[`a-zA-Z`]+$  -- these backticks are inside a character class
+		raw := "^[`a-zA-Z`]+$"
+		errFunc := func(s *sc.Scanner, msg string) {
+			Fail(fmt.Sprintf("scanner error: %s (at %s)", msg, s.Position))
+		}
+
+		scanner := parserScanner(raw, errFunc, false)
+
+		tokens := []rune{}
+		for {
+			tok := scanner.Scan()
+			if tok == sc.EOF {
+				break
+			}
+			tokens = append(tokens, tok)
+		}
+		Expect(tokens).NotTo(BeEmpty(), "should have scanned some tokens")
 	})
 })
