@@ -81,7 +81,7 @@ var _ = Describe("parserScanner backticks handling", func() {
 
 		scanner := parserScanner(raw, errFunc, true)
 
-		Expect(scanner.Mode & sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
+		Expect(scanner.Mode&sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
 			"ScanRawStrings should be enabled when rawStrings=true")
 
 		tokens := []rune{}
@@ -123,7 +123,7 @@ var _ = Describe("parserScanner backticks handling", func() {
 
 		scanner := parserScanner(raw, errFunc, true)
 
-		Expect(scanner.Mode & sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
+		Expect(scanner.Mode&sc.ScanRawStrings).To(Equal(uint(sc.ScanRawStrings)),
 			"ScanRawStrings should be enabled when rawStrings=true")
 	})
 

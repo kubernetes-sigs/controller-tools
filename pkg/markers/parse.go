@@ -265,7 +265,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		maybeItem := guessType(scanner, raw, false)
 
 		subRaw := raw[scanner.Pos().Offset:]
-		subScanner := parserScanner(subRaw, scanner.Error, true)
+		subScanner := parserScanner(subRaw, func(*sc.Scanner, string) {}, true)
 
 		var tok rune
 		for {
