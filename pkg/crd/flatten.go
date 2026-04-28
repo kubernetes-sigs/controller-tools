@@ -17,6 +17,7 @@ limitations under the License.
 package crd
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"slices"
@@ -134,7 +135,25 @@ func flattenAllOfInto(dst *apiextensionsv1.JSONSchemaProps, src apiextensionsv1.
 				errRec.AddError(fmt.Errorf("conflicting types in allOf branches in schema: %s vs %s", dstInt, srcInt))
 			}
 			// keep the destination value, for now
-		// TODO(directxman12): Default -- use field?
+		case "Default":
+			// Default is *apiextensionsv1.JSON. Two pointers to equal-valued
+			// JSON are "comparable" in reflect's sense (any pointer is) but
+			// compare by address, not by the bytes they wrap. Without this
+			// case, two equal-valued defaults arriving from different sources
+			// (e.g. a type-level schema with a baked-in default plus a
+			// field-level +default= marker) get hoisted into allOf, producing
+			// the structural-schema-violating shape reported in #1027.
+			//
+			// Compare by raw bytes; if equal, dedupe. Otherwise keep dst
+			// (the parent / field-level value), matching how
+			// XPreserveUnknownFields and XMapType are merged below.
+			srcDef := srcInt.(*apiextensionsv1.JSON)
+			dstDef := dstInt.(*apiextensionsv1.JSON)
+			if srcDef != nil && dstDef != nil && bytes.Equal(srcDef.Raw, dstDef.Raw) {
+				continue
+			}
+			// values differ: keep dst, drop src.
+			continue
 		// TODO(directxman12):
 		// - Dependencies: if field x is present, then either schema validates or all props are present
 		// - AdditionalItems: like AdditionalProperties
