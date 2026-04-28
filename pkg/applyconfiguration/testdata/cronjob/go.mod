@@ -1,6 +1,6 @@
 module sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.28.1
