@@ -397,8 +397,8 @@ var _ = Describe("AllOf Flattening", func() {
 		}))
 	})
 
-	Context("when the same default appears on both the type schema and the field (the #1027 pattern)", func() {
-		It("should dedupe equal defaults instead of hoisting them into allOf", func() {
+	Context("when the same default appears on both the type schema and the field", func() {
+		It("should not allow duplications when default values are identical", func() {
 			By("flattening a schema where two AllOf branches carry equal-valued *JSON defaults from different allocations")
 			typeDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)}
 			fieldDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)} // same bytes, distinct alloc
@@ -425,7 +425,7 @@ var _ = Describe("AllOf Flattening", func() {
 			Expect(string(protocol.Default.Raw)).To(Equal(`"TCP"`))
 		})
 
-		It("should keep the parent-level default when the values differ", func() {
+		It("should keep the parent-level default when default values differ", func() {
 			By("flattening a schema where the parent and an embedded type carry different *JSON defaults")
 			typeDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)}
 			fieldDefault := &apiextensionsv1.JSON{Raw: []byte(`"UDP"`)}

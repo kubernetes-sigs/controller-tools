@@ -136,17 +136,19 @@ func flattenAllOfInto(dst *apiextensionsv1.JSONSchemaProps, src apiextensionsv1.
 			}
 			// keep the destination value, for now
 		case "Default":
-			// Default is *apiextensionsv1.JSON. Two pointers to equal-valued
-			// JSON are "comparable" in reflect's sense (any pointer is) but
-			// compare by address, not by the bytes they wrap. Without this
-			// case, two equal-valued defaults arriving from different sources
-			// (e.g. a type-level schema with a baked-in default plus a
-			// field-level +default= marker) get hoisted into allOf, producing
-			// the structural-schema-violating shape reported in #1027.
+			// Default is *apiextensionsv1.JSON, which is comparable by pointer
+			// address rather than by the raw bytes it wraps. The generic
+			// equality short-circuit above therefore cannot detect that two
+			// distinct allocations carry the same JSON value, so without this
+			// case equal defaults arriving from different sources (a type-level
+			// schema with a baked-in default plus a field-level +default=
+			// marker, for example) would be hoisted into a fresh allOf and
+			// produce a structural-schema-violating CRD that the API server
+			// rejects at apply time.
 			//
-			// Compare by raw bytes; if equal, dedupe. Otherwise keep dst
-			// (the parent / field-level value), matching how
-			// XPreserveUnknownFields and XMapType are merged below.
+			// When the raw bytes match, dedupe and keep one. When they differ,
+			// keep dst (the parent / field-level value) and drop src, matching
+			// how XPreserveUnknownFields and XMapType are merged below.
 			srcDef := srcInt.(*apiextensionsv1.JSON)
 			dstDef := dstInt.(*apiextensionsv1.JSON)
 			if srcDef != nil && dstDef != nil && bytes.Equal(srcDef.Raw, dstDef.Raw) {
