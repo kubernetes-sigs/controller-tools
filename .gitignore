@@ -18,9 +18,16 @@
 *~
 .vscode/
 
+# OS-specific files
+.DS_Store
+Thumbs.db
+
 # Tools binaries.
 out
 hack/tools/bin
+/bin/
 
+# Test and build artifacts
 junit-report.xml
 /artifacts
+*.log
