@@ -1,0 +1,69 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  name: default.cronjob.testdata.kubebuilder.io
+  objectSelector:
+    matchExpressions:
+    - key: tier
+      operator: In
+      values:
+      - frontend
+      - backend
+    matchLabels:
+      managed-by: controller
+  rules:
+  - apiGroups:
+    - testdata.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-testdata-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  name: validation.cronjob.testdata.kubebuilder.io
+  namespaceSelector:
+    matchExpressions:
+    - key: environment
+      operator: In
+      values:
+      - dev
+      - staging
+      - prod
+  rules:
+  - apiGroups:
+    - testdata.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
