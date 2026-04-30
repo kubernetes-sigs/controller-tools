@@ -42,6 +42,14 @@ var TopologyMarkers = []*definitionWithHelp{
 		WithHelp(StructType("").Help()),
 	must(markers.MakeDefinition("structType", markers.DescribesType, StructType(""))).
 		WithHelp(StructType("").Help()),
+	must(markers.MakeDefinition("k8s:listType", markers.DescribesField, ListType(""))).
+		WithHelp(ListType("").Help()),
+	must(markers.MakeDefinition("k8s:listType", markers.DescribesType, ListType(""))).
+		WithHelp(ListType("").Help()),
+	must(markers.MakeDefinition("k8s:listMapKey", markers.DescribesField, ListMapKey(""))).
+		WithHelp(ListMapKey("").Help()),
+	must(markers.MakeDefinition("k8s:listMapKey", markers.DescribesType, ListMapKey(""))).
+		WithHelp(ListMapKey("").Help()),
 }
 
 func init() {
