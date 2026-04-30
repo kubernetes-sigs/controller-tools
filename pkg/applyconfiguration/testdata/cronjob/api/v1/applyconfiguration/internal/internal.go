@@ -1378,6 +1378,12 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: name
       type:
         scalar: string
+- name: io.k8s.api.core.v1.PodSchedulingGroup
+  map:
+    fields:
+    - name: podGroupName
+      type:
+        scalar: string
 - name: io.k8s.api.core.v1.PodSecurityContext
   map:
     fields:
@@ -1563,6 +1569,9 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - name
+    - name: schedulingGroup
+      type:
+        namedType: io.k8s.api.core.v1.PodSchedulingGroup
     - name: securityContext
       type:
         namedType: io.k8s.api.core.v1.PodSecurityContext
@@ -1607,9 +1616,6 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - name
-    - name: workloadRef
-      type:
-        namedType: io.k8s.api.core.v1.WorkloadReference
 - name: io.k8s.api.core.v1.PodTemplateSpec
   map:
     fields:
@@ -2300,18 +2306,6 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: boolean
     - name: runAsUserName
-      type:
-        scalar: string
-- name: io.k8s.api.core.v1.WorkloadReference
-  map:
-    fields:
-    - name: name
-      type:
-        scalar: string
-    - name: podGroup
-      type:
-        scalar: string
-    - name: podGroupReplicaKey
       type:
         scalar: string
 - name: io.k8s.apimachinery.pkg.api.resource.Quantity
