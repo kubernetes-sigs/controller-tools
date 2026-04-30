@@ -396,4 +396,76 @@ var _ = Describe("AllOf Flattening", func() {
 			AllOf:     []apiextensionsv1.JSONSchemaProps{{Pattern: "^[abc]$"}, {Pattern: "^[abcdef]$"}},
 		}))
 	})
+
+	It("should not duplicate MinProperties when values are identical", func() {
+		By("flattening a schema with duplicate MinProperties constraints")
+		minPropsOne := int64(1)
+		original := &apiextensionsv1.JSONSchemaProps{
+			AllOf: []apiextensionsv1.JSONSchemaProps{
+				{Type: "object", MinProperties: &minPropsOne},
+				{Type: "object", MinProperties: &minPropsOne},
+			},
+		}
+		flattened := crd.FlattenEmbedded(original, errRec)
+		Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+		By("ensuring that the result has MinProperties set once with no AllOf branches")
+		Expect(flattened).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Type:          "object",
+			MinProperties: &minPropsOne,
+		}))
+	})
+
+	It("should not duplicate MaxProperties when values are identical", func() {
+		By("flattening a schema with duplicate MaxProperties constraints")
+		maxPropsOne := int64(10)
+		original := &apiextensionsv1.JSONSchemaProps{
+			AllOf: []apiextensionsv1.JSONSchemaProps{
+				{Type: "object", MaxProperties: &maxPropsOne},
+				{Type: "object", MaxProperties: &maxPropsOne},
+			},
+		}
+		flattened := crd.FlattenEmbedded(original, errRec)
+		Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+		By("ensuring that the result has MaxProperties set once with no AllOf branches")
+		Expect(flattened).To(Equal(&apiextensionsv1.JSONSchemaProps{
+			Type:          "object",
+			MaxProperties: &maxPropsOne,
+		}))
+	})
+
+	It("should keep different MinProperties values in AllOf", func() {
+		By("flattening a schema with different MinProperties constraints")
+		minPropsOne := int64(1)
+		minPropsTwo := int64(2)
+		original := &apiextensionsv1.JSONSchemaProps{
+			AllOf: []apiextensionsv1.JSONSchemaProps{
+				{MinProperties: &minPropsOne},
+				{MinProperties: &minPropsTwo},
+			},
+		}
+		flattened := crd.FlattenEmbedded(original, errRec)
+		Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+		By("ensuring that different values remain in AllOf")
+		Expect(flattened.AllOf).To(HaveLen(2))
+	})
+
+	It("should keep different MaxProperties values in AllOf", func() {
+		By("flattening a schema with different MaxProperties constraints")
+		maxPropsOne := int64(10)
+		maxPropsTwo := int64(20)
+		original := &apiextensionsv1.JSONSchemaProps{
+			AllOf: []apiextensionsv1.JSONSchemaProps{
+				{MaxProperties: &maxPropsOne},
+				{MaxProperties: &maxPropsTwo},
+			},
+		}
+		flattened := crd.FlattenEmbedded(original, errRec)
+		Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+		By("ensuring that different values remain in AllOf")
+		Expect(flattened.AllOf).To(HaveLen(2))
+	})
 })
