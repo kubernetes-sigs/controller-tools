@@ -597,25 +597,61 @@ func isIntegral(value float64) bool {
 // This marker may be repeated to specify multiple expressions, all of
 // which must evaluate to true.
 //
+// CEL expressions can use: self (current value) and oldSelf (previous value; only on update, null on create).
+// Rules are scoped to where they appear in the schema; self is that value.
+//
 // Examples:
 //
-//	// Basic field validation
+//	// Basic field validation using self
 //	// +kubebuilder:validation:XValidation:rule="self.minReplicas <= self.replicas && self.replicas <= self.maxReplicas",message="replicas must be between minReplicas and maxReplicas"
 //
 //	// Validation with custom reason
 //	// +kubebuilder:validation:XValidation:rule="self.x <= self.maxX",message="x cannot be greater than maxX",reason="FieldValueInvalid"
 //
-//	// Immutability check
+//	// Immutability check using oldSelf (e.g. on a field so self/oldSelf are that field's value)
 //	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="field is immutable"
+//
+//	// Validation with field path for better error reporting
+//	// +kubebuilder:validation:XValidation:rule="self >= 1",message="value must be at least 1",fieldPath=".spec.replicas"
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type XValidation struct {
-	Rule              string
-	Message           string `marker:",optional"`
+	// Rule is the CEL expression that must evaluate to true.
+	// It is scoped to where this XValidation is in the schema; self is that value.
+	// Example: Rule="self.minReplicas <= self.replicas && self.replicas <= self.maxReplicas"
+	Rule string
+
+	// Message is the text shown when validation fails.
+	// If unset, the default is "failed rule: {Rule}".
+	// Must not contain line breaks. The API server limits length (e.g. 256 characters).
+	// See ValidationRule in k8s.io/apiextensions-apiserver for full details.
+	// Example: Message="replicas must be between minReplicas and maxReplicas"
+	Message string `marker:",optional"`
+
+	// MessageExpression is a CEL expression that returns the message shown when validation fails.
+	// You can set Message or MessageExpression, not both. MessageExpression must return a string.
+	// If both are set, MessageExpression is used. If neither is set, a default message is used.
+	// The expression can use the same variables as the Rule (e.g. self, oldSelf).
+	// The result must not contain line breaks and is subject to the same message limits as Message.
+	// Example: MessageExpression="'replicas must be between ' + string(self.minReplicas) + ' and ' + string(self.maxReplicas)"
 	MessageExpression string `marker:"messageExpression,optional"`
-	Reason            string `marker:"reason,optional"`
-	FieldPath         string `marker:"fieldPath,optional"`
-	OptionalOldSelf   *bool  `marker:"optionalOldSelf,optional"`
+
+	// Reason is a short code for why validation failed, returned to API callers.
+	// Supported values: "FieldValueInvalid", "FieldValueForbidden", "FieldValueRequired", "FieldValueDuplicate".
+	// If not set, defaults to "FieldValueInvalid".
+	// Example: Reason="FieldValueInvalid"
+	Reason string `marker:"reason,optional"`
+
+	// FieldPath is the path to the field that failed validation (for clearer error messages).
+	// Example: FieldPath=".spec.replicas"
+	FieldPath string `marker:"fieldPath,optional"`
+
+	// OptionalOldSelf, when true, runs the rule on create and on update (even when there is no old value).
+	// When true, oldSelf may be missing: use oldSelf.hasValue() to check and oldSelf.value() to use it.
+	// The rule always runs; you must check oldSelf.hasValue() in the rule before using oldSelf.
+	// May only be set if the rule uses oldSelf. See ValidationRule in k8s.io/apiextensions-apiserver.
+	// Example: OptionalOldSelf=true
+	OptionalOldSelf *bool `marker:"optionalOldSelf,optional"`
 }
 
 // AtMostOneOf adds a validation constraint that allows at most one of the specified fields.
