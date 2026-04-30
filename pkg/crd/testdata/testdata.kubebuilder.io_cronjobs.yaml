@@ -9353,18 +9353,6 @@ spec:
                 - bar
                 - foo
                 type: object
-              k8sConcurrencyPolicy:
-                description: |-
-                  Specifies how to treat concurrent executions of a Job.
-                  Valid values are:
-                  - "Allow" (default): allows CronJobs to run concurrently;
-                  - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
-                  - "Replace": cancels currently running job and replaces it with a new one
-                enum:
-                - Allow
-                - Forbid
-                - Replace
-                type: string
               k8sAssociativeList:
                 description: This tests that associative lists work using the +k8s:listType
                   alias.
@@ -9391,6 +9379,18 @@ spec:
                   type: string
                 type: array
                 x-kubernetes-list-type: atomic
+              k8sConcurrencyPolicy:
+                description: |-
+                  Specifies how to treat concurrent executions of a Job.
+                  Valid values are:
+                  - "Allow" (default): allows CronJobs to run concurrently;
+                  - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
+                  - "Replace": cancels currently running job and replaces it with a new one
+                enum:
+                - Allow
+                - Forbid
+                - Replace
+                type: string
               k8sNestedAssociativeList:
                 description: This tests that associative lists work via a nested type
                   using the +k8s:listType alias.
