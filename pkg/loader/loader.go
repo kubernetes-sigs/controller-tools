@@ -567,33 +567,53 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	//    2. update the loader config's Dir property to be the directory from
 	//       step one
 	//
-	//    3. determine whether the root passed to the loader should be "./."
-	//       or "./..."
+	//    3. determine whether the root passed to the loader should be "./.",
+	//       "./...", or an individual file
 	//
 	//    4. execute the loader with the value from step three
 	for _, r := range fspRoots {
 		b, d := filepath.Base(r), filepath.Dir(r)
 
-		// we want the base part of the path to be either "..." or ".", except
-		// Go's filepath utilities clean paths during manipulation, removing the
-		// ".". thus, if not "...", let's update the path components so that:
-		//
-		//   d = r
-		//   b = "."
-		if b != "..." {
-			d = r
-			b = "."
+		// we want the base part of the path to be either "...", ".", or a filename.
+		// handle "..." first since it's not a real path that can be stat'd
+		if b == "..." {
+			// update the loader configuration's Dir field to the directory part of
+			// the root
+			l.cfg.Dir = d
+
+			// update the root to be "./..."
+			// (with OS-specific filepath separator). please note filepath.Join
+			// would clean up the trailing "." character that we want preserved,
+			// hence the more manual path concatenation logic
+			r = fmt.Sprintf(".%s%s", string(filepath.Separator), b)
+		} else {
+			// check if the path is a file or directory
+			fi, err := os.Stat(r)
+			if err != nil {
+				return nil, fmt.Errorf("unable to stat path %q: %w", r, err)
+			}
+
+			if !fi.IsDir() {
+				// for individual files, set the working dir to the containing directory
+				// and pass the filename to the loader
+				l.cfg.Dir = d
+				r = fmt.Sprintf(".%s%s", string(filepath.Separator), b)
+			} else {
+				// for directories (not "..."), treat the entire path as the directory
+				d = r
+				b = "."
+
+				// update the loader configuration's Dir field to the directory part of
+				// the root
+				l.cfg.Dir = d
+
+				// update the root to be "./."
+				// (with OS-specific filepath separator). please note filepath.Join
+				// would clean up the trailing "." character that we want preserved,
+				// hence the more manual path concatenation logic
+				r = fmt.Sprintf(".%s%s", string(filepath.Separator), b)
+			}
 		}
-
-		// update the loader configuration's Dir field to the directory part of
-		// the root
-		l.cfg.Dir = d
-
-		// update the root to be "./..." or "./."
-		// (with OS-specific filepath separator). please note filepath.Join
-		// would clean up the trailing "." character that we want preserved,
-		// hence the more manual path concatenation logic
-		r = fmt.Sprintf(".%s%s", string(filepath.Separator), b)
 
 		// load the packages from the roots
 		pkgs, err := loadPackages(r)
