@@ -49,8 +49,8 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Details: "generate. Defaults to v1.\n\nCurrently, the only supported value is v1.\n\nThe first version listed will be assumed to be the \"default\" version and\nwill not get a version suffix in the output filename.\n\nYou'll need to use \"v1\" to get support for features like defaulting,\nalong with an API server that supports it (Kubernetes 1.16+).",
 			},
 			"GenerateEmbeddedObjectMeta": {
-				Summary: "specifies if any embedded ObjectMeta in the CRD should be generated",
-				Details: "",
+				Summary: "indicates that embedded ObjectMeta fields should be generated",
+				Details: "in the schema with a minimal set of properties.\n\nWhen enabled, ObjectMeta fields embedded in types (such as PodTemplateSpec) will have\nexplicit schema properties for name, namespace, labels, annotations, and finalizers. The\nschema uses a named type (EmbeddedObjectMeta) so tools can reliably identify these fields.\n\nThis prevents metadata loss during version conversion when preserveUnknownFields is false.\nIt also allows tooling to process CRDs without needing to guess which fields represent\nembedded ObjectMeta.\n\nLeft unspecified, the default is false and embedded ObjectMeta will have an empty schema.",
 			},
 			"HeaderFile": {
 				Summary: "specifies the header text (e.g. license) to prepend to generated files.",
