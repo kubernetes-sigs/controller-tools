@@ -65,10 +65,9 @@ func (o *outputFile) Close() error {
 
 var _ = Describe("ApplyConfiguration generation from API types", func() {
 	var originalCWD string
+	var tmpDir string
 
 	BeforeEach(func() {
-		var tmpDir string
-
 		By("Setting up a temporary directory", func() {
 			var err error
 			tmpDir, err = os.MkdirTemp("", "applyconfiguration-integration-test")
@@ -94,6 +93,11 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 	AfterEach(func() {
 		// Reset the working directory
 		Expect(os.Chdir(originalCWD)).To(Succeed())
+
+		// Clean up the temporary directory
+		if tmpDir != "" {
+			os.RemoveAll(tmpDir)
+		}
 	})
 
 	DescribeTable("should be able to verify generated ApplyConfiguration types for the CronJob schema", func(outputPackage string) {
