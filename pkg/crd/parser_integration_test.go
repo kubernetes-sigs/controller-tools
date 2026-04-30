@@ -279,6 +279,58 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		})
 	})
 
+	It("should resolve type aliases to packages not directly imported", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots("./typealiasindirect/rootpkg")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+		pkg := pkgs[0]
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		parser := &crd.Parser{
+			Collector: &markers.Collector{Registry: reg},
+			Checker:   &loader.TypeChecker{},
+		}
+		crd.AddKnownTypes(parser)
+
+		By("requesting that the package be parsed")
+		parser.NeedPackage(pkg)
+
+        By("checking that no non-type errors occurred along the way")
+        Expect(packageErrors(pkg, packages.TypeError)).NotTo(HaveOccurred())
+
+		By("requesting that the CRD be generated")
+		groupKind := schema.GroupKind{Kind: "Repro", Group: "repro.io"}
+		parser.NeedCRDFor(groupKind, nil)
+
+		By("fixing top level ObjectMeta on the CRD")
+		crd.FixTopLevelMetadata(parser.CustomResourceDefinitions[groupKind])
+
+		By("checking that the CRD is present")
+		generated, found := parser.CustomResourceDefinitions[groupKind]
+		Expect(found).To(BeTrue())
+
+		By("verifying schema includes the field from the aliased package")
+		versions := generated.Spec.Versions
+		Expect(versions).NotTo(BeEmpty())
+		schemaProps := versions[0].Schema.OpenAPIV3Schema.Properties
+		specSchema, ok := schemaProps["spec"]
+		Expect(ok).To(BeTrue())
+		reproducerSchema, ok := specSchema.Properties["reproducer"]
+		Expect(ok).To(BeTrue())
+		Expect(reproducerSchema.Type).To(Equal("object"))
+		_, ok = reproducerSchema.Properties["repro"]
+		Expect(ok).To(BeTrue())
+	})
+
 	It("should generate plural words for Kind correctly", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
