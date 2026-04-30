@@ -396,4 +396,59 @@ var _ = Describe("AllOf Flattening", func() {
 			AllOf:     []apiextensionsv1.JSONSchemaProps{{Pattern: "^[abc]$"}, {Pattern: "^[abcdef]$"}},
 		}))
 	})
+
+	Context("when the same default appears on both the type schema and the field", func() {
+		It("should not allow duplications when default values are identical", func() {
+			By("flattening a schema where two AllOf branches carry equal-valued *JSON defaults from different allocations")
+			typeDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)}
+			fieldDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)} // same bytes, distinct alloc
+
+			original := &apiextensionsv1.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
+					"protocol": {
+						AllOf: []apiextensionsv1.JSONSchemaProps{
+							{Type: "string", Default: typeDefault},
+							{Default: fieldDefault},
+						},
+					},
+				},
+			}
+
+			flattened := crd.FlattenEmbedded(original, errRec)
+			Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+			By("ensuring the flattened protocol has a single default and no allOf")
+			protocol := flattened.Properties["protocol"]
+			Expect(protocol.AllOf).To(BeEmpty())
+			Expect(protocol.Type).To(Equal("string"))
+			Expect(protocol.Default).NotTo(BeNil())
+			Expect(string(protocol.Default.Raw)).To(Equal(`"TCP"`))
+		})
+
+		It("should keep the parent-level default when default values differ", func() {
+			By("flattening a schema where the parent and an embedded type carry different *JSON defaults")
+			typeDefault := &apiextensionsv1.JSON{Raw: []byte(`"TCP"`)}
+			fieldDefault := &apiextensionsv1.JSON{Raw: []byte(`"UDP"`)}
+
+			original := &apiextensionsv1.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
+					"protocol": {
+						Default: fieldDefault,
+						AllOf: []apiextensionsv1.JSONSchemaProps{
+							{Type: "string", Default: typeDefault},
+						},
+					},
+				},
+			}
+
+			flattened := crd.FlattenEmbedded(original, errRec)
+			Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+			By("ensuring the parent (field-level) default wins and there is no allOf")
+			protocol := flattened.Properties["protocol"]
+			Expect(protocol.AllOf).To(BeEmpty())
+			Expect(protocol.Default).NotTo(BeNil())
+			Expect(string(protocol.Default.Raw)).To(Equal(`"UDP"`))
+		})
+	})
 })
