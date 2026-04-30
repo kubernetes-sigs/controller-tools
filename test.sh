@@ -38,7 +38,7 @@ else
   reset=''
 fi
 
-k8s_version=v1.35.0
+k8s_version=v1.36.0
 goarch=amd64
 goos="unknown"
 
