@@ -238,7 +238,9 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiextensionsv1.JSONSch
 		return &apiextensionsv1.JSONSchemaProps{}
 	}
 
-	props.Description = ctx.info.Doc
+	if ctx.PackageMarkers.Get("kubebuilder:skip:description") == nil {
+		props.Description = ctx.info.Doc
+	}
 
 	applyMarkers(ctx, ctx.info.Markers, props, rawType)
 
@@ -543,7 +545,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		} else {
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
 		}
-		propSchema.Description = field.Doc
+
+		if ctx.PackageMarkers.Get("kubebuilder:skip:description") == nil {
+			propSchema.Description = field.Doc
+		}
 
 		applyMarkers(ctx, field.Markers, propSchema, field.RawField)
 
