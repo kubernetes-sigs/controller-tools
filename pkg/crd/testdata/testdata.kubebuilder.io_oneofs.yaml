@@ -1,6 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
   name: oneofs.testdata.kubebuilder.io
 spec:
   group: testdata.kubebuilder.io
@@ -107,6 +110,19 @@ spec:
                   rule: '[has(self.a),has(self.b)].filter(x,x==true).size() <= 1'
                 - message: at most one of the fields in [c d] may be set
                   rule: '[has(self.c),has(self.d)].filter(x,x==true).size() <= 1'
+              typeWithAllOf:
+                properties:
+                  host:
+                    type: string
+                  path:
+                    type: string
+                  port:
+                    type: integer
+                type: object
+                x-kubernetes-validations:
+                - message: all fields in [host port] must be set
+                  rule: '[has(self.host),has(self.port)].filter(x,x==true).size()
+                    == 2'
               typeWithAllOneOf:
                 properties:
                   a:
@@ -129,6 +145,22 @@ spec:
                   rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 1'
                 - message: at least one of the fields in [e f] must be set
                   rule: '[has(self.e),has(self.f)].filter(x,x==true).size() >= 1'
+              typeWithMultipleAllOf:
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: all fields in [a b] must be set
+                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() == 2'
+                - message: all fields in [c d] must be set
+                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 2'
               typeWithMultipleAtLeastOneOf:
                 properties:
                   a:
@@ -151,9 +183,3 @@ spec:
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null

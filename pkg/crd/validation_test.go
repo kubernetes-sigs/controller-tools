@@ -124,6 +124,74 @@ spec:
 `,
 			wantErr: `spec.typeWithAllOneOf: Invalid value: at least one of the fields in [e f] must be set`,
 		},
+		{
+			name: "AllOf constraint satisfied when all fields are set",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf:
+    host: "localhost"
+    port: 8080
+`,
+		},
+		{
+			name: "AllOf constraint violated when one field is missing",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf:
+    host: "localhost"
+`,
+			wantErr: `spec.typeWithAllOf: Invalid value: all fields in [host port] must be set`,
+		},
+		{
+			name: "AllOf constraint violated when all fields are missing",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf: {}
+`,
+			wantErr: `spec.typeWithAllOf: Invalid value: all fields in [host port] must be set`,
+		},
+		{
+			name: "Multiple AllOf constraints satisfied",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithMultipleAllOf:
+    a: "a"
+    b: "b"
+    c: "c"
+    d: "d"
+`,
+		},
+		{
+			name: "Multiple AllOf constraints violated in first group",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithMultipleAllOf:
+    a: "a"
+    c: "c"
+    d: "d"
+`,
+			wantErr: `spec.typeWithMultipleAllOf: Invalid value: all fields in [a b] must be set`,
+		},
 	}
 
 	validator, err := newValidator(t.Context(), "./testdata/testdata.kubebuilder.io_oneofs.yaml")
