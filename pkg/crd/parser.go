@@ -17,6 +17,7 @@ limitations under the License.
 package crd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -197,7 +198,51 @@ func (p *Parser) NeedFlattenedSchemaFor(typ TypeIdent) {
 	partialFlattened := p.flattener.FlattenType(typ)
 	fullyFlattened := FlattenEmbedded(partialFlattened, typ.Package)
 
+	// Merge nested defaults after flattening
+	mergeNestedDefaults(fullyFlattened)
+
 	p.FlattenedSchemata[typ] = *fullyFlattened
+}
+
+// mergeNestedDefaults walks the schema and merges nested property defaults
+// into parent defaults when the parent default is {}.
+func mergeNestedDefaults(schema *apiextensionsv1.JSONSchemaProps) {
+	EditSchema(schema, &defaultMerger{})
+}
+
+// defaultMerger implements SchemaVisitor to merge nested defaults.
+type defaultMerger struct{}
+
+func (d *defaultMerger) Visit(schema *apiextensionsv1.JSONSchemaProps) SchemaVisitor {
+	if schema == nil {
+		return nil
+	}
+
+	// For object types with default={}, merge nested property defaults
+	if schema.Type == "object" && schema.Default != nil && len(schema.Properties) > 0 {
+		var currentDefault any
+		if err := json.Unmarshal(schema.Default.Raw, &currentDefault); err == nil {
+			// Check if current default is an empty object
+			if defaultMap, isMap := currentDefault.(map[string]any); isMap && len(defaultMap) == 0 {
+				merged := make(map[string]any)
+				for name, prop := range schema.Properties {
+					if prop.Default != nil {
+						var val any
+						if err := json.Unmarshal(prop.Default.Raw, &val); err == nil {
+							merged[name] = val
+						}
+					}
+				}
+				if len(merged) > 0 {
+					if marshalledDefault, err := json.Marshal(merged); err == nil {
+						schema.Default = &apiextensionsv1.JSON{Raw: marshalledDefault}
+					}
+				}
+			}
+		}
+	}
+
+	return d
 }
 
 // NeedCRDFor lives off in spec.go
