@@ -24,6 +24,17 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
+func (AllOf) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "adds a validation constraint that requires all specified fields to be set.",
+			Details: "This marker may be repeated to specify multiple AllOf constraints.\n\nExample:\n\n\t// +kubebuilder:validation:AllOf=host;port;protocol\n\ttype ServerConfig struct {\n\t    Host *string\n\t    Port *int\n\t    Protocol *string\n\t}",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (AtLeastOneOf) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

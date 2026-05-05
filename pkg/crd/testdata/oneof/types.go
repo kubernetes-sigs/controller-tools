@@ -37,6 +37,10 @@ type OneofSpec struct {
 
 	TypeWithAllOneOf *TypeWithAllOneofs `json:"typeWithAllOneOf,omitempty"`
 
+	TypeWithAllOf *TypeWithAllOf `json:"typeWithAllOf,omitempty"`
+
+	TypeWithMultipleAllOf *TypeWithMultipleAllOf `json:"typeWithMultipleAllOf,omitempty"`
+
 	FirstCustomTypeAlias CustomTypeAlias `json:"firstCustomTypeAlias,omitempty"`
 
 	// This verifies if the custom type alias XValidation is not duplicated.
@@ -98,6 +102,22 @@ type TypeWithAllOneofs struct {
 
 	E *string `json:"e,omitempty"`
 	F *string `json:"f,omitempty"`
+}
+
+// +kubebuilder:validation:AllOf=host;port
+type TypeWithAllOf struct {
+	Host *string `json:"host,omitempty"`
+	Port *int    `json:"port,omitempty"`
+	Path *string `json:"path,omitempty"`
+}
+
+// +kubebuilder:validation:AllOf=a;b
+// +kubebuilder:validation:AllOf=c;d
+type TypeWithMultipleAllOf struct {
+	A *string `json:"a,omitempty"`
+	B *string `json:"b,omitempty"`
+	C *string `json:"c,omitempty"`
+	D *string `json:"d,omitempty"`
 }
 
 // CustomTypeAlias is a custom alias
