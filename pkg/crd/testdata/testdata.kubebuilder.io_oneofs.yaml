@@ -1,6 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
   name: oneofs.testdata.kubebuilder.io
 spec:
   group: testdata.kubebuilder.io
@@ -145,15 +148,40 @@ spec:
                   rule: '[has(self.a),has(self.b)].filter(x,x==true).size() >= 1'
                 - message: at least one of the fields in [c d] must be set
                   rule: '[has(self.c),has(self.d)].filter(x,x==true).size() >= 1'
+              typeWithOmitZero:
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at most one of the fields in [foo bar] may be set
+                  rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() <=
+                    1'
+              typeWithOmitZeroAtLeastOneOf:
+                properties:
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at least one of the fields in [c d] must be set
+                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() >= 1'
+              typeWithOmitZeroExact:
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [a b] must be set
+                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() == 1'
             type: object
         required:
         - spec
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null
