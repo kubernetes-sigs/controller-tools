@@ -40,7 +40,7 @@ type ErrorRecorder interface {
 // it compares val to valInt (which should probably be the zero value).
 func isOrNil(val reflect.Value, valInt any, zeroInt any) bool {
 	switch valKind := val.Kind(); valKind {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
 		return val.IsNil()
 	default:
 		return valInt == zeroInt

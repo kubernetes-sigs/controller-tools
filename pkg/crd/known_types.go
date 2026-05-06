@@ -28,10 +28,10 @@ import (
 var KnownPackages = map[string]PackageOverride{
 	"k8s.io/apimachinery/pkg/apis/meta/v1": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "ObjectMeta", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
-			Type: "object",
+			Type: "object", //nolint:goconst
 		}
 		p.Schemata[TypeIdent{Name: "Time", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
-			Type:   "string",
+			Type:   "string", //nolint:goconst
 			Format: "date-time",
 		}
 		p.Schemata[TypeIdent{Name: "MicroTime", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
