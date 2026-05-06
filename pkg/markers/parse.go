@@ -642,7 +642,7 @@ func ArgumentFromType(rawType reflect.Type) (Argument, error) {
 	}
 
 	arg := Argument{}
-	if rawType.Kind() == reflect.Ptr {
+	if rawType.Kind() == reflect.Pointer {
 		rawType = rawType.Elem()
 		arg.Pointer = true
 		arg.Optional = true

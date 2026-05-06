@@ -1,6 +1,6 @@
 version: "2"
 run:
-  go: "1.25"
+  go: "1.26"
   timeout: 10m
   modules-download-mode: readonly
   allow-parallel-runners: true
@@ -58,6 +58,9 @@ linters:
             msg: Use ginkgos SpecContext or go testings t.Context instead
           - pattern: context.TODO
             msg: Use ginkgos SpecContext or go testings t.Context instead
+    goconst:
+      ignore-tests: true
+      min-occurrences: 5
     govet:
       disable:
         - fieldalignment

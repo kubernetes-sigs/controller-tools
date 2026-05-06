@@ -235,6 +235,7 @@ func FixTopLevelMetadata(crd apiextensionsv1.CustomResourceDefinition) {
 		if v.Schema != nil && v.Schema.OpenAPIV3Schema != nil && v.Schema.OpenAPIV3Schema.Properties != nil {
 			schemaProperties := v.Schema.OpenAPIV3Schema.Properties
 			if _, ok := schemaProperties["metadata"]; ok {
+				//nolint:goconst
 				schemaProperties["metadata"] = apiextensionsv1.JSONSchemaProps{Type: "object"}
 			}
 		}

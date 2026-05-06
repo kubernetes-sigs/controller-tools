@@ -128,6 +128,7 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 
 		// If the obj implements a text marshaler, encode it as a string.
 		case implements(obj.Type(), textMarshaler):
+			//nolint:goconst
 			schema := &apiextensionsv1.JSONSchemaProps{Type: "string"}
 			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
 			if schema.Type != "string" {
@@ -424,6 +425,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 		return &apiextensionsv1.JSONSchemaProps{}
 	}
 
+	//nolint:goconst
 	return &apiextensionsv1.JSONSchemaProps{
 		Type: "object",
 		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
