@@ -987,9 +987,8 @@ func (fields AtMostOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextension
 	if len(fields) == 0 {
 		return nil
 	}
-	rule := fieldsToOneOfCelRuleStr(fields)
 	xvalidation := XValidation{
-		Rule:    fmt.Sprintf("%s <= 1", rule),
+		Rule:    fmt.Sprintf("%s <= 1", fieldsToOneOfSumExpr(fields)),
 		Message: fmt.Sprintf("at most one of the fields in %v may be set", fields),
 	}
 	return xvalidation.ApplyToSchema(ctx, schema)
@@ -1004,9 +1003,8 @@ func (fields ExactlyOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensio
 	if len(fields) == 0 {
 		return nil
 	}
-	rule := fieldsToOneOfCelRuleStr(fields)
 	xvalidation := XValidation{
-		Rule:    fmt.Sprintf("%s == 1", rule),
+		Rule:    fmt.Sprintf("%s == 1", fieldsToOneOfSumExpr(fields)),
 		Message: fmt.Sprintf("exactly one of the fields in %v must be set", fields),
 	}
 	return xvalidation.ApplyToSchema(ctx, schema)
@@ -1021,9 +1019,8 @@ func (fields AtLeastOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensio
 	if len(fields) == 0 {
 		return nil
 	}
-	rule := fieldsToOneOfCelRuleStr(fields)
 	xvalidation := XValidation{
-		Rule:    fmt.Sprintf("%s >= 1", rule),
+		Rule:    fieldsToOneOfOrExpr(fields),
 		Message: fmt.Sprintf("at least one of the fields in %v must be set", fields),
 	}
 	return xvalidation.ApplyToSchema(ctx, schema)
@@ -1034,21 +1031,47 @@ func (AtLeastOneOf) ApplyPriority() ApplyPriority {
 	return ExactlyOneOf{}.ApplyPriority() + 1
 }
 
-// fieldsToOneOfCelRuleStr converts a slice of field names to a string representation
-// [has(self.field1),has(self.field1),...].filter(x, x == true).size()
-func fieldsToOneOfCelRuleStr(fields []string) string {
-	var list strings.Builder
-	list.WriteString("[")
+// fieldsToOneOfSumExpr returns a CEL expression that evaluates to the count of
+// the given fields that are set on self, using ternary-sum form:
+//
+//	(has(self.field1)?1:0) + (has(self.field2)?1:0) + ...
+//
+// The caller compares the result against a constant (== 1, <= 1).
+//
+// This form is preferred over [has(self.f1), has(self.f2), ...].filter(x, x == true).size()
+// because the latter pays for list construction and a comprehension over the list,
+// whereas the sum form is constant-cost scalar arithmetic.
+func fieldsToOneOfSumExpr(fields []string) string {
+	var b strings.Builder
 	for i, f := range fields {
 		if i > 0 {
-			list.WriteString(",")
+			b.WriteString("+")
 		}
-		list.WriteString("has(self.")
-		list.WriteString(f)
-		list.WriteString(")")
+		b.WriteString("(has(self.")
+		b.WriteString(f)
+		b.WriteString(")?1:0)")
 	}
-	list.WriteString("].filter(x,x==true).size()")
-	return list.String()
+	return b.String()
+}
+
+// fieldsToOneOfOrExpr returns a CEL boolean expression that is true when at
+// least one of the given fields is set on self:
+//
+//	has(self.field1) || has(self.field2) || ...
+//
+// This is strictly cheaper than counting and comparing >= 1 because || short-circuits
+// as soon as any field is found.
+func fieldsToOneOfOrExpr(fields []string) string {
+	var b strings.Builder
+	for i, f := range fields {
+		if i > 0 {
+			b.WriteString("||")
+		}
+		b.WriteString("has(self.")
+		b.WriteString(f)
+		b.WriteString(")")
+	}
+	return b.String()
 }
 
 // K8sEnumField exists solely to reject the k8s:enum marker when placed on a
