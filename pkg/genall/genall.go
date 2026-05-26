@@ -281,3 +281,8 @@ func (r *Runtime) Run() bool {
 	// skip TypeErrors -- they're probably just from partial typechecking in crd-gen
 	return loader.PrintErrors(r.Roots, packages.TypeError) || hadErrs
 }
+
+// PrintWarnings prints any non-fatal warnings accumulated during generation.
+func (r *Runtime) PrintWarnings() {
+	loader.PrintWarnings(r.Roots)
+}

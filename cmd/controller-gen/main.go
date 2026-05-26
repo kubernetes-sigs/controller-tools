@@ -188,6 +188,8 @@ func main() {
 				// don't obscure the actual error with a bunch of usage
 				return noUsageError{fmt.Errorf("not all generators ran successfully")}
 			}
+
+			rt.PrintWarnings()
 			return nil
 		},
 		SilenceUsage: true, // silence the usage, then print it out ourselves if it wasn't suppressed

@@ -63,6 +63,41 @@ func PrintErrors(pkgs []*Package, filterKinds ...packages.ErrorKind) bool {
 	return hadErrors
 }
 
+// PrintWarnings prints warnings associated with all packages
+// in the given package graph, starting at the given root
+// packages and traversing through all imports.  It will
+// return true if any warnings were printed.
+func PrintWarnings(pkgs []*Package) bool {
+	hadWarnings := false
+	VisitPackages(pkgs, func(pkg *Package) {
+		for _, warn := range pkg.Warnings {
+			hadWarnings = true
+			fmt.Fprintln(os.Stderr, "Warning: ", warn)
+		}
+	})
+	return hadWarnings
+}
+
+// VisitPackages visits all packages reachable from the given root packages,
+// calling the given visitor for each unique package exactly once.
+func VisitPackages(pkgs []*Package, visitor func(*Package)) {
+	visited := make(map[*Package]struct{})
+	var visit func(pkg *Package)
+	visit = func(pkg *Package) {
+		if _, done := visited[pkg]; done {
+			return
+		}
+		visited[pkg] = struct{}{}
+		visitor(pkg)
+		for _, imported := range pkg.Imports() {
+			visit(imported)
+		}
+	}
+	for _, pkg := range pkgs {
+		visit(pkg)
+	}
+}
+
 // Package is a single, unique Go package that can be
 // lazily parsed and type-checked.  Packages should not
 // be constructed directly -- instead, use LoadRoots.
@@ -71,6 +106,10 @@ func PrintErrors(pkgs []*Package, filterKinds ...packages.ErrorKind) bool {
 // and for comparison.
 type Package struct {
 	*packages.Package
+
+	// Warnings stores non-fatal warnings encountered during code generation.
+	// Unlike errors, warnings do not cause generation to fail.
+	Warnings []packages.Error
 
 	imports map[string]*Package
 
@@ -170,6 +209,49 @@ func (p *Package) AddError(err error) {
 	default:
 		// should only happen for external errors, like ref checking
 		p.Errors = append(p.Errors, packages.Error{
+			Pos:  p.ID + ":-",
+			Msg:  err.Error(),
+			Kind: packages.UnknownError,
+		})
+	}
+}
+
+// AddWarning adds a non-fatal warning to the warnings associated with the
+// given package.  It accepts the same error types as AddError.
+func (p *Package) AddWarning(err error) {
+	switch typedErr := err.(type) {
+	case *os.PathError:
+		p.Warnings = append(p.Warnings, packages.Error{
+			Pos:  typedErr.Path + ":1",
+			Msg:  typedErr.Err.Error(),
+			Kind: packages.ParseError,
+		})
+	case scanner.ErrorList:
+		for _, subErr := range typedErr {
+			p.Warnings = append(p.Warnings, packages.Error{
+				Pos:  subErr.Pos.String(),
+				Msg:  subErr.Msg,
+				Kind: packages.ParseError,
+			})
+		}
+	case types.Error:
+		p.Warnings = append(p.Warnings, packages.Error{
+			Pos:  typedErr.Fset.Position(typedErr.Pos).String(),
+			Msg:  typedErr.Msg,
+			Kind: packages.TypeError,
+		})
+	case ErrList:
+		for _, subErr := range typedErr {
+			p.AddWarning(subErr)
+		}
+	case PositionedError:
+		p.Warnings = append(p.Warnings, packages.Error{
+			Pos:  p.loader.cfg.Fset.Position(typedErr.Pos).String(),
+			Msg:  typedErr.Error(),
+			Kind: packages.UnknownError,
+		})
+	default:
+		p.Warnings = append(p.Warnings, packages.Error{
 			Pos:  p.ID + ":-",
 			Msg:  err.Error(),
 			Kind: packages.UnknownError,
