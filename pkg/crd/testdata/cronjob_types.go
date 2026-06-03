@@ -297,6 +297,10 @@ type CronJobSpec struct {
 	// Maps of arrays of things-that-aren’t-strings are permitted
 	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
 
+	// Maps keyed by a type that implements encoding.TextMarshaler are permitted,
+	// since such keys serialize to strings (just like TextMarshaler fields do).
+	MapOfTextMarshalerKeys map[URL3]string `json:"mapOfTextMarshalerKeys,omitempty"`
+
 	// +kubebuilder:validation:Minimum=-0.5
 	// +kubebuilder:validation:Maximum=1.5
 	// +kubebuilder:validation:MultipleOf=0.5
