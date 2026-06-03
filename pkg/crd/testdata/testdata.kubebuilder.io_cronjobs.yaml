@@ -9468,6 +9468,13 @@ spec:
                   fields
                 type: object
                 x-kubernetes-map-type: granular
+              mapOfTextMarshalerKeys:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Maps keyed by a type that implements encoding.TextMarshaler are permitted,
+                  since such keys serialize to strings (just like TextMarshaler fields do).
+                type: object
               minMaxProperties:
                 description: This tests that min/max properties work
                 maxProperties: 2
