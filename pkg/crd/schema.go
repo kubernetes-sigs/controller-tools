@@ -71,19 +71,21 @@ type schemaContext struct {
 	schemaRequester schemaRequester
 	PackageMarkers  markers.MarkerValues
 
-	allowDangerousTypes    bool
-	ignoreUnexportedFields bool
+	allowDangerousTypes             bool
+	ignoreUnexportedFields          bool
+	ignoreTopLevelObjectAndTypeMeta bool
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
 // It must have type info added before use via ForInfo.
-func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields bool) *schemaContext {
+func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTypes, ignoreUnexportedFields, ignoreTopLevelObjectAndTypeMeta bool) *schemaContext {
 	pkg.NeedTypesInfo()
 	return &schemaContext{
-		pkg:                    pkg,
-		schemaRequester:        req,
-		allowDangerousTypes:    allowDangerousTypes,
-		ignoreUnexportedFields: ignoreUnexportedFields,
+		pkg:                             pkg,
+		schemaRequester:                 req,
+		allowDangerousTypes:             allowDangerousTypes,
+		ignoreUnexportedFields:          ignoreUnexportedFields,
+		ignoreTopLevelObjectAndTypeMeta: ignoreTopLevelObjectAndTypeMeta,
 	}
 }
 
@@ -91,11 +93,12 @@ func newSchemaContext(pkg *loader.Package, req schemaRequester, allowDangerousTy
 // as this one, except with the given type information.
 func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 	return &schemaContext{
-		pkg:                    c.pkg,
-		info:                   info,
-		schemaRequester:        c.schemaRequester,
-		allowDangerousTypes:    c.allowDangerousTypes,
-		ignoreUnexportedFields: c.ignoreUnexportedFields,
+		pkg:                             c.pkg,
+		info:                            info,
+		schemaRequester:                 c.schemaRequester,
+		allowDangerousTypes:             c.allowDangerousTypes,
+		ignoreUnexportedFields:          c.ignoreUnexportedFields,
+		ignoreTopLevelObjectAndTypeMeta: c.ignoreTopLevelObjectAndTypeMeta,
 	}
 }
 
@@ -484,6 +487,14 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		if len(jsonOpts) == 1 && jsonOpts[0] == "-" {
 			// skipped fields have the tag "-" (note that "-," means the field is named "-")
 			continue
+		}
+
+		//nolint:gocritic // we need here the switch on type, otherwise reflect package is needed
+		switch ft := field.RawField.Type.(type) {
+		case *ast.SelectorExpr:
+			if (ft.Sel.Name == "TypeMeta" || ft.Sel.Name == "ObjectMeta") && ctx.ignoreTopLevelObjectAndTypeMeta {
+				continue
+			}
 		}
 
 		inline := false
