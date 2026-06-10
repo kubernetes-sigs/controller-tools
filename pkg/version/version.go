@@ -22,6 +22,10 @@ import (
 	"runtime/debug"
 )
 
+// VersionAnnotationKey is the CRD annotation key used to record which
+// controller-gen version generated the manifest.
+const VersionAnnotationKey = "controller-gen.kubebuilder.io/version"
+
 // version to be set using ldflags:
 // -ldflags "-X sigs.k8s.io/controller-tools/pkg/version.version=v1.0.0"
 // falls back to module information is unset

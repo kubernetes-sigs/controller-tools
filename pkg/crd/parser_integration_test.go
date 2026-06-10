@@ -30,6 +30,7 @@ import (
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
+	"sigs.k8s.io/controller-tools/pkg/version"
 	"sigs.k8s.io/yaml"
 )
 
@@ -120,7 +121,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			var crd apiextensionsv1.CustomResourceDefinition
 			ExpectWithOffset(1, yaml.Unmarshal(expectedFile, &crd)).To(Succeed())
 			// clear the version annotation -- we don't care about the attribution annotation
-			delete(crd.Annotations, "controller-gen.kubebuilder.io/version")
+			delete(crd.Annotations, version.VersionAnnotationKey)
 			if len(crd.Annotations) == 0 {
 				crd.Annotations = nil
 			}

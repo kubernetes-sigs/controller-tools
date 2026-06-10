@@ -248,7 +248,7 @@ func addAttribution(crd *apiextensionsv1.CustomResourceDefinition) {
 	if crd.ObjectMeta.Annotations == nil {
 		crd.ObjectMeta.Annotations = map[string]string{}
 	}
-	crd.ObjectMeta.Annotations["controller-gen.kubebuilder.io/version"] = version.Version()
+	crd.ObjectMeta.Annotations[version.VersionAnnotationKey] = version.Version()
 }
 
 // FindMetav1 locates the actual package representing metav1 amongst

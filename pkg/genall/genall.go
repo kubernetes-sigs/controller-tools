@@ -101,6 +101,10 @@ type Runtime struct {
 	OutputRules OutputRules
 	// ErrorWriter defines where to write error messages.
 	ErrorWriter io.Writer
+	// SkipUnchanged skips writing output files whose content has not
+	// meaningfully changed, ignoring version annotations and generated-by
+	// comments.
+	SkipUnchanged bool
 }
 
 // GenerationContext defines the common information needed for each Generator
@@ -117,6 +121,9 @@ type GenerationContext struct {
 	// InputRule describes how to load associated boilerplate artifacts.
 	// It should *not* be used to load source files.
 	InputRule
+	// SkipUnchanged, when true, causes generators to skip writing output
+	// files whose content has not meaningfully changed.
+	SkipUnchanged bool
 }
 
 // WriteYAMLOptions implements the Options Pattern for WriteYAML.
@@ -264,7 +271,12 @@ func (r *Runtime) Run() bool {
 	hadErrs := false
 	for _, gen := range r.Generators {
 		ctx := r.GenerationContext // make a shallow copy
+		ctx.SkipUnchanged = r.SkipUnchanged
 		ctx.OutputRule = r.OutputRules.ForGenerator(gen)
+
+		if r.SkipUnchanged {
+			ctx.OutputRule = &skipUnchangedRule{inner: ctx.OutputRule}
+		}
 
 		// don't pass a typechecker to generators that don't provide a filter
 		// to avoid accidents
