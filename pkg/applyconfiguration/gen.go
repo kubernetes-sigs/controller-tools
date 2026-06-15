@@ -17,6 +17,7 @@ limitations under the License.
 package applyconfiguration
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -174,6 +175,7 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 		Checker:                     ctx.Checker,
 		HeaderFilePath:              headerFilePath,
 		ExternalApplyConfigurations: externalACs,
+		SkipUnchanged:               ctx.SkipUnchanged,
 	}
 
 	errs := []error{}
@@ -198,6 +200,7 @@ type ObjectGenCtx struct {
 	Checker                     *loader.TypeChecker
 	HeaderFilePath              string
 	ExternalApplyConfigurations map[types.Name]string
+	SkipUnchanged               bool
 }
 
 // generateForPackage generates apply configuration implementations for
@@ -235,6 +238,12 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	c, err := generator.NewContext(p, generators.NameSystems(), generators.DefaultNameSystem())
 	if err != nil {
 		return fmt.Errorf("failed making a context: %w", err)
+	}
+
+	if ctx.SkipUnchanged {
+		if goFT, ok := c.FileTypes[generator.GoFileType].(*generator.DefaultFileType); ok {
+			c.FileTypes[generator.GoFileType] = &writeIfChangedFileType{inner: goFT}
+		}
 	}
 
 	pkg, ok := c.Universe[root.PkgPath]
@@ -308,4 +317,50 @@ func isCRDClusterScoped(info *markers.TypeInfo) bool {
 		return false
 	}
 	return resource.Scope == string(apiextensionsv1.ClusterScoped)
+}
+
+// writeIfChangedFileType wraps a gengo DefaultFileType to skip writing files
+// whose content has not meaningfully changed.
+type writeIfChangedFileType struct {
+	inner *generator.DefaultFileType
+}
+
+func (ft *writeIfChangedFileType) AssembleFile(f *generator.File, pathname string) error {
+	b := &bytes.Buffer{}
+	et := generator.NewErrorTracker(b)
+	ft.inner.Assemble(et, f)
+	if et.Error() != nil {
+		return et.Error()
+	}
+
+	content := b.Bytes()
+	formatted, formatErr := ft.inner.Format(content)
+	if formatErr != nil {
+		formatted = content
+	}
+
+	writeFile := func(data []byte) error {
+		if err := os.MkdirAll(filepath.Dir(pathname), os.ModePerm); err != nil {
+			return err
+		}
+		return os.WriteFile(pathname, data, 0666)
+	}
+
+	// On format failure, always write the unformatted content so developers
+	// can inspect what went wrong — matching gengo's DefaultFileType behavior.
+	if formatErr != nil {
+		if err := writeFile(formatted); err != nil {
+			return err
+		}
+		return formatErr
+	}
+
+	existing, readErr := os.ReadFile(pathname)
+	if readErr != nil {
+		existing = nil
+	}
+	if _, err := genall.WriteFileIfChanged(existing, formatted, writeFile); err != nil {
+		return err
+	}
+	return nil
 }
