@@ -414,6 +414,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 	case *ast.ArrayType:
 		valSchema = arrayToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	case *ast.StarExpr:
+		ctx.pkg.AddWarning(loader.ErrFromNode(fmt.Errorf("using pointers as map values is not recommended per Kubernetes API conventions"), mapType.Value))
 		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)
 	case *ast.MapType:
 		valSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), val)

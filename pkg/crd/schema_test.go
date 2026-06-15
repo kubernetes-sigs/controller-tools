@@ -176,3 +176,80 @@ func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiexte
 	m.callback()
 	return nil
 }
+
+func Test_Schema_PointerMapValue_Warning(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
+	modules := []pkgstest.Module{
+		{
+			Name: moduleName,
+			Files: map[string]any{
+				"test.go": `package crd
+type Test map[string]*string
+`,
+			},
+		},
+	}
+
+	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
+	if exported != nil {
+		t.Cleanup(exported.Cleanup)
+	}
+	if err != nil {
+		t.Fatalf("unable to load fake package: %s", err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("expected to parse only one package")
+	}
+
+	pkg := pkgs[0]
+	pkg.NeedTypesInfo()
+	failIfErrors(t, pkg.Errors)
+
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
+	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
+	typeToSchema(schemaContext, definedType)
+
+	g.Expect(pkg.Errors).To(gomega.BeEmpty(), "pointer map values should not produce errors")
+	g.Expect(pkg.Warnings).To(gomega.HaveLen(1), "expected exactly one warning")
+	g.Expect(pkg.Warnings[0].Msg).To(gomega.ContainSubstring("pointers as map values"))
+}
+
+func Test_Schema_NonPointerMapValue_NoWarning(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
+	modules := []pkgstest.Module{
+		{
+			Name: moduleName,
+			Files: map[string]any{
+				"test.go": `package crd
+type Test map[string]string
+`,
+			},
+		},
+	}
+
+	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
+	if exported != nil {
+		t.Cleanup(exported.Cleanup)
+	}
+	if err != nil {
+		t.Fatalf("unable to load fake package: %s", err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("expected to parse only one package")
+	}
+
+	pkg := pkgs[0]
+	pkg.NeedTypesInfo()
+	failIfErrors(t, pkg.Errors)
+
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
+	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
+	typeToSchema(schemaContext, definedType)
+
+	g.Expect(pkg.Errors).To(gomega.BeEmpty())
+	g.Expect(pkg.Warnings).To(gomega.BeEmpty(), "non-pointer map values should not produce warnings")
+}
