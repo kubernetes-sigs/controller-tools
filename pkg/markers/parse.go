@@ -265,7 +265,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		maybeItem := guessType(scanner, raw, false)
 
 		subRaw := raw[scanner.Pos().Offset:]
-		subScanner := parserScanner(subRaw, scanner.Error)
+		subScanner := parserScanner(subRaw, scanner.Error, true)
 
 		var tok rune
 		for {
@@ -291,7 +291,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 	// (so we don't consume our scanner tokens until we actually
 	// go to use this -- Go doesn't like scanners that can be rewound).
 	subRaw := raw[scanner.Pos().Offset:]
-	subScanner := parserScanner(subRaw, scanner.Error)
+	subScanner := parserScanner(subRaw, scanner.Error, true)
 
 	// skip whitespace
 	hint := peekNoSpace(subScanner)
@@ -808,10 +808,14 @@ func (d *Definition) loadFields() error {
 }
 
 // parserScanner makes a new scanner appropriate for use in parsing definitions and arguments.
-func parserScanner(raw string, err func(*sc.Scanner, string)) *sc.Scanner {
+// If rawStrings is true, backticks are treated as raw string delimiters.
+func parserScanner(raw string, err func(*sc.Scanner, string), rawStrings bool) *sc.Scanner {
 	scanner := &sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(raw))
-	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
+	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.SkipComments
+	if rawStrings {
+		scanner.Mode |= sc.ScanRawStrings
+	}
 	scanner.Error = err
 
 	return scanner
@@ -825,6 +829,25 @@ type markerParser interface {
 // raw marker in the form `+a:b:c=arg,d=arg` into an output object of the
 // type specified in the definition.
 func (d *Definition) Parse(rawMarker string) (any, error) {
+	// Try with ScanRawStrings enabled first (supports raw strings like `pattern`).
+	result, errs := d.parse(rawMarker, true)
+	// Retry without ScanRawStrings if we get "literal not terminated" — the backticks
+	// may be literal characters (e.g. inside a regex character class), not raw string
+	// delimiters.
+	if hasTerminatedErr(errs) {
+		result, errs = d.parse(rawMarker, false)
+	}
+	return result, errs
+}
+
+func hasTerminatedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "literal not terminated")
+}
+
+func (d *Definition) parse(rawMarker string, rawStrings bool) (any, error) {
 	name, anonName, fields := splitMarker(rawMarker)
 
 	outPointer := reflect.New(d.Output)
@@ -844,7 +867,7 @@ func (d *Definition) Parse(rawMarker string) (any, error) {
 	var errs []error
 	scanner := parserScanner(fields, func(scanner *sc.Scanner, msg string) {
 		errs = append(errs, &ScannerError{Msg: msg, Pos: scanner.Position})
-	})
+	}, rawStrings)
 
 	// TODO(directxman12): strict parsing where we error out if certain fields aren't optional
 	seen := make(map[string]struct{}, len(d.Fields))
