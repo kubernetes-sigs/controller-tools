@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/packages"
-	rawyaml "gopkg.in/yaml.v2"
+	rawyaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
