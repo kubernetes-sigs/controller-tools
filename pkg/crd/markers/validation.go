@@ -407,7 +407,7 @@ type Nullable struct{}
 //
 //	// Object default
 //	// +kubebuilder:default={replicas: 1}
-//	Config map[string]interface{}
+//	Config map[string]any
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type Default struct {
@@ -468,7 +468,7 @@ type Title struct {
 //
 //	// Object default (JSON format)
 //	// +default={"policy": "delete"}
-//	Config map[string]interface{}
+//	Config map[string]any
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type KubernetesDefault struct {
@@ -531,7 +531,7 @@ type Example struct {
 // Example:
 //
 //	// +kubebuilder:pruning:PreserveUnknownFields
-//	RawConfig map[string]interface{}
+//	RawConfig map[string]any
 //
 // +controllertools:marker:generateHelp:category="CRD processing"
 type XPreserveUnknownFields struct{}
