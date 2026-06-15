@@ -62,6 +62,9 @@ type Generator struct {
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
 	HeaderFile string `marker:",optional"`
 
+	// Year specifies the year to substitute for " YEAR" in the header file.
+	Year string `marker:",optional"`
+
 	// ExternalApplyConfigurations provides mappings between external types and their applyconfiguration packages.
 	//
 	// Use this to reference apply configuration types for external types referenced
@@ -144,12 +147,25 @@ func isCRD(info *markers.TypeInfo) bool {
 func (d Generator) Generate(ctx *genall.GenerationContext) error {
 	headerFilePath := d.HeaderFile
 
-	if headerFilePath == "" {
+	if d.HeaderFile != "" {
+		headerBytes, err := ctx.ReadFile(d.HeaderFile)
+		if err != nil {
+			return err
+		}
+		headerText := string(headerBytes)
+		headerText = strings.ReplaceAll(headerText, " YEAR", " "+d.Year)
+
 		tmpFile, err := os.CreateTemp("", "applyconfig-header-*.txt")
 		if err != nil {
 			return fmt.Errorf("failed to create temporary file: %w", err)
 		}
+		if _, err := tmpFile.WriteString(headerText); err != nil {
+			tmpFile.Close()
+			os.Remove(tmpFile.Name())
+			return fmt.Errorf("failed to write to temporary file: %w", err)
+		}
 		if err := tmpFile.Close(); err != nil {
+			os.Remove(tmpFile.Name())
 			return fmt.Errorf("failed to close temporary file: %w", err)
 		}
 
