@@ -210,6 +210,20 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Inline struct error", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./inline_struct_error/..."}
+				expPkgLen = 1
+			})
+			It("should reject inline struct literals with a clear error message", func() {
+				groupKind := schema.GroupKind{Kind: "InlineStruct", Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "inline struct types are not supported, use a named type instead"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
 		Context("OneOf API with invalid marker", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./oneof_error/..."}
