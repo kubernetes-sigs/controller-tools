@@ -17,6 +17,7 @@ limitations under the License.
 package genall
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -133,7 +134,7 @@ func WithTransform(transform func(obj map[string]any) error) *WriteYAMLOptions {
 
 // TransformRemoveCreationTimestamp ensures we do not write the metadata.creationTimestamp field.
 func TransformRemoveCreationTimestamp(obj map[string]any) error {
-	metadata := obj["metadata"].(map[any]any)
+	metadata := obj["metadata"].(map[string]any)
 	delete(metadata, "creationTimestamp")
 	return nil
 }
@@ -201,8 +202,17 @@ func yamlJSONToYAMLWithFilter(j []byte, options ...*WriteYAMLOptions) ([]byte, e
 		}
 	}
 
-	// Marshal this object into YAML.
-	return rawyaml.Marshal(jsonObj)
+	// Marshal this object into YAML with 2-space indentation (yaml.v3 defaults to 4).
+	var buf bytes.Buffer
+	enc := rawyaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(jsonObj); err != nil {
+		return nil, err
+	}
+	if err := enc.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // ReadFile reads the given boilerplate artifact using the context's InputRule.
