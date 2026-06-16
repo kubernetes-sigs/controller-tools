@@ -1,5 +1,4 @@
 [![Go Reference](https://pkg.go.dev/badge/sigs.k8s.io/controller-tools.svg)](https://pkg.go.dev/sigs.k8s.io/controller-tools)
-[![Build Status](https://travis-ci.org/kubernetes-sigs/controller-tools.svg?branch=main)](https://travis-ci.org/kubernetes-sigs/controller-tools "Travis")
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/controller-tools)](https://goreportcard.com/report/sigs.k8s.io/controller-tools)
 
 # Kubernetes controller-tools Project
@@ -9,10 +8,6 @@ The Kubernetes controller-tools Project is a set of go libraries for building Co
 ## Development
 
 Clone this project, and iterate on changes by running `./test.sh`.
-
-This project uses Go modules to manage its dependencies, so feel free to work from outside
-of your `GOPATH`. However, if you'd like to continue to work from within your `GOPATH`, please
-export `GO111MODULE=on`.
 
 ## Releasing and Versioning
 
@@ -31,12 +26,9 @@ Compatible k8s.io/*, client-go and minimum Go versions can be looked up in our [
 
 |          | k8s.io/*, client-go | minimum Go version |
 |----------|:-------------------:|:------------------:|
-| CT v0.17 |        v0.32        |        1.23        |
-| CT v0.16 |        v0.31        |        1.22        |
-| CT v0.15 |        v0.30        |        1.22        |
-| CT v0.14 |        v0.29        |        1.20        |
-| CT v0.13 |        v0.28        |        1.20        |
-| CT v0.12 |        v0.27        |        1.20        |
+| CT v0.21 |        v0.36        |        1.26        |
+| CT v0.20 |        v0.35        |        1.25        |
+| CT v0.19 |        v0.34        |        1.24        |
 
 ## Community, discussion, contribution, and support
 
