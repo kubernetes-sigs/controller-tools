@@ -386,20 +386,31 @@ func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiextensionsv1.JS
 // mapToSchema creates a schema for items of the given map.  Key types must eventually resolve
 // to string (other types aren't allowed by JSON, and thus the kubernetes API standards).
 func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSONSchemaProps {
-	keyInfo := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
-	// check that we've got a type that actually corresponds to a string
+	keyType := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
+	// check that we've got a type that actually corresponds to a string, or that
+	// implements encoding.TextMarshaler (in which case it serializes to a string,
+	// just like text-marshaler-implementing field types do).
+	keyInfo := keyType
 	for keyInfo != nil {
 		switch typedKey := keyInfo.(type) {
 		case *types.Basic:
 			if typedKey.Info()&types.IsString == 0 {
-				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
+				if implements(keyType, textMarshaler) {
+					keyInfo = nil // stop iterating
+					break
+				}
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings or implement encoding.TextMarshaler, not %s", keyInfo.String()), mapType.Key))
 				return &apiextensionsv1.JSONSchemaProps{}
 			}
 			keyInfo = nil // stop iterating
 		case *types.Named:
 			keyInfo = typedKey.Underlying()
 		default:
-			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
+			if implements(keyType, textMarshaler) {
+				keyInfo = nil // stop iterating
+				break
+			}
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings or implement encoding.TextMarshaler, not %s", keyInfo.String()), mapType.Key))
 			return &apiextensionsv1.JSONSchemaProps{}
 		}
 	}
