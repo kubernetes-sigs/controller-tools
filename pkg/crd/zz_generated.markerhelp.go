@@ -64,6 +64,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "indicates whether",
 				Details: "or not we should turn off field pruning for this resource.\n\nSpecifies spec.preserveUnknownFields value that is false and omitted by default.\nThis value can only be specified for CustomResourceDefinitions that were created with\n`apiextensions.k8s.io/v1beta1`.\n\nThe field can be set for compatibility reasons, although strongly discouraged, resource\nauthors should move to a structural OpenAPI schema instead.\n\nSee https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#field-pruning\nfor more information about field pruning and v1beta1 resources compatibility.",
 			},
+			"SkipToolVersionAnnotation": {
+				Summary: "specifies if the controller-gen version annotation",
+				Details: "(controller-gen.kubebuilder.io/version) should be skipped when generating the CRD.\n\nLeft unspecified, the default is false.",
+			},
 		},
 	}
 }
