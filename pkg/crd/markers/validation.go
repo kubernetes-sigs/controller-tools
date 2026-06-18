@@ -571,8 +571,8 @@ type XIntOrString struct{}
 // Schemaless objects are not introspected, so you must provide
 // any type and validation information yourself. One use for this
 // tag is for embedding fields that hold JSONSchema typed objects.
-// Because this field disables all type checking, it is recommended
-// to be used only as a last resort.
+// Because this field disables all type checking, it is recommended to
+// be used only as a last resort.
 //
 // Example:
 //
