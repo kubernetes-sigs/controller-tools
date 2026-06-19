@@ -116,7 +116,7 @@ func transformRemoveCRDStatus(obj map[string]any) error {
 // transformPreserveUnknownFields adds spec.preserveUnknownFields=value.
 func transformPreserveUnknownFields(value bool) func(map[string]any) error {
 	return func(obj map[string]any) error {
-		if spec, ok := obj["spec"].(map[any]any); ok {
+		if spec, ok := obj["spec"].(map[string]any); ok {
 			spec["preserveUnknownFields"] = value
 		}
 		return nil
