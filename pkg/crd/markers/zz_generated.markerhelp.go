@@ -443,7 +443,7 @@ func (Schemaless) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "marks a field as being a schemaless object.",
-			Details: "Schemaless objects are not introspected, so you must provide\nany type and validation information yourself. One use for this\ntag is for embedding fields that hold JSONSchema typed objects.\nBecause this field disables all type checking, it is recommended\nto be used only as a last resort.\n\nExample:\n\n\t// +kubebuilder:validation:Schemaless\n\tJSONSchema apiextensionsv1.JSONSchemaProps",
+			Details: "Schemaless objects are not introspected, so you must provide\nany type and validation information yourself. One use for this\ntag is for embedding fields that hold JSONSchema typed objects.\nBecause this field disables all type checking, it is recommended to\nbe used only as a last resort.\n\nExample:\n\n\t// +kubebuilder:validation:Schemaless\n\tJSONSchema apiextensionsv1.JSONSchemaProps",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}

@@ -81,6 +81,8 @@ linters:
         - pkg: sigs.k8s.io/controller-runtime
           alias: ctrl
       no-unaliased: true
+    misspell:
+      mode: default
     revive:
       # By default, revive will enable only the linting rules that are named in the configuration file.
       # So, it's needed to explicitly enable all required rules here.
