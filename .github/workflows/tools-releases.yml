@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # tag=v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # tag=v7.0.0
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # tag=v47.0.6
@@ -39,7 +39,7 @@ jobs:
         run: |
           make release-envtest KUBERNETES_VERSION=${{ env.KUBERNETES_VERSION }}
       - name: Release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # tag=v3.0.0
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # tag=v3.0.1
         with:
           tag_name: envtest-${{ env.KUBERNETES_VERSION }}
           draft: false
