@@ -414,7 +414,7 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:items:MaxLength=3
 	// +kubebuilder:validation:items:MinLength=1
 	// +kubebuilder:validation:items:Enum=1;2;"foo";"bar"
-	IntOrStringWithEnumSlice []*intstr.IntOrString `json:"intOrStringWithEnumSlice,omitempty"`
+	IntOrStringWithEnumSlice []intstr.IntOrString `json:"intOrStringWithEnumSlice,omitempty"`
 
 	// This tests that we can embed protocol correctly (without ending up with allOf).
 	// Context: https://github.com/kubernetes-sigs/controller-tools/issues/1027
