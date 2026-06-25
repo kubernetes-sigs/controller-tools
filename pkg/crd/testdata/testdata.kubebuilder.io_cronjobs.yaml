@@ -332,6 +332,23 @@ spec:
                 - foo
                 - bar
                 x-kubernetes-int-or-string: true
+              intOrStringWithEnumSlice:
+                description: |-
+                  This tests that a slice of  IntOrString can also have enum validation.
+                  The XIntOrString marker is required for applying enum to IntOrString.
+                items:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  enum:
+                  - 1
+                  - 2
+                  - foo
+                  - bar
+                  maxLength: 3
+                  minLength: 1
+                  x-kubernetes-int-or-string: true
+                type: array
               intWithValidations:
                 maximum: 2
                 minimum: -2
