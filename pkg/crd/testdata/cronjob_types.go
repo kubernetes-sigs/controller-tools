@@ -16,7 +16,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved;./job/... output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved;./job/...;./immutable output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -60,6 +60,14 @@ type CronJobSpec struct {
 	// - "Replace": cancels currently running job and replaces it with a new one
 	// +optional
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
+
+	// Specifies how to treat concurrent executions of a Job.
+	// Valid values are:
+	// - "Allow" (default): allows CronJobs to run concurrently;
+	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
+	// - "Replace": cancels currently running job and replaces it with a new one
+	// +optional
+	K8sConcurrencyPolicy K8sConcurrencyPolicy `json:"k8sConcurrencyPolicy,omitempty"`
 
 	// This flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
@@ -288,6 +296,10 @@ type CronJobSpec struct {
 
 	// Maps of arrays of things-that-aren’t-strings are permitted
 	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
+
+	// Maps keyed by a type that implements encoding.TextMarshaler are permitted,
+	// since such keys serialize to strings (just like TextMarshaler fields do).
+	MapOfTextMarshalerKeys map[URL3]string `json:"mapOfTextMarshalerKeys,omitempty"`
 
 	// +kubebuilder:validation:Minimum=-0.5
 	// +kubebuilder:validation:Maximum=1.5
@@ -760,6 +772,21 @@ const (
 
 	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
+)
+
+// +k8s:enum
+type K8sConcurrencyPolicy string
+
+const (
+	// AllowK8sConcurrencyPolicy allows CronJobs to run concurrently.
+	AllowK8sConcurrencyPolicy K8sConcurrencyPolicy = "Allow"
+
+	// ForbidK8sConcurrencyPolicy forbids concurrent runs, skipping next run if previous
+	// hasn't finished yet.
+	ForbidK8sConcurrencyPolicy K8sConcurrencyPolicy = "Forbid"
+
+	// ReplaceK8sConcurrencyPolicy cancels currently running job and replaces it with a new one.
+	ReplaceK8sConcurrencyPolicy K8sConcurrencyPolicy = "Replace"
 )
 
 // StringEvenType is a type that includes an expression-based validation.

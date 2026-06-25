@@ -186,6 +186,30 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Enum API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./enum/..."}
+				expPkgLen = 1
+			})
+			It("should successfully generate the CRD with enum validation constraints", func() {
+				assertCRD(pkgs[0], "Enum", "testdata.kubebuilder.io_enums.yaml")
+			})
+		})
+
+		Context("Enum API with marker on field", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./enum_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error when k8s:enum is set on a field", func() {
+				groupKind := schema.GroupKind{Kind: "EnumError", Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "k8s:enum must be set on a type, not a field"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
 		Context("OneOf API with invalid marker", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./oneof_error/..."}
@@ -197,6 +221,21 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 				parser.NeedCRDFor(groupKind, nil)
 
 				expectedErr := "kubebuilder:validation:AtMostOneOf: cannot reference nested fields: field.foo,field.bar"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
+		Context("OneOf API with missing omitempty/omitzero tag", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./oneof_missing_tag_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error when OneOf field lacks omitempty or omitzero tag", func() {
+				kind := "Oneof"
+				groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "field foo is part of OneOf constraint and must have omitempty or omitzero tag"
 				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
 			})
 		})

@@ -21,6 +21,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 )
 
@@ -37,3 +39,39 @@ var _ = Describe("CronJob CRD", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
+
+var _ = Describe("Enum CRD", func() {
+	It("should accept Value1", func(ctx SpecContext) {
+		obj := enumObject("valid-value1", "Value1")
+		err := k8sClient.Create(ctx, obj)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should accept Value2", func(ctx SpecContext) {
+		obj := enumObject("valid-value2", "Value2")
+		err := k8sClient.Create(ctx, obj)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("should reject an invalid enum value", func(ctx SpecContext) {
+		obj := enumObject("invalid-value", "Invalid")
+		err := k8sClient.Create(ctx, obj)
+		Expect(err).To(HaveOccurred())
+	})
+})
+
+func enumObject(name, fieldValue string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "testdata.kubebuilder.io/v1",
+			"kind":       "Enum",
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": metav1.NamespaceDefault,
+			},
+			"spec": map[string]interface{}{
+				"field": fieldValue,
+			},
+		},
+	}
+}

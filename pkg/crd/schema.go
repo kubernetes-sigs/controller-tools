@@ -49,7 +49,7 @@ var byteType = types.Universe.Lookup("byte").Type()
 type SchemaMarker interface {
 	// ApplyToSchema is called after the rest of the schema for a given type
 	// or field is generated, to modify the schema appropriately.
-	ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error
+	ApplyToSchema(ctx *crdmarkers.SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error
 }
 
 // applyFirstMarker is applied before any other markers.  It's a bit of a hack.
@@ -128,6 +128,7 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 
 		// If the obj implements a text marshaler, encode it as a string.
 		case implements(obj.Type(), textMarshaler):
+			//nolint:goconst
 			schema := &apiextensionsv1.JSONSchemaProps{Type: "string"}
 			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
 			if schema.Type != "string" {
@@ -194,8 +195,9 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	slices.SortStableFunc(markers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 	slices.SortStableFunc(itemsMarkers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
 
+	schemaCtx := &crdmarkers.SchemaContext{Package: ctx.pkg, TypeInfo: ctx.info}
 	for _, schemaMarker := range markers {
-		if err := schemaMarker.SchemaMarker.ApplyToSchema(props); err != nil {
+		if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, props); err != nil {
 			ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 		}
 	}
@@ -206,7 +208,7 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			ctx.pkg.AddError(loader.ErrFromNode(err, node))
 		} else {
 			itemsSchema := props.Items.Schema
-			if err := schemaMarker.SchemaMarker.ApplyToSchema(itemsSchema); err != nil {
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, itemsSchema); err != nil {
 				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 			}
 		}
@@ -384,20 +386,31 @@ func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiextensionsv1.JS
 // mapToSchema creates a schema for items of the given map.  Key types must eventually resolve
 // to string (other types aren't allowed by JSON, and thus the kubernetes API standards).
 func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSONSchemaProps {
-	keyInfo := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
-	// check that we've got a type that actually corresponds to a string
+	keyType := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
+	// check that we've got a type that actually corresponds to a string, or that
+	// implements encoding.TextMarshaler (in which case it serializes to a string,
+	// just like text-marshaler-implementing field types do).
+	keyInfo := keyType
 	for keyInfo != nil {
 		switch typedKey := keyInfo.(type) {
 		case *types.Basic:
 			if typedKey.Info()&types.IsString == 0 {
-				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
+				if implements(keyType, textMarshaler) {
+					keyInfo = nil // stop iterating
+					break
+				}
+				ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings or implement encoding.TextMarshaler, not %s", keyInfo.String()), mapType.Key))
 				return &apiextensionsv1.JSONSchemaProps{}
 			}
 			keyInfo = nil // stop iterating
 		case *types.Named:
 			keyInfo = typedKey.Underlying()
 		default:
-			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings, not %s", keyInfo.String()), mapType.Key))
+			if implements(keyType, textMarshaler) {
+				keyInfo = nil // stop iterating
+				break
+			}
+			ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("map keys must be strings or implement encoding.TextMarshaler, not %s", keyInfo.String()), mapType.Key))
 			return &apiextensionsv1.JSONSchemaProps{}
 		}
 	}
@@ -423,6 +436,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 		return &apiextensionsv1.JSONSchemaProps{}
 	}
 
+	//nolint:goconst
 	return &apiextensionsv1.JSONSchemaProps{
 		Type: "object",
 		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
@@ -463,6 +477,8 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		return props
 	}
 
+	var immutableFields []string
+
 	for _, field := range ctx.info.Fields {
 		// Skip if the field is not an inline field, ignoreUnexportedFields is true, and the field is not exported
 		if field.Name != "" && ctx.ignoreUnexportedFields && !ast.IsExported(field.Name) {
@@ -487,7 +503,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			switch opt {
 			case "inline":
 				inline = true
-			case "omitempty":
+			case "omitempty", "omitzero":
 				omitEmpty = true
 			}
 		}
@@ -522,10 +538,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 
 		// if this package isn't set to optional default...
 		case defaultMode == "required":
-			// ...everything that's not inline / omitempty is required
+			// ...everything that's not inline / omitempty / omitzero is required
 			if !inline && !omitEmpty {
 				if exactlyOneOf.Has(fieldName) || atMostOneOf.Has(fieldName) || atLeastOneOf.Has(fieldName) {
-					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty tag", fieldName), structType))
+					ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("field %s is part of OneOf constraint and must have omitempty or omitzero tag", fieldName), structType))
 					return props
 				}
 				props.Required = append(props.Required, fieldName)
@@ -551,11 +567,28 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			continue
 		}
 
+		if field.Markers.Get("k8s:immutable") != nil {
+			immutableFields = append(immutableFields, fieldName)
+		}
+
 		props.Properties[fieldName] = *propSchema
 	}
 
 	// Ensure the required fields are always listed alphabetically.
 	slices.Sort(props.Required)
+
+	// For optional immutable fields, add a parent-level validation rule to prevent
+	// clearing the field once set. The field-level rule prevents value changes, but
+	// when an optional field is removed, the field-level rule doesn't execute.
+	for _, fieldName := range immutableFields {
+		if slices.Contains(props.Required, fieldName) {
+			continue
+		}
+		props.XValidations = append(props.XValidations, apiextensionsv1.ValidationRule{
+			Rule:    fmt.Sprintf("!has(oldSelf.%s) || has(self.%s)", fieldName, fieldName),
+			Message: fmt.Sprintf("field %s is immutable once set", fieldName),
+		})
+	}
 
 	return props
 }

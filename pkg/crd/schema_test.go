@@ -26,6 +26,7 @@ import (
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/loader"
 	testloader "sigs.k8s.io/controller-tools/pkg/loader/testutils"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -70,6 +71,106 @@ func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
 	result := typeToSchema(schemaContext, definedType)
 	failIfErrors(t, pkg.Errors)
 	return result
+}
+
+// transformPackage loads pkgContents as a fake package and returns the schema
+// produced for the type definition named typeName, together with the package so
+// callers can inspect (or assert) any errors raised during schema generation.
+// Unlike transform, it does not fail the test when schema generation errors,
+// which lets negative cases assert that an error was produced.
+func transformPackage(t *testing.T, pkgContents, typeName string) (*apiextensionsv1.JSONSchemaProps, *loader.Package) {
+	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
+	modules := []pkgstest.Module{
+		{
+			Name: moduleName,
+			Files: map[string]any{
+				"test.go": pkgContents,
+			},
+		},
+	}
+
+	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
+	if exported != nil {
+		t.Cleanup(exported.Cleanup)
+	}
+
+	if err != nil {
+		t.Fatalf("unable to load fake package: %s", err)
+	}
+
+	if len(pkgs) != 1 {
+		t.Fatal("expected to parse only one package")
+	}
+
+	pkg := pkgs[0]
+	pkg.NeedTypesInfo()
+
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
+
+	var definedType ast.Expr
+	for _, decl := range pkg.Syntax[0].Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, spec := range genDecl.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if ok && typeSpec.Name.Name == typeName {
+				definedType = typeSpec.Type
+			}
+		}
+	}
+	if definedType == nil {
+		t.Fatalf("could not find type %q in fake package", typeName)
+	}
+
+	return typeToSchema(schemaContext, definedType), pkg
+}
+
+const textMarshalerKeyPackage = `
+	package crd
+
+	// textKey implements encoding.TextMarshaler, so it serializes to a string
+	// and is a valid (JSON string) map key.
+	type textKey struct{}
+
+	func (textKey) MarshalText() ([]byte, error) { return nil, nil }
+
+	// nonStringKey is a struct that does not implement encoding.TextMarshaler.
+	type nonStringKey struct{}
+
+	type TextMarshalerKeyMap map[textKey]string
+	type NonStringKeyMap map[nonStringKey]string
+`
+
+// Test_Schema_MapOfTextMarshalerKey verifies that a map keyed by a type that
+// implements encoding.TextMarshaler is accepted (mirroring how such types are
+// accepted as struct fields) and produces an ordinary string-keyed object
+// schema with no key schema emitted.
+func Test_Schema_MapOfTextMarshalerKey(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	output, pkg := transformPackage(t, textMarshalerKeyPackage, "TextMarshalerKeyMap")
+	failIfErrors(t, pkg.Errors)
+	g.Expect(output).To(gomega.Equal(&apiextensionsv1.JSONSchemaProps{
+		Type: "object",
+		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+			Allows: true,
+			Schema: &apiextensionsv1.JSONSchemaProps{
+				Type: "string",
+			},
+		},
+	}))
+}
+
+// Test_Schema_MapOfNonStringKey verifies that a struct key that does not
+// implement encoding.TextMarshaler is still rejected.
+func Test_Schema_MapOfNonStringKey(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	_, pkg := transformPackage(t, textMarshalerKeyPackage, "NonStringKeyMap")
+	g.Expect(pkg.Errors).ToNot(gomega.BeEmpty())
+	g.Expect(pkg.Errors[0].Msg).To(gomega.ContainSubstring("map keys must be strings"))
 }
 
 func failIfErrors(t *testing.T, errs []packages.Error) {
@@ -148,7 +249,7 @@ type defaultPriorityMarker struct {
 	callback func()
 }
 
-func (m *defaultPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *defaultPriorityMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -162,7 +263,7 @@ func (m *testPriorityMarker) ApplyPriority() crdmarkers.ApplyPriority {
 	return m.priority
 }
 
-func (m *testPriorityMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *testPriorityMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }
@@ -172,7 +273,7 @@ type testapplyFirstMarker struct {
 }
 
 func (m *testapplyFirstMarker) ApplyFirst() {}
-func (m *testapplyFirstMarker) ApplyToSchema(*apiextensionsv1.JSONSchemaProps) error {
+func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
 }

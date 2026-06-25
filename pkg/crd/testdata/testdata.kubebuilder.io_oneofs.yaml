@@ -1,6 +1,9 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
   name: oneofs.testdata.kubebuilder.io
 spec:
   group: testdata.kubebuilder.io
@@ -52,8 +55,7 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: exactly one of the fields in [foo bar] must be set
-                  rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() ==
-                    1'
+                  rule: (has(self.foo)?1:0)+(has(self.bar)?1:0) == 1
               firstTypeWithOneof:
                 properties:
                   bar:
@@ -65,8 +67,7 @@ spec:
                 - message: only one of foo|bar may be set
                   rule: '!(has(self.foo) && has(self.bar))'
                 - message: at most one of the fields in [foo bar] may be set
-                  rule: '[has(self.foo),has(self.bar)].filter(x,x==true).size() <=
-                    1'
+                  rule: (has(self.foo)?1:0)+(has(self.bar)?1:0) <= 1
               secondCustomTypeAlias:
                 description: This verifies if the custom type alias XValidation is
                   not duplicated.
@@ -88,9 +89,9 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: exactly one of the fields in [a b] must be set
-                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() == 1'
+                  rule: (has(self.a)?1:0)+(has(self.b)?1:0) == 1
                 - message: exactly one of the fields in [c d] must be set
-                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 1'
+                  rule: (has(self.c)?1:0)+(has(self.d)?1:0) == 1
               secondTypeWithOneof:
                 properties:
                   a:
@@ -104,9 +105,9 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: at most one of the fields in [a b] may be set
-                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() <= 1'
+                  rule: (has(self.a)?1:0)+(has(self.b)?1:0) <= 1
                 - message: at most one of the fields in [c d] may be set
-                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() <= 1'
+                  rule: (has(self.c)?1:0)+(has(self.d)?1:0) <= 1
               typeWithAllOneOf:
                 properties:
                   a:
@@ -124,11 +125,11 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: at most one of the fields in [a b] may be set
-                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() <= 1'
+                  rule: (has(self.a)?1:0)+(has(self.b)?1:0) <= 1
                 - message: exactly one of the fields in [c d] must be set
-                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() == 1'
+                  rule: (has(self.c)?1:0)+(has(self.d)?1:0) == 1
                 - message: at least one of the fields in [e f] must be set
-                  rule: '[has(self.e),has(self.f)].filter(x,x==true).size() >= 1'
+                  rule: has(self.e)||has(self.f)
               typeWithMultipleAtLeastOneOf:
                 properties:
                   a:
@@ -142,18 +143,42 @@ spec:
                 type: object
                 x-kubernetes-validations:
                 - message: at least one of the fields in [a b] must be set
-                  rule: '[has(self.a),has(self.b)].filter(x,x==true).size() >= 1'
+                  rule: has(self.a)||has(self.b)
                 - message: at least one of the fields in [c d] must be set
-                  rule: '[has(self.c),has(self.d)].filter(x,x==true).size() >= 1'
+                  rule: has(self.c)||has(self.d)
+              typeWithOmitZero:
+                properties:
+                  bar:
+                    type: string
+                  foo:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at most one of the fields in [foo bar] may be set
+                  rule: (has(self.foo)?1:0)+(has(self.bar)?1:0) <= 1
+              typeWithOmitZeroAtLeastOneOf:
+                properties:
+                  c:
+                    type: string
+                  d:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at least one of the fields in [c d] must be set
+                  rule: has(self.c)||has(self.d)
+              typeWithOmitZeroExact:
+                properties:
+                  a:
+                    type: string
+                  b:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [a b] must be set
+                  rule: (has(self.a)?1:0)+(has(self.b)?1:0) == 1
             type: object
         required:
         - spec
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null
