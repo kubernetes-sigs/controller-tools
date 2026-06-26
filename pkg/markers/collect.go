@@ -158,37 +158,68 @@ func (c *Collector) associateFileMarkers(file *ast.File) map[ast.Node][]markerCo
 	lastFileMarkers := visitor.markersBetween(false, visitor.commentInd, len(visitor.allComments))
 	visitor.pkgMarkers = append(visitor.pkgMarkers, lastFileMarkers...)
 
-	// figure out if any type-level markers are actually package-level markers
+	// figure out if any type/var/const/func markers are actually package-level markers.
+	// This is required to support package-level markers (RBAC, webhook, CRD, deepcopy, applyconfiguration)
+	// placed directly above declarations without blank lines - they're initially on the node but belong at package scope.
+	//
+	// Precedence rules:
+	// - types prefer type-level markers (skipGodocMarkers=true, preferPackageLevel=false)
+	// - var/const prefer package-level markers (skipGodocMarkers=false, preferPackageLevel=true)
+	// - func prefer package-level markers (skipGodocMarkers=false, preferPackageLevel=true)
 	for node, markers := range visitor.nodeMarkers {
-		_, isType := node.(*ast.TypeSpec)
-		if !isType {
+		var shouldReClassify bool
+		var skipGodocMarkers bool
+		var preferPackageLevel bool
+		switch node.(type) {
+		case *ast.TypeSpec:
+			shouldReClassify = true
+			skipGodocMarkers = true
+			preferPackageLevel = false
+		case *ast.ValueSpec:
+			shouldReClassify = true
+			skipGodocMarkers = false
+			preferPackageLevel = true
+		case *ast.FuncDecl:
+			shouldReClassify = true
+			skipGodocMarkers = false
+			preferPackageLevel = true
+		default:
 			continue
 		}
+
+		if !shouldReClassify {
+			continue
+		}
+
 		endOfMarkers := 0
 		for _, marker := range markers {
-			if marker.fromGodoc {
-				// markers from godoc are never package level
+			if marker.fromGodoc && skipGodocMarkers {
+				// godoc markers stay with the type
 				markers[endOfMarkers] = marker
 				endOfMarkers++
 				continue
 			}
 			markerText := marker.Text()
+			pkgDef := c.Registry.Lookup(markerText, DescribesPackage)
 			typeDef := c.Registry.Lookup(markerText, DescribesType)
-			if typeDef != nil {
-				// prefer assuming type-level markers
+
+			// Decide where the marker should go based on context and available definitions
+			switch {
+			case preferPackageLevel && pkgDef != nil:
+				// var/const/func prefers package-level when available
+				visitor.pkgMarkers = append(visitor.pkgMarkers, marker)
+			case typeDef != nil:
+				// type-level definition exists, keep at type level
 				markers[endOfMarkers] = marker
 				endOfMarkers++
-				continue
-			}
-			def := c.Registry.Lookup(markerText, DescribesPackage)
-			if def == nil {
-				// assume type-level unless proven otherwise
+			case pkgDef != nil:
+				// only package-level definition exists
+				visitor.pkgMarkers = append(visitor.pkgMarkers, marker)
+			default:
+				// no definition found, assume type-level
 				markers[endOfMarkers] = marker
 				endOfMarkers++
-				continue
 			}
-			// it's package-level, since a package-level definition exists
-			visitor.pkgMarkers = append(visitor.pkgMarkers, marker)
 		}
 		visitor.nodeMarkers[node] = markers[:endOfMarkers] // re-set after trimming the package markers
 	}
@@ -349,13 +380,13 @@ func (v markerSubVisitor) Visit(node ast.Node) ast.Visitor {
 	// associate those markers with a node
 	switch typedNode := node.(type) {
 	case *ast.GenDecl:
-		// save the comments associated with the gen-decl if it's a single-line type decl
-		if typedNode.Lparen != token.NoPos || typedNode.Tok != token.TYPE {
-			// not a single-line type spec, treat them as free comments
+		// save the comments associated with the gen-decl if it's a single-line decl (type/var/const)
+		if typedNode.Lparen != token.NoPos {
+			// not a single-line decl, treat them as free comments
 			v.pkgMarkers = append(v.pkgMarkers, markerCommentBlock...)
 			break
 		}
-		// save these, we'll need them when we encounter the actual type spec
+		// save these, we'll need them when we encounter the actual type/value spec
 		v.declComments = append(v.declComments, markerCommentBlock...)
 		v.declComments = append(v.declComments, docCommentBlock...)
 	case *ast.TypeSpec:
@@ -367,6 +398,16 @@ func (v markerSubVisitor) Visit(node ast.Node) ast.Visitor {
 
 		v.declComments = nil
 		v.collectPackageLevel = false // don't collect package-level inside type structs
+	case *ast.ValueSpec:
+		// Only use declComments (from GenDecl) to avoid re-classifying markers inside var() blocks
+		if len(v.declComments) > 0 {
+			v.nodeMarkers[node] = append(v.nodeMarkers[node], v.declComments...)
+			v.declComments = nil
+		}
+	case *ast.FuncDecl:
+		// Associate markers for re-classification
+		v.nodeMarkers[node] = append(v.nodeMarkers[node], markerCommentBlock...)
+		v.nodeMarkers[node] = append(v.nodeMarkers[node], docCommentBlock...)
 	case *ast.Field:
 		v.nodeMarkers[node] = append(v.nodeMarkers[node], markerCommentBlock...)
 		v.nodeMarkers[node] = append(v.nodeMarkers[node], docCommentBlock...)
