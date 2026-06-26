@@ -19,7 +19,7 @@ package yaml
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 var _ = Describe("SetNode", func() {
