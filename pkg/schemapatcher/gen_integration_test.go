@@ -42,9 +42,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
 		Expect(err).NotTo(HaveOccurred())
 
-		outputDir, err := os.MkdirTemp("", "controller-tools-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
 
 		By("running the generator")
@@ -68,9 +66,7 @@ var _ = Describe("CRD Patching From Parsing to Editing", func() {
 		rt, err := genall.Generators{&crdSchemaGen}.ForRoots("./...")
 		Expect(err).NotTo(HaveOccurred())
 
-		outputDir, err := os.MkdirTemp("", "controller-tools-test")
-		Expect(err).NotTo(HaveOccurred())
-		defer os.RemoveAll(outputDir)
+		outputDir := GinkgoT().TempDir()
 		rt.OutputRules.Default = genall.OutputToDirectory(outputDir)
 		rt.ErrorWriter = GinkgoWriter
 
