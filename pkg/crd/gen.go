@@ -76,7 +76,18 @@ type Generator struct {
 	// along with an API server that supports it (Kubernetes 1.16+).
 	CRDVersions []string `marker:"crdVersions,optional"`
 
-	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta in the CRD should be generated
+	// GenerateEmbeddedObjectMeta indicates that embedded ObjectMeta fields should be generated
+	// in the schema with a minimal set of properties.
+	//
+	// When enabled, ObjectMeta fields embedded in types (such as PodTemplateSpec) will have
+	// explicit schema properties for name, namespace, labels, annotations, and finalizers. The
+	// schema uses a named type (EmbeddedObjectMeta) so tools can reliably identify these fields.
+	//
+	// This prevents metadata loss during version conversion when preserveUnknownFields is false.
+	// It also allows tooling to process CRDs without needing to guess which fields represent
+	// embedded ObjectMeta.
+	//
+	// Left unspecified, the default is false and embedded ObjectMeta will have an empty schema.
 	GenerateEmbeddedObjectMeta *bool `marker:",optional"`
 
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
