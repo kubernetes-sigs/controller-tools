@@ -62,14 +62,14 @@ var _ = Describe("Enum CRD", func() {
 
 func enumObject(name, fieldValue string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "testdata.kubebuilder.io/v1",
 			"kind":       "Enum",
-			"metadata": map[string]interface{}{
+			"metadata": map[string]any{
 				"name":      name,
 				"namespace": metav1.NamespaceDefault,
 			},
-			"spec": map[string]interface{}{
+			"spec": map[string]any{
 				"field": fieldValue,
 			},
 		},
