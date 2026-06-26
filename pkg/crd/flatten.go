@@ -153,7 +153,7 @@ func flattenAllOfInto(dst *apiextensionsv1.JSONSchemaProps, src apiextensionsv1.
 			flattenAllOfInto(dstProps.Schema, *srcProps.Schema, errRec)
 		case "XPreserveUnknownFields":
 			dstField.Set(srcField)
-		case "XMapType":
+		case "XMapType", "XListType", "XListMapKeys":
 			dstField.Set(srcField)
 		case "XValidations":
 			dstField.Set(reflect.AppendSlice(srcField, dstField))
