@@ -98,6 +98,12 @@ type Generator struct {
 	// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#field-pruning
 	// for more information about field pruning and v1beta1 resources compatibility.
 	DeprecatedV1beta1CompatibilityPreserveUnknownFields *bool `marker:",optional"`
+
+	// SkipToolVersionAnnotation specifies if the controller-gen version annotation
+	// (controller-gen.kubebuilder.io/version) should be skipped when generating the CRD.
+	//
+	// Left unspecified, the default is false.
+	SkipToolVersionAnnotation *bool `marker:",optional"`
 }
 
 func (Generator) CheckFilter() loader.NodeFilter {
@@ -180,7 +186,9 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	for _, groupKind := range kubeKinds {
 		parser.NeedCRDFor(groupKind, g.MaxDescLen)
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
-		addAttribution(&crdRaw)
+		if g.SkipToolVersionAnnotation == nil || !*g.SkipToolVersionAnnotation {
+			addAttribution(&crdRaw)
+		}
 
 		// Prevent the top level metadata for the CRD to be generate regardless of the intention in the arguments
 		FixTopLevelMetadata(crdRaw)
