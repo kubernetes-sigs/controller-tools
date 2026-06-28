@@ -196,6 +196,17 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("EmptyObjectDefault API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./emptyobjectdefault/..."}
+				expPkgLen = 1
+			})
+			It("should generate default: {} for pointer fields defaulting to an empty object", func() {
+				assertCRD(pkgs[0], "EmptyObjectDefault", "testdata.kubebuilder.io_emptyobjectdefaults.yaml")
+				assertCRD(pkgs[0], "RequiredChildDefault", "testdata.kubebuilder.io_requiredchilddefaults.yaml")
+			})
+		})
+
 		Context("Enum API with marker on field", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./enum_error/..."}
