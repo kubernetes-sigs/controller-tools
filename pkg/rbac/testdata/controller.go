@@ -44,3 +44,20 @@ package controller
 // +kubebuilder:rbac:groups=apps,namespace=infrastructure,roleName=infra-deployment-manager,resources=statefulsets,verbs=get;list
 // Test backward compatibility - no roleName specified (uses default)
 // +kubebuilder:rbac:groups=monitoring,namespace=observability,resources=prometheuses,verbs=get;list
+
+// RBAC marker directly above var (no blank line)
+// +kubebuilder:rbac:groups=vartest,resources=directvar,verbs=get;list
+var DirectVarWithMarker = "test"
+
+// RBAC marker with blank line above var
+// +kubebuilder:rbac:groups=vartest,resources=blanklinevar,verbs=get;list
+
+var BlankLineVarWithMarker = "test"
+
+// RBAC marker directly above const
+// +kubebuilder:rbac:groups=vartest,resources=directconst,verbs=get;list
+const DirectConstWithMarker = "test"
+
+// RBAC marker directly above func
+// +kubebuilder:rbac:groups=vartest,resources=directfunc,verbs=get;list
+func DirectFuncWithMarker() {}
