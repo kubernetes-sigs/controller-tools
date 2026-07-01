@@ -28,6 +28,11 @@ type FooSpec struct {
 	// +kubebuilder:default=fooDefaultString
 	// +kubebuilder:example=fooExampleString
 	DefaultedString string `json:"defaultedString"`
+
+	// This tests that fields marked with kubebuilder:ignore are excluded
+	// from the generated CRD schema entirely.
+	// +kubebuilder:ignore
+	IgnoredString string `json:"ignoredString,omitempty"`
 }
 type FooStatus struct{}
 

@@ -169,6 +169,17 @@ func (Format) Help() *markers.DefinitionHelp {
 	}
 }
 
+func (Ignore) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD processing",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "excludes this field from the generated CRD schema entirely.",
+			Details: "Unlike marking a field optional, an ignored field is not just absent from\nthe value, it never appears in the schema's properties at all.\n\nExample:\n\n\t// +kubebuilder:ignore\n\tInternal string",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (Immutable) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

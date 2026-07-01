@@ -35,6 +35,7 @@ const (
 	validationPrefix = "kubebuilder:validation:"
 
 	SchemalessName        = "kubebuilder:validation:Schemaless"
+	IgnoreName            = "kubebuilder:ignore"
 	ValidationItemsPrefix = validationPrefix + "items:"
 
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
@@ -152,6 +153,9 @@ var ValidationIshMarkers = []*definitionWithHelp{
 		WithHelp(Title{}.Help()),
 	must(markers.MakeAnyTypeDefinition("kubebuilder:title", markers.DescribesType, Title{})).
 		WithHelp(Title{}.Help()),
+
+	must(markers.MakeDefinition(IgnoreName, markers.DescribesField, Ignore{})).
+		WithHelp(Ignore{}.Help()),
 }
 
 func init() {
@@ -608,6 +612,19 @@ func (m Immutable) ApplyToSchema(_ *SchemaContext, schema *apiextensionsv1.JSONS
 	})
 	return nil
 }
+
+// Ignore excludes this field from the generated CRD schema entirely.
+//
+// Unlike marking a field optional, an ignored field is not just absent from
+// the value, it never appears in the schema's properties at all.
+//
+// Example:
+//
+//	// +kubebuilder:ignore
+//	Internal string
+//
+// +controllertools:marker:generateHelp:category="CRD processing"
+type Ignore struct{}
 
 func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)
