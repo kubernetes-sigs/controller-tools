@@ -525,6 +525,10 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			continue
 		}
 
+		if field.Markers.Get(crdmarkers.IgnoreName) != nil {
+			continue
+		}
+
 		jsonTag, hasTag := field.Tag.Lookup("json")
 		if !hasTag {
 			// if the field doesn't have a JSON tag, it doesn't belong in output (and shouldn't exist in a serialized type)
