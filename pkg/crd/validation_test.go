@@ -212,6 +212,128 @@ spec:
 `,
 			wantErr: `spec.typeWithOmitZeroAtLeastOneOf: Invalid value: at least one of the fields in [c d] must be set`,
 		},
+		{
+			name: "AllOf constraint satisfied when all fields are set",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf:
+    host: "localhost"
+    port: 8080
+`,
+		},
+		{
+			name: "AllOf constraint violated when one field is missing",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf:
+    host: "localhost"
+`,
+			wantErr: `spec.typeWithAllOf.port: Required value`,
+		},
+		{
+			name: "AllOf constraint violated when all fields are missing",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithAllOf: {}
+`,
+			wantErr: `spec.typeWithAllOf.host: Required value`,
+		},
+		{
+			name: "Multiple AllOf constraints satisfied",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithMultipleAllOf:
+    host: "localhost"
+    port: 8080
+    username: "admin"
+    password: "secret"
+`,
+		},
+		{
+			name: "Multiple AllOf constraints violated in first group",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithMultipleAllOf:
+    port: 8080
+    username: "admin"
+    password: "secret"
+`,
+			wantErr: `spec.typeWithMultipleAllOf.host: Required value`,
+		},
+		{
+			name: "satisfies AllOf constraint with omitzero fields",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithOmitZeroAllOf:
+    username: "admin"
+    password: "secret"
+`,
+		},
+		{
+			name: "AllOf constraint violated by missing omitzero field",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithOmitZeroAllOf:
+    username: "admin"
+`,
+			wantErr: `spec.typeWithOmitZeroAllOf.password: Required value`,
+		},
+		{
+			name: "AllOf overlapping constraints satisfied when the shared field is set",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithOverlappingAllOf:
+    host: "localhost"
+    port: 8080
+    protocol: "https"
+`,
+		},
+		{
+			name: "AllOf overlapping constraints violated when a field is missing",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithOverlappingAllOf:
+    host: "localhost"
+    port: 8080
+`,
+			wantErr: `spec.typeWithOverlappingAllOf.protocol: Required value`,
+		},
 	}
 
 	validator, err := newValidator(t.Context(), "./testdata/testdata.kubebuilder.io_oneofs.yaml")

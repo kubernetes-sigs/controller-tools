@@ -45,6 +45,14 @@ type OneofSpec struct {
 
 	TypeWithOmitZeroAtLeastOneOf *TypeWithOmitZeroAtLeastOneOf `json:"typeWithOmitZeroAtLeastOneOf,omitempty"`
 
+	TypeWithOmitZeroAllOf *TypeWithOmitZeroAllOf `json:"typeWithOmitZeroAllOf,omitempty"`
+
+	TypeWithAllOf *TypeWithAllOf `json:"typeWithAllOf,omitempty"`
+
+	TypeWithMultipleAllOf *TypeWithMultipleAllOf `json:"typeWithMultipleAllOf,omitempty"`
+
+	TypeWithOverlappingAllOf *TypeWithOverlappingAllOf `json:"typeWithOverlappingAllOf,omitempty"`
+
 	FirstCustomTypeAlias CustomTypeAlias `json:"firstCustomTypeAlias,omitempty"`
 
 	// This verifies if the custom type alias XValidation is not duplicated.
@@ -124,6 +132,38 @@ type TypeWithOmitZeroExact struct {
 type TypeWithOmitZeroAtLeastOneOf struct {
 	C *string `json:"c,omitzero"`
 	D *string `json:"d,omitzero"`
+}
+
+// +kubebuilder:validation:AllOf=username;password
+type TypeWithOmitZeroAllOf struct {
+	Username *string `json:"username,omitzero"`
+	Password *string `json:"password,omitzero"`
+}
+
+// +kubebuilder:validation:AllOf=host;port
+type TypeWithAllOf struct {
+	Host *string `json:"host,omitempty"`
+	Port *int    `json:"port,omitempty"`
+	Path *string `json:"path,omitempty"`
+}
+
+// +kubebuilder:validation:AllOf=host;port
+// +kubebuilder:validation:AllOf=username;password
+type TypeWithMultipleAllOf struct {
+	Host     *string `json:"host,omitempty"`
+	Port     *int    `json:"port,omitempty"`
+	Username *string `json:"username,omitempty"`
+	Password *string `json:"password,omitempty"`
+}
+
+// TypeWithOverlappingAllOf verifies that a field shared between repeated AllOf
+// markers is required only once (deduplicated in the required list).
+// +kubebuilder:validation:AllOf=host;port
+// +kubebuilder:validation:AllOf=port;protocol
+type TypeWithOverlappingAllOf struct {
+	Host     *string `json:"host,omitempty"`
+	Port     *int    `json:"port,omitempty"`
+	Protocol *string `json:"protocol,omitempty"`
 }
 
 // CustomTypeAlias is a custom alias
