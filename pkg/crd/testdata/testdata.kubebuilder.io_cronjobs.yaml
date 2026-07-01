@@ -9544,8 +9544,8 @@ spec:
                 additionalProperties:
                   type: string
                 description: |-
-                  Maps keyed by a type that implements encoding.TextMarshaler are permitted,
-                  since such keys serialize to strings (just like TextMarshaler fields do).
+                  Maps keyed by a type that implements encoding.TextMarshaler via a value receiver
+                  are permitted, since such keys serialize to strings when marshaled to JSON.
                 type: object
               minMaxProperties:
                 description: This tests that min/max properties work
