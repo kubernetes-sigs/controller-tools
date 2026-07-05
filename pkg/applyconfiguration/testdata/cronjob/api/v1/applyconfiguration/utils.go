@@ -62,6 +62,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.NestedObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("NestedStructWithSeveralFields"):
 		return &apiv1.NestedStructWithSeveralFieldsApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("NoMarkerJob"):
+		return &apiv1.NoMarkerJobApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("NoMarkerJobSpec"):
+		return &apiv1.NoMarkerJobSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Preserved"):
 		return &apiv1.PreservedApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RootObject"):

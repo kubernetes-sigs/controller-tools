@@ -3054,6 +3054,27 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
     elementRelationship: atomic
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NoMarkerJob
+  map:
+    fields:
+    - name: apiVersion
+      type:
+        scalar: string
+    - name: kind
+      type:
+        scalar: string
+    - name: metadata
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta
+    - name: spec
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NoMarkerJobSpec
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NoMarkerJobSpec
+  map:
+    fields:
+    - name: suspend
+      type:
+        scalar: boolean
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.Preserved
   map:
     elementType:

@@ -408,8 +408,8 @@ type CronJobSpec struct {
 	// +optional
 	EmbeddedExternal *EmbeddedExternalSpec `json:"embeddedExternal,omitempty"`
 
-	StructSlice []RootObject            `json:"structSlice,omitempty"`
-	StructMap   map[string]RootObject   `json:"structMap,omitempty"`
+	StructSlice []RootObject          `json:"structSlice,omitempty"`
+	StructMap   map[string]RootObject `json:"structMap,omitempty"`
 }
 
 type InlineAlias = EmbeddedStruct
@@ -869,4 +869,63 @@ type ClusterScopedResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ClusterScopedResource `json:"items"`
+}
+
+// NoMarkerJobSpec defines the desired state of NoMarkerJob
+type NoMarkerJobSpec struct {
+	// Suspend tells the controller to suspend the job.
+	Suspend *bool `json:"suspend,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:ac:generate=true
+
+// NoMarkerJob is a kind enabled by the type-level ac:generate marker
+// instead of a kubebuilder:resource marker.
+type NoMarkerJob struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec NoMarkerJobSpec `json:"spec,omitempty"`
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *NoMarkerJob) DeepCopyObject() runtime.Object {
+	if in == nil {
+		return nil
+	}
+	out := new(NoMarkerJob)
+	buf, err := json.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(buf, out); err != nil {
+		panic(err)
+	}
+	return out
+}
+
+// +kubebuilder:object:root=true
+
+// NoMarkerJobList contains a list of NoMarkerJob
+type NoMarkerJobList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []NoMarkerJob `json:"items"`
+}
+
+// DeepCopyObject implements runtime.Object.
+func (in *NoMarkerJobList) DeepCopyObject() runtime.Object {
+	if in == nil {
+		return nil
+	}
+	out := new(NoMarkerJobList)
+	buf, err := json.Marshal(in)
+	if err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(buf, out); err != nil {
+		panic(err)
+	}
+	return out
 }
