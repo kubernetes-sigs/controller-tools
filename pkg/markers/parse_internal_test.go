@@ -152,7 +152,7 @@ var _ = Describe("parserScanner backticks handling", func() {
 		// Test the complete Parse() flow, not just parserScanner
 		registry := &Registry{}
 		def := Must(MakeDefinition("kubebuilder:validation:Pattern", DescribesField, ""))
-		registry.Register(def)
+		Expect(registry.Register(def)).NotTo(HaveOccurred())
 
 		// This should trigger the retry mechanism internally
 		result, err := def.Parse("+kubebuilder:validation:Pattern=^[`a-zA-Z]+$")
