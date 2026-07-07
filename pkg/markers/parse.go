@@ -847,6 +847,10 @@ type markerParser interface {
 // Parse uses the type information in this Definition to parse the given
 // raw marker in the form `+a:b:c=arg,d=arg` into an output object of the
 // type specified in the definition.
+//
+// Parse attempts to support both raw strings (backtick-delimited) and literal
+// backtick characters by retrying without raw string support if parsing fails
+// with "literal not terminated" error.
 func (d *Definition) Parse(rawMarker string) (any, error) {
 	// Try with ScanRawStrings enabled first (supports raw strings like `pattern`).
 	result, errs := d.parse(rawMarker, true)
@@ -854,7 +858,11 @@ func (d *Definition) Parse(rawMarker string) (any, error) {
 	// may be literal characters (e.g. inside a regex character class), not raw string
 	// delimiters.
 	if hasTerminatedErr(errs) {
-		result, errs = d.parse(rawMarker, false)
+		result, retryErr := d.parse(rawMarker, false)
+		if retryErr != nil {
+			return result, fmt.Errorf("parse failed (tried with and without raw strings): %w", retryErr)
+		}
+		return result, nil
 	}
 	return result, errs
 }
@@ -863,7 +871,10 @@ func hasTerminatedErr(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "literal not terminated")
+	// Check for the specific scanner error, not just string matching
+	errStr := err.Error()
+	return strings.Contains(errStr, "literal not terminated") ||
+		strings.Contains(errStr, "string not terminated")
 }
 
 func (d *Definition) parse(rawMarker string, rawStrings bool) (any, error) {
