@@ -24,8 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -73,6 +72,7 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 			var err error
 			tmpDir, err = os.MkdirTemp("", "applyconfiguration-integration-test")
 			Expect(err).NotTo(HaveOccurred(), "Should be able to create a temporary directory")
+			DeferCleanup(os.RemoveAll, tmpDir)
 
 			// Copy the testdata directory, but removed the generated files.
 			Expect(os.CopyFS(tmpDir, os.DirFS(cronjobDir))).To(Succeed(), "Should be able to copy source files")
@@ -85,15 +85,12 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 
 			originalCWD = cwd
 
+			// Cleanups run last-in-first-out, so the working directory is restored before the temporary directory is removed.
+			DeferCleanup(os.Chdir, originalCWD)
 			Expect(os.Chdir(tmpDir)).To(Succeed()) // go modules are directory-sensitive
 		})
 
 		By(fmt.Sprintf("Completed set up in %s", tmpDir))
-	})
-
-	AfterEach(func() {
-		// Reset the working directory
-		Expect(os.Chdir(originalCWD)).To(Succeed())
 	})
 
 	DescribeTable("should be able to verify generated ApplyConfiguration types for the CronJob schema", func(outputPackage string) {

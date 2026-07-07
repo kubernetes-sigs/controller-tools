@@ -19,7 +19,7 @@ package markers_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	pkgstest "golang.org/x/tools/go/packages/packagestest"
 	"sigs.k8s.io/controller-tools/pkg/loader"
