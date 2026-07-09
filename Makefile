@@ -91,6 +91,7 @@ test: ## Run the test.sh script which will check all.
 
 test-all:
 	$(MAKE) verify-modules
+	$(MAKE) verify-boilerplate
 	$(MAKE) verify-k8s-deps
 	$(MAKE) test
 
@@ -113,6 +114,10 @@ verify-modules: modules ## Verify go modules are up to date
 		git diff; \
 		echo "go module files are out of date, please run 'make modules'"; exit 1; \
 	fi
+
+.PHONY: verify-boilerplate
+verify-boilerplate:
+	./hack/verify-boilerplate.sh
 
 ## --------------------------------------
 ## Cleanup / Verification
