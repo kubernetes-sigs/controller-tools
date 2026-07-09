@@ -17,8 +17,10 @@ limitations under the License.
 package deepcopy_test
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path"
 	"slices"
 
 	"github.com/google/go-cmp/cmp"
@@ -79,7 +81,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("object", markers.DescribesPackage, deepcopy.Generator{})))).To(Succeed())
 		rt, err := genall.FromOptions(optionsRegistry, []string{
 			"crd", // Run another generator first to make sure they don't interfere; see also: the comment on cronjob_types.go:UntypedBlob
-			"object",
+			fmt.Sprintf("object:headerFile=%s", path.Join(cwd, "../../hack/boilerplate/boilerplate.generatego.txt")),
 		})
 		Expect(err).NotTo(HaveOccurred())
 		rt.OutputRules = genall.OutputRules{Default: output}
