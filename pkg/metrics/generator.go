@@ -1,11 +1,11 @@
 /*
-Copyright 2024 The Kubernetes Authors All rights reserved.
+Copyright 2026 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ package metrics
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/gobuffalo/flect"
@@ -113,8 +113,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 		if len(resource.Metrics) > 0 {
 			// Sort the metrics to get a deterministic output.
-			sort.Slice(resource.Metrics, func(i, j int) bool {
-				return resource.Metrics[i].Name < resource.Metrics[j].Name
+			slices.SortFunc(resource.Metrics, func(a, b config.Generator) int {
+				return strings.Compare(a.Name, b.Name)
 			})
 
 			metrics.Spec.Resources = append(metrics.Spec.Resources, *resource)
@@ -128,17 +128,15 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	// Sort the resources by GVK to get a deterministic output.
-	sort.Slice(metrics.Spec.Resources, func(i, j int) bool {
-		a := metrics.Spec.Resources[i].GroupVersionKind.String()
-		b := metrics.Spec.Resources[j].GroupVersionKind.String()
-		return a < b
+	slices.SortFunc(metrics.Spec.Resources, func(a, b config.Resource) int {
+		return strings.Compare(a.GroupVersionKind.String(), b.GroupVersionKind.String())
 	})
 
 	header := fmt.Sprintf(headerText, version.Version(), config.KubeStateMetricsVersion)
 
 	// Write the rendered yaml to the context which will result in stdout.
 	virtualFilePath := "metrics.yaml"
-	if err := ctx.WriteYAML(virtualFilePath, header, []interface{}{metrics}, genall.WithTransform(addCustomResourceStateKind)); err != nil {
+	if err := ctx.WriteYAML(virtualFilePath, header, []any{metrics}, genall.WithTransform(addCustomResourceStateKind)); err != nil {
 		return fmt.Errorf("WriteYAML to %s: %w", virtualFilePath, err)
 	}
 
@@ -157,7 +155,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	}
 
 	virtualFilePath = "rbac.yaml"
-	if err := ctx.WriteYAML(virtualFilePath, "", []interface{}{clusterRole}, genall.WithTransform(genall.TransformRemoveCreationTimestamp)); err != nil {
+	if err := ctx.WriteYAML(virtualFilePath, "", []any{clusterRole}, genall.WithTransform(genall.TransformRemoveCreationTimestamp)); err != nil {
 		return fmt.Errorf("WriteYAML to %s: %w", virtualFilePath, err)
 	}
 
@@ -177,7 +175,7 @@ func (Generator) CheckFilter() loader.NodeFilter {
 
 // addCustomResourceStateKind adds the correct kind because we don't have a correct
 // kubernetes-style object as configuration definition.
-func addCustomResourceStateKind(obj map[string]interface{}) error {
+func addCustomResourceStateKind(obj map[string]any) error {
 	obj["kind"] = "CustomResourceStateMetrics"
 	return nil
 }
