@@ -314,9 +314,9 @@ type CronJobSpec struct {
 	// Maps of arrays of things-that-aren’t-strings are permitted
 	MapOfArraysOfFloats map[string][]bool `json:"mapOfArraysOfFloats,omitempty"`
 
-	// Maps keyed by a type that implements encoding.TextMarshaler are permitted,
-	// since such keys serialize to strings (just like TextMarshaler fields do).
-	MapOfTextMarshalerKeys map[URL3]string `json:"mapOfTextMarshalerKeys,omitempty"`
+	// Maps keyed by a type that implements encoding.TextMarshaler via a value receiver
+	// are permitted, since such keys serialize to strings when marshaled to JSON.
+	MapOfTextMarshalerKeys map[TextMarshalerKey]string `json:"mapOfTextMarshalerKeys,omitempty"`
 
 	// +kubebuilder:validation:Minimum=-0.5
 	// +kubebuilder:validation:Maximum=1.5
@@ -748,6 +748,15 @@ var _ encoding.TextMarshaler = (*URL4)(nil)
 func (u *URL4) MarshalText() (text []byte, err error) {
 	return (*url.URL)(u).MarshalBinary()
 }
+
+// TextMarshalerKey is a string-based type that implements [encoding.TextMarshaler]
+// via a value receiver, making it valid as a CRD map key.
+type TextMarshalerKey string
+
+var _ encoding.TextMarshaler = TextMarshalerKey("")
+
+// MarshalText implements [encoding.TextMarshaler].
+func (t TextMarshalerKey) MarshalText() ([]byte, error) { return []byte(t), nil }
 
 // +kubebuilder:validation:Type=integer
 // +kubebuilder:validation:Format=int64
