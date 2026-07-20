@@ -79,6 +79,10 @@ type Generator struct {
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta in the CRD should be generated
 	GenerateEmbeddedObjectMeta *bool `marker:",optional"`
 
+	// IgnoreTopLevelObjectAndTypeMeta specifies if the top level ObjectMeta and type metadata (kind and apiVersion)
+	// should be generated.
+	IgnoreTopLevelObjectAndTypeMeta *bool `marker:",optional"`
+
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
 	HeaderFile string `marker:",optional"`
 
@@ -131,7 +135,8 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		IgnoreUnexportedFields: g.IgnoreUnexportedFields != nil && *g.IgnoreUnexportedFields,
 		AllowDangerousTypes:    g.AllowDangerousTypes != nil && *g.AllowDangerousTypes,
 		// Indicates the parser on whether to register the ObjectMeta type or not
-		GenerateEmbeddedObjectMeta: g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
+		GenerateEmbeddedObjectMeta:      g.GenerateEmbeddedObjectMeta != nil && *g.GenerateEmbeddedObjectMeta,
+		IgnoreTopLevelObjectAndTypeMeta: g.IgnoreTopLevelObjectAndTypeMeta != nil && *g.IgnoreTopLevelObjectAndTypeMeta,
 	}
 
 	AddKnownTypes(parser)
@@ -182,8 +187,10 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		crdRaw := parser.CustomResourceDefinitions[groupKind]
 		addAttribution(&crdRaw)
 
-		// Prevent the top level metadata for the CRD to be generate regardless of the intention in the arguments
-		FixTopLevelMetadata(crdRaw)
+		if !parser.IgnoreTopLevelObjectAndTypeMeta {
+			// Prevent the top level metadata for the CRD to be generate regardless of the intention in the arguments
+			FixTopLevelMetadata(crdRaw)
+		}
 
 		versionedCRDs := make([]any, len(crdVersions))
 		for i, ver := range crdVersions {

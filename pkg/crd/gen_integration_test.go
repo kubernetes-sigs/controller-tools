@@ -169,6 +169,23 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
+
+	It("should not generate top level type and object metadata", func() {
+		By("calling Generate")
+		yes := true
+		gen := &crd.Generator{
+			CRDVersions:                     []string{"v1"},
+			IgnoreTopLevelObjectAndTypeMeta: &yes,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("loading the desired YAML")
+		expectedFile, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos_no_toplevel_meta.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+
+		By("comparing the two")
+		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
+	})
 })
 
 type outputRule struct {

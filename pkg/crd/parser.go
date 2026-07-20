@@ -92,6 +92,9 @@ type Parser struct {
 
 	// GenerateEmbeddedObjectMeta specifies if any embedded ObjectMeta should be generated
 	GenerateEmbeddedObjectMeta bool
+
+	// IgnoreTopLevelObjectAndTypeMeta specifies if the top level ObjectMeta and TypeMeta should be omitted
+	IgnoreTopLevelObjectAndTypeMeta bool
 }
 
 func (p *Parser) init() {
@@ -172,7 +175,7 @@ func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	// avoid tripping recursive schemata, like ManagedFields, by adding an empty WIP schema
 	p.Schemata[typ] = apiextensionsv1.JSONSchemaProps{}
 
-	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes, p.IgnoreUnexportedFields)
+	schemaCtx := newSchemaContext(typ.Package, p, p.AllowDangerousTypes, p.IgnoreUnexportedFields, p.IgnoreTopLevelObjectAndTypeMeta)
 	ctxForInfo := schemaCtx.ForInfo(info)
 
 	pkgMarkers, err := markers.PackageMarkers(p.Collector, typ.Package)

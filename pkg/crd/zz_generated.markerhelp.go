@@ -52,6 +52,10 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "specifies if any embedded ObjectMeta in the CRD should be generated",
 				Details: "",
 			},
+			"IgnoreTopLevelObjectAndTypeMeta": {
+				Summary: "specifies if the top level ObjectMeta and type metadata (kind and apiVersion)",
+				Details: "should be generated.",
+			},
 			"HeaderFile": {
 				Summary: "specifies the header text (e.g. license) to prepend to generated files.",
 				Details: "",
