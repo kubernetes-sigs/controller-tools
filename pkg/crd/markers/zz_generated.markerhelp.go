@@ -24,6 +24,17 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
+func (AllOf) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "CRD validation",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "marks all of the specified fields as required.",
+			Details: "The fields are added to the schema's required list, the same mechanism used when\nmarking each field individually with kubebuilder:validation:Required. This marker\nmay be repeated; every listed field is required regardless of grouping.\n\nExample:\n\n\t// +kubebuilder:validation:AllOf=host;port;protocol\n\ttype ServerConfig struct {\n\t    Host *string\n\t    Port *int\n\t    Protocol *string\n\t}",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{},
+	}
+}
+
 func (AtLeastOneOf) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",

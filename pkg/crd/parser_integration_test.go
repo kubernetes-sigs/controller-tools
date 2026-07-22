@@ -239,6 +239,21 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("AllOf API with invalid marker", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./allof_error/..."}
+				expPkgLen = 1
+			})
+			It("should generate an error with nested field in marker", func() {
+				kind := "Allof"
+				groupKind := schema.GroupKind{Kind: kind, Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+
+				expectedErr := "kubebuilder:validation:AllOf: cannot reference nested fields: field.foo,field.bar"
+				Expect(packageErrors(pkgs[0])).To(MatchError(ContainSubstring(expectedErr)))
+			})
+		})
+
 		Context("OneOf API with missing omitempty/omitzero tag", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./oneof_missing_tag_error/..."}

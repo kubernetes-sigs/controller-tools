@@ -40,6 +40,7 @@ const (
 	ValidationExactlyOneOfPrefix = validationPrefix + "ExactlyOneOf"
 	ValidationAtMostOneOfPrefix  = validationPrefix + "AtMostOneOf"
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
+	ValidationAllOfPrefix        = validationPrefix + "AllOf"
 
 	// K8sEnumTag indicates that the given type is an enum; all const values of this type are considered values in the enum
 	K8sEnumTag = "k8s:enum"
@@ -98,6 +99,8 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the ExactlyOneOf constraint.")),
 	must(markers.MakeDefinition(ValidationAtLeastOneOfPrefix, markers.DescribesType, AtLeastOneOf(nil))).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that must conform to the AtLeastOneOf constraint.")),
+	must(markers.MakeDefinition(ValidationAllOfPrefix, markers.DescribesType, AllOf(nil))).
+		WithHelp(markers.SimpleHelp("CRD validation", "specifies a list of field names that are all marked as required.")),
 	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesType, K8sEnum{})).
 		WithHelp(markers.SimpleHelp("CRD", "indicates that the given type is an enum; all const values of this type are considered values in the enum")),
 	must(markers.MakeDefinition(K8sEnumTag, markers.DescribesField, K8sEnumField{})),
@@ -731,6 +734,24 @@ type ExactlyOneOf []string
 // +controllertools:marker:generateHelp:category="CRD validation"
 type AtLeastOneOf []string
 
+// AllOf marks all of the specified fields as required.
+//
+// The fields are added to the schema's required list, the same mechanism used when
+// marking each field individually with kubebuilder:validation:Required. This marker
+// may be repeated; every listed field is required regardless of grouping.
+//
+// Example:
+//
+//	// +kubebuilder:validation:AllOf=host;port;protocol
+//	type ServerConfig struct {
+//	    Host *string
+//	    Port *int
+//	    Protocol *string
+//	}
+//
+// +controllertools:marker:generateHelp:category="CRD validation"
+type AllOf []string
+
 func (m Maximum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
 	if !hasNumericType(schema) {
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
@@ -1065,6 +1086,25 @@ func (fields AtLeastOneOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensio
 func (AtLeastOneOf) ApplyPriority() ApplyPriority {
 	// explicitly go after ExactlyOneOf markers so that the ordering is deterministic
 	return ExactlyOneOf{}.ApplyPriority() + 1
+}
+
+func (fields AllOf) ApplyToSchema(_ *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
+	var invalid []string
+	for _, field := range fields {
+		if strings.Contains(field, ".") {
+			invalid = append(invalid, field)
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("%s: cannot reference nested fields: %s", ValidationAllOfPrefix, strings.Join(invalid, ","))
+	}
+	for _, field := range fields {
+		if !slices.Contains(schema.Required, field) {
+			schema.Required = append(schema.Required, field)
+		}
+	}
+	slices.Sort(schema.Required)
+	return nil
 }
 
 // fieldsToOneOfSumExpr returns a CEL expression that evaluates to the count of
