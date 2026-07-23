@@ -107,9 +107,9 @@ var TypeOnlyMarkers = []*definitionWithHelp{
 // sense on a type, and thus aren't in ValidationMarkers).
 var FieldOnlyMarkers = []*definitionWithHelp{
 	must(markers.MakeDefinition("kubebuilder:validation:Required", markers.DescribesField, struct{}{})).
-		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
+		WithHelp(markers.DeprecatedHelp("required", "CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("kubebuilder:validation:Optional", markers.DescribesField, struct{}{})).
-		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
+		WithHelp(markers.DeprecatedHelp("optional", "CRD validation", "specifies that this field is optional.")),
 	must(markers.MakeDefinition("required", markers.DescribesField, struct{}{})).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})).
