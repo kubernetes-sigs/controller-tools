@@ -32,7 +32,7 @@ import (
 //
 // CronJob is the Schema for the cronjobs API
 type CronJobApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
+	metav1.TypeMetaApplyConfiguration    `json:""`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                                 *CronJobSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                               *CronJobStatusApplyConfiguration `json:"status,omitempty"`

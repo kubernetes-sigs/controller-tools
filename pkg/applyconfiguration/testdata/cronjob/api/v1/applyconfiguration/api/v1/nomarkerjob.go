@@ -33,7 +33,7 @@ import (
 // NoMarkerJob is a kind enabled by the type-level ac:generate marker
 // instead of a kubebuilder:resource marker.
 type NoMarkerJobApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
+	metav1.TypeMetaApplyConfiguration    `json:""`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                                 *NoMarkerJobSpecApplyConfiguration `json:"spec,omitempty"`
 }
