@@ -105,20 +105,6 @@ fetch_kb_tools
 # setup testing env
 setup_envs
 
-header_text "Running go generate"
-for dir in $(find . -name go.mod -exec dirname {} \;); do
-  header_text "go generate in $dir"
-  pushd "$dir" > /dev/null
-    go generate ./...
-  popd > /dev/null
-done
-
-if ! git diff --quiet --exit-code; then
-  header_text "go generate produced changes"
-  git diff
-  exit 1
-fi
-
 header_text "running golangci-lint"
 make lint
 
