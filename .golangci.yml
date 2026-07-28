@@ -52,6 +52,12 @@ linters:
           deny:
             - pkg: sort
               desc: Should be replaced with slices package
+        forbid-yaml-gopkg:
+          deny:
+            - pkg: gopkg.in/yaml.v2
+              desc: "Use sigs.k8s.io/yaml instead. gopkg.in/yaml.v2 is unmaintained, see github.com/go-yaml/yaml."
+            - pkg: gopkg.in/yaml.v3
+              desc: "Use sigs.k8s.io/yaml instead, or go.yaml.in/yaml/v3 for yaml.Node operations. gopkg.in/yaml.v3 is unmaintained, see github.com/go-yaml/yaml."
     forbidigo:
         forbid:
           - pattern: context.Background
