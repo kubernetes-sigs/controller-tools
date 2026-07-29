@@ -236,6 +236,42 @@ spec:
                 type: string
               explicitlyRequiredK8s:
                 description: This tests explicitly required k8s fields
+                minLength: 1
+                type: string
+              explicitlyRequiredK8sMap:
+                additionalProperties:
+                  type: string
+                description: This tests explicitly required k8s fields on a map
+                minProperties: 1
+                type: object
+              explicitlyRequiredK8sMapWithMinProperties:
+                additionalProperties:
+                  type: string
+                description: This tests explicitly required k8s fields on a map with
+                  minProperties already set
+                minProperties: 5
+                type: object
+              explicitlyRequiredK8sPointer:
+                description: This tests explicitly required k8s fields on a pointer
+                minLength: 1
+                type: string
+              explicitlyRequiredK8sSlice:
+                description: This tests explicitly required k8s fields on a slice
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              explicitlyRequiredK8sSliceWithMinItems:
+                description: This tests explicitly required k8s fields on a slice
+                  with minItems already set
+                items:
+                  type: string
+                minItems: 5
+                type: array
+              explicitlyRequiredK8sWithMinLength:
+                description: This tests explicitly required k8s fields with minLength
+                  already set
+                minLength: 5
                 type: string
               explicitlyRequiredKubebuilder:
                 description: This tests explicitly required kubebuilder fields
@@ -10323,6 +10359,12 @@ spec:
             - duplicateListMapKey
             - embeddedResource
             - explicitlyRequiredK8s
+            - explicitlyRequiredK8sMap
+            - explicitlyRequiredK8sMapWithMinProperties
+            - explicitlyRequiredK8sPointer
+            - explicitlyRequiredK8sSlice
+            - explicitlyRequiredK8sSliceWithMinItems
+            - explicitlyRequiredK8sWithMinLength
             - explicitlyRequiredKubebuilder
             - explicitlyRequiredKubernetes
             - float64WithValidations
