@@ -19,7 +19,7 @@ limitations under the License.
 //
 // The markers take the form:
 //
-//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,timeoutSeconds=<int>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>
+//	+kubebuilder:webhook:webhookVersions=<[]string>,failurePolicy=<string>,matchPolicy=<string>,groups=<[]string>,resources=<[]string>,verbs=<[]string>,versions=<[]string>,name=<string>,path=<string>,mutating=<bool>,sideEffects=<string>,timeoutSeconds=<int>,admissionReviewVersions=<[]string>,reinvocationPolicy=<string>,patch=<string>
 package webhook
 
 import (
@@ -31,8 +31,11 @@ import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
+	kjson "sigs.k8s.io/json"
+
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -232,6 +235,14 @@ type Config struct {
 	// Example (override timeout):
 	//
 	//	// +kubebuilder:webhook:...,patch=`{"timeoutSeconds":25}`
+	//
+	// Example (remove a field by setting it to null):
+	//
+	//	// +kubebuilder:webhook:...,patch=`{"timeoutSeconds":null}`
+	//
+	// Setting a field to null removes it. Patching a list field without a merge key,
+	// such as rules, replaces the whole list. Field names are case-sensitive and unknown
+	// fields in the patch cause an error.
 	Patch string `marker:"patch,optional"`
 }
 
@@ -256,30 +267,155 @@ func verbToAPIVariant(verbRaw string) admissionregv1.OperationType {
 
 // applyPatch applies a strategic merge patch to a webhook object.
 // The patch is provided as a JSON string and is applied using Kubernetes strategic merge patch logic.
-func applyPatch(webhook any, patchStr string) error {
-	patchStr = strings.TrimSpace(patchStr)
+func applyPatch[T any](webhook *T, patchStr string) error {
 	if patchStr == "" {
 		return nil
 	}
 
-	// Marshal the webhook to JSON
+	if err := validatePatch(patchStr, webhook); err != nil {
+		return fmt.Errorf("failed to validate strategic merge patch: %w", err)
+	}
+
 	webhookJSON, err := json.Marshal(webhook)
 	if err != nil {
 		return fmt.Errorf("failed to marshal webhook: %w", err)
 	}
 
-	// Apply the strategic merge patch
 	patchedJSON, err := strategicpatch.StrategicMergePatch(webhookJSON, []byte(patchStr), webhook)
 	if err != nil {
 		return fmt.Errorf("failed to apply strategic merge patch: %w", err)
 	}
 
-	// Unmarshal back into the webhook
-	if err := json.Unmarshal(patchedJSON, webhook); err != nil {
+	// A fresh object drops values the patch removed; strict decoding rejects unknown or miscased keys.
+	var patched T
+	strictErrs, err := kjson.UnmarshalStrict(patchedJSON, &patched)
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal patched webhook: %w", err)
+	}
+	if len(strictErrs) > 0 {
+		return fmt.Errorf("invalid patch: %w", kerrors.NewAggregate(strictErrs))
+	}
+	*webhook = patched
+
+	return nil
+}
+
+// validatePatch validates the patch before strategic merge patching can discard
+// unknown fields whose values are null. Strategic merge directives are removed
+// before strict decoding because they are not fields on the webhook object.
+func validatePatch[T any](patchStr string, webhook *T) error {
+	var patch map[string]any
+	strictErrs, err := kjson.UnmarshalStrict([]byte(patchStr), &patch)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal patch: %w", err)
+	}
+	if len(strictErrs) > 0 {
+		return fmt.Errorf("invalid patch: %w", kerrors.NewAggregate(strictErrs))
+	}
+
+	schema, err := strategicpatch.NewPatchMetaFromStruct(webhook)
+	if err != nil {
+		return fmt.Errorf("failed to inspect webhook type: %w", err)
+	}
+	if err := cleanPatchMap(patch, schema); err != nil {
+		return err
+	}
+
+	cleanPatch, err := json.Marshal(patch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal validated patch: %w", err)
+	}
+	var validated T
+	strictErrs, err = kjson.UnmarshalStrict(cleanPatch, &validated)
+	if err != nil {
+		return fmt.Errorf("failed to validate patch fields: %w", err)
+	}
+	if len(strictErrs) > 0 {
+		return fmt.Errorf("invalid patch fields: %w", kerrors.NewAggregate(strictErrs))
 	}
 
 	return nil
+}
+
+// cleanPatchMap validates fields in a strategic merge patch and removes the
+// directives understood by strategicpatch before the patch is decoded into a
+// typed object. A non-struct schema represents a map with arbitrary keys, so
+// only directives are interpreted at that level.
+func cleanPatchMap(patch map[string]any, schema strategicpatch.LookupPatchMeta) error {
+	for key, value := range patch {
+		switch {
+		case key == "$patch":
+			if directive, ok := value.(string); ok && (directive == "delete" || directive == "replace") {
+				delete(patch, key)
+			}
+			continue
+		case key == "$retainKeys":
+			if _, ok := value.([]any); ok {
+				delete(patch, key)
+			}
+			continue
+		case strings.HasPrefix(key, "$setElementOrder/"):
+			fieldName := strings.TrimPrefix(key, "$setElementOrder/")
+			if _, _, err := schema.LookupPatchMetadataForSlice(fieldName); err != nil {
+				return fmt.Errorf("invalid $setElementOrder directive: %w", err)
+			}
+			if _, ok := value.([]any); ok {
+				delete(patch, key)
+			}
+			continue
+		case strings.HasPrefix(key, "$deleteFromPrimitiveList/"):
+			fieldName := strings.TrimPrefix(key, "$deleteFromPrimitiveList/")
+			if _, _, err := schema.LookupPatchMetadataForSlice(fieldName); err != nil {
+				return fmt.Errorf("invalid $deleteFromPrimitiveList directive: %w", err)
+			}
+			if _, ok := value.([]any); ok {
+				delete(patch, key)
+			}
+			continue
+		case strings.HasPrefix(key, "$"):
+			// Leave unknown or malformed directives in the patch so strict
+			// decoding rejects them, while strategicpatch preserves its error
+			// handling for malformed supported directives.
+			continue
+		}
+
+		if !isObjectSchema(schema) {
+			continue
+		}
+
+		switch value := value.(type) {
+		case map[string]any:
+			subschema, _, err := schema.LookupPatchMetadataForStruct(key)
+			if err != nil {
+				return fmt.Errorf("invalid patch field %q: %w", key, err)
+			}
+			if err := cleanPatchMap(value, subschema); err != nil {
+				return err
+			}
+		case []any:
+			subschema, _, err := schema.LookupPatchMetadataForSlice(key)
+			if err != nil {
+				return fmt.Errorf("invalid patch field %q: %w", key, err)
+			}
+			for _, item := range value {
+				if item, ok := item.(map[string]any); ok {
+					if err := cleanPatchMap(item, subschema); err != nil {
+						return err
+					}
+				}
+			}
+		default:
+			if _, _, err := schema.LookupPatchMetadataForStruct(key); err != nil {
+				return fmt.Errorf("invalid patch field %q: %w", key, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func isObjectSchema(schema strategicpatch.LookupPatchMeta) bool {
+	return schema.Name() == "struct" || schema.Name() == "ptr"
 }
 
 // ToMutatingWebhookConfiguration converts this WebhookConfig to its Kubernetes API form.
