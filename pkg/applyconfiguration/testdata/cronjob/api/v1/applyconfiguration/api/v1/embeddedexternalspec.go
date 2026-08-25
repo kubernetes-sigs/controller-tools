@@ -28,7 +28,7 @@ import (
 // EmbeddedExternalSpec embeds an external type with json:",inline".
 // Used to test the ExternalApplyConfigurations feature.
 type EmbeddedExternalSpecApplyConfiguration struct {
-	externalac.ExternalDataApplyConfiguration `json:",inline"`
+	externalac.ExternalDataApplyConfiguration `json:""`
 	// Extra is an additional field.
 	Extra *string `json:"extra,omitempty"`
 }

@@ -156,7 +156,7 @@ type CronJobSpecApplyConfiguration struct {
 	//
 	// This currently does not work
 	// unexportedStruct `json:",inline"`
-	ExportedStructApplyConfiguration `json:",inline"`
+	ExportedStructApplyConfiguration `json:""`
 	// Test of the expression-based validation rule marker, with optional message.
 	StringWithEvenLength *string `json:"stringWithEvenLength,omitempty"`
 	// Test of the expression-based validation with messageExpression marker.
@@ -195,7 +195,7 @@ type CronJobSpecApplyConfiguration struct {
 	// This tests that selectable field.
 	SelectableFieldString *string `json:"selectableFieldString,omitempty"`
 	// This tests that embedded struct, which is an alias type, is handled correctly.
-	EmbeddedStructApplyConfiguration `json:",inline"`
+	EmbeddedStructApplyConfiguration `json:""`
 	// Test that we can add a field that can only be set to a non-default value on updates using XValidation OptionalOldSelf.
 	OnlyAllowSettingOnUpdate *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
 	// EmbeddedExternal tests the ExternalApplyConfigurations feature.

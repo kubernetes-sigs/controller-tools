@@ -32,7 +32,7 @@ import (
 //
 // ClusterScopedResource is a cluster-scoped resource for testing applyconfiguration generation
 type ClusterScopedResourceApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
+	metav1.TypeMetaApplyConfiguration    `json:""`
 	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                                 *apiv1.ClusterScopedResourceSpec `json:"spec,omitempty"`
 }
