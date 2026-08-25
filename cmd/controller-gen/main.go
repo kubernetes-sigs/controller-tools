@@ -211,8 +211,7 @@ func main() {
 	})
 
 	if err := cmd.Execute(); err != nil {
-		var errNoUsage noUsageError
-		if !errors.As(err, &errNoUsage) {
+		if _, ok := errors.AsType[noUsageError](err); !ok {
 			// print the usage unless we suppressed it
 			if err := cmd.Usage(); err != nil {
 				panic(err)

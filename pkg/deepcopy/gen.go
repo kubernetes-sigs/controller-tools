@@ -100,7 +100,7 @@ func enabledOnPackage(col *markers.Collector, pkg *loader.Package) (bool, error)
 	legacyMarker := pkgMarkers.Get(legacyEnablePkgMarker.Name)
 	if legacyMarker != nil {
 		legacyMarkerVal := string(legacyMarker.(markers.RawArguments))
-		firstArg := strings.Split(legacyMarkerVal, ",")[0]
+		firstArg, _, _ := strings.Cut(legacyMarkerVal, ",")
 		return firstArg == "package", nil
 	}
 
