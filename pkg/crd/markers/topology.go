@@ -18,6 +18,7 @@ package markers
 
 import (
 	"fmt"
+	"slices"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-tools/pkg/markers"
@@ -208,7 +209,14 @@ func (l ListMapKey) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JS
 	if schema.XListType == nil || *schema.XListType != string(Map) {
 		return fmt.Errorf("must apply listMapKey to an associative-list")
 	}
-	schema.XListMapKeys = append(schema.XListMapKeys, string(l))
+	key := string(l)
+	// Deduplicate: k8s.io/api v0.37.0 has some types with both +listMapKey and
+	// +k8s:listMapKey annotations on the same field, producing duplicate entries.
+	// Kubernetes API Server rejects CRDs with duplicate x-kubernetes-list-map-keys.
+	if slices.Contains(schema.XListMapKeys, key) {
+		return nil
+	}
+	schema.XListMapKeys = append(schema.XListMapKeys, key)
 	return nil
 }
 

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/tools/go/packages"
@@ -126,7 +127,11 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			}
 
 			By(fmt.Sprintf("comparing the two %s CRDs", kind))
-			ExpectWithOffset(1, parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+			// Use cmpopts.EquateEmpty() to treat nil and empty maps/slices as equal.
+			// k8s.io/api v0.37.0+ produces nil Properties for object types without
+			// explicit properties, while YAML deserialization produces empty maps.
+			cmpOpts := cmpopts.EquateEmpty()
+			ExpectWithOffset(1, cmp.Equal(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts)).To(BeTrue(), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts))
 		}
 
 		assertCRD := func(pkg *loader.Package, kind, fileName string) {
@@ -374,7 +379,8 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		crd.Annotations = nil
 
 		By("comparing the two")
-		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+		cmpOpts := cmpopts.EquateEmpty()
+		Expect(cmp.Equal(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts)).To(BeTrue(), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts))
 	})
 
 	It("should skip api internal package", func() {
@@ -456,6 +462,7 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		crd.Annotations = nil
 
 		By("comparing the two")
-		Expect(parser.CustomResourceDefinitions[groupKind]).To(Equal(crd), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd))
+		cmpOpts := cmpopts.EquateEmpty()
+		Expect(cmp.Equal(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts)).To(BeTrue(), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts))
 	})
 })
