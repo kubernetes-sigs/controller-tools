@@ -301,6 +301,14 @@ type CronJobSpec struct {
 	// +k8s:required
 	ExplicitlyRequiredK8sMap map[string]string `json:"explicitlyRequiredK8sMap,omitempty"`
 
+	// This tests explicitly required k8s fields on a struct
+	// +k8s:required
+	ExplicitlyRequiredK8sStruct NestedObject `json:"explicitlyRequiredK8sStruct,omitempty"`
+
+	// This tests explicitly required k8s fields on a pointer to struct
+	// +k8s:required
+	ExplicitlyRequiredK8sStructPointer *NestedObject `json:"explicitlyRequiredK8sStructPointer,omitempty"`
+
 	// This tests explicitly required k8s fields with minLength already set
 	// +k8s:required
 	// +kubebuilder:validation:MinLength=5

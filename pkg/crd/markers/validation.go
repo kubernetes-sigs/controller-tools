@@ -1192,6 +1192,7 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 // When applied to a string, it also ensures that the string has a minimum length of 1.
 // When applied to a map, it also ensures that the map has at least 1 property.
 // When applied to a slice, it also ensures that the slice has at least 1 item.
+// When applied to a struct, it also ensures that the struct has at least 1 field set.
 // These minimum constraints are only applied if they are not explicitly set.
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
@@ -1210,7 +1211,13 @@ func (m K8sRequired) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.J
 			schema.MinItems = &val
 		}
 	case "object":
-		if schema.AdditionalProperties != nil && schema.MinProperties == nil {
+		if schema.MinProperties == nil {
+			val := int64(1)
+			schema.MinProperties = &val
+		}
+	default:
+		// If the schema is a reference to a type.
+		if schema.Ref != nil && schema.MinProperties == nil {
 			val := int64(1)
 			schema.MinProperties = &val
 		}
