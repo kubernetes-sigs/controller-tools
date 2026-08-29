@@ -36,10 +36,6 @@ import (
 // now, we're trusting k/k's conversion code, though, which is probably
 // fine for the time being)
 var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", func() {
-	assertSame := func(actual, expected any) {
-		ExpectWithOffset(1, actual).To(Equal(expected), "type not as expected, check pkg/webhook/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(actual, expected))
-	}
-
 	It("should fail generating a v1beta1 webhook", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
@@ -547,6 +543,10 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 		assertSame(actualManifest, expectedManifest)
 	})
 
+	It("should properly generate webhook definition when the patch removes a field", func() {
+		generateAndCompareValidating("./testdata/valid-patch-removal")
+	})
+
 	It("should properly generate webhook definition with objectSelector", func() {
 		By("switching into testdata to appease go modules")
 		cwd, err := os.Getwd()
@@ -637,6 +637,53 @@ var _ = Describe("Webhook Generation From Parsing to CustomResourceDefinition", 
 	})
 
 })
+
+func assertSame(actual, expected any) {
+	ExpectWithOffset(1, actual).To(Equal(expected), "type not as expected, check pkg/webhook/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(actual, expected))
+}
+
+func generateAndCompareValidating(testdataDir string) {
+	GinkgoHelper()
+
+	By("switching into testdata to appease go modules")
+	cwd, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(os.Chdir, cwd)
+	Expect(os.Chdir(testdataDir)).To(Succeed())
+
+	By("loading the roots")
+	pkgs, err := loader.LoadRoots(".")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(pkgs).To(HaveLen(1))
+
+	By("setting up the parser")
+	reg := &markers.Registry{}
+	Expect(reg.Register(webhook.ConfigDefinition)).To(Succeed())
+	Expect(reg.Register(webhook.WebhookConfigDefinition)).To(Succeed())
+
+	By("requesting that the manifest be generated")
+	outputDir := GinkgoT().TempDir()
+	genCtx := &genall.GenerationContext{
+		Collector:  &markers.Collector{Registry: reg},
+		Roots:      pkgs,
+		OutputRule: genall.OutputToDirectory(outputDir),
+	}
+	Expect(webhook.Generator{}.Generate(genCtx)).To(Succeed())
+	for _, r := range genCtx.Roots {
+		Expect(r.Errors).To(HaveLen(0))
+	}
+
+	By("comparing the generated v1 YAML with the desired v1 YAML")
+	actualFile, err := os.ReadFile(path.Join(outputDir, "manifests.yaml"))
+	Expect(err).NotTo(HaveOccurred())
+	actualManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+	Expect(yaml.UnmarshalStrict(actualFile, actualManifest)).To(Succeed())
+	expectedFile, err := os.ReadFile("manifests.yaml")
+	Expect(err).NotTo(HaveOccurred())
+	expectedManifest := &admissionregv1.ValidatingWebhookConfiguration{}
+	Expect(yaml.UnmarshalStrict(expectedFile, expectedManifest)).To(Succeed())
+	assertSame(actualManifest, expectedManifest)
+}
 
 func unmarshalBothV1(in []byte) (mutating admissionregv1.MutatingWebhookConfiguration, validating admissionregv1.ValidatingWebhookConfiguration) {
 	documents := bytes.Split(in, []byte("\n---\n"))
