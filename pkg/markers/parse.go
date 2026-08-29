@@ -849,7 +849,7 @@ func (d *Definition) Parse(rawMarker string) (any, error) {
 	outPointer := reflect.New(d.Output)
 	out := reflect.Indirect(outPointer)
 
-	if parser, ok := outPointer.Interface().(markerParser); ok {
+	if parser, ok := reflect.TypeAssert[markerParser](outPointer); ok {
 		err := parser.ParseMarker(name, anonName, fields)
 		return out.Interface(), err
 	}
