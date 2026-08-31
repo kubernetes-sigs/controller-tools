@@ -155,7 +155,7 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 		// anything. If there is no marker, fall back to traversing.
 		case implements(obj.Type(), jsonMarshaler):
 			schema := &apiextensionsv1.JSONSchemaProps{}
-			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
+			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type, ctx.info.RawDecl, ctx.info.RawSpec)
 			if schema.Type != "" {
 				return schema
 			}
@@ -164,7 +164,7 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 		case implements(obj.Type(), textMarshaler):
 			//nolint:goconst
 			schema := &apiextensionsv1.JSONSchemaProps{Type: "string"}
-			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type)
+			applyMarkers(ctx, ctx.info.Markers, schema, ctx.info.RawSpec.Type, ctx.info.RawDecl, ctx.info.RawSpec)
 			if schema.Type != "string" {
 				err := fmt.Errorf("%q implements encoding.TextMarshaler but schema type is not string: %q", ctx.info.RawSpec.Name, schema.Type)
 				ctx.pkg.AddError(loader.ErrFromNode(err, ctx.info.RawSpec.Type))
@@ -178,12 +178,25 @@ func infoToSchema(ctx *schemaContext) *apiextensionsv1.JSONSchemaProps {
 type schemaMarkerWithName struct {
 	SchemaMarker SchemaMarker
 	Name         string
+	SourceOrder  int
 }
 
 // applyMarkers applies schema markers given their priority to the given schema
-func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiextensionsv1.JSONSchemaProps, node ast.Node) {
+func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *apiextensionsv1.JSONSchemaProps, node ast.Node, sourceNodes ...ast.Node) {
 	markers := make([]schemaMarkerWithName, 0, len(markerSet))
 	itemsMarkers := make([]schemaMarkerWithName, 0, len(markerSet))
+	markerOrders := markerSourceOrders(markerSet, sourceNodes...)
+	markerOrderCursors := make(map[string]int, len(markerOrders))
+
+	nextSourceOrder := func(markerName string) int {
+		orders := markerOrders[markerName]
+		index := markerOrderCursors[markerName]
+		markerOrderCursors[markerName] = index + 1
+		if index >= len(orders) {
+			return -1
+		}
+		return orders[index]
+	}
 
 	for markerName, markerValues := range markerSet {
 		for _, markerValue := range markerValues {
@@ -192,11 +205,13 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 					itemsMarkers = append(itemsMarkers, schemaMarkerWithName{
 						SchemaMarker: schemaMarker,
 						Name:         markerName,
+						SourceOrder:  nextSourceOrder(markerName),
 					})
 				} else {
 					markers = append(markers, schemaMarkerWithName{
 						SchemaMarker: schemaMarker,
 						Name:         markerName,
+						SourceOrder:  nextSourceOrder(markerName),
 					})
 				}
 			}
@@ -226,8 +241,17 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 
 		return int(iPriority - jPriority)
 	}
-	slices.SortStableFunc(markers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
-	slices.SortStableFunc(itemsMarkers, func(i, j schemaMarkerWithName) int { return cmpPriority(i, j) })
+	cmpMarkers := func(i, j schemaMarkerWithName) int {
+		if priority := cmpPriority(i, j); priority != 0 {
+			return priority
+		}
+		if i.SourceOrder >= 0 && j.SourceOrder >= 0 && i.SourceOrder != j.SourceOrder {
+			return i.SourceOrder - j.SourceOrder
+		}
+		return strings.Compare(i.Name, j.Name)
+	}
+	slices.SortStableFunc(markers, cmpMarkers)
+	slices.SortStableFunc(itemsMarkers, cmpMarkers)
 
 	schemaCtx := &crdmarkers.SchemaContext{Package: ctx.pkg, TypeInfo: ctx.info}
 	for _, schemaMarker := range markers {
@@ -247,6 +271,77 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 			}
 		}
 	}
+}
+
+func markerSourceOrders(markerSet markers.MarkerValues, nodes ...ast.Node) map[string][]int {
+	orders := make(map[string][]int, len(markerSet))
+	if len(markerSet) == 0 {
+		return orders
+	}
+	seenComments := sets.Set[token.Pos]{}
+	sourceOrder := 0
+
+	addCommentGroup := func(group *ast.CommentGroup) {
+		if group == nil {
+			return
+		}
+		for _, comment := range group.List {
+			if !seenComments.Has(comment.Pos()) {
+				seenComments.Insert(comment.Pos())
+			} else {
+				continue
+			}
+
+			rawMarkerText, isMarker := markerText(comment.Text)
+			if !isMarker {
+				continue
+			}
+			if markerName, found := markerNameForText(markerSet, rawMarkerText); found {
+				orders[markerName] = append(orders[markerName], sourceOrder)
+				sourceOrder++
+			}
+		}
+	}
+
+	for _, node := range nodes {
+		switch node := node.(type) {
+		case *ast.Field:
+			addCommentGroup(node.Doc)
+			addCommentGroup(node.Comment)
+		case *ast.TypeSpec:
+			addCommentGroup(node.Doc)
+			addCommentGroup(node.Comment)
+		case *ast.GenDecl:
+			addCommentGroup(node.Doc)
+		case *ast.File:
+			addCommentGroup(node.Doc)
+		}
+	}
+
+	return orders
+}
+
+func markerText(comment string) (string, bool) {
+	if !strings.HasPrefix(comment, "//") {
+		return "", false
+	}
+	text := strings.TrimSpace(comment[2:])
+	if !strings.HasPrefix(text, "+") {
+		return "", false
+	}
+	return strings.TrimPrefix(text, "+"), true
+}
+
+func markerNameForText(markerSet markers.MarkerValues, markerText string) (string, bool) {
+	var bestMatch string
+	for markerName := range markerSet {
+		if markerText == markerName || strings.HasPrefix(markerText, markerName+":") {
+			if len(markerName) > len(bestMatch) {
+				bestMatch = markerName
+			}
+		}
+	}
+	return bestMatch, bestMatch != ""
 }
 
 // typeToSchema creates a schema for the given AST type.
@@ -275,7 +370,7 @@ func typeToSchema(ctx *schemaContext, rawType ast.Expr) *apiextensionsv1.JSONSch
 
 	props.Description = ctx.info.Doc
 
-	applyMarkers(ctx, ctx.info.Markers, props, rawType)
+	applyMarkers(ctx, ctx.info.Markers, props, rawType, ctx.info.RawDecl, ctx.info.RawSpec)
 
 	return props
 }
@@ -600,7 +695,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		}
 		propSchema.Description = field.Doc
 
-		applyMarkers(ctx, field.Markers, propSchema, field.RawField)
+		applyMarkers(ctx, field.Markers, propSchema, field.RawField, field.RawField)
 
 		if inline {
 			props.AllOf = append(props.AllOf, *propSchema)
