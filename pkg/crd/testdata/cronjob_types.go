@@ -412,6 +412,14 @@ type CronJobSpec struct {
 	// This tests that validation on a string alias type itself is handled correctly.
 	StringAliasAlreadyValidated StringAliasWithValidation `json:"stringAliasAlreadyValidated,omitempty"`
 
+	// This tests that validation on a map type alias is handled correctly.
+	MapAliasField MapAliasWithValidation `json:"mapAliasField,omitempty"`
+
+	// This tests that a struct type alias resolves to the underlying named type.
+	// Note: markers on the alias declaration are not applied for struct aliases
+	// (they resolve to the underlying named type via $ref).
+	StructAliasField StructAlias `json:"structAliasField,omitempty"`
+
 	// These test that title works on both a type and field, with field taking precedence.
 	// +kubebuilder:title="title on field"
 	StringAliasWithAddedTitle StringAliasWithTitle `json:"stringAliasWithAddedTitle,omitempty"`
@@ -509,6 +517,14 @@ type StringAliasWithTitle = string
 // +kubebuilder:validation:MinLength=1
 // +kubebuilder:validation:MaxLength=255
 type StringAliasWithValidation = string
+
+// MapAliasWithValidation is a map type alias with XValidation.
+// +kubebuilder:validation:XValidation:rule=`self.all(key, size(key) > 0)`,message="keys must be non-empty"
+type MapAliasWithValidation = map[string]string
+
+// StructAlias is a struct type alias with XValidation.
+// +kubebuilder:validation:XValidation:rule="self.name != ''",message="name must not be empty"
+type StructAlias = EmbeddedStruct
 
 type ContainsNestedMap struct {
 	InnerMap map[string]string `json:"innerMap,omitempty"`
