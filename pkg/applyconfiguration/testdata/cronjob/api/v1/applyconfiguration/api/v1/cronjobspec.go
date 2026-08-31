@@ -109,6 +109,10 @@ type CronJobSpecApplyConfiguration struct {
 	UnprunedFromTypeAndField *PreservedApplyConfiguration `json:"unprunedFomTypeAndField,omitempty"`
 	// This tests that associative lists work.
 	AssociativeList []AssociativeTypeApplyConfiguration `json:"associativeList,omitempty"`
+	// This tests that duplicate listMapKey markers (both +listMapKey and +k8s:listMapKey
+	// on the same field) are deduplicated. This reproduces the k8s.io/api v0.37.0 bug
+	// where some fields have both annotations (e.g. core/v1.EvictionResponders).
+	DuplicateListMapKey []AssociativeTypeApplyConfiguration `json:"duplicateListMapKey,omitempty"`
 	// This tests that associative lists work via a nested type.
 	NestedAssociativeList *apiv1.NestedAssociativeList `json:"nestedassociativeList,omitempty"`
 	// A map that allows different actors to manage different fields
@@ -549,6 +553,19 @@ func (b *CronJobSpecApplyConfiguration) WithAssociativeList(values ...*Associati
 			panic("nil value passed to WithAssociativeList")
 		}
 		b.AssociativeList = append(b.AssociativeList, *values[i])
+	}
+	return b
+}
+
+// WithDuplicateListMapKey adds the given value to the DuplicateListMapKey field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the DuplicateListMapKey field.
+func (b *CronJobSpecApplyConfiguration) WithDuplicateListMapKey(values ...*AssociativeTypeApplyConfiguration) *CronJobSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithDuplicateListMapKey")
+		}
+		b.DuplicateListMapKey = append(b.DuplicateListMapKey, *values[i])
 	}
 	return b
 }

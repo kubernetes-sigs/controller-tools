@@ -204,6 +204,14 @@ type CronJobSpec struct {
 	// +listMapKey=secondary
 	AssociativeList []AssociativeType `json:"associativeList"`
 
+	// This tests that duplicate listMapKey markers (both +listMapKey and +k8s:listMapKey
+	// on the same field) are deduplicated. This reproduces the k8s.io/api v0.37.0 bug
+	// where some fields have both annotations (e.g. core/v1.EvictionResponders).
+	// +listType=map
+	// +listMapKey=name
+	// +k8s:listMapKey=name
+	DuplicateListMapKey []AssociativeType `json:"duplicateListMapKey"`
+
 	// This tests that associative lists work via a nested type.
 	NestedAssociativeList NestedAssociativeList `json:"nestedassociativeList"`
 
