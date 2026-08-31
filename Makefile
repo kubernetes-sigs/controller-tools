@@ -91,6 +91,7 @@ test-all:
 	$(MAKE) verify-modules
 	$(MAKE) verify-boilerplate
 	$(MAKE) verify-k8s-deps
+	$(MAKE) verify-generated
 	$(MAKE) test
 
 .PHONY: modules
@@ -116,6 +117,10 @@ verify-modules: modules ## Verify go modules are up to date
 .PHONY: verify-boilerplate
 verify-boilerplate:
 	./hack/verify-boilerplate.sh
+
+.PHONY: verify-generated
+verify-generated:
+	./hack/verify-generated.sh
 
 ## --------------------------------------
 ## Cleanup / Verification
