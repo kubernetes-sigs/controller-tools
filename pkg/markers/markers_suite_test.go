@@ -122,6 +122,18 @@ var _ = BeforeSuite(func() {
 
 					type Quux string
 
+					// Re-classify package marker from var
+					// +testing:pkglvl="here reassociated from var"
+					var varWithPkgMarker = "test"
+
+					// Re-classify package marker from const
+					// +testing:pkglvl="here reassociated from const"
+					const constWithPkgMarker = "test"
+
+					// Re-classify package marker from func
+					// +testing:pkglvl="here reassociated from func"
+					func funcWithPkgMarker() {}
+
 					// +testing:pkglvl="here at end after last node"
 
 					/* +testing:pkglvl="not here in block" */
