@@ -62,6 +62,9 @@ type Generator struct {
 	// HeaderFile specifies the header text (e.g. license) to prepend to generated files.
 	HeaderFile string `marker:",optional"`
 
+	// Year specifies the year to substitute for " YEAR" in the header file.
+	Year string `marker:",optional"`
+
 	// ExternalApplyConfigurations provides mappings between external types and their applyconfiguration packages.
 	//
 	// Use this to reference apply configuration types for external types referenced
@@ -154,6 +157,30 @@ func (d Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		defer os.Remove(tmpFile.Name())
+
+		headerFilePath = tmpFile.Name()
+	} else {
+		// Substitute the year into the header and write the result to a temp
+		// file, since the generator reads the header from a file.
+		headerBytes, err := ctx.ReadFile(d.HeaderFile)
+		if err != nil {
+			return err
+		}
+		headerText := strings.ReplaceAll(string(headerBytes), " YEAR", " "+d.Year)
+
+		tmpFile, err := os.CreateTemp("", "applyconfig-header-*.txt")
+		if err != nil {
+			return fmt.Errorf("failed to create temporary file: %w", err)
+		}
+		defer os.Remove(tmpFile.Name())
+
+		if _, err := tmpFile.WriteString(headerText); err != nil {
+			_ = tmpFile.Close()
+			return fmt.Errorf("failed to write to temporary file: %w", err)
+		}
+		if err := tmpFile.Close(); err != nil {
+			return fmt.Errorf("failed to close temporary file: %w", err)
+		}
 
 		headerFilePath = tmpFile.Name()
 	}
