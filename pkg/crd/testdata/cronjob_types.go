@@ -289,6 +289,41 @@ type CronJobSpec struct {
 	// +k8s:required
 	ExplicitlyRequiredK8s string `json:"explicitlyRequiredK8s,omitempty"`
 
+	// This tests explicitly required k8s fields on a pointer
+	// +k8s:required
+	ExplicitlyRequiredK8sPointer *string `json:"explicitlyRequiredK8sPointer,omitempty"`
+
+	// This tests explicitly required k8s fields on a slice
+	// +k8s:required
+	ExplicitlyRequiredK8sSlice []string `json:"explicitlyRequiredK8sSlice,omitempty"`
+
+	// This tests explicitly required k8s fields on a map
+	// +k8s:required
+	ExplicitlyRequiredK8sMap map[string]string `json:"explicitlyRequiredK8sMap,omitempty"`
+
+	// This tests explicitly required k8s fields on a struct
+	// +k8s:required
+	ExplicitlyRequiredK8sStruct NestedObject `json:"explicitlyRequiredK8sStruct,omitempty"`
+
+	// This tests explicitly required k8s fields on a pointer to struct
+	// +k8s:required
+	ExplicitlyRequiredK8sStructPointer *NestedObject `json:"explicitlyRequiredK8sStructPointer,omitempty"`
+
+	// This tests explicitly required k8s fields with minLength already set
+	// +k8s:required
+	// +kubebuilder:validation:MinLength=5
+	ExplicitlyRequiredK8sWithMinLength string `json:"explicitlyRequiredK8sWithMinLength,omitempty"`
+
+	// This tests explicitly required k8s fields on a slice with minItems already set
+	// +k8s:required
+	// +kubebuilder:validation:MinItems=5
+	ExplicitlyRequiredK8sSliceWithMinItems []string `json:"explicitlyRequiredK8sSliceWithMinItems,omitempty"`
+
+	// This tests explicitly required k8s fields on a map with minProperties already set
+	// +k8s:required
+	// +kubebuilder:validation:MinProperties=5
+	ExplicitlyRequiredK8sMapWithMinProperties map[string]string `json:"explicitlyRequiredK8sMapWithMinProperties,omitempty"`
+
 	// This tests that min/max properties work
 	MinMaxProperties MinMaxObject `json:"minMaxProperties,omitempty"`
 

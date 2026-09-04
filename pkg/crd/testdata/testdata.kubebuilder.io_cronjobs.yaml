@@ -236,6 +236,67 @@ spec:
                 type: string
               explicitlyRequiredK8s:
                 description: This tests explicitly required k8s fields
+                minLength: 1
+                type: string
+              explicitlyRequiredK8sMap:
+                additionalProperties:
+                  type: string
+                description: This tests explicitly required k8s fields on a map
+                minProperties: 1
+                type: object
+              explicitlyRequiredK8sMapWithMinProperties:
+                additionalProperties:
+                  type: string
+                description: This tests explicitly required k8s fields on a map with
+                  minProperties already set
+                minProperties: 5
+                type: object
+              explicitlyRequiredK8sPointer:
+                description: This tests explicitly required k8s fields on a pointer
+                minLength: 1
+                type: string
+              explicitlyRequiredK8sSlice:
+                description: This tests explicitly required k8s fields on a slice
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              explicitlyRequiredK8sSliceWithMinItems:
+                description: This tests explicitly required k8s fields on a slice
+                  with minItems already set
+                items:
+                  type: string
+                minItems: 5
+                type: array
+              explicitlyRequiredK8sStruct:
+                description: This tests explicitly required k8s fields on a struct
+                minProperties: 1
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+              explicitlyRequiredK8sStructPointer:
+                description: This tests explicitly required k8s fields on a pointer
+                  to struct
+                minProperties: 1
+                properties:
+                  bar:
+                    type: boolean
+                  foo:
+                    type: string
+                required:
+                - bar
+                - foo
+                type: object
+              explicitlyRequiredK8sWithMinLength:
+                description: This tests explicitly required k8s fields with minLength
+                  already set
+                minLength: 5
                 type: string
               explicitlyRequiredKubebuilder:
                 description: This tests explicitly required kubebuilder fields
@@ -676,6 +737,7 @@ spec:
                                   description: |-
                                     name uniquely identifies this resource claim inside the group.
                                     This field is required. It must be a DNS_LABEL.
+                                  minLength: 1
                                   type: string
                                 resourceClaimName:
                                   description: |-
@@ -722,6 +784,7 @@ spec:
                                         All pods within the PodGroup must be colocated within the same domain instance.
                                         Different PodGroups can land on different domain instances even if they derive from the same PodGroupTemplate.
                                         Examples: "topology.kubernetes.io/rack"
+                                      minLength: 1
                                       type: string
                                   required:
                                   - key
@@ -5179,6 +5242,7 @@ spec:
                                         Domain names *.k8s.io and *.kubernetes.io are reserved.
                                         This field must be unique for each responder.
                                         This field is required.
+                                      minLength: 1
                                       type: string
                                     priority:
                                       description: |-
@@ -10323,6 +10387,14 @@ spec:
             - duplicateListMapKey
             - embeddedResource
             - explicitlyRequiredK8s
+            - explicitlyRequiredK8sMap
+            - explicitlyRequiredK8sMapWithMinProperties
+            - explicitlyRequiredK8sPointer
+            - explicitlyRequiredK8sSlice
+            - explicitlyRequiredK8sSliceWithMinItems
+            - explicitlyRequiredK8sStruct
+            - explicitlyRequiredK8sStructPointer
+            - explicitlyRequiredK8sWithMinLength
             - explicitlyRequiredKubebuilder
             - explicitlyRequiredKubernetes
             - float64WithValidations
