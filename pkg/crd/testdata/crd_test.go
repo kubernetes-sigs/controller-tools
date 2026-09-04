@@ -100,6 +100,7 @@ var _ = Describe("CronJob CRD", func() {
 				"unprunedFomTypeAndField":                   map[string]interface{}{},
 				"unprunedJSON":                              map[string]interface{}{"foo": "str", "bar": true},
 				"associativeList":                           []interface{}{},
+				"duplicateListMapKey":                       []interface{}{},
 			}
 			if opaqueVal != "" {
 				spec["opaqueField"] = opaqueVal
