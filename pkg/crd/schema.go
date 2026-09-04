@@ -97,6 +97,7 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		schemaRequester:        c.schemaRequester,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
+		opaque:                 c.opaque,
 	}
 }
 
@@ -411,6 +412,36 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 	typeNameInfo := typeInfo.Obj()
 	typesPkg := typeNameInfo.Pkg()
 	nonVendorPath := loader.NonVendorPath(typesPkg.Path())
+
+	if ctx.opaque {
+		typeInfoToCheck := typeInfoRaw
+		if aliasInfo, isAlias := typeInfoToCheck.(*types.Alias); isAlias {
+			typeInfoToCheck = aliasInfo.Rhs()
+		}
+		if namedInfo, isNamed := typeInfoToCheck.(*types.Named); isNamed {
+			if basic, isBasic := namedInfo.Underlying().(*types.Basic); isBasic {
+				typ, fmt, err := builtinToType(basic, ctx.allowDangerousTypes)
+				if err != nil {
+					ctx.pkg.AddError(loader.ErrFromNode(err, named))
+				}
+				return &apiextensionsv1.JSONSchemaProps{
+					Type:   typ,
+					Format: fmt,
+				}
+			}
+		}
+		if basic, isBasic := typeInfoToCheck.(*types.Basic); isBasic {
+			typ, fmt, err := builtinToType(basic, ctx.allowDangerousTypes)
+			if err != nil {
+				ctx.pkg.AddError(loader.ErrFromNode(err, named))
+			}
+			return &apiextensionsv1.JSONSchemaProps{
+				Type:   typ,
+				Format: fmt,
+			}
+		}
+	}
+
 	ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
 	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
 	return &apiextensionsv1.JSONSchemaProps{
@@ -618,7 +649,7 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		switch {
 		case field.Markers.Get(crdmarkers.SchemalessName) != nil:
 			propSchema = &apiextensionsv1.JSONSchemaProps{}
-		case field.Markers.Get(crdmarkers.OpaqueFieldName) != nil:
+		case field.Markers.Get(crdmarkers.OpaqueTypeFieldName) != nil:
 			propSchema = typeToSchema(ctx.ForInfoOpaque(&markers.TypeInfo{}), field.RawField.Type)
 		default:
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)

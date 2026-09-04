@@ -43,7 +43,7 @@ var _ = Describe("CronJob CRD", func() {
 	})
 
 	Context("validating opaque markers", func() {
-		applyCronJob := func(ctx context.Context, name, opaqueVal, nonOpaqueVal string) error {
+		applyCronJob := func(ctx context.Context, name, opaqueVal, nonOpaqueVal, opaquePointerVal string) error {
 			obj := &unstructured.Unstructured{}
 			obj.SetGroupVersionKind(schema.GroupVersionKind{
 				Group:   "testdata.kubebuilder.io",
@@ -107,32 +107,45 @@ var _ = Describe("CronJob CRD", func() {
 			if nonOpaqueVal != "" {
 				spec["nonOpaqueField"] = nonOpaqueVal
 			}
+			if opaquePointerVal != "" {
+				spec["opaquePointerField"] = opaquePointerVal
+			}
 			obj.Object["spec"] = spec
 
 			return k8sClient.Create(ctx, obj)
 		}
 
-		It("should suppress type-level validation for fields with +k8s:opaque", func(ctx SpecContext) {
+		It("should suppress type-level validation for fields with +k8s:opaqueType", func(ctx SpecContext) {
 			// type-level validation is MinLength=4
 			// field-level validation is MaxLength=5
 
 			By("allowing opaqueField with length 3 (suppresses type-level MinLength=4)")
 			Eventually(func() error {
-				return applyCronJob(ctx, "test-opaque-short", "abc", "")
+				return applyCronJob(ctx, "test-opaque-short", "abc", "", "")
 			}, 5*time.Second, 1*time.Second).Should(Succeed())
 
 			By("rejecting nonOpaqueField with length 3 (inherits type-level MinLength=4)")
-			err := applyCronJob(ctx, "test-non-opaque-short", "", "abc")
+			err := applyCronJob(ctx, "test-non-opaque-short", "", "abc", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("should be at least 4 chars long"))
 
 			By("rejecting opaqueField with length 6 (applies field-level MaxLength=5)")
-			err = applyCronJob(ctx, "test-opaque-long", "abcdef", "")
+			err = applyCronJob(ctx, "test-opaque-long", "abcdef", "", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Too long"))
 
 			By("rejecting nonOpaqueField with length 6 (applies field-level MaxLength=5)")
-			err = applyCronJob(ctx, "test-non-opaque-long", "", "abcdef")
+			err = applyCronJob(ctx, "test-non-opaque-long", "", "abcdef", "")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Too long"))
+
+			By("allowing opaquePointerField with length 3 (suppresses type-level MinLength=4 on pointer)")
+			Eventually(func() error {
+				return applyCronJob(ctx, "test-opaque-ptr-short", "", "", "abc")
+			}, 5*time.Second, 1*time.Second).Should(Succeed())
+
+			By("rejecting opaquePointerField with length 6 (applies field-level MaxLength=5 on pointer)")
+			err = applyCronJob(ctx, "test-opaque-ptr-long", "", "", "abcdef")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Too long"))
 		})

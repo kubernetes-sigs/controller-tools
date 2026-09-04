@@ -359,7 +359,7 @@ func (Nullable) Help() *markers.DefinitionHelp {
 	}
 }
 
-func (Opaque) Help() *markers.DefinitionHelp {
+func (OpaqueType) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{

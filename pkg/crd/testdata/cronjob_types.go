@@ -487,20 +487,25 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MaxLength=10
 	FieldLevelLocalDeclarationOverride LongerString `json:"fieldLevelLocalDeclarationOverride,omitempty"`
 
-	// This tests that +k8s:opaque suppresses type-level validation from LongerString (MinLength=4).
-	// +k8s:opaque
+	// This tests that +k8s:opaqueType suppresses type-level validation from LongerString (MinLength=4).
+	// +k8s:opaqueType
 	// +kubebuilder:validation:MaxLength=5
 	OpaqueField LongerString `json:"opaqueField,omitempty"`
 
-	// This tests that without +k8s:opaque, type-level validations from LongerString are inherited.
+	// This tests that without +k8s:opaqueType, type-level validations from LongerString are inherited.
 	// +kubebuilder:validation:MaxLength=5
 	NonOpaqueField LongerString `json:"nonOpaqueField,omitempty"`
 
-	// This tests that +k8s:opaque allows a field to completely replace a type-level validation.
+	// This tests that +k8s:opaqueType allows a field to completely replace a type-level validation.
 	// LongerString has MinLength=4. This field should have only MinLength=2.
-	// +k8s:opaque
+	// +k8s:opaqueType
 	// +kubebuilder:validation:MinLength=2
 	OpaqueMinLengthField LongerString `json:"opaqueMinLengthField,omitempty"`
+
+	// This tests that +k8s:opaqueType suppresses type-level validation on pointer fields.
+	// +k8s:opaqueType
+	// +kubebuilder:validation:MaxLength=5
+	OpaquePointerField *LongerString `json:"opaquePointerField,omitempty"`
 }
 
 type InlineAlias = EmbeddedStruct

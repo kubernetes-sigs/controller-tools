@@ -42,8 +42,8 @@ const (
 	ValidationAtLeastOneOfPrefix = validationPrefix + "AtLeastOneOf"
 
 	// K8sEnumTag indicates that the given type is an enum; all const values of this type are considered values in the enum
-	K8sEnumTag      = "k8s:enum"
-	OpaqueFieldName = "k8s:opaque"
+	K8sEnumTag          = "k8s:enum"
+	OpaqueTypeFieldName = "k8s:opaqueType"
 )
 
 // ValidationMarkers lists all available markers that affect CRD schema generation,
@@ -138,8 +138,8 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("k8s:immutable", markers.DescribesField, Immutable{})).
 		WithHelp(Immutable{}.Help()),
-	must(markers.MakeDefinition(OpaqueFieldName, markers.DescribesField, Opaque{})).
-		WithHelp(Opaque{}.Help()),
+	must(markers.MakeDefinition(OpaqueTypeFieldName, markers.DescribesField, OpaqueType{})).
+		WithHelp(OpaqueType{}.Help()),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -612,11 +612,11 @@ func (m Immutable) ApplyToSchema(_ *SchemaContext, schema *apiextensionsv1.JSONS
 	return nil
 }
 
-// Opaque instructs the CRD generator to suppress inheritance of type-level
+// OpaqueType instructs the CRD generator to suppress inheritance of type-level
 // validation for this field. Field-level markers still apply.
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
-type Opaque struct{}
+type OpaqueType struct{}
 
 func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
 	return schema.Type == string(Integer) || schema.Type == string(Number)
