@@ -694,6 +694,7 @@ spec:
                               required:
                               - name
                               type: object
+                            maxItems: 4
                             type: array
                             x-kubernetes-list-map-keys:
                             - name
@@ -726,6 +727,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                maxItems: 1
                                 type: array
                                 x-kubernetes-list-type: atomic
                             type: object
@@ -758,6 +760,7 @@ spec:
                                       parallelism for a Job).
                                       If set, it must be a positive integer.
                                     format: int32
+                                    minimum: 1
                                     type: integer
                                 type: object
                             type: object
@@ -5195,12 +5198,15 @@ spec:
                                         The interval 0-999 is reserved for responders with *.k8s.io suffix.
                                         This field is required.
                                       format: int32
+                                      maximum: 100000
+                                      minimum: 0
                                       type: integer
                                   required:
                                   - name
                                   - priority
                                   type: object
                                   x-kubernetes-map-type: atomic
+                                maxItems: 10
                                 type: array
                                 x-kubernetes-list-map-keys:
                                 - name
