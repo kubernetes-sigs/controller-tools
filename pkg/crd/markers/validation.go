@@ -114,7 +114,7 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("optional", markers.DescribesField, struct{}{})).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
-	must(markers.MakeDefinition("k8s:required", markers.DescribesField, struct{}{})).
+	must(markers.MakeDefinition("k8s:required", markers.DescribesField, K8sRequired{})).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is required.")),
 	must(markers.MakeDefinition("k8s:optional", markers.DescribesField, struct{}{})).
 		WithHelp(markers.SimpleHelp("CRD validation", "specifies that this field is optional.")),
@@ -1185,5 +1185,42 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 
 	schema.Type = "string"
 	schema.Enum = enumValues
+	return nil
+}
+
+// K8sRequired specifies that this field is required.
+// When applied to a string, it also ensures that the string has a minimum length of 1.
+// When applied to a map, it also ensures that the map has at least 1 property.
+// When applied to a slice, it also ensures that the slice has at least 1 item.
+// When applied to a struct, it also ensures that the struct has at least 1 field set.
+// These minimum constraints are only applied if they are not explicitly set.
+//
+// +controllertools:marker:generateHelp:category="CRD validation"
+type K8sRequired struct{}
+
+func (m K8sRequired) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSchemaProps) error {
+	switch schema.Type {
+	case "string":
+		if schema.MinLength == nil {
+			val := int64(1)
+			schema.MinLength = &val
+		}
+	case "array":
+		if schema.MinItems == nil {
+			val := int64(1)
+			schema.MinItems = &val
+		}
+	case "object":
+		if schema.MinProperties == nil {
+			val := int64(1)
+			schema.MinProperties = &val
+		}
+	default:
+		// If the schema is a reference to a type.
+		if schema.Ref != nil && schema.MinProperties == nil {
+			val := int64(1)
+			schema.MinProperties = &val
+		}
+	}
 	return nil
 }
