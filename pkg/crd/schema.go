@@ -304,10 +304,29 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unknown type %s", ident.Name), ident))
 		return &apiextensionsv1.JSONSchemaProps{}
 	}
-	// This reproduces the behavior we had pre gotypesalias=1 (needed if this
-	// project is compiled with default settings and Go >= 1.23).
+	// For user-defined type aliases (type X = Y, gotypesalias=1), the handling
+	// depends on the RHS type:
+	//   - Basic types (type X = string): unwrap to preserve existing behavior
+	//     (inline type/format needed for field-level markers like MinLength).
+	//   - Named types (type X = SomeStruct): unwrap to preserve existing behavior
+	//     (emits $ref to the underlying named type, needed for inline/embedded
+	//     struct aliases and the applyconfiguration generator).
+	//   - Complex types (type X = map[string]string, []string, etc.): the
+	//     existing switch would error out because these types have no Obj().
+	//     Instead, emit a $ref to the alias type so markers on the alias
+	//     declaration (e.g. +kubebuilder:validation:XValidation) are applied
+	//     when the flattener resolves the $ref via infoToSchema.
+	//   - Built-in aliases (any): unwrap, Pkg() is nil.
 	if aliasInfo, isAlias := typeInfo.(*types.Alias); isAlias {
-		typeInfo = aliasInfo.Rhs()
+		rhs := aliasInfo.Rhs()
+		_, rhsIsBasic := rhs.(*types.Basic)
+		_, rhsHasObj := rhs.(interface{ Obj() *types.TypeName })
+		if !rhsIsBasic && !rhsHasObj && aliasInfo.Obj().Pkg() != nil {
+			ctx.requestSchema("", ident.Name)
+			link := TypeRefLink("", ident.Name)
+			return &apiextensionsv1.JSONSchemaProps{Ref: &link}
+		}
+		typeInfo = rhs
 	}
 	switch typeInfo := typeInfo.(type) {
 	case *types.Basic:
