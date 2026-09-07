@@ -169,6 +169,156 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		By("comparing the two")
 		Expect(out.buf.String()).To(Equal(string(expectedFile)), cmp.Diff(out.buf.String(), string(expectedFile)))
 	})
+
+	It("should skip spec desc when marker is found", func() {
+		By("switching to test directory")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		skipDescDir := filepath.Join(cwd, "testdata", "skip_desc")
+		Expect(os.Chdir(skipDescDir)).To(Succeed())
+
+		By("loading test packages")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("generating CRDs")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		out := &outputRule{buf: &bytes.Buffer{}}
+		ctx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("verifying marked specs have no desc")
+		output := out.buf.String()
+		Expect(output).NotTo(ContainSubstring("won't have this description"))
+
+		By("verifying normal specs keep their desc")
+		Expect(output).To(ContainSubstring("multi-line description"))
+		Expect(output).To(ContainSubstring("only affects"))
+	})
+
+	It("should skip all desc when package marker is found", func() {
+		By("switching to test directory")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		dir := filepath.Join(cwd, "testdata", "skip_desc_pkg")
+		Expect(os.Chdir(dir)).To(Succeed())
+
+		By("loading test packages")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("generating CRDs")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		out := &outputRule{buf: &bytes.Buffer{}}
+		ctx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("verifying all specs have no desc")
+		output := out.buf.String()
+		Expect(output).NotTo(ContainSubstring("won't appear"))
+		Expect(output).NotTo(ContainSubstring("package marker"))
+	})
+
+	It("should skip desc when spec has no doc", func() {
+		By("switching to test directory")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		skipDescDir := filepath.Join(cwd, "testdata", "skip_desc")
+		Expect(os.Chdir(skipDescDir)).To(Succeed())
+
+		By("loading test packages")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("generating CRDs")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		out := &outputRule{buf: &bytes.Buffer{}}
+		ctx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("verifying CRD generates successfully")
+		output := out.buf.String()
+		Expect(output).To(ContainSubstring("skipdescexamples.skipdesc.example.com"))
+	})
+
+	It("should skip desc when marker is used with maxDescLen", func() {
+		By("switching to test directory")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		skipDescDir := filepath.Join(cwd, "testdata", "skip_desc")
+		Expect(os.Chdir(skipDescDir)).To(Succeed())
+
+		By("loading test packages")
+		pkgs, err := loader.LoadRoots(".")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(1))
+
+		By("generating CRDs with maxDescLen")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		out := &outputRule{buf: &bytes.Buffer{}}
+		ctx := &genall.GenerationContext{
+			Collector:  &markers.Collector{Registry: reg},
+			Roots:      pkgs,
+			Checker:    &loader.TypeChecker{},
+			OutputRule: out,
+		}
+
+		fifty := 50
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+			MaxDescLen:  &fifty,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("verifying marked specs have no desc")
+		output := out.buf.String()
+		Expect(output).NotTo(ContainSubstring("won't have this description"))
+
+		By("verifying normal specs have truncated desc")
+		Expect(output).To(ContainSubstring("normalField"))
+	})
 })
 
 type outputRule struct {
