@@ -153,6 +153,30 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 		Expect(out.buf.String()).NotTo(ContainSubstring("preserveUnknownFields"))
 	})
 
+	It("should add controller-gen version annotation by default", func() {
+		By("calling Generate")
+		gen := &crd.Generator{
+			CRDVersions: []string{"v1"},
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching for version annotation")
+		Expect(out.buf.String()).To(ContainSubstring("controller-gen.kubebuilder.io/version"))
+	})
+
+	It("should not add controller-gen version annotation when OmitToolVersion is true", func() {
+		By("calling Generate")
+		yes := true
+		gen := &crd.Generator{
+			CRDVersions:     []string{"v1"},
+			OmitToolVersion: &yes,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching for version annotation")
+		Expect(out.buf.String()).NotTo(ContainSubstring("controller-gen.kubebuilder.io/version"))
+	})
+
 	It("should truncate CRD descriptions", func() {
 		By("calling Generate")
 		fifty := 50
