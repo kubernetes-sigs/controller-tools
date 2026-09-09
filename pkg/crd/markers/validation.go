@@ -137,6 +137,15 @@ var FieldOnlyMarkers = []*definitionWithHelp{
 
 	must(markers.MakeDefinition("k8s:immutable", markers.DescribesField, Immutable{})).
 		WithHelp(Immutable{}.Help()),
+
+	// Kubernetes declarative validation aliases.  These bounds are especially
+	// important for keeping the estimated cost of CEL rules finite.
+	must(markers.MakeDefinition("k8s:maxItems", markers.DescribesField, MaxItems(0))).
+		WithHelp(MaxItems(0).Help()),
+	must(markers.MakeDefinition("k8s:minimum", markers.DescribesField, Minimum(0))).
+		WithHelp(Minimum(0).Help()),
+	must(markers.MakeDefinition("k8s:maximum", markers.DescribesField, Maximum(0))).
+		WithHelp(Maximum(0).Help()),
 }
 
 // ValidationIshMarkers are field-and-type markers that don't fall under the
@@ -207,6 +216,33 @@ type Minimum float64
 
 func (m Minimum) Value() float64 {
 	return float64(m)
+}
+
+func declarativeValidationMarkerValue(name, restFields string) string {
+	if strings.HasPrefix(name, "k8s:") {
+		if comment := strings.Index(restFields, " #"); comment >= 0 {
+			restFields = restFields[:comment]
+		}
+	}
+	return strings.TrimSpace(restFields)
+}
+
+func (m *Maximum) ParseMarker(_, name, restFields string) error {
+	value, err := strconv.ParseFloat(declarativeValidationMarkerValue(name, restFields), 64)
+	if err != nil {
+		return fmt.Errorf("invalid maximum value: %w", err)
+	}
+	*m = Maximum(value)
+	return nil
+}
+
+func (m *Minimum) ParseMarker(_, name, restFields string) error {
+	value, err := strconv.ParseFloat(declarativeValidationMarkerValue(name, restFields), 64)
+	if err != nil {
+		return fmt.Errorf("invalid minimum value: %w", err)
+	}
+	*m = Minimum(value)
+	return nil
 }
 
 // ExclusiveMinimum indicates that the minimum is "up to" but not including that value.
@@ -284,6 +320,15 @@ type Pattern string
 //
 // +controllertools:marker:generateHelp:category="CRD validation"
 type MaxItems int
+
+func (m *MaxItems) ParseMarker(_, name, restFields string) error {
+	value, err := strconv.Atoi(declarativeValidationMarkerValue(name, restFields))
+	if err != nil {
+		return fmt.Errorf("invalid maxItems value: %w", err)
+	}
+	*m = MaxItems(value)
+	return nil
+}
 
 // MinItems specifies the minimum length for this list.
 //
