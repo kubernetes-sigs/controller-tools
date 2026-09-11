@@ -418,19 +418,21 @@ func arrayToSchema(ctx *schemaContext, array *ast.ArrayType) *apiextensionsv1.JS
 	}
 }
 
-// mapToSchema creates a schema for items of the given map.  Key types must eventually resolve
-// to string (other types aren't allowed by JSON, and thus the kubernetes API standards).
+// mapToSchema creates a schema for items of the given map. Key types must eventually
+// resolve to string or implement encoding.TextMarshaler via a value receiver. Pointer-receiver
+// implementations are not accepted: map keys are not addressable, so encoding/json cannot call
+// a pointer-receiver MarshalText on them and will return an error at runtime.
 func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSONSchemaProps {
 	keyType := ctx.pkg.TypesInfo.TypeOf(mapType.Key)
-	// check that we've got a type that actually corresponds to a string, or that
-	// implements encoding.TextMarshaler (in which case it serializes to a string,
-	// just like text-marshaler-implementing field types do).
+	// Accept string-kinded types, or types whose value receiver implements
+	// encoding.TextMarshaler (pointer-receiver-only types are rejected because map
+	// keys are not addressable and encoding/json cannot call pointer methods on them).
 	keyInfo := keyType
 	for keyInfo != nil {
 		switch typedKey := keyInfo.(type) {
 		case *types.Basic:
 			if typedKey.Info()&types.IsString == 0 {
-				if implements(keyType, textMarshaler) {
+				if types.Implements(keyType, textMarshaler) {
 					keyInfo = nil // stop iterating
 					break
 				}
@@ -441,7 +443,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 		case *types.Named:
 			keyInfo = typedKey.Underlying()
 		default:
-			if implements(keyType, textMarshaler) {
+			if types.Implements(keyType, textMarshaler) {
 				keyInfo = nil // stop iterating
 				break
 			}
