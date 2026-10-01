@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   labels:
     kube-state-metrics/aggregate-to-manager: "true"
-  name: manager-metrics-role
+  name: metrics-role
 rules:
 - apiGroups:
   - bar.example.com

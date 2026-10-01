@@ -40,7 +40,7 @@ func Test_Generate(t *testing.T) {
 
 	optionsRegistry := &markers.Registry{}
 
-	metricGenerator := Generator{}
+	metricGenerator := Generator{Experimental: true}
 	if err := metricGenerator.RegisterMarkers(optionsRegistry); err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,7 @@ func Test_Generate(t *testing.T) {
 		t.Errorf("loading packages %v", err)
 	}
 
-	gen := Generator{}
+	gen := Generator{Experimental: true}
 
 	generationContext := &genall.GenerationContext{
 		Collector:  &markers.Collector{Registry: optionsRegistry},
@@ -72,7 +72,7 @@ func Test_Generate(t *testing.T) {
 
 	output := strings.Split(out.buf.String(), "\n---\n")
 
-	header := fmt.Sprintf(headerText, "(devel)", config.KubeStateMetricsVersion)
+	header := fmt.Sprintf(headerText, config.KubeStateMetricsVersion)
 
 	if len(output) != 3 {
 		t.Error("Expected two output files, metrics configuration followed by rbac.")
@@ -87,8 +87,6 @@ func Test_Generate(t *testing.T) {
 	t.Log("Comparing output to testdata to check for regressions")
 
 	for _, golden := range []string{"metrics.yaml", "rbac.yaml"} {
-		// generatedRaw := strings.TrimSpace(output[i])
-
 		expectedRaw, err := os.ReadFile(path.Clean(path.Join(cwd, "testdata", golden)))
 		if err != nil {
 			t.Error(err)

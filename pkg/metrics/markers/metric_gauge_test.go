@@ -33,7 +33,7 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 		{
 			name: "Happy path",
 			gaugeMarker: gaugeMarker{
-				ValueFrom: jsonPathPointer(".foo"),
+				Value: jsonPathPointer(".foo"),
 			},
 			basePath: []string{},
 			want: &config.Generator{
@@ -45,6 +45,29 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 							Path:           []string{},
 						},
 						ValueFrom: []string{"foo"},
+					},
+				},
+			},
+		},
+		{
+			name: "keyLabel, missingAsZero and relative JSONPath",
+			gaugeMarker: gaugeMarker{
+				JSONPath:      ".bar",
+				KeyLabel:      "key",
+				MissingAsZero: true,
+				Labels:        map[string]jsonPath{"l": ".l"},
+			},
+			basePath: []string{"spec"},
+			want: &config.Generator{
+				Each: config.Metric{
+					Type: config.MetricTypeGauge,
+					Gauge: &config.MetricGauge{
+						MetricMeta: config.MetricMeta{
+							LabelsFromPath: map[string][]string{"l": {"l"}},
+							Path:           []string{"spec", "bar"},
+						},
+						LabelFromKey: "key",
+						NilIsZero:    true,
 					},
 				},
 			},

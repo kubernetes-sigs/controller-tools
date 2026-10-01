@@ -51,22 +51,23 @@ type infoMarker struct {
 
 	// Keys from the MetricMeta struct.
 
-	// LabelsFromPath specifies additional labels where the value is taken from the given JSONPath.
-	LabelsFromPath map[string]jsonPath `marker:"labelsFromPath,optional"`
+	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	Labels map[string]jsonPath `marker:"labels,optional"`
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
 	JSONPath jsonPath `marker:"JSONPath,optional"`
 
 	// Keys from the MetricInfo struct.
 
-	// LabelFromKey specifies a label which will be added to the metric having the object's key as value.
-	LabelFromKey string `marker:"labelFromKey,optional"`
+	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
+	// Note: This is only meaningful if the metric path points to an object (map). It is not validated.
+	KeyLabel string `marker:"keyLabel,optional"`
 }
 
 var _ LocalGeneratorMarker = &infoMarker{}
 
 func (i infoMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
-	meta, err := newMetricMeta(basePath, i.JSONPath, i.LabelsFromPath)
+	meta, err := newMetricMeta(basePath, i.JSONPath, i.Labels)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func (i infoMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
 			Type: config.MetricTypeInfo,
 			Info: &config.MetricInfo{
 				MetricMeta:   meta,
-				LabelFromKey: i.LabelFromKey,
+				LabelFromKey: i.KeyLabel,
 			},
 		},
 	}, nil

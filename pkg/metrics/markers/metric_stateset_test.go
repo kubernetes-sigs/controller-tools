@@ -33,7 +33,7 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 		{
 			name: "Happy path",
 			stateSetMarker: stateSetMarker{
-				JSONPath: jsonPathPointer(".foo"),
+				Value: jsonPathPointer(".foo"),
 			},
 			basePath: []string{},
 			want: &config.Generator{
@@ -43,6 +43,26 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 						MetricMeta: config.MetricMeta{
 							LabelsFromPath: map[string][]string{},
 							Path:           []string{},
+						},
+						ValueFrom: []string{"foo"},
+					},
+				},
+			},
+		},
+		{
+			name: "relative JSONPath and value",
+			stateSetMarker: stateSetMarker{
+				JSONPath: ".bar",
+				Value:    jsonPathPointer(".foo"),
+			},
+			basePath: []string{"spec"},
+			want: &config.Generator{
+				Each: config.Metric{
+					Type: config.MetricTypeStateSet,
+					StateSet: &config.MetricStateSet{
+						MetricMeta: config.MetricMeta{
+							LabelsFromPath: map[string][]string{},
+							Path:           []string{"spec", "bar"},
 						},
 						ValueFrom: []string{"foo"},
 					},

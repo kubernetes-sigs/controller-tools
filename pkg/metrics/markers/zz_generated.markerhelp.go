@@ -29,7 +29,7 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 		Category: "Metric type Gauge",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "defines a Gauge metric and uses the implicit path to the field joined by the provided JSONPath as path for the metric configuration.",
-			Details: "Gauge is a metric which targets a Path that may be a single value, array, or object.\nArrays and objects will generate a metric per element and requre ValueFrom to be set.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge",
+			Details: "Gauge is a metric which targets a Path that may be a single value, array, or object.\nArrays and objects will generate a metric per element and require Value to be set.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Name": {
@@ -40,41 +40,25 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 				Summary: "specifies the help text for the metric.",
 				Details: "",
 			},
-			"LabelsFromPath": {
-				Summary: "specifies additional labels where the value is taken from the given JSONPath.",
+			"Labels": {
+				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
 				Details: "",
 			},
 			"JSONPath": {
 				Summary: "specifies the relative path from this marker.",
 				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
 			},
-			"ValueFrom": {
-				Summary: "specifies the JSONPath to a numeric field that will be the metric value.",
+			"Value": {
+				Summary: "specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.",
 				Details: "",
 			},
-			"LabelFromKey": {
+			"KeyLabel": {
 				Summary: "specifies a label which will be added to the metric having the object's key as value.",
-				Details: "",
+				Details: "Note: This is only meaningful if the metric path points to an object (map). It is not validated.",
 			},
-			"NilIsZero": {
-				Summary: "specifies to treat a not-existing field as zero value.",
+			"MissingAsZero": {
+				Summary: "specifies to expose a not-existing field as zero value instead of omitting the metric.",
 				Details: "",
-			},
-		},
-	}
-}
-
-func (gvkMarker) Help() *markers.DefinitionHelp {
-	return &markers.DefinitionHelp{
-		Category: "Metrics",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.",
-			Details: "",
-		},
-		FieldHelp: map[string]markers.DetailedHelp{
-			"NamePrefix": {
-				Summary: "specifies the prefix for all metrics of this resource.",
-				Details: "Note: This field directly maps to the metricNamePrefix field in the resource's custom resource configuration.",
 			},
 		},
 	}
@@ -96,28 +80,28 @@ func (infoMarker) Help() *markers.DefinitionHelp {
 				Summary: "specifies the help text for the metric.",
 				Details: "",
 			},
-			"LabelsFromPath": {
-				Summary: "specifies additional labels where the value is taken from the given JSONPath.",
+			"Labels": {
+				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
 				Details: "",
 			},
 			"JSONPath": {
 				Summary: "specifies the relative path from this marker.",
 				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
 			},
-			"LabelFromKey": {
+			"KeyLabel": {
 				Summary: "specifies a label which will be added to the metric having the object's key as value.",
-				Details: "",
+				Details: "Note: This is only meaningful if the metric path points to an object (map). It is not validated.",
 			},
 		},
 	}
 }
 
-func (labelFromPathMarker) Help() *markers.DefinitionHelp {
+func (labelMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "Metrics",
 		DetailedHelp: markers.DetailedHelp{
-			Summary: "specifies additional labels for all metrics of this field or type.",
-			Details: "",
+			Summary: "specifies additional labels for all metrics of the custom resource.",
+			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nThe JSONPath is relative to the custom resource.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Name": {
@@ -125,7 +109,7 @@ func (labelFromPathMarker) Help() *markers.DefinitionHelp {
 				Details: "",
 			},
 			"JSONPath": {
-				Summary: "specifies the relative path to the value for the label.",
+				Summary: "specifies the path to the value for the label, relative to the custom resource.",
 				Details: "",
 			},
 		},
@@ -148,21 +132,41 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 				Summary: "specifies the help text for the metric.",
 				Details: "",
 			},
-			"LabelsFromPath": {
-				Summary: "specifies additional labels where the value is taken from the given JSONPath.",
+			"Labels": {
+				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
 				Details: "",
 			},
+			"JSONPath": {
+				Summary: "specifies the relative path from this marker.",
+				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
+			},
 			"List": {
-				Summary: "specifies a list of values to compare the given JSONPath against.",
+				Summary: "specifies a list of values to compare the given Value against.",
 				Details: "",
 			},
 			"LabelName": {
 				Summary: "specifies the key of the label which is used for each entry in List to expose the value.",
 				Details: "",
 			},
-			"JSONPath": {
-				Summary: "specifies the path to the field which gets used as value to compare against the list for equality.",
-				Details: "Note: This field directly maps to the valueFrom field in the custom resource configuration.",
+			"Value": {
+				Summary: "specifies the JSONPath to the field which gets used as value to compare against the list for equality, relative to the metric path.",
+				Details: "",
+			},
+		},
+	}
+}
+
+func (storeMarker) Help() *markers.DefinitionHelp {
+	return &markers.DefinitionHelp{
+		Category: "Metrics",
+		DetailedHelp: markers.DetailedHelp{
+			Summary: "enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.",
+			Details: "",
+		},
+		FieldHelp: map[string]markers.DetailedHelp{
+			"NamePrefix": {
+				Summary: "specifies the prefix for all metrics of this resource.",
+				Details: "Note: This field directly maps to the metricNamePrefix field in the resource's custom resource configuration.",
 			},
 		},
 	}
