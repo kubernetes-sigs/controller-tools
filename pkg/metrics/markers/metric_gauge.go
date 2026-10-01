@@ -42,7 +42,7 @@ func init() {
 
 // gaugeMarker defines a Gauge metric and uses the implicit path to the field joined by the provided JSONPath as path for the metric configuration.
 // Gauge is a metric which targets a Path that may be a single value, array, or object.
-// Arrays and objects will generate a metric per element and requre ValueFrom to be set.
+// Arrays and objects will generate a metric per element and require Value to be set.
 // Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge
 type gaugeMarker struct {
 	// Keys from the Generator struct.
@@ -54,20 +54,21 @@ type gaugeMarker struct {
 
 	// Keys from the MetricMeta struct.
 
-	// LabelsFromPath specifies additional labels where the value is taken from the given JSONPath.
-	LabelsFromPath map[string]jsonPath `marker:"labelsFromPath,optional"`
+	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	Labels map[string]jsonPath `marker:"labels,optional"`
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
 	JSONPath jsonPath `marker:"JSONPath,optional"`
 
 	// Keys from the MetricGauge struct.
 
-	// ValueFrom specifies the JSONPath to a numeric field that will be the metric value.
-	ValueFrom *jsonPath `marker:"valueFrom,optional"`
-	// LabelFromKey specifies a label which will be added to the metric having the object's key as value.
-	LabelFromKey string `marker:"labelFromKey,optional"`
-	// NilIsZero specifies to treat a not-existing field as zero value.
-	NilIsZero bool `marker:"nilIsZero,optional"`
+	// Value specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.
+	Value *jsonPath `marker:"value,optional"`
+	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
+	// Note: This is only meaningful if the metric path points to an object (map). It is not validated.
+	KeyLabel string `marker:"keyLabel,optional"`
+	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
+	MissingAsZero bool `marker:"missingAsZero,optional"`
 }
 
 var _ LocalGeneratorMarker = &gaugeMarker{}
@@ -75,14 +76,14 @@ var _ LocalGeneratorMarker = &gaugeMarker{}
 func (g gaugeMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
 	var err error
 	var valueFrom []string
-	if g.ValueFrom != nil {
-		valueFrom, err = g.ValueFrom.Parse()
+	if g.Value != nil {
+		valueFrom, err = g.Value.Parse()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse ValueFrom: %w", err)
+			return nil, fmt.Errorf("failed to parse Value: %w", err)
 		}
 	}
 
-	meta, err := newMetricMeta(basePath, g.JSONPath, g.LabelsFromPath)
+	meta, err := newMetricMeta(basePath, g.JSONPath, g.Labels)
 	if err != nil {
 		return nil, err
 	}
@@ -93,9 +94,9 @@ func (g gaugeMarker) ToGenerator(basePath ...string) (*config.Generator, error) 
 		Each: config.Metric{
 			Type: config.MetricTypeGauge,
 			Gauge: &config.MetricGauge{
-				NilIsZero:    g.NilIsZero,
+				NilIsZero:    g.MissingAsZero,
 				MetricMeta:   meta,
-				LabelFromKey: g.LabelFromKey,
+				LabelFromKey: g.KeyLabel,
 				ValueFrom:    valueFrom,
 			},
 		},

@@ -23,31 +23,33 @@ import (
 )
 
 const (
-	// GVKMarkerName is the marker for a GVK. Without a set GVKMarkerName the
-	// generator will not generate any configuration for this GVK.
-	GVKMarkerName = "k8s:controller-gen:metrics:gvk"
+	// StoreMarkerName is the marker for a store, which is a custom resource type
+	// (identified by its group, version and kind) to generate metrics for.
+	// Without a set StoreMarkerName the generator will not generate any configuration
+	// for this custom resource.
+	StoreMarkerName = "k8s:controller-gen:metrics:store"
 )
 
 func init() {
 	MarkerDefinitions = append(
 		MarkerDefinitions,
-		must(markers.MakeDefinition(GVKMarkerName, markers.DescribesType, gvkMarker{})).
-			help(gvkMarker{}.Help()),
+		must(markers.MakeDefinition(StoreMarkerName, markers.DescribesType, storeMarker{})).
+			help(storeMarker{}.Help()),
 	)
 }
 
 // +controllertools:marker:generateHelp:category=Metrics
 
-// gvkMarker enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.
-type gvkMarker struct {
+// storeMarker enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.
+type storeMarker struct {
 	// NamePrefix specifies the prefix for all metrics of this resource.
 	// Note: This field directly maps to the metricNamePrefix field in the resource's custom resource configuration.
 	NamePrefix string `marker:"namePrefix,optional"`
 }
 
-var _ ResourceMarker = gvkMarker{}
+var _ ResourceMarker = storeMarker{}
 
-func (n gvkMarker) ApplyToResource(resource *config.Resource) error {
+func (n storeMarker) ApplyToResource(resource *config.Resource) error {
 	if n.NamePrefix != "" {
 		resource.MetricNamePrefix = &n.NamePrefix
 	}

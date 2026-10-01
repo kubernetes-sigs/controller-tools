@@ -20,10 +20,30 @@ import (
 	"reflect"
 	"testing"
 
+	"sigs.k8s.io/controller-tools/pkg/markers"
+
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
 )
 
-func Test_labelFromPathMarker_ApplyToResource(t *testing.T) {
+// The label marker gets applied to the custom resource, which is only done for markers
+// on the type of the custom resource. Markers on fields would silently get ignored.
+func Test_labelMarker_onlyRegisteredForTypes(t *testing.T) {
+	found := false
+	for _, def := range MarkerDefinitions {
+		if def.Name != labelMarkerName {
+			continue
+		}
+		found = true
+		if def.Target != markers.DescribesType {
+			t.Errorf("marker %s must only be registered for types, got target %v", labelMarkerName, def.Target)
+		}
+	}
+	if !found {
+		t.Errorf("marker %s is not registered", labelMarkerName)
+	}
+}
+
+func Test_labelMarker_ApplyToResource(t *testing.T) {
 	type fields struct {
 		Name     string
 		JSONPath jsonPath
@@ -117,15 +137,15 @@ func Test_labelFromPathMarker_ApplyToResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := labelFromPathMarker{
+			n := labelMarker{
 				Name:     tt.fields.Name,
 				JSONPath: tt.fields.JSONPath,
 			}
 			if err := n.ApplyToResource(tt.resource); (err != nil) != tt.wantErr {
-				t.Errorf("labelFromPathMarker.ApplyToResource() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("labelMarker.ApplyToResource() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.resource, tt.wantResource) {
-				t.Errorf("labelFromPathMarker.ApplyToResource() = %v, want %v", tt.resource, tt.wantResource)
+				t.Errorf("labelMarker.ApplyToResource() = %v, want %v", tt.resource, tt.wantResource)
 			}
 		})
 	}

@@ -26,32 +26,32 @@ import (
 )
 
 const (
-	labelFromPathMarkerName = "k8s:controller-gen:metrics:labelFromPath"
+	labelMarkerName = "k8s:controller-gen:metrics:label"
 )
 
 func init() {
 	MarkerDefinitions = append(
 		MarkerDefinitions,
-		must(markers.MakeDefinition(labelFromPathMarkerName, markers.DescribesType, labelFromPathMarker{})).
-			help(labelFromPathMarker{}.Help()),
-		must(markers.MakeDefinition(labelFromPathMarkerName, markers.DescribesField, labelFromPathMarker{})).
-			help(labelFromPathMarker{}.Help()),
+		must(markers.MakeDefinition(labelMarkerName, markers.DescribesType, labelMarker{})).
+			help(labelMarker{}.Help()),
 	)
 }
 
 // +controllertools:marker:generateHelp:category=Metrics
 
-// labelFromPathMarker specifies additional labels for all metrics of this field or type.
-type labelFromPathMarker struct {
+// labelMarker specifies additional labels for all metrics of the custom resource.
+// It is only considered on the type of the custom resource, which is the type having the store marker.
+// The JSONPath is relative to the custom resource.
+type labelMarker struct {
 	// Name specifies the name of the label.
 	Name string
-	// JSONPath specifies the relative path to the value for the label.
+	// JSONPath specifies the path to the value for the label, relative to the custom resource.
 	JSONPath jsonPath `marker:"JSONPath"`
 }
 
-var _ ResourceMarker = labelFromPathMarker{}
+var _ ResourceMarker = labelMarker{}
 
-func (n labelFromPathMarker) ApplyToResource(resource *config.Resource) error {
+func (n labelMarker) ApplyToResource(resource *config.Resource) error {
 	if resource == nil {
 		return errors.New("expected resource to not be nil")
 	}

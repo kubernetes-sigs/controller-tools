@@ -53,18 +53,20 @@ type stateSetMarker struct {
 
 	// Keys from the MetricMeta struct.
 
-	// LabelsFromPath specifies additional labels where the value is taken from the given JSONPath.
-	LabelsFromPath map[string]jsonPath `marker:"labelsFromPath,optional"`
+	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	Labels map[string]jsonPath `marker:"labels,optional"`
+	// JSONPath specifies the relative path from this marker.
+	// Note: This field get's appended to the path field in the custom resource configuration.
+	JSONPath jsonPath `marker:"JSONPath,optional"`
 
 	// Keys from the MetricStateSet struct.
 
-	// List specifies a list of values to compare the given JSONPath against.
+	// List specifies a list of values to compare the given Value against.
 	List []string `marker:"list"`
 	// LabelName specifies the key of the label which is used for each entry in List to expose the value.
 	LabelName string `marker:"labelName,optional"`
-	// JSONPath specifies the path to the field which gets used as value to compare against the list for equality.
-	// Note: This field directly maps to the valueFrom field in the custom resource configuration.
-	JSONPath *jsonPath `marker:"JSONPath,optional"`
+	// Value specifies the JSONPath to the field which gets used as value to compare against the list for equality, relative to the metric path.
+	Value *jsonPath `marker:"value,optional"`
 }
 
 var _ LocalGeneratorMarker = &stateSetMarker{}
@@ -72,14 +74,14 @@ var _ LocalGeneratorMarker = &stateSetMarker{}
 func (s stateSetMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
 	var valueFrom []string
 	var err error
-	if s.JSONPath != nil {
-		valueFrom, err = s.JSONPath.Parse()
+	if s.Value != nil {
+		valueFrom, err = s.Value.Parse()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse JSONPath: %w", err)
+			return nil, fmt.Errorf("failed to parse Value: %w", err)
 		}
 	}
 
-	meta, err := newMetricMeta(basePath, "", s.LabelsFromPath)
+	meta, err := newMetricMeta(basePath, s.JSONPath, s.Labels)
 	if err != nil {
 		return nil, err
 	}
