@@ -10025,6 +10025,15 @@ spec:
                   type: string
                 minItems: 3
                 type: array
+              mapAliasField:
+                additionalProperties:
+                  type: string
+                description: This tests that validation on a map type alias is handled
+                  correctly.
+                type: object
+                x-kubernetes-validations:
+                - message: keys must be non-empty
+                  rule: self.all(key, size(key) > 0)
               mapOfArraysOfFloats:
                 additionalProperties:
                   items:
@@ -10251,6 +10260,17 @@ spec:
                 x-kubernetes-validations:
                 - messageExpression: self + ' has odd length, must be even'
                   rule: self.size() % 2 == 0
+              structAliasField:
+                description: |-
+                  This tests that a struct type alias resolves to the underlying named type.
+                  Note: markers on the alias declaration are not applied for struct aliases
+                  (they resolve to the underlying named type via $ref).
+                properties:
+                  fromEmbedded:
+                    description: FromEmbedded is a field from the embedded struct
+                      that was used through an alias type.
+                    type: string
+                type: object
               structWithSeveralFields:
                 description: A struct that can only be entirely replaced
                 properties:
