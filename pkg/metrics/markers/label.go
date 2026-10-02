@@ -19,10 +19,11 @@ package markers
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 const (
@@ -41,6 +42,7 @@ func init() {
 
 // labelMarker specifies additional labels for all metrics of the custom resource.
 // It is only considered on the type of the custom resource, which is the type having the store marker.
+// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
 // The JSONPath is relative to the custom resource.
 type labelMarker struct {
 	// Name specifies the name of the label.
@@ -51,31 +53,27 @@ type labelMarker struct {
 
 var _ ResourceMarker = labelMarker{}
 
-func (n labelMarker) ApplyToResource(resource *config.Resource) error {
+func (n labelMarker) ApplyToResource(resource *model.Resource) error {
 	if resource == nil {
 		return errors.New("expected resource to not be nil")
 	}
 
-	jsonPathElems, err := n.JSONPath.Parse()
+	path, err := n.JSONPath.Parse()
 	if err != nil {
 		return err
 	}
 
-	if resource.LabelsFromPath == nil {
-		resource.LabelsFromPath = map[string][]string{}
-	}
-
-	if jsonPath, labelExists := resource.LabelsFromPath[n.Name]; labelExists {
-		if len(jsonPathElems) != len(jsonPath) {
+	for _, label := range resource.Labels {
+		if label.Name != n.Name {
+			continue
+		}
+		if !slices.Equal(label.Path, path) {
 			return fmt.Errorf("duplicate definition for label %q", n.Name)
 		}
-		for i, v := range jsonPath {
-			if v != jsonPathElems[i] {
-				return fmt.Errorf("duplicate definition for label %q", n.Name)
-			}
-		}
+		// Identical duplicate definitions are fine.
+		return nil
 	}
 
-	resource.LabelsFromPath[n.Name] = jsonPathElems
+	resource.Labels = append(resource.Labels, model.Label{Name: n.Name, Path: path})
 	return nil
 }

@@ -16,11 +16,16 @@ limitations under the License.
 
 // Package testdata contains the types used to test and demonstrate the metrics generator.
 //
-// Changes to the packages below this directory may require to regenerate the
-// `metrics.yaml`, `rbac.yaml` and `bar.example.com_foos.yaml` files. Otherwise the tests in
-// ../generate_integration_test.go may fail.
-// The below marker can be used to regenerate the files by running the following command:
+// Changes to the packages below this directory may require to regenerate the expected output:
+// the CustomResourceDefinition `bar.example.com_foos.yaml` and the files in the directories
+// `resource-state-metrics` and `kube-state-metrics`, one for each target of the generator.
+// Otherwise the tests in ../generate_integration_test.go may fail.
+// The below markers can be used to regenerate the files by running the following command:
 // $ go generate ./pkg/metrics/testdata
 //
-//go:generate sh -c "go run ../../../cmd/controller-gen crd metrics:experimental=true paths=./... output:dir=."
+// The default target of the generator is resource-state-metrics.
+//
+//go:generate sh -c "go run ../../../cmd/controller-gen crd paths=./... output:dir=."
+//go:generate sh -c "go run ../../../cmd/controller-gen metrics:experimental=true,name=foo-metrics,namespace=default paths=./... output:dir=./resource-state-metrics"
+//go:generate sh -c "go run ../../../cmd/controller-gen metrics:experimental=true,target=kube-state-metrics paths=./... output:dir=./kube-state-metrics"
 package testdata

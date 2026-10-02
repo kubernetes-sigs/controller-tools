@@ -22,7 +22,7 @@ import (
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 // The label marker gets applied to the custom resource, which is only done for markers
@@ -51,86 +51,52 @@ func Test_labelMarker_ApplyToResource(t *testing.T) {
 	tests := []struct {
 		name         string
 		fields       fields
-		resource     *config.Resource
-		wantResource *config.Resource
+		resource     *model.Resource
+		wantResource *model.Resource
 		wantErr      bool
 	}{
 		{
-			name: "happy path",
-			fields: fields{
-				Name:     "foo",
-				JSONPath: ".bar",
-			},
-			resource: &config.Resource{},
-			wantResource: &config.Resource{
-				Labels: config.Labels{
-					LabelsFromPath: map[string][]string{
-						"foo": {"bar"},
-					},
-				},
-			},
-			wantErr: false,
+			name:         "happy path",
+			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			resource:     &model.Resource{},
+			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
-			name: "label already exists with same path length",
-			fields: fields{
-				Name:     "foo",
-				JSONPath: ".bar",
-			},
-			resource: &config.Resource{
-				Labels: config.Labels{
-					LabelsFromPath: map[string][]string{
-						"foo": {"other"},
-					},
-				},
-			},
-			wantResource: &config.Resource{
-				Labels: config.Labels{
-					LabelsFromPath: map[string][]string{
-						"foo": {"other"},
-					},
-				},
-			},
-			wantErr: true,
+			name:         "other label exists",
+			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			resource:     &model.Resource{Labels: []model.Label{{Name: "other", Path: model.Path{"x"}}}},
+			wantResource: &model.Resource{Labels: []model.Label{{Name: "other", Path: model.Path{"x"}}, {Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
-			name: "label already exists with different path length",
-			fields: fields{
-				Name:     "foo",
-				JSONPath: ".bar",
-			},
-			resource: &config.Resource{
-				Labels: config.Labels{
-					LabelsFromPath: map[string][]string{
-						"foo": {"other", "path"},
-					},
-				},
-			},
-			wantResource: &config.Resource{
-				Labels: config.Labels{
-					LabelsFromPath: map[string][]string{
-						"foo": {"other", "path"},
-					},
-				},
-			},
-			wantErr: true,
+			name:         "label already exists with identical path",
+			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
+			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
-			name: "invalid json path",
-			fields: fields{
-				Name:     "foo",
-				JSONPath: "{.bar}",
-			},
-			resource:     &config.Resource{},
-			wantResource: &config.Resource{},
+			name:         "label already exists with same path length",
+			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other"}}}},
+			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other"}}}},
 			wantErr:      true,
 		},
 		{
-			name: "nil resource",
-			fields: fields{
-				Name:     "foo",
-				JSONPath: "{.bar}",
-			},
+			name:         "label already exists with different path length",
+			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other", "path"}}}},
+			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other", "path"}}}},
+			wantErr:      true,
+		},
+		{
+			name:         "invalid json path",
+			fields:       fields{Name: "foo", JSONPath: "{.bar}"},
+			resource:     &model.Resource{},
+			wantResource: &model.Resource{},
+			wantErr:      true,
+		},
+		{
+			name:     "nil resource",
+			fields:   fields{Name: "foo", JSONPath: "{.bar}"},
 			resource: nil,
 			wantErr:  true,
 		},

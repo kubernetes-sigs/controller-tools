@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 func Test_jsonPath_Parse(t *testing.T) {
@@ -73,52 +73,67 @@ func Test_jsonPath_Parse(t *testing.T) {
 	}
 }
 
-func Test_newMetricMeta(t *testing.T) {
+func Test_newPath(t *testing.T) {
 	tests := []struct {
-		name               string
-		basePath           []string
-		j                  jsonPath
-		jsonLabelsFromPath map[string]jsonPath
-		want               config.MetricMeta
+		name     string
+		basePath []string
+		j        jsonPath
+		want     model.Path
 	}{
-		{
-			name:               "with basePath and jsonpath, without jsonLabelsFromPath",
-			basePath:           []string{"foo"},
-			j:                  jsonPath(".bar"),
-			jsonLabelsFromPath: map[string]jsonPath{},
-			want: config.MetricMeta{
-				Path:           []string{"foo", "bar"},
-				LabelsFromPath: map[string][]string{},
-			},
-		},
-		{
-			name:               "with basePath, jsonpath and jsonLabelsFromPath",
-			basePath:           []string{"foo"},
-			j:                  jsonPath(".bar"),
-			jsonLabelsFromPath: map[string]jsonPath{"some": ".label.from.path"},
-			want: config.MetricMeta{
-				Path: []string{"foo", "bar"},
-				LabelsFromPath: map[string][]string{
-					"some": {"label", "from", "path"},
-				},
-			},
-		},
-		{
-			name:               "no basePath, jsonpath and jsonLabelsFromPath",
-			basePath:           []string{},
-			j:                  jsonPath(""),
-			jsonLabelsFromPath: map[string]jsonPath{},
-			want: config.MetricMeta{
-				Path:           []string{},
-				LabelsFromPath: map[string][]string{},
-			},
-		},
+		{name: "with basePath and jsonpath", basePath: []string{"foo"}, j: ".bar", want: model.Path{"foo", "bar"}},
+		{name: "without jsonpath", basePath: []string{"foo"}, j: "", want: model.Path{"foo"}},
+		{name: "without basePath", basePath: nil, j: ".bar", want: model.Path{"bar"}},
+		{name: "empty", basePath: []string{}, j: "", want: model.Path{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := newMetricMeta(tt.basePath, tt.j, tt.jsonLabelsFromPath); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("newMetricMeta() = %v, want %v", got, tt.want)
+			got, err := newPath(tt.basePath, tt.j)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("newPath() = %#v, want %#v", got, tt.want)
 			}
 		})
+	}
+
+	t.Run("does not modify the basePath", func(t *testing.T) {
+		basePath := make([]string, 1, 10)
+		basePath[0] = "foo"
+		if _, err := newPath(basePath, ".bar"); err != nil {
+			t.Fatal(err)
+		}
+		if got := basePath[:2][1]; got != "" {
+			t.Errorf("newPath() modified the backing array of basePath: %q", got)
+		}
+	})
+
+	t.Run("invalid jsonpath", func(t *testing.T) {
+		if _, err := newPath(nil, "{.bar}"); err == nil {
+			t.Error("expected an error")
+		}
+	})
+}
+
+func Test_newLabels(t *testing.T) {
+	got, err := newLabels(map[string]jsonPath{
+		"b": ".label.from.path",
+		"a": ".",
+		"c": ".c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []model.Label{
+		{Name: "a", Path: model.Path{}},
+		{Name: "b", Path: model.Path{"label", "from", "path"}},
+		{Name: "c", Path: model.Path{"c"}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("newLabels() = %v, want %v", got, want)
+	}
+
+	if _, err := newLabels(map[string]jsonPath{"a": "{.bar}"}); err == nil {
+		t.Error("expected an error for an invalid jsonpath")
 	}
 }

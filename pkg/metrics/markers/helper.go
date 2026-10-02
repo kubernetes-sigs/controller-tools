@@ -18,11 +18,13 @@ package markers
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"k8s.io/client-go/util/jsonpath"
 	ctrlmarkers "sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 type markerDefinitionWithHelp struct {
@@ -89,33 +91,34 @@ func (j jsonPath) Parse() ([]string, error) {
 	return ret, nil
 }
 
-func newMetricMeta(basePath []string, j jsonPath, jsonLabelsFromPath map[string]jsonPath) (config.MetricMeta, error) {
-	path := basePath
-	if j != "" {
-		valueFrom, err := j.Parse()
-		if err != nil {
-			return config.MetricMeta{}, fmt.Errorf("failed to parse JSONPath %q", j)
-		}
-		if len(valueFrom) > 0 {
-			path = append(path, valueFrom...)
-		}
+// newPath returns the path of j appended to the basePath.
+func newPath(basePath []string, j jsonPath) (model.Path, error) {
+	path := slices.Clone(basePath)
+	if j == "" {
+		return path, nil
 	}
 
-	labelsFromPath := map[string][]string{}
-	for k, v := range jsonLabelsFromPath {
-		path := []string{}
-		var err error
-		if v != "." {
-			path, err = v.Parse()
+	elements, err := j.Parse()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse JSONPath %q: %w", j, err)
+	}
+	return append(path, elements...), nil
+}
+
+// newLabels returns the labels sorted by name to get a deterministic output.
+// The path "." means the label has the value of the field itself.
+func newLabels(labels map[string]jsonPath) ([]model.Label, error) {
+	result := make([]model.Label, 0, len(labels))
+	for _, name := range slices.Sorted(maps.Keys(labels)) {
+		path := model.Path{}
+		if labels[name] != "." {
+			var err error
+			path, err = labels[name].Parse()
 			if err != nil {
-				return config.MetricMeta{}, fmt.Errorf("failed to parse JSONPath %q", v)
+				return nil, fmt.Errorf("failed to parse JSONPath %q of label %q: %w", labels[name], name, err)
 			}
 		}
-		labelsFromPath[k] = path
+		result = append(result, model.Label{Name: name, Path: path})
 	}
-
-	return config.MetricMeta{
-		Path:           path,
-		LabelsFromPath: labelsFromPath,
-	}, nil
+	return result, nil
 }
