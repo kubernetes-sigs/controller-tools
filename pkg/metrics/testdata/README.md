@@ -7,7 +7,7 @@ The files in this directory are used for testing the `controller-gen metrics` ge
 These files are used in the test at [generate_integration_test.go](../generate_integration_test.go) to verify that the resulting output does not change during changes in the codebase.
 
 If there are intended changes these files need to get regenerated to make the test succeed again.
-This could be done by running [hack/update-generated.sh](../../../hack/update-generated.sh) from the root of the repository, which also runs the `go:generate` marker inside [foo_types.go](foo_types.go):
+This could be done by running [hack/update-generated.sh](../../../hack/update-generated.sh) from the root of the repository, which also runs the `go:generate` marker inside [generate.go](generate.go):
 
 ```sh
 ./hack/update-generated.sh
