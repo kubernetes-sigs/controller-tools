@@ -33,11 +33,16 @@ fi
 # Add the newly built Kubernetes version to the releases.yaml file with yq as an object key under releases
 yq eval ".releases += {\"${KUBERNETES_VERSION}\": {}}" -i "${ROOT}"/envtest-releases.yaml
 
-for file in "${ROOT}"/out/*.tar.gz; do
-  file_name=$(basename "${file}")
-  file_hash=$(awk '{ print $1 }' < "${file}.sha512")
-  self_link=https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${file_name}
+sha_files=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/kubernetes-sigs/controller-tools/releases/tags/envtest-${KUBERNETES_VERSION} |
+  jq '.assets[] | select(.name | contains("sha512")) | .name' -r)
 
+for sha_file in ${sha_files}; do
+  file_name=${sha_file%".sha512"}
+  file_hash=$(curl -L https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${sha_file} | awk '{ print $1 }')
+  self_link=https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-${KUBERNETES_VERSION}/${file_name}
   yq eval \
     ".releases[\"${KUBERNETES_VERSION}\"] += {\"${file_name}\": {\"hash\": \"${file_hash}\", \"selfLink\": \"${self_link}\"}}" \
     -i "${ROOT}"/envtest-releases.yaml
