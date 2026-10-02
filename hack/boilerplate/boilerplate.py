@@ -143,7 +143,10 @@ def file_extension(filename):
 skipped_dirs = ['_output', '.git', "hack/boilerplate/test"]
 
 # list all the files contain 'DO NOT EDIT', but are not generated
-skipped_ungenerated_files = ['hack/boilerplate/boilerplate.py']
+skipped_ungenerated_files = [
+    'hack/boilerplate/boilerplate.py',
+    'pkg/applyconfiguration/applyconfiguration_integration_test.go',
+]
 
 def normalize_files(files):
     newfiles = []
