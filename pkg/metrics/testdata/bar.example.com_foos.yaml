@@ -14,7 +14,7 @@ spec:
     singular: foo
   scope: Namespaced
   versions:
-  - name: foo
+  - name: v1
     schema:
       openAPIV3Schema:
         description: Foo is a test object.

@@ -14,16 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Changes to this file or the packages below this directory may require to regenerate the
-// `metrics.yaml`, `rbac.yaml` and `bar.example.com_foos.yaml` files. Otherwise the tests in
-// ../generate_integration_test.go may fail.
-// The below marker can be used to regenerate the files by running `hack/update-generated.sh`
-// or the following command:
-// $ go generate ./pkg/metrics/testdata
-//go:generate sh -c "go run ../../../cmd/controller-gen crd metrics:experimental=true paths=./... output:dir=."
-
 // +groupName=bar.example.com
-package foo
+package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

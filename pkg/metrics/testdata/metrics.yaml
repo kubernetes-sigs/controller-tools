@@ -7,7 +7,7 @@ spec:
   - groupVersionKind:
       group: bar.example.com
       kind: Foo
-      version: foo
+      version: v1
     labelsFromPath:
       app_name:
       - metadata
