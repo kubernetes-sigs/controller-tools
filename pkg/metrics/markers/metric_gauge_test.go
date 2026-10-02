@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 func Test_gaugeMarker_ToGenerator(t *testing.T) {
@@ -28,7 +28,7 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 		name        string
 		gaugeMarker gaugeMarker
 		basePath    []string
-		want        *config.Generator
+		want        *model.Generator
 	}{
 		{
 			name: "Happy path",
@@ -36,17 +36,11 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 				Value: jsonPathPointer(".foo"),
 			},
 			basePath: []string{},
-			want: &config.Generator{
-				Each: config.Metric{
-					Type: config.MetricTypeGauge,
-					Gauge: &config.MetricGauge{
-						MetricMeta: config.MetricMeta{
-							LabelsFromPath: map[string][]string{},
-							Path:           []string{},
-						},
-						ValueFrom: []string{"foo"},
-					},
-				},
+			want: &model.Generator{
+				Type:   model.MetricTypeGauge,
+				Path:   model.Path{},
+				Labels: []model.Label{},
+				Value:  model.Path{"foo"},
 			},
 		},
 		{
@@ -58,18 +52,12 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 				Labels:        map[string]jsonPath{"l": ".l"},
 			},
 			basePath: []string{"spec"},
-			want: &config.Generator{
-				Each: config.Metric{
-					Type: config.MetricTypeGauge,
-					Gauge: &config.MetricGauge{
-						MetricMeta: config.MetricMeta{
-							LabelsFromPath: map[string][]string{"l": {"l"}},
-							Path:           []string{"spec", "bar"},
-						},
-						LabelFromKey: "key",
-						NilIsZero:    true,
-					},
-				},
+			want: &model.Generator{
+				Type:          model.MetricTypeGauge,
+				Path:          model.Path{"spec", "bar"},
+				Labels:        []model.Label{{Name: "l", Path: model.Path{"l"}}},
+				KeyLabel:      "key",
+				MissingAsZero: true,
 			},
 		},
 	}

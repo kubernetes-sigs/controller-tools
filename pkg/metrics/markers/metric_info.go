@@ -19,7 +19,7 @@ package markers
 import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 const (
@@ -52,6 +52,8 @@ type infoMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: If the path points to a map, at most one label for its entries is supported, either keyLabel or one of labels, as the labels can't be aligned with each other by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
@@ -60,27 +62,30 @@ type infoMarker struct {
 	// Keys from the MetricInfo struct.
 
 	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
-	// Note: This is only meaningful if the metric path points to an object (map). It is not validated.
+	// Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.
+	// Note: If the path points to a map, at most one label for its entries is supported, either this label or one of labels, as the labels can't be aligned with each other by all targets.
 	KeyLabel string `marker:"keyLabel,optional"`
 }
 
 var _ LocalGeneratorMarker = &infoMarker{}
 
-func (i infoMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
-	meta, err := newMetricMeta(basePath, i.JSONPath, i.Labels)
+func (i infoMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
+	path, err := newPath(basePath, i.JSONPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &config.Generator{
-		Name: i.Name,
-		Help: i.MetricHelp,
-		Each: config.Metric{
-			Type: config.MetricTypeInfo,
-			Info: &config.MetricInfo{
-				MetricMeta:   meta,
-				LabelFromKey: i.KeyLabel,
-			},
-		},
+	labels, err := newLabels(i.Labels)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Generator{
+		Name:     i.Name,
+		Help:     i.MetricHelp,
+		Type:     model.MetricTypeInfo,
+		Path:     path,
+		Labels:   labels,
+		KeyLabel: i.KeyLabel,
 	}, nil
 }

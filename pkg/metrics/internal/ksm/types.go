@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package config contains a copy of the types describing the custom resource state
-// configuration of kube-state-metrics:
+// Package ksm contains the output builder for kube-state-metrics and a copy of the types
+// describing the custom resource state configuration of kube-state-metrics:
 // https://github.com/kubernetes/kube-state-metrics/blob/v2.20.0/pkg/customresourcestate/config.go
 // https://github.com/kubernetes/kube-state-metrics/blob/v2.20.0/pkg/customresourcestate/config_metrics_types.go
 //
 // The following modifications got applied:
-//   - Rename the package to `config` and merge both files into this one.
+//   - Rename the package to `ksm` and merge both files into this one.
 //   - Rename `Metrics` to `CustomResourceStateMetrics` (the kind used in the configuration file)
 //     and `MetricsSpec` to `CustomResourceStateMetricsSpec`.
 //   - Drop `const customResourceState`, `ConfigDecoder` and all functions, only preserve structs.
@@ -28,7 +28,7 @@ limitations under the License.
 //   - Drop the `yaml` struct tags, the output gets written using the `json` struct tags.
 //   - Add `omitempty` to all fields which don't have to be set, to not render zero values.
 //   - Replace the `+union` markers with a comment.
-package config
+package ksm
 
 import (
 	"fmt"
@@ -122,9 +122,9 @@ type Metric struct {
 	Info *MetricInfo `json:"info,omitempty"`
 }
 
-// KubeStateMetricsVersion defines which version of kube-state-metrics these types
+// Version defines which version of kube-state-metrics these types
 // are based on and the output file should be compatible to.
-const KubeStateMetricsVersion = "v2.20.0"
+const Version = "v2.20.0"
 
 // MetricType is the type of a metric.
 type MetricType string

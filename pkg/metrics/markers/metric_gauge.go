@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 const (
@@ -55,6 +55,8 @@ type gaugeMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
@@ -63,42 +65,46 @@ type gaugeMarker struct {
 	// Keys from the MetricGauge struct.
 
 	// Value specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.
+	// Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime.
 	Value *jsonPath `marker:"value,optional"`
 	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
-	// Note: This is only meaningful if the metric path points to an object (map). It is not validated.
+	// Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.
+	// Note: If the path points to a map, labels for its entries, including this label, are not supported by gauge metrics, as they can't be aligned with the values by all targets.
 	KeyLabel string `marker:"keyLabel,optional"`
 	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
+	// Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.
 	MissingAsZero bool `marker:"missingAsZero,optional"`
 }
 
 var _ LocalGeneratorMarker = &gaugeMarker{}
 
-func (g gaugeMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
-	var err error
-	var valueFrom []string
+func (g gaugeMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
+	path, err := newPath(basePath, g.JSONPath)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := newLabels(g.Labels)
+	if err != nil {
+		return nil, err
+	}
+
+	var value model.Path
 	if g.Value != nil {
-		valueFrom, err = g.Value.Parse()
+		value, err = g.Value.Parse()
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Value: %w", err)
 		}
 	}
 
-	meta, err := newMetricMeta(basePath, g.JSONPath, g.Labels)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config.Generator{
-		Name: g.Name,
-		Help: g.MetricHelp,
-		Each: config.Metric{
-			Type: config.MetricTypeGauge,
-			Gauge: &config.MetricGauge{
-				NilIsZero:    g.MissingAsZero,
-				MetricMeta:   meta,
-				LabelFromKey: g.KeyLabel,
-				ValueFrom:    valueFrom,
-			},
-		},
+	return &model.Generator{
+		Name:          g.Name,
+		Help:          g.MetricHelp,
+		Type:          model.MetricTypeGauge,
+		Path:          path,
+		Labels:        labels,
+		KeyLabel:      g.KeyLabel,
+		Value:         value,
+		MissingAsZero: g.MissingAsZero,
 	}, nil
 }

@@ -19,7 +19,7 @@ package markers
 import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 var (
@@ -35,14 +35,14 @@ var (
 
 // ResourceMarker is a marker that configures a custom resource.
 type ResourceMarker interface {
-	// ApplyToCRD applies this marker to the given CRD, in the given version
-	// within that CRD.  It's called after everything else in the CRD is populated.
-	ApplyToResource(resource *config.Resource) error
+	// ApplyToResource applies this marker to the given resource.
+	// It's called after the metrics of the resource are populated.
+	ApplyToResource(resource *model.Resource) error
 }
 
-// LocalGeneratorMarker is a marker that creates a custom resource metric generator.
+// LocalGeneratorMarker is a marker that defines a metric of a custom resource.
 type LocalGeneratorMarker interface {
-	// ApplyToCRD applies this marker to the given CRD, in the given version
-	// within that CRD.  It's called after everything else in the CRD is populated.
-	ToGenerator(basePath ...string) (*config.Generator, error)
+	// ToGenerator creates the metric. The basePath is the path to the field the marker is set on,
+	// relative to the type the marker is set on.
+	ToGenerator(basePath ...string) (*model.Generator, error)
 }

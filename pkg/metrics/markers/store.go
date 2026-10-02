@@ -19,7 +19,7 @@ package markers
 import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 const (
@@ -43,15 +43,16 @@ func init() {
 // storeMarker enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.
 type storeMarker struct {
 	// NamePrefix specifies the prefix for all metrics of this resource.
-	// Note: This field directly maps to the metricNamePrefix field in the resource's custom resource configuration.
+	// Note: With the kube-state-metrics target this field directly maps to the metricNamePrefix field in the resource's custom resource configuration.
+	// With the resource-state-metrics target the prefix and an underscore are added to the name of every metric.
 	NamePrefix string `marker:"namePrefix,optional"`
 }
 
 var _ ResourceMarker = storeMarker{}
 
-func (n storeMarker) ApplyToResource(resource *config.Resource) error {
+func (n storeMarker) ApplyToResource(resource *model.Resource) error {
 	if n.NamePrefix != "" {
-		resource.MetricNamePrefix = &n.NamePrefix
+		resource.NamePrefix = &n.NamePrefix
 	}
 	return nil
 }

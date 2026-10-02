@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 const (
@@ -54,6 +54,8 @@ type stateSetMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
+	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
@@ -71,32 +73,33 @@ type stateSetMarker struct {
 
 var _ LocalGeneratorMarker = &stateSetMarker{}
 
-func (s stateSetMarker) ToGenerator(basePath ...string) (*config.Generator, error) {
-	var valueFrom []string
-	var err error
+func (s stateSetMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
+	path, err := newPath(basePath, s.JSONPath)
+	if err != nil {
+		return nil, err
+	}
+
+	labels, err := newLabels(s.Labels)
+	if err != nil {
+		return nil, err
+	}
+
+	var value model.Path
 	if s.Value != nil {
-		valueFrom, err = s.Value.Parse()
+		value, err = s.Value.Parse()
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Value: %w", err)
 		}
 	}
 
-	meta, err := newMetricMeta(basePath, s.JSONPath, s.Labels)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config.Generator{
-		Name: s.Name,
-		Help: s.MetricHelp,
-		Each: config.Metric{
-			Type: config.MetricTypeStateSet,
-			StateSet: &config.MetricStateSet{
-				MetricMeta: meta,
-				List:       s.List,
-				LabelName:  s.LabelName,
-				ValueFrom:  valueFrom,
-			},
-		},
+	return &model.Generator{
+		Name:      s.Name,
+		Help:      s.MetricHelp,
+		Type:      model.MetricTypeStateSet,
+		Path:      path,
+		Labels:    labels,
+		Value:     value,
+		List:      s.List,
+		LabelName: s.LabelName,
 	}, nil
 }

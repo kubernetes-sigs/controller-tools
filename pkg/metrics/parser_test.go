@@ -21,15 +21,15 @@ import (
 	"testing"
 
 	ctrlmarkers "sigs.k8s.io/controller-tools/pkg/markers"
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 type fakeGeneratorMarker struct {
 	name string
 }
 
-func (f fakeGeneratorMarker) ToGenerator(_ ...string) (*config.Generator, error) {
-	return &config.Generator{Name: f.name}, nil
+func (f fakeGeneratorMarker) ToGenerator(_ ...string) (*model.Generator, error) {
+	return &model.Generator{Name: f.name}, nil
 }
 
 func Test_generatorsFromMarkers_deterministicOrder(t *testing.T) {
@@ -42,13 +42,13 @@ func Test_generatorsFromMarkers_deterministicOrder(t *testing.T) {
 
 	// Iterating over a map is random, so run multiple times to make a flaky ordering visible.
 	for range 50 {
-		generators, err := generatorsFromMarkers(markerValues)
+		metrics, err := generatorsFromMarkers(markerValues)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := make([]string, 0, len(generators))
-		for _, g := range generators {
-			got = append(got, g.Name)
+		got := make([]string, 0, len(metrics))
+		for _, m := range metrics {
+			got = append(got, m.Name)
 		}
 		if !slices.Equal(got, want) {
 			t.Fatalf("generatorsFromMarkers() order = %v, want %v", got, want)
@@ -57,24 +57,17 @@ func Test_generatorsFromMarkers_deterministicOrder(t *testing.T) {
 }
 
 func Test_addPathPrefixOnGenerator(t *testing.T) {
-	newGauge := func() config.Generator {
-		return config.Generator{Each: config.Metric{
-			Type:  config.MetricTypeGauge,
-			Gauge: &config.MetricGauge{MetricMeta: config.MetricMeta{Path: []string{"bar"}}},
-		}}
-	}
-
 	tests := []struct {
 		name   string
 		prefix []string
-		want   []string
+		want   model.Path
 	}{
-		{name: "prefix", prefix: []string{"foo"}, want: []string{"foo", "bar"}},
-		{name: "no prefix for inlined fields", prefix: nil, want: []string{"bar"}},
+		{name: "prefix", prefix: []string{"foo"}, want: model.Path{"foo", "bar"}},
+		{name: "no prefix for inlined fields", prefix: nil, want: model.Path{"bar"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := addPathPrefixOnGenerator(newGauge(), tt.prefix).Each.Gauge.Path
+			got := addPathPrefixOnGenerator(model.Generator{Path: model.Path{"bar"}}, tt.prefix).Path
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("addPathPrefixOnGenerator() path = %v, want %v", got, tt.want)
 			}

@@ -30,14 +30,16 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	ctrlmarkers "sigs.k8s.io/controller-tools/pkg/markers"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 	"sigs.k8s.io/controller-tools/pkg/metrics/markers"
 )
 
 type parser struct {
 	*crd.Parser
 
-	CustomResourceStates map[crd.TypeIdent]*config.Resource
+	// resources contains the metrics of the custom resources. The value is nil for
+	// types which are visited but don't have the store marker.
+	resources map[crd.TypeIdent]*model.Resource
 
 	// inProgress contains the types for which generators are currently getting
 	// created to not recurse endlessly on self-referencing types.
@@ -46,23 +48,23 @@ type parser struct {
 
 func newParser(p *crd.Parser) *parser {
 	return &parser{
-		Parser:               p,
-		CustomResourceStates: make(map[crd.TypeIdent]*config.Resource),
-		inProgress:           make(map[crd.TypeIdent]struct{}),
+		Parser:     p,
+		resources:  make(map[crd.TypeIdent]*model.Resource),
+		inProgress: make(map[crd.TypeIdent]struct{}),
 	}
 }
 
-// NeedResourceFor creates the customresourcestate.Resource object for the given
+// NeedResourceFor creates the model.Resource object for the given
 // GroupKind located at the package identified by packageID.
 func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind) error {
 	typeIdent := crd.TypeIdent{Package: pkg, Name: groupKind.Kind}
 	// Skip if type was already processed.
-	if _, exists := p.CustomResourceStates[typeIdent]; exists {
+	if _, exists := p.resources[typeIdent]; exists {
 		return nil
 	}
 
 	// Already mark the cacheID so the next time it enters NeedResourceFor it skips early.
-	p.CustomResourceStates[typeIdent] = nil
+	p.resources[typeIdent] = nil
 
 	// Build the type identifier for the custom resource.
 	typeInfo := p.Types[typeIdent]
@@ -82,10 +84,13 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 	if err != nil {
 		return err
 	}
+	if object := pkg.Types.Scope().Lookup(typeIdent.Name); object != nil {
+		annotatePathKinds(metrics, object.Type())
+	}
 
 	// Initialize the Resource object.
-	resource := config.Resource{
-		GroupVersionKind: config.GroupVersionKind{
+	resource := model.Resource{
+		GroupVersionKind: model.GroupVersionKind{
 			Group:   groupKind.Group,
 			Kind:    groupKind.Kind,
 			Version: p.GroupVersions[pkg].Version,
@@ -105,12 +110,17 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 		}
 	}
 
-	p.CustomResourceStates[typeIdent] = &resource
+	// Sort the labels to get a deterministic output.
+	slices.SortFunc(resource.Labels, func(a, b model.Label) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	p.resources[typeIdent] = &resource
 	return nil
 }
 
 type generatorRequester interface {
-	NeedMetricsGeneratorFor(typ crd.TypeIdent) ([]config.Generator, error)
+	NeedMetricsGeneratorFor(typ crd.TypeIdent) ([]model.Generator, error)
 }
 
 // generatorContext stores and provides information across a hierarchy of metric generators generation.
@@ -129,9 +139,9 @@ func newGeneratorContext(pkg *loader.Package, req generatorRequester) *generator
 	}
 }
 
-// NeedMetricsGeneratorFor creates the customresourcestate.Generator object for a
+// NeedMetricsGeneratorFor creates the model.Generator objects for a
 // Custom Resource.
-func (p *parser) NeedMetricsGeneratorFor(typ crd.TypeIdent) ([]config.Generator, error) {
+func (p *parser) NeedMetricsGeneratorFor(typ crd.TypeIdent) ([]model.Generator, error) {
 	// Types of other packages are only known after the package got indexed.
 	p.NeedPackage(typ.Package)
 
@@ -202,8 +212,8 @@ func sortedMarkerNames(m ctrlmarkers.MarkerValues) []string {
 	return slices.Sorted(maps.Keys(m))
 }
 
-func generatorsFromMarkers(m ctrlmarkers.MarkerValues, basePath ...string) ([]config.Generator, error) {
-	generators := []config.Generator{}
+func generatorsFromMarkers(m ctrlmarkers.MarkerValues, basePath ...string) ([]model.Generator, error) {
+	generators := []model.Generator{}
 
 	for _, markerName := range sortedMarkerNames(m) {
 		for _, val := range m[markerName] {
@@ -224,7 +234,7 @@ func generatorsFromMarkers(m ctrlmarkers.MarkerValues, basePath ...string) ([]co
 
 // generatorsFor creates generators for the given AST type.
 // Note: This follows how the crd package maps AST types to schemas, see typeToSchema in pkg/crd/schema.go.
-func generatorsFor(ctx *generatorContext, rawType ast.Expr) ([]config.Generator, error) {
+func generatorsFor(ctx *generatorContext, rawType ast.Expr) ([]model.Generator, error) {
 	switch expr := rawType.(type) {
 	case *ast.Ident:
 		return localNamedToGenerators(ctx, expr)
@@ -255,7 +265,7 @@ func generatorsFor(ctx *generatorContext, rawType ast.Expr) ([]config.Generator,
 
 // localNamedToGenerators recurses back to NeedMetricsGeneratorFor for the type to
 // get generators defined at the objects in a custom resource.
-func localNamedToGenerators(ctx *generatorContext, ident *ast.Ident) ([]config.Generator, error) {
+func localNamedToGenerators(ctx *generatorContext, ident *ast.Ident) ([]model.Generator, error) {
 	typeInfo := ctx.pkg.TypesInfo.TypeOf(ident)
 	if typeInfo == types.Typ[types.Invalid] {
 		// It is expected to hit this error for types from not loaded transitive package dependencies.
@@ -288,7 +298,7 @@ func localNamedToGenerators(ctx *generatorContext, ident *ast.Ident) ([]config.G
 
 // requestGenerator asks for the generator for a type in the package with the
 // given import path.
-func (c *generatorContext) requestGenerator(pkgPath, typeName string) ([]config.Generator, error) {
+func (c *generatorContext) requestGenerator(pkgPath, typeName string) ([]model.Generator, error) {
 	pkg := c.pkg
 	if pkgPath != "" {
 		pkg = c.pkg.Imports()[pkgPath]
@@ -299,20 +309,12 @@ func (c *generatorContext) requestGenerator(pkgPath, typeName string) ([]config.
 	})
 }
 
-// addPathPrefixOnGenerator prefixes the path set at the generators MetricMeta object.
-func addPathPrefixOnGenerator(generator config.Generator, pathPrefix []string) config.Generator {
+// addPathPrefixOnGenerator prefixes the path of the generator.
+func addPathPrefixOnGenerator(generator model.Generator, pathPrefix []string) model.Generator {
 	if len(pathPrefix) == 0 {
 		return generator
 	}
 
-	switch generator.Each.Type {
-	case config.MetricTypeGauge:
-		generator.Each.Gauge.MetricMeta.Path = append(slices.Clone(pathPrefix), generator.Each.Gauge.MetricMeta.Path...)
-	case config.MetricTypeStateSet:
-		generator.Each.StateSet.MetricMeta.Path = append(slices.Clone(pathPrefix), generator.Each.StateSet.MetricMeta.Path...)
-	case config.MetricTypeInfo:
-		generator.Each.Info.MetricMeta.Path = append(slices.Clone(pathPrefix), generator.Each.Info.MetricMeta.Path...)
-	}
-
+	generator.Path = append(slices.Clone(pathPrefix), generator.Path...)
 	return generator
 }

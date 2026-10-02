@@ -28,13 +28,25 @@ func (Generator) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "",
 		DetailedHelp: markers.DetailedHelp{
-			Summary: "generates kube-state-metrics custom resource configuration files.",
-			Details: "This generator is experimental. The markers, the flags and the generated output might change\nincompatibly in any release. It has to be enabled explicitly by setting the experimental flag.",
+			Summary: "generates custom resource metrics configuration files for resource-state-metrics",
+			Details: "(default) or kube-state-metrics.\n\nThis generator is experimental. The markers, the flags and the generated output might change\nincompatibly in any release. It has to be enabled explicitly by setting the experimental flag.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Experimental": {
 				Summary: "enables the experimental metrics generator.",
 				Details: "It has to be set to true to acknowledge that markers and output might change incompatibly.",
+			},
+			"Target": {
+				Summary: "selects the metrics implementation to generate the configuration for.",
+				Details: "Supported values are resource-state-metrics and kube-state-metrics.\n\nLeft unspecified, the default is resource-state-metrics.",
+			},
+			"Name": {
+				Summary: "is the name of the ResourceMetricsMonitor which gets generated for resource-state-metrics.",
+				Details: "It is only supported by the resource-state-metrics target.\n\nLeft unspecified, the default is resource-metrics.",
+			},
+			"Namespace": {
+				Summary: "is the namespace of the ResourceMetricsMonitor which gets generated for resource-state-metrics.",
+				Details: "It is only supported by the resource-state-metrics target.\n\nLeft unspecified, the namespace is not set.",
 			},
 		},
 	}

@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 func Test_infoMarker_ToGenerator(t *testing.T) {
@@ -28,22 +28,32 @@ func Test_infoMarker_ToGenerator(t *testing.T) {
 		name       string
 		infoMarker infoMarker
 		basePath   []string
-		want       *config.Generator
+		want       *model.Generator
 	}{
 		{
 			name:       "Happy path",
 			infoMarker: infoMarker{},
 			basePath:   []string{},
-			want: &config.Generator{
-				Each: config.Metric{
-					Type: config.MetricTypeInfo,
-					Info: &config.MetricInfo{
-						MetricMeta: config.MetricMeta{
-							LabelsFromPath: map[string][]string{},
-							Path:           []string{},
-						},
-					},
-				},
+			want: &model.Generator{
+				Type:   model.MetricTypeInfo,
+				Path:   model.Path{},
+				Labels: []model.Label{},
+			},
+		},
+		{
+			name: "keyLabel, relative JSONPath and labels",
+			infoMarker: infoMarker{
+				JSONPath: ".bar",
+				KeyLabel: "key",
+				Labels:   map[string]jsonPath{"b": ".b", "a": "."},
+			},
+			basePath: []string{"spec"},
+			want: &model.Generator{
+				Type: model.MetricTypeInfo,
+				Path: model.Path{"spec", "bar"},
+				// Labels are sorted by name.
+				Labels:   []model.Label{{Name: "a", Path: model.Path{}}, {Name: "b", Path: model.Path{"b"}}},
+				KeyLabel: "key",
 			},
 		},
 	}

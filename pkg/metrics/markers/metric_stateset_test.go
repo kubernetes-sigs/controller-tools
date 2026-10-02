@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"sigs.k8s.io/controller-tools/pkg/metrics/internal/config"
+	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 func Test_stateSetMarker_ToGenerator(t *testing.T) {
@@ -28,7 +28,7 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 		name           string
 		stateSetMarker stateSetMarker
 		basePath       []string
-		want           *config.Generator
+		want           *model.Generator
 	}{
 		{
 			name: "Happy path",
@@ -36,37 +36,29 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 				Value: jsonPathPointer(".foo"),
 			},
 			basePath: []string{},
-			want: &config.Generator{
-				Each: config.Metric{
-					Type: config.MetricTypeStateSet,
-					StateSet: &config.MetricStateSet{
-						MetricMeta: config.MetricMeta{
-							LabelsFromPath: map[string][]string{},
-							Path:           []string{},
-						},
-						ValueFrom: []string{"foo"},
-					},
-				},
+			want: &model.Generator{
+				Type:   model.MetricTypeStateSet,
+				Path:   model.Path{},
+				Labels: []model.Label{},
+				Value:  model.Path{"foo"},
 			},
 		},
 		{
 			name: "relative JSONPath and value",
 			stateSetMarker: stateSetMarker{
-				JSONPath: ".bar",
-				Value:    jsonPathPointer(".foo"),
+				JSONPath:  ".bar",
+				Value:     jsonPathPointer(".foo"),
+				List:      []string{"a", "b"},
+				LabelName: "state",
 			},
 			basePath: []string{"spec"},
-			want: &config.Generator{
-				Each: config.Metric{
-					Type: config.MetricTypeStateSet,
-					StateSet: &config.MetricStateSet{
-						MetricMeta: config.MetricMeta{
-							LabelsFromPath: map[string][]string{},
-							Path:           []string{"spec", "bar"},
-						},
-						ValueFrom: []string{"foo"},
-					},
-				},
+			want: &model.Generator{
+				Type:      model.MetricTypeStateSet,
+				Path:      model.Path{"spec", "bar"},
+				Labels:    []model.Label{},
+				Value:     model.Path{"foo"},
+				List:      []string{"a", "b"},
+				LabelName: "state",
 			},
 		},
 	}
