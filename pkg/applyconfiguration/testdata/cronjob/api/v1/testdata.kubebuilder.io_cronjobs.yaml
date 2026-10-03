@@ -596,6 +596,7 @@ spec:
                                   description: |-
                                     name uniquely identifies this resource claim inside the group.
                                     This field is required. It must be a DNS_LABEL.
+                                  minLength: 1
                                   type: string
                                 resourceClaimName:
                                   description: |-
@@ -642,6 +643,7 @@ spec:
                                         All pods within the PodGroup must be colocated within the same domain instance.
                                         Different PodGroups can land on different domain instances even if they derive from the same PodGroupTemplate.
                                         Examples: "topology.kubernetes.io/rack"
+                                      minLength: 1
                                       type: string
                                   required:
                                   - key
@@ -5099,6 +5101,7 @@ spec:
                                         Domain names *.k8s.io and *.kubernetes.io are reserved.
                                         This field must be unique for each responder.
                                         This field is required.
+                                      minLength: 1
                                       type: string
                                     priority:
                                       description: |-
