@@ -133,6 +133,25 @@ spec:
                   type: string
                 title: '{}'
                 type: array
+              defaultedListMapKey:
+                description: |-
+                  This tests that a listMapKey naming a defaulted property is left alone,
+                  since a default also satisfies the API Server.
+                items:
+                  description: |-
+                    DefaultedKeyAssociativeType has an optional list map key carrying a default,
+                    which already satisfies the API Server.
+                  properties:
+                    port:
+                      type: integer
+                    protocol:
+                      default: TCP
+                      type: string
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - protocol
+                x-kubernetes-list-type: map
               defaultedObject:
                 default:
                 - nested:
@@ -10270,6 +10289,31 @@ spec:
                     an update.
                   optionalOldSelf: true
                   rule: oldSelf.hasValue() || self == 0
+              optionalListMapKey:
+                description: |-
+                  This tests that a listMapKey naming an optional property is promoted to
+                  required. The API Server rejects an associative list whose keys are
+                  neither required nor defaulted, and k8s.io/api v0.37.0 carries exactly
+                  that combination on the apps/v1 workload condition types, where Type is
+                  marked +optional but is still the +listMapKey.
+                items:
+                  description: |-
+                    OptionalKeyAssociativeType mirrors the shape of the apps/v1 workload
+                    condition types, whose list map key is marked optional upstream.
+                  properties:
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
               patternObject:
                 description: This tests that pattern validator is properly applied.
                 pattern: ^$|^((https):\/\/?)[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|\/?))$
@@ -10431,6 +10475,7 @@ spec:
             - defaultedEmptyMap
             - defaultedEmptyObject
             - defaultedEmptySlice
+            - defaultedListMapKey
             - defaultedObject
             - defaultedSlice
             - defaultedString
@@ -10470,6 +10515,7 @@ spec:
             - nestedStructWithSeveralFields
             - nestedStructWithSeveralFieldsDoubleMarked
             - nestedassociativeList
+            - optionalListMapKey
             - patternObject
             - schedule
             - stringPair
