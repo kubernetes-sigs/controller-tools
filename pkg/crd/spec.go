@@ -18,6 +18,7 @@ package crd
 
 import (
 	"fmt"
+	"go/types"
 	"slices"
 	"strings"
 
@@ -60,6 +61,18 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 			continue
 		}
 		packages = append(packages, pkg)
+	}
+
+	// A plain type that shares its name with an object in another version
+	// of the group must not become a version of this CRD.
+	var objectPackages []*loader.Package
+	for _, pkg := range packages {
+		if isObjectType(pkg, groupKind.Kind) {
+			objectPackages = append(objectPackages, pkg)
+		}
+	}
+	if len(objectPackages) > 0 {
+		packages = objectPackages
 	}
 
 	defaultPlural := strings.ToLower(flect.Pluralize(groupKind.Kind))
@@ -174,4 +187,35 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 	}
 
 	p.CustomResourceDefinitions[groupKind] = crd
+}
+
+// isObjectType reports whether the named type in pkg is a struct that embeds
+// both metav1.TypeMeta and metav1.ObjectMeta. Aliases are resolved.
+func isObjectType(pkg *loader.Package, name string) bool {
+	pkg.NeedTypesInfo()
+	obj := pkg.Types.Scope().Lookup(name)
+	if obj == nil {
+		return false
+	}
+	st, ok := obj.Type().Underlying().(*types.Struct)
+	if !ok {
+		return false
+	}
+	var hasTypeMeta, hasObjectMeta bool
+	for field := range st.Fields() {
+		if !field.Embedded() {
+			continue
+		}
+		named, ok := field.Type().(*types.Named)
+		if !ok || named.Obj().Pkg() == nil || loader.NonVendorPath(named.Obj().Pkg().Path()) != "k8s.io/apimachinery/pkg/apis/meta/v1" {
+			continue
+		}
+		switch named.Obj().Name() {
+		case "TypeMeta":
+			hasTypeMeta = true
+		case "ObjectMeta":
+			hasObjectMeta = true
+		}
+	}
+	return hasTypeMeta && hasObjectMeta
 }
