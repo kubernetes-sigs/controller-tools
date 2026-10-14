@@ -228,7 +228,7 @@ func usage() {
 			continue
 		}
 		contents := prettyhelp.MarkersDetails(true, cat.Category, cat.Markers)
-		if err := contents.WriteTo(os.Stderr); err != nil {
+		if err := contents.Write(os.Stderr); err != nil {
 			panic(err)
 		}
 	}
@@ -239,7 +239,7 @@ func usage() {
 	}
 	markerInfo := help.ByCategory(reg, help.SortByCategory)
 	contents := prettyhelp.MarkersDetails(true, "markers", markerInfo[0].Markers)
-	if err := contents.WriteTo(os.Stderr); err != nil {
+	if err := contents.Write(os.Stderr); err != nil {
 		panic(err)
 	}
 	os.Exit(1)
