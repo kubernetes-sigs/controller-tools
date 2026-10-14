@@ -277,3 +277,155 @@ func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiexte
 	m.callback()
 	return nil
 }
+
+// Test_Schema_TypeAlias_Map verifies that a type alias to a map type
+// (type X = map[string]string) produces a $ref to the alias instead of
+// erroring out. This is the fix for https://github.com/kubernetes-sigs/controller-tools/issues/1462.
+func Test_Schema_TypeAlias_Map(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	pkgContents := `
+package crd
+
+// +kubebuilder:validation:XValidation:rule="self.all(key, size(key) > 0)",message="keys must be non-empty"
+type MapAlias = map[string]string
+`
+	pkg := loadTestPackage(t, pkgContents)
+
+	// Find the MapAlias identifier from the alias type declaration's AST.
+	// We need an *ast.Ident to trigger localNamedToSchema.
+	ident := findTypeIdent(t, pkg, "MapAlias")
+	// Use a no-op schemaRequester since we only test the immediate output.
+	ctx := newSchemaContext(pkg, &noopSchemaRequester{}, true, false).ForInfo(&markers.TypeInfo{})
+	result := localNamedToSchema(ctx, ident)
+	failIfErrors(t, pkg.Errors)
+
+	g.Expect(result.Ref).ToNot(gomega.BeNil(), "map type alias should produce a $ref")
+	g.Expect(*result.Ref).To(gomega.ContainSubstring("MapAlias"))
+}
+
+// Test_Schema_TypeAlias_Slice verifies that a type alias to a slice type
+// produces a $ref to the alias instead of erroring out.
+func Test_Schema_TypeAlias_Slice(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	pkgContents := `
+package crd
+
+type SliceAlias = []string
+`
+	pkg := loadTestPackage(t, pkgContents)
+	ident := findTypeIdent(t, pkg, "SliceAlias")
+	ctx := newSchemaContext(pkg, &noopSchemaRequester{}, true, false).ForInfo(&markers.TypeInfo{})
+	result := localNamedToSchema(ctx, ident)
+	failIfErrors(t, pkg.Errors)
+
+	g.Expect(result.Ref).ToNot(gomega.BeNil(), "slice type alias should produce a $ref")
+	g.Expect(*result.Ref).To(gomega.ContainSubstring("SliceAlias"))
+}
+
+// Test_Schema_TypeAlias_Basic verifies that a basic type alias
+// (type X = string) still produces an inline type with a $ref
+// (preserving existing behavior for field-level markers like MinLength).
+func Test_Schema_TypeAlias_Basic(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	pkgContents := `
+package crd
+
+type StringAlias = string
+`
+	pkg := loadTestPackage(t, pkgContents)
+	ident := findTypeIdent(t, pkg, "StringAlias")
+	ctx := newSchemaContext(pkg, &noopSchemaRequester{}, true, false).ForInfo(&markers.TypeInfo{})
+	result := localNamedToSchema(ctx, ident)
+	failIfErrors(t, pkg.Errors)
+
+	g.Expect(result.Type).To(gomega.Equal("string"), "basic type alias should preserve inline type")
+	g.Expect(result.Ref).ToNot(gomega.BeNil(), "basic type alias should also have a $ref")
+}
+
+// Test_Schema_TypeAlias_Struct verifies that a struct type alias
+// (type X = SomeStruct) still produces a $ref to the underlying named type
+// (preserving existing behavior for inline/embedded struct aliases).
+func Test_Schema_TypeAlias_Struct(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	pkgContents := `
+package crd
+
+type EmbeddedStruct struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type StructAlias = EmbeddedStruct
+`
+	pkg := loadTestPackage(t, pkgContents)
+	ident := findTypeIdent(t, pkg, "StructAlias")
+	ctx := newSchemaContext(pkg, &noopSchemaRequester{}, true, false).ForInfo(&markers.TypeInfo{})
+	result := localNamedToSchema(ctx, ident)
+	failIfErrors(t, pkg.Errors)
+
+	g.Expect(result.Ref).ToNot(gomega.BeNil(), "struct type alias should produce a $ref")
+	// The $ref should point to the underlying named type (EmbeddedStruct),
+	// not the alias name, preserving existing behavior for inline/embedded
+	// struct aliases and the applyconfiguration generator.
+	g.Expect(*result.Ref).To(gomega.ContainSubstring("EmbeddedStruct"))
+}
+
+// noopSchemaRequester is a schemaRequester that does nothing, for unit tests
+// that only check the immediate schema output without resolving references.
+type noopSchemaRequester struct{}
+
+func (noopSchemaRequester) NeedSchemaFor(typ TypeIdent) {}
+func (noopSchemaRequester) LookupType(pkg *loader.Package, name string) *markers.TypeInfo {
+	return nil
+}
+
+// loadTestPackage loads pkgContents as a fake package for unit testing.
+func loadTestPackage(t *testing.T, pkgContents string) *loader.Package {
+	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
+	modules := []pkgstest.Module{
+		{
+			Name: moduleName,
+			Files: map[string]any{
+				"test.go": pkgContents,
+			},
+		},
+	}
+
+	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
+	if exported != nil {
+		t.Cleanup(exported.Cleanup)
+	}
+	if err != nil {
+		t.Fatalf("unable to load fake package: %s", err)
+	}
+	if len(pkgs) != 1 {
+		t.Fatal("expected to parse only one package")
+	}
+
+	pkg := pkgs[0]
+	pkg.NeedTypesInfo()
+	return pkg
+}
+
+// findTypeIdent returns an *ast.Ident for the type declaration with the given name.
+// This is used to test localNamedToSchema directly.
+func findTypeIdent(t *testing.T, pkg *loader.Package, typeName string) *ast.Ident {
+	t.Helper()
+	for _, decl := range pkg.Syntax[0].Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+		for _, spec := range genDecl.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if ok && typeSpec.Name.Name == typeName {
+				return typeSpec.Name
+			}
+		}
+	}
+	t.Fatalf("could not find type %q in fake package", typeName)
+	return nil
+}
