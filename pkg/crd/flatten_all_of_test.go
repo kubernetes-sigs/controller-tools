@@ -171,6 +171,38 @@ var _ = Describe("AllOf Flattening", func() {
 			Expect(errRec.FirstError()).To(HaveOccurred())
 		})
 
+		It("should error out if Enum values are disjoint", func() {
+			By("flattening a schema with a single property with two disjoint enums")
+			crd.FlattenEmbedded(&apiextensionsv1.JSONSchemaProps{
+				Properties: map[string]apiextensionsv1.JSONSchemaProps{
+					"disjointEnum": {AllOf: []apiextensionsv1.JSONSchemaProps{
+						{Enum: []apiextensionsv1.JSON{{Raw: []byte(`"red"`)}}},
+						{Enum: []apiextensionsv1.JSON{{Raw: []byte(`"yellow"`)}}},
+					}},
+				},
+			}, errRec)
+
+			By("ensuring that an error was recorded")
+			Expect(errRec.FirstError()).To(HaveOccurred())
+		})
+
+		It("should keep only the Enum values that all AllOf branches allow", func() {
+			By("flattening a schema with two overlapping enums")
+			original := apiextensionsv1.JSONSchemaProps{
+				AllOf: []apiextensionsv1.JSONSchemaProps{
+					{Enum: []apiextensionsv1.JSON{{Raw: []byte(`"a"`)}, {Raw: []byte(`"b"`)}, {Raw: []byte(`"c"`)}}},
+					{Enum: []apiextensionsv1.JSON{{Raw: []byte(`"d"`)}, {Raw: []byte(`"c"`)}, {Raw: []byte(`"b"`)}}},
+				},
+			}
+			flattened := crd.FlattenEmbedded(&original, errRec)
+			Expect(errRec.FirstError()).NotTo(HaveOccurred())
+
+			By("checking that only the shared values remain, in the first branch's order")
+			Expect(flattened).To(Equal(&apiextensionsv1.JSONSchemaProps{
+				Enum: []apiextensionsv1.JSON{{Raw: []byte(`"b"`)}, {Raw: []byte(`"c"`)}},
+			}))
+		})
+
 		It("should merge Required fields, deduplicating", func() {
 			By("flattening a schema with multiple required fields, some duplicate across branches")
 			original := &apiextensionsv1.JSONSchemaProps{
