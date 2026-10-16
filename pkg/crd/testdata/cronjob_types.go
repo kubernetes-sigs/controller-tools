@@ -70,6 +70,16 @@ type CronJobSpec struct {
 	// +optional
 	K8sConcurrencyPolicy K8sConcurrencyPolicy `json:"k8sConcurrencyPolicy,omitempty"`
 
+	// This tests that a field-level enum narrows its type's enum.
+	// +kubebuilder:validation:Enum=Allow;Forbid
+	// +optional
+	NarrowedConcurrencyPolicy ConcurrencyPolicy `json:"narrowedConcurrencyPolicy,omitempty"`
+
+	// This tests that a field-level enum equal to its type's enum appears once.
+	// +kubebuilder:validation:Enum=Allow;Forbid;Replace
+	// +optional
+	RepeatedConcurrencyPolicy ConcurrencyPolicy `json:"repeatedConcurrencyPolicy,omitempty"`
+
 	// This flag tells the controller to suspend subsequent executions, it does
 	// not apply to already started executions.  Defaults to false.
 	// +optional
