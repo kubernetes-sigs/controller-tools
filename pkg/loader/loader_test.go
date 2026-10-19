@@ -18,9 +18,11 @@ package loader_test
 
 import (
 	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"golang.org/x/tools/go/packages"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )
 
@@ -184,6 +186,32 @@ var _ = Describe("Loader parsing root module", func() {
 			pkgs, err := loader.LoadRoots("./testmod/submod1/subdir1/")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(pkgs).To(HaveLen(1))
+			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+		})
+	})
+
+	Context("with an absolute root ending in ...", func() {
+		It("should load seven packages", func() {
+			root, err := filepath.Abs("testmod")
+			Expect(err).ToNot(HaveOccurred())
+			pkgs, err := loader.LoadRoots(filepath.Join(root, "..."))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(7))
+			assertPkgExists(testmodPkg, pkgs)
+			assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
+			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+		})
+	})
+
+	Context("with cfg.Dir=testmod and roots=[./...]", func() {
+		It("should load seven packages", func() {
+			dir, err := filepath.Abs("testmod")
+			Expect(err).ToNot(HaveOccurred())
+			pkgs, err := loader.LoadRootsWithConfig(&packages.Config{Dir: dir}, "./...")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(7))
+			assertPkgExists(testmodPkg, pkgs)
+			assertPkgExists(testmodPkg+"/subdir1/submod1", pkgs)
 			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
 		})
 	})

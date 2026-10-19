@@ -329,8 +329,47 @@ func LoadRoots(roots ...string) ([]*Package, error) {
 }
 
 // absPath makes a filesystem root absolute; a variable so that tests can
-// stand in for the platform's behaviour (see LoadRootsWithConfig).
+// stand in for the platform's behaviour (see absRoot).
 var absPath = filepath.Abs
+
+// absRoot cleans a filesystem root and makes it absolute, against cfgDir when
+// that is non-empty and against the working directory otherwise.
+func absRoot(r, cfgDir string) (string, error) {
+	// clean up the root
+	r = filepath.Clean(r)
+
+	// a trailing "..." is the nested traversal syntax, not part of the
+	// directory: set it aside while the directory is made absolute and
+	// put it back afterwards. on Windows, filepath.Abs resolves the path
+	// with GetFullPathName, which drops trailing dots, so "x\..." became
+	// "x" and only the package in x was loaded.
+	nested := filepath.Base(r) == "..."
+	if nested {
+		r = filepath.Dir(r)
+	}
+
+	// get the absolute path of the root
+	if !filepath.IsAbs(r) {
+		// if the initial value of cfg.Dir was non-empty then use it when
+		// building the absolute path to this root. otherwise use the
+		// filepath.Abs function to get the absolute path of the root based
+		// on the working directory
+		if cfgDir != "" {
+			r = filepath.Join(cfgDir, r)
+		} else {
+			ar, err := absPath(r)
+			if err != nil {
+				return "", err
+			}
+			r = ar
+		}
+	}
+
+	if nested {
+		r = filepath.Join(r, "...")
+	}
+	return r, nil
+}
 
 // LoadRootsWithConfig functions like LoadRoots, except that it allows passing
 // a custom loading config.  The config will be modified to suit the needs of
@@ -525,38 +564,9 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	for i := range fspRoots {
 		r := fspRoots[i]
 
-		// clean up the root
-		r = filepath.Clean(r)
-
-		// a trailing "..." is the nested traversal syntax, not part of the
-		// directory: set it aside while the directory is made absolute and
-		// put it back afterwards. on Windows, filepath.Abs resolves the path
-		// with GetFullPathName, which drops trailing dots, so "x\..." became
-		// "x" and only the package in x was loaded.
-		nested := filepath.Base(r) == "..."
-		if nested {
-			r = filepath.Dir(r)
-		}
-
-		// get the absolute path of the root
-		if !filepath.IsAbs(r) {
-			// if the initial value of cfg.Dir was non-empty then use it when
-			// building the absolute path to this root. otherwise use the
-			// filepath.Abs function to get the absolute path of the root based
-			// on the working directory
-			if cfgDir != "" {
-				r = filepath.Join(cfgDir, r)
-			} else {
-				ar, err := absPath(r)
-				if err != nil {
-					return nil, err
-				}
-				r = ar
-			}
-		}
-
-		if nested {
-			r = filepath.Join(r, "...")
+		r, err := absRoot(r, cfgDir)
+		if err != nil {
+			return nil, err
 		}
 
 		// update the root to be an absolute path
