@@ -69,6 +69,14 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 	BeforeEach(func() {
 		var tmpDir string
 
+		// gengo names the generator after filepath.Base(os.Args[0]) with one
+		// extension stripped: "applyconfiguration.test" on Unix, but
+		// "applyconfiguration.test.exe" on Windows, which keeps ".test".
+		// Pin the name the checked-in files carry.
+		originalArgs0 := os.Args[0]
+		os.Args[0] = "applyconfiguration"
+		DeferCleanup(func() { os.Args[0] = originalArgs0 })
+
 		By("Setting up a temporary directory", func() {
 			var err error
 			tmpDir, err = os.MkdirTemp("", "applyconfiguration-integration-test")
