@@ -204,6 +204,9 @@ func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loade
 			if err := resolveAllOfRefs(resolved, pkg, p, pkgByPath); err != nil {
 				return err
 			}
+			// The resolved schema is merged into a type from contextPkg, so
+			// local refs inside it must not be read relative to contextPkg.
+			qualifyLocalRefs(resolved, pkg)
 			schema.AllOf[i] = *resolved
 		} else {
 			// Recurse into non-ref AllOf entries.
@@ -231,6 +234,38 @@ func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loade
 		}
 	}
 	return nil
+}
+
+// qualifyLocalRefs walks the schema and rewrites local $ref entries (those
+// without a package) to refs qualified with the package path of pkg. This is
+// needed when a schema is moved out of its own package, e.g. when an embedded
+// type from another package is flattened into its parent.
+func qualifyLocalRefs(schema *apiextensionsv1.JSONSchemaProps, pkg *loader.Package) {
+	if schema == nil || pkg == nil {
+		return
+	}
+
+	if schema.Ref != nil && len(*schema.Ref) > 0 {
+		typeName, pkgPath, err := crd.RefParts(*schema.Ref)
+		if err == nil && pkgPath == "" {
+			newRef := crd.TypeRefLink(pkg.PkgPath, typeName)
+			schema.Ref = &newRef
+		}
+	}
+
+	for k, v := range schema.Properties {
+		qualifyLocalRefs(&v, pkg)
+		schema.Properties[k] = v
+	}
+	for i := range schema.AllOf {
+		qualifyLocalRefs(&schema.AllOf[i], pkg)
+	}
+	if schema.Items != nil && schema.Items.Schema != nil {
+		qualifyLocalRefs(schema.Items.Schema, pkg)
+	}
+	if schema.AdditionalProperties != nil && schema.AdditionalProperties.Schema != nil {
+		qualifyLocalRefs(schema.AdditionalProperties.Schema, pkg)
+	}
 }
 
 // convertRefs walks the schema and converts internal $ref links from the
