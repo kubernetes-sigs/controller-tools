@@ -44,11 +44,11 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 			},
 		},
 		{
-			name: "relative JSONPath and value",
+			name: "relative path and value",
 			stateSetMarker: stateSetMarker{
-				JSONPath:  ".bar",
+				Path:      ".bar",
 				Value:     jsonPathPointer(".foo"),
-				List:      []string{"a", "b"},
+				States:    []string{"a", "b"},
 				LabelName: "state",
 			},
 			basePath: []string{"spec"},

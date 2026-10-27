@@ -41,19 +41,17 @@ func Test_infoMarker_ToGenerator(t *testing.T) {
 			},
 		},
 		{
-			name: "keyLabel, relative JSONPath and labels",
+			name: "relative path and labels",
 			infoMarker: infoMarker{
-				JSONPath: ".bar",
-				KeyLabel: "key",
-				Labels:   map[string]jsonPath{"b": ".b", "a": "."},
+				Path:   ".bar",
+				Labels: map[string]jsonPath{"b": ".b", "a": "."},
 			},
 			basePath: []string{"spec"},
 			want: &model.Generator{
 				Type: model.MetricTypeInfo,
 				Path: model.Path{"spec", "bar"},
 				// Labels are sorted by name.
-				Labels:   []model.Label{{Name: "a", Path: model.Path{}}, {Name: "b", Path: model.Path{"b"}}},
-				KeyLabel: "key",
+				Labels: []model.Label{{Name: "a", Path: model.Path{}}, {Name: "b", Path: model.Path{"b"}}},
 			},
 		},
 	}

@@ -56,38 +56,11 @@ func TestBuilder_AddResource(t *testing.T) {
 			wantErrPart: "requires the name to match",
 		},
 		{
-			// The name prefix is part of the name of the family which has to match the pattern.
-			name: "name prefix is part of the name",
-			resource: newResource(func(r *model.Resource, _ *model.Generator) {
-				prefix := "foo-bar"
-				r.NamePrefix = &prefix
-			}),
-			wantErrPart: "foo-bar_foo_info",
-		},
-		{
 			name: "labels with the name of an injected label are dropped",
 			resource: newResource(func(r *model.Resource, m *model.Generator) {
 				m.Labels = []model.Label{label("name"), label("kind")}
 				r.Labels = []model.Label{label("namespace")}
 			}),
-		},
-		{
-			name: "key label of a map",
-			resource: newResource(func(_ *model.Resource, m *model.Generator) {
-				m.Path, m.PathKind, m.KeyLabel = model.Path{"spec", "m"}, model.PathKindMap, "key"
-			}),
-		},
-		{
-			name:        "key label of something not being a map",
-			resource:    newResource(func(_ *model.Resource, m *model.Generator) { m.KeyLabel = "key" }),
-			wantErrPart: "keyLabel can only be used if the path points to a map",
-		},
-		{
-			name: "key label with the name of an injected label",
-			resource: newResource(func(_ *model.Resource, m *model.Generator) {
-				m.Path, m.PathKind, m.KeyLabel = model.Path{"spec", "m"}, model.PathKindMap, "name"
-			}),
-			wantErrPart: `the label "name" of the option keyLabel is added by resource-state-metrics`,
 		},
 		{
 			name: "state label with the name of an injected label",

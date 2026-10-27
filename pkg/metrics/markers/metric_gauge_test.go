@@ -44,10 +44,9 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 			},
 		},
 		{
-			name: "keyLabel, missingAsZero and relative JSONPath",
+			name: "missingAsZero and relative path",
 			gaugeMarker: gaugeMarker{
-				JSONPath:      ".bar",
-				KeyLabel:      "key",
+				Path:          ".bar",
 				MissingAsZero: true,
 				Labels:        map[string]jsonPath{"l": ".l"},
 			},
@@ -56,7 +55,6 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 				Type:          model.MetricTypeGauge,
 				Path:          model.Path{"spec", "bar"},
 				Labels:        []model.Label{{Name: "l", Path: model.Path{"l"}}},
-				KeyLabel:      "key",
 				MissingAsZero: true,
 			},
 		},

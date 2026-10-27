@@ -40,9 +40,9 @@ func init() {
 
 // +controllertools:marker:generateHelp:category=Metric type Gauge
 
-// gaugeMarker defines a Gauge metric and uses the implicit path to the field joined by the provided JSONPath as path for the metric configuration.
+// gaugeMarker defines a Gauge metric and uses the path to the field joined by the provided path as path of the metric.
 // Gauge is a metric which targets a Path that may be a single value, array, or object.
-// Arrays and objects will generate a metric per element and require Value to be set.
+// Lists and maps generate a metric per element. If the elements are objects, Value has to point to the numeric field of each element.
 // Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge
 type gaugeMarker struct {
 	// Keys from the Generator struct.
@@ -50,8 +50,9 @@ type gaugeMarker struct {
 	// Name specifies the Name of the metric.
 	Name string
 
+	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
+
 	// MetricHelp specifies the help text for the metric.
-	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
@@ -61,20 +62,15 @@ type gaugeMarker struct {
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
-	// JSONPath specifies the relative path from this marker.
-	// Note: This field get's appended to the path field in the custom resource configuration.
-	JSONPath jsonPath `marker:"JSONPath,optional"`
+	// Path specifies the JSONPath of the metric, relative to the field or type the marker is set on.
+	// With the kube-state-metrics target the full path ends up in the path field of the metric.
+	Path jsonPath `marker:"path,optional"`
 
 	// Keys from the MetricGauge struct.
 
 	// Value specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.
 	// Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime.
 	Value *jsonPath `marker:"value,optional"`
-
-	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
-	// Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.
-	// Note: If the path points to a map, labels for its entries, including this label, are not supported by gauge metrics, as they can't be aligned with the values by all targets.
-	KeyLabel string `marker:"keyLabel,optional"`
 
 	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
 	// Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.
@@ -84,7 +80,7 @@ type gaugeMarker struct {
 var _ LocalGeneratorMarker = &gaugeMarker{}
 
 func (g gaugeMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
-	path, err := newPath(basePath, g.JSONPath)
+	path, err := newPath(basePath, g.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +104,6 @@ func (g gaugeMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
 		Type:          model.MetricTypeGauge,
 		Path:          path,
 		Labels:        labels,
-		KeyLabel:      g.KeyLabel,
 		Value:         value,
 		MissingAsZero: g.MissingAsZero,
 	}, nil

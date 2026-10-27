@@ -148,9 +148,9 @@ func (l labelNames) addUnique(option, name string) error {
 }
 
 // addUniqueOption is like addUnique, but additionally rejects the names of the labels which are injected
-// by resource-state-metrics. In contrast to the labels of the markers `label` and `labels`, the labels
-// created from the options keyLabel and labelName are not dropped silently, as they usually are an
-// essential part of the metric and would not be exposed.
+// by resource-state-metrics. In contrast to the labels of the markers `label` and `labels`, the label
+// created from the option labelName is not dropped silently, as it is an essential part
+// of the metric and would not be exposed.
 func (l labelNames) addUniqueOption(option, name string) error {
 	if isAutoLabel(name) {
 		return fmt.Errorf("metric %q of %s: the label %q of the option %s is added by resource-state-metrics to every metric", l.metric, l.gvk, name, option)
@@ -176,14 +176,6 @@ func validateMetricLabels(resource model.Resource, metric model.Generator) error
 		}
 	}
 
-	if metric.KeyLabel != "" {
-		if metric.PathKind != model.PathKindMap {
-			return fmt.Errorf("metric %q of %s: the option keyLabel can only be used if the path points to a map", metric.Name, gvk)
-		}
-		if err := names.addUniqueOption("keyLabel", metric.KeyLabel); err != nil {
-			return err
-		}
-	}
 	if metric.Type == model.MetricTypeStateSet {
 		if err := names.addUniqueOption("labelName", metric.LabelName); err != nil {
 			return err

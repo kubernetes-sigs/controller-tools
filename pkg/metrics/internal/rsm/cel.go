@@ -31,6 +31,7 @@ const resolverCEL = "cel"
 
 // toStore converts a resource to a resource-state-metrics store. All expressions are
 // CEL expressions, as the store uses the CEL resolver. The object is available as `o`.
+// The name of every family is prefixed with a prefix derived from the kind (see namePrefix).
 func toStore(resource model.Resource) Store {
 	resourceLabels := labelsToCEL(resource.Labels, nil, model.PathKindScalar, "")
 	store := Store{
@@ -41,10 +42,7 @@ func toStore(resource model.Resource) Store {
 		Resolver: resolverCEL,
 	}
 
-	prefix := ""
-	if resource.NamePrefix != nil && *resource.NamePrefix != "" {
-		prefix = *resource.NamePrefix + "_"
-	}
+	prefix := namePrefix(resource)
 	for _, metric := range resource.Metrics {
 		family := Family{Name: prefix + metric.Name, Help: metric.Help}
 		switch metric.Type {
@@ -65,6 +63,17 @@ func toStore(resource model.Resource) Store {
 		store.Families = append(store.Families, family)
 	}
 	return store
+}
+
+// namePrefix returns the prefix for the names of the families of the resource, including the
+// separating underscore. It is the lowercased kind, e.g. machinedeployment_ for MachineDeployment,
+// following the naming of the metrics of kube-state-metrics, e.g. kube_horizontalpodautoscaler_.
+// resource-state-metrics prefixes the names with kube_customresource_ itself, which results in e.g.
+// kube_customresource_machinedeployment_created. The prefix keeps the families of different resources
+// apart, as resource-state-metrics exposes duplicate HELP and TYPE lines for a family name used by
+// multiple stores. The name prefix of the resource is ignored, it is only used by kube-state-metrics.
+func namePrefix(resource model.Resource) string {
+	return strings.ToLower(resource.GroupVersionKind.Kind) + "_"
 }
 
 // elements describes the elements of the list or map a metric is generated for. A list is
@@ -152,9 +161,6 @@ func gaugeToCEL(m model.Generator) Metric {
 		}
 
 		labels := labelsToCEL(m.Labels, m.Path, m.PathKind, filter)
-		if m.KeyLabel != "" && m.PathKind == model.PathKindMap {
-			labels = append(labels, Label{Name: m.KeyLabel, Value: e.mapCEL(filter, "k")})
-		}
 		return Metric{Labels: labels, Value: e.mapCEL(filter, value)}
 	}
 
@@ -182,9 +188,6 @@ func infoToCEL(m model.Generator) Metric {
 
 	if isIterated(m.Path, m.PathKind) {
 		e := newElements(m.Path, m.PathKind)
-		if m.KeyLabel != "" && m.PathKind == model.PathKindMap {
-			labels = append(labels, Label{Name: m.KeyLabel, Value: e.mapCEL("", "k")})
-		}
 		return Metric{Labels: labels, Value: e.mapCEL("", "1")}
 	}
 

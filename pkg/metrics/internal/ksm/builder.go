@@ -103,8 +103,8 @@ func fromModel(resource model.Resource) Resource {
 
 func generatorFromModel(metric model.Generator) Generator {
 	meta := MetricMeta{
-		LabelsFromPath: labelsFromModel(metric.Labels),
-		Path:           metric.Path,
+		Labels: labelsFromModel(metric.Labels),
+		Path:   metric.Path,
 	}
 
 	each := Metric{}
@@ -112,24 +112,22 @@ func generatorFromModel(metric model.Generator) Generator {
 	case model.MetricTypeGauge:
 		each.Type = MetricTypeGauge
 		each.Gauge = &MetricGauge{
-			MetricMeta:   meta,
-			ValueFrom:    metric.Value,
-			LabelFromKey: metric.KeyLabel,
-			NilIsZero:    metric.MissingAsZero,
+			MetricMeta:    meta,
+			Value:         metric.Value,
+			MissingAsZero: metric.MissingAsZero,
 		}
 	case model.MetricTypeInfo:
 		each.Type = MetricTypeInfo
 		each.Info = &MetricInfo{
-			MetricMeta:   meta,
-			LabelFromKey: metric.KeyLabel,
+			MetricMeta: meta,
 		}
 	case model.MetricTypeStateSet:
 		each.Type = MetricTypeStateSet
 		each.StateSet = &MetricStateSet{
 			MetricMeta: meta,
-			List:       metric.List,
+			States:     metric.List,
 			LabelName:  metric.LabelName,
-			ValueFrom:  metric.Value,
+			Value:      metric.Value,
 		}
 	}
 

@@ -138,8 +138,8 @@ const (
 
 // MetricMeta are variables which may used for any metric type.
 type MetricMeta struct {
-	// LabelsFromPath adds additional labels where the value of the label is taken from a field under Path.
-	LabelsFromPath map[string][]string `json:"labelsFromPath,omitempty"`
+	// Labels adds additional labels where the value of the label is taken from a field under Path.
+	Labels map[string][]string `json:"labelsFromPath,omitempty"`
 
 	// Path is the path to generate metric(s) for.
 	Path []string `json:"path"`
@@ -150,25 +150,17 @@ type MetricMeta struct {
 type MetricGauge struct {
 	MetricMeta
 
-	// ValueFrom is the path to a numeric field under Path that will be the metric value.
-	ValueFrom []string `json:"valueFrom,omitempty"`
+	// Value is the path to a numeric field under Path that will be the metric value.
+	Value []string `json:"valueFrom,omitempty"`
 
-	// LabelFromKey adds a label with the given name if Path is an object. The label value will be the object key.
-	// Example: With "pool" and a path pointing to `{a: ..., b: ...}`, the metrics have the labels pool="a" and pool="b".
-	LabelFromKey string `json:"labelFromKey,omitempty"`
-
-	// NilIsZero indicates that if a value is nil it will be treated as zero value.
-	NilIsZero bool `json:"nilIsZero,omitempty"`
+	// MissingAsZero indicates that if a value is nil it will be treated as zero value.
+	MissingAsZero bool `json:"nilIsZero,omitempty"`
 }
 
 // MetricInfo is a metric which is used to expose textual information.
 // Ref: https://github.com/prometheus/OpenMetrics/blob/v1.0.0/specification/OpenMetrics.md#info
 type MetricInfo struct {
 	MetricMeta
-
-	// LabelFromKey adds a label with the given name if Path is an object. The label value will be the object key.
-	// Example: With "pool" and a path pointing to `{a: ..., b: ...}`, the metrics have the labels pool="a" and pool="b".
-	LabelFromKey string `json:"labelFromKey,omitempty"`
 }
 
 // MetricStateSet is a metric which represent a series of related boolean values, also called a bitset.
@@ -176,12 +168,12 @@ type MetricInfo struct {
 type MetricStateSet struct {
 	MetricMeta
 
-	// List is the list of values to expose a value for.
-	List []string `json:"list,omitempty"`
+	// States is the list of values to expose a value for.
+	States []string `json:"list,omitempty"`
 
-	// LabelName is the key of the label which is used for each entry in List to expose the value.
+	// LabelName is the key of the label which is used for each entry in States to expose the value.
 	LabelName string `json:"labelName,omitempty"`
 
-	// ValueFrom is the subpath to compare the list to.
-	ValueFrom []string `json:"valueFrom,omitempty"`
+	// Value is the subpath to compare the states to.
+	Value []string `json:"valueFrom,omitempty"`
 }

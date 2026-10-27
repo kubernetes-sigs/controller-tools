@@ -43,13 +43,12 @@ func init() {
 // labelMarker specifies additional labels for all metrics of the custom resource.
 // It is only considered on the type of the custom resource, which is the type having the store marker.
 // Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
-// The JSONPath is relative to the custom resource.
 type labelMarker struct {
 	// Name specifies the name of the label.
 	Name string
 
-	// JSONPath specifies the path to the value for the label, relative to the custom resource.
-	JSONPath jsonPath `marker:"JSONPath"`
+	// Value specifies the JSONPath to the value of the label, relative to the custom resource.
+	Value jsonPath `marker:"value"`
 }
 
 var _ ResourceMarker = labelMarker{}
@@ -59,7 +58,7 @@ func (n labelMarker) ApplyToResource(resource *model.Resource) error {
 		return errors.New("expected resource to not be nil")
 	}
 
-	path, err := n.JSONPath.Parse()
+	path, err := n.Value.Parse()
 	if err != nil {
 		return err
 	}

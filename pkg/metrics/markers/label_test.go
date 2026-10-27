@@ -45,8 +45,8 @@ func Test_labelMarker_onlyRegisteredForTypes(t *testing.T) {
 
 func Test_labelMarker_ApplyToResource(t *testing.T) {
 	type fields struct {
-		Name     string
-		JSONPath jsonPath
+		Name  string
+		Value jsonPath
 	}
 	tests := []struct {
 		name         string
@@ -57,46 +57,46 @@ func Test_labelMarker_ApplyToResource(t *testing.T) {
 	}{
 		{
 			name:         "happy path",
-			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			fields:       fields{Name: "foo", Value: ".bar"},
 			resource:     &model.Resource{},
 			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
 			name:         "other label exists",
-			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			fields:       fields{Name: "foo", Value: ".bar"},
 			resource:     &model.Resource{Labels: []model.Label{{Name: "other", Path: model.Path{"x"}}}},
 			wantResource: &model.Resource{Labels: []model.Label{{Name: "other", Path: model.Path{"x"}}, {Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
 			name:         "label already exists with identical path",
-			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			fields:       fields{Name: "foo", Value: ".bar"},
 			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
 			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"bar"}}}},
 		},
 		{
 			name:         "label already exists with same path length",
-			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			fields:       fields{Name: "foo", Value: ".bar"},
 			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other"}}}},
 			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other"}}}},
 			wantErr:      true,
 		},
 		{
 			name:         "label already exists with different path length",
-			fields:       fields{Name: "foo", JSONPath: ".bar"},
+			fields:       fields{Name: "foo", Value: ".bar"},
 			resource:     &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other", "path"}}}},
 			wantResource: &model.Resource{Labels: []model.Label{{Name: "foo", Path: model.Path{"other", "path"}}}},
 			wantErr:      true,
 		},
 		{
 			name:         "invalid json path",
-			fields:       fields{Name: "foo", JSONPath: "{.bar}"},
+			fields:       fields{Name: "foo", Value: "{.bar}"},
 			resource:     &model.Resource{},
 			wantResource: &model.Resource{},
 			wantErr:      true,
 		},
 		{
 			name:     "nil resource",
-			fields:   fields{Name: "foo", JSONPath: "{.bar}"},
+			fields:   fields{Name: "foo", Value: "{.bar}"},
 			resource: nil,
 			wantErr:  true,
 		},
@@ -104,8 +104,8 @@ func Test_labelMarker_ApplyToResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := labelMarker{
-				Name:     tt.fields.Name,
-				JSONPath: tt.fields.JSONPath,
+				Name:  tt.fields.Name,
+				Value: tt.fields.Value,
 			}
 			if err := n.ApplyToResource(tt.resource); (err != nil) != tt.wantErr {
 				t.Errorf("labelMarker.ApplyToResource() error = %v, wantErr %v", err, tt.wantErr)

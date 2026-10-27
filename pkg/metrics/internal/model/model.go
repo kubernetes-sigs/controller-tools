@@ -30,7 +30,8 @@ type Resource struct {
 	GroupVersionKind GroupVersionKind
 
 	// NamePrefix is the prefix for the names of all metrics of the resource.
-	// If nil, the target uses its default prefix. If set to "", no prefix will be added.
+	// Only used by the kube-state-metrics target.
+	// If nil, the default prefix kube_customresource is used. If set to "", no prefix will be added.
 	// Example: If set to "foo", the name of the metric "bar" will be "foo_bar".
 	NamePrefix *string
 
@@ -103,10 +104,6 @@ type Generator struct {
 	// Labels are additional labels of the metric. The path of the labels is relative to
 	// Path, which means relative to the element if Path is a list or map.
 	Labels []Label
-
-	// KeyLabel is the name of a label which gets the key of the element as value, if Path is a map.
-	// Only used by Gauge and Info.
-	KeyLabel string
 
 	// Value is the path to the field containing the value of the metric (Gauge) or
 	// the field compared to the states (StateSet). It is relative to Path.
