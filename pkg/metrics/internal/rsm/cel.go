@@ -58,6 +58,7 @@ func toStore(resource model.Resource) Store {
 		// resource-state-metrics v0.1.0 mutates the labels of a family when inheriting the
 		// labels of the store for every processed object. Put the labels of the resource
 		// directly on each metric to avoid duplicate labels on the second and subsequent objects.
+		// Ref: https://github.com/kubernetes-sigs/resource-state-metrics/issues/81
 		for i := range family.Metrics {
 			family.Metrics[i].Labels = append(family.Metrics[i].Labels, resourceLabels...)
 		}
@@ -121,6 +122,14 @@ func (e elements) valueFilter(value model.Path) string {
 	return guard
 }
 
+// gaugeToCEL returns the metric for a gauge. Example of the resulting value expressions:
+//
+//	scalar `spec.replicas`:            has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []
+//	with missingAsZero:                has(o.spec) && has(o.spec.replicas) ? o.spec.replicas : 0
+//	list `status.items`, value `size`: has(o.status) && has(o.status.items) ? o.status.items.filter(v, has(v.size)).map(v, v.size) : []
+//
+// The expressions evaluate to a list, with an element for each sample of the metric. A scalar
+// which is not set evaluates to an empty list, so no sample is exposed.
 func gaugeToCEL(m model.Generator) Metric {
 	timestamp := m.ValueKind == model.ValueKindTimestamp
 
@@ -130,6 +139,8 @@ func gaugeToCEL(m model.Generator) Metric {
 		valueExpr = timestampCEL(valueExpr, timestamp)
 
 		// Elements without the value are exposed as zero or left out, if not set.
+		// The filter is empty if there is no value path (m.Value is empty). In that case the elements
+		// themselves are the values, which are always present and don't have to be filtered.
 		filter := ""
 		value := valueExpr
 		if len(m.Value) > 0 {
@@ -148,8 +159,8 @@ func gaugeToCEL(m model.Generator) Metric {
 	}
 
 	valuePath := append(slices.Clone(m.Path), m.Value...)
-	value := timestampCEL(pathCEL("o", valuePath), timestamp)
-	guard, _ := guardedPathCEL("o", valuePath)
+	guard, valueExpr := guardedPathCEL("o", valuePath)
+	value := timestampCEL(valueExpr, timestamp)
 	if m.MissingAsZero {
 		value = fmt.Sprintf("%s ? %s : 0", guard, value)
 	} else if len(valuePath) > 0 {
@@ -158,6 +169,14 @@ func gaugeToCEL(m model.Generator) Metric {
 	return Metric{Labels: labelsToCEL(m.Labels, m.Path, m.PathKind, ""), Value: value}
 }
 
+// infoToCEL returns the metric for an info. An info metric always has the value 1, the information
+// is exposed by the labels. Example of the resulting value expressions:
+//
+//	no path:                            1
+//	object `status.nodeRef`:            has(o.status) && has(o.status.nodeRef) ? [1] : []
+//	list `metadata.ownerReferences`:    has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v, 1) : []
+//
+// For a list or map one sample with the value 1 is exposed for each element.
 func infoToCEL(m model.Generator) Metric {
 	labels := labelsToCEL(m.Labels, m.Path, m.PathKind, "")
 
@@ -178,7 +197,15 @@ func infoToCEL(m model.Generator) Metric {
 }
 
 // stateSetToCEL returns a metric for each state, which has the value 1 if the field is
-// equal to the state and 0 if not.
+// equal to the state and 0 if not. The state is exposed as label (labelName). Example for the
+// states "True" and "False" and the labelName "status", which results in two metrics:
+//
+//	foo{status="True"}  1
+//	foo{status="False"} 0
+//
+// for an object having `status.phase: "True"`. The value expression of the first one is:
+//
+//	has(o.status) && has(o.status.phase) ? [int(o.status.phase == "True" ? 1 : 0)] : []
 func stateSetToCEL(m model.Generator) []Metric {
 	metrics := make([]Metric, 0, len(m.List))
 	for _, state := range m.List {
@@ -244,11 +271,6 @@ func isAutoLabel(name string) bool {
 	}
 }
 
-func pathCEL(root string, path model.Path) string {
-	_, value := guardedPathCEL(root, path)
-	return value
-}
-
 // timestampCEL converts a timestamp to unix seconds. The conversion is not done based on the
 // name of a field, as it would fail for numeric fields.
 func timestampCEL(expr string, timestamp bool) string {
@@ -264,7 +286,10 @@ var celIdentifier = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 // as field name in a selection like `o.in`.
 var celKeywords = []string{"in", "true", "false", "null"}
 
-// guardedPathCEL returns a presence guard and the CEL expression for the path.
+// guardedPathCEL returns a presence guard and the CEL expression for the path. The guard
+// is `true` for an empty path.
+// Example: for the root `o` and the path "spec", "replicas" it returns the guard
+// `has(o.spec) && has(o.spec.replicas)` and the expression `o.spec.replicas`.
 func guardedPathCEL(root string, path model.Path) (string, string) {
 	expr := root
 	guards := make([]string, 0, len(path))
@@ -274,6 +299,12 @@ func guardedPathCEL(root string, path model.Path) (string, string) {
 			expr += "." + part
 			guards = append(guards, "has("+expr+")")
 		} else {
+			// Fields which are not valid CEL identifiers or are CEL keywords can't be selected
+			// with `.`, so they are accessed by index and checked with the `in` operator, as has()
+			// only supports field selections.
+			// Example: for the path "metadata", "labels", "cluster.x-k8s.io/name":
+			//   has(o.metadata) && has(o.metadata.labels) && "cluster.x-k8s.io/name" in o.metadata.labels
+			// resulting in the expression o.metadata.labels["cluster.x-k8s.io/name"].
 			expr += "[" + strconv.Quote(part) + "]"
 			guards = append(guards, fmt.Sprintf("%s in %s", strconv.Quote(part), parent))
 		}

@@ -100,6 +100,18 @@ spec:
             has(v.lastTransitionTime)).map(v, unixSeconds(v.lastTransitionTime)) :
             []'
         name: foo_status_condition_last_transition_time
+      - help: The tags of a foo.
+        metrics:
+        - labels:
+          - name: tag
+            value: 'has(o.spec) && has(o.spec.tags) ? o.spec.tags.map(v, true ? string(v)
+              : "") : []'
+          - name: app_name
+            value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
+              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
+              : ""'
+          value: 'has(o.spec) && has(o.spec.tags) ? o.spec.tags.map(v, 1) : []'
+        name: foo_tags
       group: bar.example.com
       kind: Foo
       resolver: cel

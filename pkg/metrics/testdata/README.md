@@ -11,7 +11,7 @@ The generator creates the configuration for one target, which is selected with t
 
 Next to them [bar.example.com_foos.yaml](bar.example.com_foos.yaml) is the CustomResourceDefinition of the types.
 
-These files are used in the test at [generate_integration_test.go](../generate_integration_test.go) to verify that the resulting output does not change during changes in the codebase.
+These files are used in the test at [generator_integration_test.go](../generator_integration_test.go) to verify that the resulting output does not change during changes in the codebase.
 
 If there are intended changes these files need to get regenerated to make the test succeed again, by running the `go:generate` markers in [generate.go](generate.go):
 

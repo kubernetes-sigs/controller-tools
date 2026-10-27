@@ -47,6 +47,7 @@ func init() {
 type labelMarker struct {
 	// Name specifies the name of the label.
 	Name string
+
 	// JSONPath specifies the path to the value for the label, relative to the custom resource.
 	JSONPath jsonPath `marker:"JSONPath"`
 }

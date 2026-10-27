@@ -34,15 +34,15 @@ func Test_newOutputBuilder(t *testing.T) {
 		wantErrPart string
 	}{
 		{name: "default is resource-state-metrics", generator: Generator{}, wantRSM: true},
-		{name: "default with name and namespace", generator: Generator{Name: "foo", Namespace: "bar"}, wantRSM: true},
+		{name: "default with name and namespace", generator: Generator{ResourceMetricsMonitorName: "foo", ResourceMetricsMonitorNamespace: "bar"}, wantRSM: true},
 		{name: "resource-state-metrics", generator: Generator{Target: targetResourceStateMetrics}, wantRSM: true},
-		{name: "resource-state-metrics with name and namespace", generator: Generator{Target: targetResourceStateMetrics, Name: "foo", Namespace: "bar"}, wantRSM: true},
-		{name: "invalid name", generator: Generator{Name: "Foo_Bar"}, wantErrPart: `invalid name "Foo_Bar"`},
-		{name: "invalid namespace", generator: Generator{Namespace: "foo.bar"}, wantErrPart: `invalid namespace "foo.bar"`},
+		{name: "resource-state-metrics with name and namespace", generator: Generator{Target: targetResourceStateMetrics, ResourceMetricsMonitorName: "foo", ResourceMetricsMonitorNamespace: "bar"}, wantRSM: true},
+		{name: "invalid name", generator: Generator{ResourceMetricsMonitorName: "Foo_Bar"}, wantErrPart: `invalid resourceMetricsMonitorName "Foo_Bar"`},
+		{name: "invalid namespace", generator: Generator{ResourceMetricsMonitorNamespace: "foo.bar"}, wantErrPart: `invalid resourceMetricsMonitorNamespace "foo.bar"`},
 		{name: "kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics}, wantKSM: true},
-		{name: "name is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, Name: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
-		{name: "namespace is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, Namespace: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
-		{name: "unsupported target", generator: Generator{Target: "foo"}, wantErrPart: `unsupported metrics target "foo", supported targets are kube-state-metrics, resource-state-metrics`},
+		{name: "name is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, ResourceMetricsMonitorName: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
+		{name: "namespace is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, ResourceMetricsMonitorNamespace: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
+		{name: "unsupported target", generator: Generator{Target: "foo"}, wantErrPart: `unsupported metrics target "foo", supported targets are kube-state-metrics and resource-state-metrics`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -48,7 +48,9 @@ type stateSetMarker struct {
 
 	// Name specifies the Name of the metric.
 	Name string
+
 	// MetricHelp specifies the help text for the metric.
+	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
@@ -57,6 +59,7 @@ type stateSetMarker struct {
 	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
+
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
 	JSONPath jsonPath `marker:"JSONPath,optional"`
@@ -65,8 +68,10 @@ type stateSetMarker struct {
 
 	// List specifies a list of values to compare the given Value against.
 	List []string `marker:"list"`
+
 	// LabelName specifies the key of the label which is used for each entry in List to expose the value.
 	LabelName string `marker:"labelName,optional"`
+
 	// Value specifies the JSONPath to the field which gets used as value to compare against the list for equality, relative to the metric path.
 	Value *jsonPath `marker:"value,optional"`
 }

@@ -17,50 +17,39 @@ limitations under the License.
 package metrics
 
 import (
-	"slices"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"sigs.k8s.io/controller-tools/pkg/crd"
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
 func Test_sortedResources(t *testing.T) {
-	newResource := func(version string, names ...string) *model.Resource {
-		r := &model.Resource{GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: version, Kind: "Foo"}}
-		for _, name := range names {
-			r.Metrics = append(r.Metrics, model.Generator{Name: name, Help: name + "-" + version})
-		}
-		return r
+	gvk := func(version string) model.GroupVersionKind {
+		return model.GroupVersionKind{Group: "example.io", Version: version, Kind: "Foo"}
 	}
 
 	resourceStates := map[crd.TypeIdent]*model.Resource{
-		{Name: "v2"}:      newResource("v2", "b", "a"),
-		{Name: "v1"}:      newResource("v1", "same", "same"),
+		{Name: "v2"}: {GroupVersionKind: gvk("v2"), Metrics: []model.Generator{{Name: "b"}, {Name: "a"}}},
+		// The metrics with the same name keep their order, as the sort is stable.
+		{Name: "v1"}: {GroupVersionKind: gvk("v1"), Metrics: []model.Generator{{Name: "same", Help: "first"}, {Name: "same", Help: "second"}}},
+		// Resources which are nil or don't have metrics are dropped.
 		{Name: "nil"}:     nil,
-		{Name: "metrics"}: newResource("v3"),
+		{Name: "metrics"}: {GroupVersionKind: gvk("v3")},
 	}
-	// The stable sort must keep the order of the metrics with the same name.
-	resourceStates[crd.TypeIdent{Name: "v1"}].Metrics[0].Help = "first"
-	resourceStates[crd.TypeIdent{Name: "v1"}].Metrics[1].Help = "second"
+
+	// The resources are sorted by GVK and their metrics by name.
+	want := []model.Resource{
+		{GroupVersionKind: gvk("v1"), Metrics: []model.Generator{{Name: "same", Help: "first"}, {Name: "same", Help: "second"}}},
+		{GroupVersionKind: gvk("v2"), Metrics: []model.Generator{{Name: "a"}, {Name: "b"}}},
+	}
 
 	// Iterating over a map is random, so run multiple times to make a flaky ordering visible.
 	for range 20 {
-		got := sortedResources(resourceStates)
-
-		versions := make([]string, 0, len(got))
-		for _, r := range got {
-			versions = append(versions, r.GroupVersionKind.Version)
-		}
-		if want := []string{"v1", "v2"}; !slices.Equal(versions, want) {
-			t.Fatalf("sortedResources() versions = %v, want %v (resources without metrics and nil must be dropped, sorted by GVK)", versions, want)
-		}
-
-		if got[0].Metrics[0].Help != "first" || got[0].Metrics[1].Help != "second" {
-			t.Errorf("sortedResources() changed the order of metrics with the same name: %v", got[0].Metrics)
-		}
-		if got[1].Metrics[0].Name != "a" || got[1].Metrics[1].Name != "b" {
-			t.Errorf("sortedResources() did not sort the metrics by name: %v", got[1].Metrics)
+		if diff := cmp.Diff(want, sortedResources(resourceStates)); diff != "" {
+			t.Fatalf("sortedResources() (-want,+got): %s", diff)
 		}
 	}
 }

@@ -40,11 +40,11 @@ func (Generator) Help() *markers.DefinitionHelp {
 				Summary: "selects the metrics implementation to generate the configuration for.",
 				Details: "Supported values are resource-state-metrics and kube-state-metrics.\n\nLeft unspecified, the default is resource-state-metrics.",
 			},
-			"Name": {
+			"ResourceMetricsMonitorName": {
 				Summary: "is the name of the ResourceMetricsMonitor which gets generated for resource-state-metrics.",
 				Details: "It is only supported by the resource-state-metrics target.\n\nLeft unspecified, the default is resource-metrics.",
 			},
-			"Namespace": {
+			"ResourceMetricsMonitorNamespace": {
 				Summary: "is the namespace of the ResourceMetricsMonitor which gets generated for resource-state-metrics.",
 				Details: "It is only supported by the resource-state-metrics target.\n\nLeft unspecified, the namespace is not set.",
 			},

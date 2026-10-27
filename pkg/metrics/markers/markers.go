@@ -26,7 +26,7 @@ var (
 	// MarkerDefinitions contains all marker definitions defined by this package so
 	// they can get used in a generator.
 	MarkerDefinitions = []*markerDefinitionWithHelp{
-		// GroupName is a marker copied from controller-runtime to identify the API Group.
+		// GroupName is a marker copied from the crd generator (pkg/crd/markers) to identify the API Group.
 		// It needs to get added as marker so the parser will be able to read the API
 		// which is Group set for a package.
 		must(markers.MakeDefinition("groupName", markers.DescribesPackage, "")),

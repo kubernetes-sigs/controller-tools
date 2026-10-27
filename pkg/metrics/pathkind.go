@@ -17,6 +17,8 @@ limitations under the License.
 package metrics
 
 import (
+	"errors"
+	"fmt"
 	"go/types"
 	"reflect"
 	"slices"
@@ -25,29 +27,42 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-// annotatePathKinds records the kind of the Go type at the path of each metric and
+// annotatePathAndValueKinds records the kind of the Go type at the path of each metric and
 // how its value has to be converted, which is needed by targets which have to know
 // how to iterate over the path or convert the value.
-func annotatePathKinds(metrics []model.Generator, root types.Type) {
+// It returns an error for each metric having a path (or value path) which does not exist in the
+// Go types, which is a configuration error. This includes paths into fields without a
+// schema in Go like `any`, `runtime.RawExtension` or `apiextensionsv1.JSON`.
+func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error {
+	var errs []error
 	for i := range metrics {
 		metric := &metrics[i]
-		metric.PathKind = goPathKind(root, metric.Path)
-		if metric.Type == model.MetricTypeGauge {
-			valuePath := append(slices.Clone(metric.Path), metric.Value...)
-			if isTimestampType(goTypeAtJSONPath(root, valuePath)) {
-				metric.ValueKind = model.ValueKindTimestamp
-			}
+
+		pathType := goTypeAtJSONPath(root, metric.Path)
+		if pathType == nil {
+			errs = append(errs, fmt.Errorf("metric %q: the path %q does not exist in the type", metric.Name, strings.Join(metric.Path, ".")))
+			continue
+		}
+		metric.PathKind = goPathKind(pathType)
+
+		if len(metric.Value) == 0 && metric.Type != model.MetricTypeGauge {
+			continue
+		}
+		valuePath := append(slices.Clone(metric.Path), metric.Value...)
+		valueType := goTypeAtJSONPath(root, valuePath)
+		if valueType == nil {
+			errs = append(errs, fmt.Errorf("metric %q: the value path %q does not exist in the type", metric.Name, strings.Join(valuePath, ".")))
+			continue
+		}
+		if metric.Type == model.MetricTypeGauge && isTimestampType(valueType) {
+			metric.ValueKind = model.ValueKindTimestamp
 		}
 	}
+	return errors.Join(errs...)
 }
 
-// goPathKind returns the kind of the Go type at the path. A path which cannot be
-// resolved is treated as scalar.
-func goPathKind(root types.Type, path []string) model.PathKind {
-	current := goTypeAtJSONPath(root, path)
-	if current == nil {
-		return model.PathKindScalar
-	}
+// goPathKind returns the kind of the Go type.
+func goPathKind(current types.Type) model.PathKind {
 	switch dereferenceType(current).Underlying().(type) {
 	case *types.Slice, *types.Array:
 		return model.PathKindArray
@@ -73,6 +88,9 @@ func goTypeAtJSONPath(root types.Type, path []string) types.Type {
 		case *types.Array:
 			current = typed.Elem()
 		case *types.Map:
+			// The path element is the key of the map, which is not a field name. It has to
+			// be skipped instead of being looked up in the element type, which is done below
+			// for all other types.
 			current = typed.Elem()
 			continue
 		}

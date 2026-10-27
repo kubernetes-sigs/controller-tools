@@ -76,6 +76,16 @@ spec:
         type: Gauge
       help: The condition last transition time of a foo.
       name: status_condition_last_transition_time
+    - each:
+        info:
+          labelsFromPath:
+            tag: []
+          path:
+          - spec
+          - tags
+        type: Info
+      help: The tags of a foo.
+      name: tags
   - groupVersionKind:
       group: bar.example.com
       kind: Foo

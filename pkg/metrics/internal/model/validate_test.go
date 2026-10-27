@@ -58,6 +58,7 @@ func TestResource_Validate(t *testing.T) {
 			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindMap, Labels: label("a")},
 			wantErrPart: "a Gauge metric on a map doesn't support labels",
 		},
+		{name: "stateset on a map without labels", generator: Generator{Type: MetricTypeStateSet, PathKind: PathKindMap}},
 		{
 			name:        "stateset on a map with a label",
 			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindMap, Labels: label("a")},
