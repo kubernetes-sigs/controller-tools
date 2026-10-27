@@ -17,17 +17,16 @@ limitations under the License.
 package metrics
 
 import (
-	"go/token"
-	"go/types"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-func Test_annotatePathKinds(t *testing.T) {
+func Test_annotatePathAndValueKinds(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -40,27 +39,38 @@ func Test_annotatePathKinds(t *testing.T) {
 	// the types of the imported packages are invalid, like it is in the generator.
 	(&loader.TypeChecker{}).Check(roots[0])
 	roots[0].NeedTypesInfo()
-	foo := roots[0].Types.Scope().Lookup("Foo")
-	if foo == nil {
-		t.Fatal("type Foo not found")
+
+	gauge := func(path ...string) model.Generator {
+		return model.Generator{Type: model.MetricTypeGauge, Path: path}
 	}
 
 	tests := []struct {
-		name          string
+		name string
+		// root is the name of the type in testdata/v1 the path starts at. Defaults to Foo.
+		root          string
 		metric        model.Generator
 		wantPathKind  model.PathKind
 		wantValueKind model.ValueKind
+		wantErrPart   string
 	}{
-		{name: "scalar", metric: model.Generator{Type: model.MetricTypeGauge, Path: model.Path{"spec", "someString"}}, wantPathKind: model.PathKindScalar},
+		// Path kinds.
+		{name: "scalar", metric: gauge("spec", "someString"), wantPathKind: model.PathKindScalar},
 		{name: "struct", metric: model.Generator{Type: model.MetricTypeInfo, Path: model.Path{"spec"}}, wantPathKind: model.PathKindObject},
 		{name: "map of an inlined field", metric: model.Generator{Type: model.MetricTypeInfo, Path: model.Path{"metadata", "labels"}}, wantPathKind: model.PathKindMap},
 		{name: "list", metric: model.Generator{Type: model.MetricTypeStateSet, Path: model.Path{"status", "conditions"}}, wantPathKind: model.PathKindArray},
 		{name: "list of an inlined field", metric: model.Generator{Type: model.MetricTypeInfo, Path: model.Path{"metadata", "ownerReferences"}}, wantPathKind: model.PathKindArray},
-		{
-			name:         "timestamp type",
-			metric:       model.Generator{Type: model.MetricTypeGauge, Path: model.Path{"metadata", "creationTimestamp"}},
-			wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp,
-		},
+		{name: "map", root: "PathKinds", metric: gauge("map"), wantPathKind: model.PathKindMap},
+		{name: "entry of a map of structs", root: "PathKinds", metric: gauge("map", "someKey"), wantPathKind: model.PathKindObject},
+		{name: "field of an entry of a map, the key is consumed", root: "PathKinds", metric: gauge("map", "someKey", "a"), wantPathKind: model.PathKindScalar},
+
+		// Inlined fields.
+		{name: "inlined embedded field", root: "PathKinds", metric: gauge("a"), wantPathKind: model.PathKindScalar},
+		{name: "inlined embedded field with a name and the inline option", root: "PathKinds", metric: gauge("b"), wantPathKind: model.PathKindScalar},
+		{name: "embedded field without a json name", root: "PathKinds", metric: gauge("c"), wantPathKind: model.PathKindScalar},
+		{name: "field with a name containing inline is accessible by its name", root: "PathKinds", metric: gauge("inlineFoo", "a"), wantPathKind: model.PathKindScalar},
+
+		// Value kinds.
+		{name: "timestamp type", metric: gauge("metadata", "creationTimestamp"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
 		{
 			name:         "timestamp type in the elements of a list",
 			metric:       model.Generator{Type: model.MetricTypeGauge, Path: model.Path{"status", "conditions"}, Value: model.Path{"lastTransitionTime"}},
@@ -76,124 +86,58 @@ func Test_annotatePathKinds(t *testing.T) {
 			metric:       model.Generator{Type: model.MetricTypeStateSet, Path: model.Path{"status", "conditions"}, Value: model.Path{"lastTransitionTime"}},
 			wantPathKind: model.PathKindArray,
 		},
-		{name: "unknown path is scalar", metric: model.Generator{Type: model.MetricTypeGauge, Path: model.Path{"spec", "doesNotExist"}}, wantPathKind: model.PathKindScalar},
+		{name: "micro time", root: "PathKinds", metric: gauge("microTime"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
+		{name: "pointer to time", root: "PathKinds", metric: gauge("timePointer"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
+		{name: "alias of time", root: "PathKinds", metric: gauge("timeAlias"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
+		{name: "alias of a pointer to time", root: "PathKinds", metric: gauge("timeAliasPointer"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
+		{name: "pointer to an alias of time", root: "PathKinds", metric: gauge("pointerToTimeAlias"), wantPathKind: model.PathKindObject, wantValueKind: model.ValueKindTimestamp},
+		{name: "other type named Time", root: "PathKinds", metric: gauge("otherTime"), wantPathKind: model.PathKindObject},
+		{name: "other type of metav1", root: "PathKinds", metric: gauge("duration"), wantPathKind: model.PathKindObject},
+
+		// Paths which don't exist in the Go types are configuration errors.
+		{name: "unknown path", metric: gauge("spec", "doesNotExist"), wantErrPart: `the path "spec.doesNotExist" does not exist`},
+		{
+			name:        "unknown value path",
+			metric:      model.Generator{Type: model.MetricTypeGauge, Path: model.Path{"status", "conditions"}, Value: model.Path{"doesNotExist"}},
+			wantErrPart: `the value path "status.conditions.doesNotExist" does not exist`,
+		},
+		{
+			name:        "unknown value path of a stateset",
+			metric:      model.Generator{Type: model.MetricTypeStateSet, Path: model.Path{"status", "conditions"}, Value: model.Path{"doesNotExist"}},
+			wantErrPart: `the value path "status.conditions.doesNotExist" does not exist`,
+		},
+		{name: "field with a name containing inline is not inlined", root: "PathKinds", metric: gauge("inlineFoo", "x"), wantErrPart: "does not exist"},
+		{name: "path below any", root: "PathKinds", metric: gauge("any", "foo"), wantErrPart: `"any.foo" does not exist`},
+		{name: "path below runtime.RawExtension", root: "PathKinds", metric: gauge("raw", "foo"), wantErrPart: `"raw.foo" does not exist`},
+		{name: "path below apiextensionsv1.JSON", root: "PathKinds", metric: gauge("json", "foo"), wantErrPart: `"json.foo" does not exist`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			rootName := tt.root
+			if rootName == "" {
+				rootName = "Foo"
+			}
+			object := roots[0].Types.Scope().Lookup(rootName)
+			if object == nil {
+				t.Fatalf("type %s not found", rootName)
+			}
+
 			metrics := []model.Generator{tt.metric}
-			annotatePathKinds(metrics, foo.Type())
+			err := annotatePathAndValueKinds(metrics, object.Type())
+			if tt.wantErrPart != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErrPart) {
+					t.Fatalf("annotatePathAndValueKinds() error = %v, want error containing %q", err, tt.wantErrPart)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
 			if metrics[0].PathKind != tt.wantPathKind {
 				t.Errorf("PathKind = %q, want %q", metrics[0].PathKind, tt.wantPathKind)
 			}
 			if metrics[0].ValueKind != tt.wantValueKind {
 				t.Errorf("ValueKind = %q, want %q", metrics[0].ValueKind, tt.wantValueKind)
-			}
-		})
-	}
-}
-
-func Test_goTypeAtJSONPath_inlineAndMaps(t *testing.T) {
-	pkg := types.NewPackage("example.io/api", "api")
-	str := types.Typ[types.String]
-	field := func(name string, typ types.Type, embedded bool) *types.Var {
-		return types.NewField(token.NoPos, pkg, name, typ, embedded)
-	}
-
-	inner := types.NewNamed(types.NewTypeName(token.NoPos, pkg, "Inner", nil), types.NewStruct([]*types.Var{field("A", str, false)}, []string{`json:"a"`}), nil)
-
-	tests := []struct {
-		name     string
-		root     types.Type
-		path     []string
-		wantType types.Type
-	}{
-		{
-			name:     "inlined embedded field",
-			root:     types.NewStruct([]*types.Var{field("Inner", inner, true)}, []string{`json:",inline"`}),
-			path:     []string{"a"},
-			wantType: str,
-		},
-		{
-			name:     "inlined embedded field with a name and the inline option",
-			root:     types.NewStruct([]*types.Var{field("Inner", inner, true)}, []string{`json:"x,inline"`}),
-			path:     []string{"a"},
-			wantType: str,
-		},
-		{
-			name:     "embedded field without a json name",
-			root:     types.NewStruct([]*types.Var{field("Inner", inner, true)}, []string{""}),
-			path:     []string{"a"},
-			wantType: str,
-		},
-		{
-			// The name only contains the word inline, which must not inline the field.
-			name: "embedded field with a name containing inline is not inlined",
-			root: types.NewStruct([]*types.Var{field("Inner", inner, true)}, []string{`json:"inlineFoo"`}),
-			path: []string{"a"},
-		},
-		{
-			name:     "embedded field with a name containing inline is accessible by its name",
-			root:     types.NewStruct([]*types.Var{field("Inner", inner, true)}, []string{`json:"inlineFoo"`}),
-			path:     []string{"inlineFoo", "a"},
-			wantType: str,
-		},
-		{
-			name:     "key of a map is consumed",
-			root:     types.NewStruct([]*types.Var{field("M", types.NewMap(str, inner), false)}, []string{`json:"m"`}),
-			path:     []string{"m", "someKey", "a"},
-			wantType: str,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := goTypeAtJSONPath(tt.root, tt.path)
-			if got != tt.wantType {
-				t.Errorf("goTypeAtJSONPath() = %v, want %v", got, tt.wantType)
-			}
-		})
-	}
-
-	t.Run("kind of a map", func(t *testing.T) {
-		root := types.NewStruct([]*types.Var{field("M", types.NewMap(str, inner), false)}, []string{`json:"m"`})
-		if got := goPathKind(root, []string{"m"}); got != model.PathKindMap {
-			t.Errorf("goPathKind() = %q, want %q", got, model.PathKindMap)
-		}
-		if got := goPathKind(root, []string{"m", "key"}); got != model.PathKindObject {
-			t.Errorf("goPathKind() of an entry of a map of structs = %q, want %q", got, model.PathKindObject)
-		}
-	})
-}
-
-func Test_isTimestampType_aliases(t *testing.T) {
-	metav1 := types.NewPackage("k8s.io/apimachinery/pkg/apis/meta/v1", "v1")
-	other := types.NewPackage("example.io/api", "api")
-	newNamed := func(pkg *types.Package, name string) *types.Named {
-		return types.NewNamed(types.NewTypeName(token.NoPos, pkg, name, nil), types.NewStruct(nil, nil), nil)
-	}
-	newAlias := func(name string, rhs types.Type) types.Type {
-		return types.NewAlias(types.NewTypeName(token.NoPos, other, name, nil), rhs)
-	}
-
-	time := newNamed(metav1, "Time")
-	tests := []struct {
-		name string
-		typ  types.Type
-		want bool
-	}{
-		{name: "time", typ: time, want: true},
-		{name: "micro time", typ: newNamed(metav1, "MicroTime"), want: true},
-		{name: "pointer to time", typ: types.NewPointer(time), want: true},
-		{name: "alias of time", typ: newAlias("MyTime", time), want: true},
-		{name: "alias of a pointer to time", typ: newAlias("MyTimePtr", types.NewPointer(time)), want: true},
-		{name: "pointer to an alias of time", typ: types.NewPointer(newAlias("MyTime", time)), want: true},
-		{name: "other type named Time", typ: newNamed(other, "Time"), want: false},
-		{name: "other type of metav1", typ: newNamed(metav1, "Duration"), want: false},
-		{name: "nil", typ: nil, want: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isTimestampType(tt.typ); got != tt.want {
-				t.Errorf("isTimestampType() = %v, want %v", got, tt.want)
 			}
 		})
 	}

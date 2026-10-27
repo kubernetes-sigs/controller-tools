@@ -25,6 +25,11 @@ import (
 type FooSpec struct {
 	// SomeString is a string.
 	SomeString string `json:"someString"`
+
+	// Tags are the tags of a Foo.
+	// The path "." of the label refers to each tag itself, which is a string and has no fields.
+	// +k8s:controller-gen:metrics:info:name="tags",help="The tags of a foo.",labels={tag:"."}
+	Tags []string `json:"tags,omitempty"`
 }
 
 // FooStatus is the status of Foo.

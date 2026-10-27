@@ -34,6 +34,7 @@ func (r Resource) Validate() error {
 // the value separately and the iteration order of a map differs between evaluations, so the
 // labels would get assigned to the wrong entries. This is not a problem for an Info metric
 // having a single label, as the values of all entries are the same.
+// This is a limitation of the CEL resolver of resource-state-metrics.
 func (g Generator) validateMapLabels(gvk GroupVersionKind) error {
 	if g.PathKind != PathKindMap {
 		return nil

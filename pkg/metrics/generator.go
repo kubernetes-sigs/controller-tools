@@ -50,17 +50,17 @@ type Generator struct {
 	// Left unspecified, the default is resource-state-metrics.
 	Target string `marker:",optional"`
 
-	// Name is the name of the ResourceMetricsMonitor which gets generated for resource-state-metrics.
+	// ResourceMetricsMonitorName is the name of the ResourceMetricsMonitor which gets generated for resource-state-metrics.
 	// It is only supported by the resource-state-metrics target.
 	//
 	// Left unspecified, the default is resource-metrics.
-	Name string `marker:",optional"`
+	ResourceMetricsMonitorName string `marker:",optional"`
 
-	// Namespace is the namespace of the ResourceMetricsMonitor which gets generated for resource-state-metrics.
+	// ResourceMetricsMonitorNamespace is the namespace of the ResourceMetricsMonitor which gets generated for resource-state-metrics.
 	// It is only supported by the resource-state-metrics target.
 	//
 	// Left unspecified, the namespace is not set.
-	Namespace string `marker:",optional"`
+	ResourceMetricsMonitorNamespace string `marker:",optional"`
 }
 
 var _ genall.Generator = &Generator{}
@@ -117,7 +117,7 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 
 		// Create metrics for all Custom Resources in this package.
-		// This creates the customresourcestate.Resource object which contains all metric
+		// This creates the model.Resource object which contains all metric
 		// definitions for the Custom Resource, if it is part of the package.
 		for _, gv := range kubeKinds {
 			if err := parser.NeedResourceFor(pkg, gv); err != nil {
@@ -165,7 +165,7 @@ func sortedResources(resourceStates map[crd.TypeIdent]*model.Resource) []model.R
 	}
 
 	// Sort the resources by GVK to get a deterministic output.
-	slices.SortFunc(resources, func(a, b model.Resource) int {
+	slices.SortStableFunc(resources, func(a, b model.Resource) int {
 		return strings.Compare(a.GroupVersionKind.String(), b.GroupVersionKind.String())
 	})
 	return resources

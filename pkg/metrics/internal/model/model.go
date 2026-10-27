@@ -110,7 +110,7 @@ type Generator struct {
 
 	// Value is the path to the field containing the value of the metric (Gauge) or
 	// the field compared to the states (StateSet). It is relative to Path.
-	// Not used by Info.
+	// Only used by Gauge and StateSet.
 	Value Path
 
 	// MissingAsZero exposes a missing value as zero instead of not exposing the metric.
@@ -124,11 +124,13 @@ type Generator struct {
 	LabelName string
 
 	// PathKind is the kind of the field at Path. It is derived from the Go type and
-	// is needed by targets which have to know how to iterate over the path.
+	// is needed by targets (the metrics implementations kube-state-metrics and
+	// resource-state-metrics) which have to know how to iterate over the path.
 	PathKind PathKind
 
 	// ValueKind describes how the field at Value has to be converted. It is derived
-	// from the Go type and is needed by targets which have to convert the value.
+	// from the Go type and is needed by targets (the metrics implementations kube-state-metrics
+	// and resource-state-metrics) which have to convert the value.
 	ValueKind ValueKind
 }
 
@@ -137,16 +139,16 @@ type PathKind string
 
 // Supported path kinds.
 const (
-	// PathKindScalar is a single value.
+	// PathKindScalar is a single value. A single metric is generated.
 	PathKindScalar PathKind = "scalar"
 
-	// PathKindObject is a struct.
+	// PathKindObject is a struct. A single metric is generated.
 	PathKindObject PathKind = "object"
 
 	// PathKindMap is a map. A metric is generated for each entry.
 	PathKindMap PathKind = "map"
 
-	// PathKindArray is a list.
+	// PathKindArray is a list. A metric is generated for each element.
 	PathKindArray PathKind = "array"
 )
 

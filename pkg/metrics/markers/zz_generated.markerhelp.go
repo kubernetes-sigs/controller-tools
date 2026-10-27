@@ -38,7 +38,7 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "",
+				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
@@ -78,7 +78,7 @@ func (infoMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "",
+				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
@@ -130,7 +130,7 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "",
+				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",

@@ -37,9 +37,6 @@ func Test_Generate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rsmFiles := []string{"resource-metrics-monitor.yaml", "rbac.yaml"}
-	rsmGenerator := Generator{Experimental: true, Name: "foo-metrics", Namespace: "default"}
-
 	tests := []struct {
 		name      string
 		generator Generator
@@ -50,20 +47,20 @@ func Test_Generate(t *testing.T) {
 	}{
 		{
 			name:      "default",
-			generator: rsmGenerator,
+			generator: Generator{Experimental: true, ResourceMetricsMonitorName: "foo-metrics", ResourceMetricsMonitorNamespace: "default"},
 			goldenDir: "resource-state-metrics",
-			files:     rsmFiles,
+			files:     []string{"resource-metrics-monitor.yaml", "rbac.yaml"},
 		},
 		{
 			name: "resource-state-metrics",
 			generator: Generator{
-				Experimental: true,
-				Target:       targetResourceStateMetrics,
-				Name:         rsmGenerator.Name,
-				Namespace:    rsmGenerator.Namespace,
+				Experimental:                    true,
+				Target:                          targetResourceStateMetrics,
+				ResourceMetricsMonitorName:      "foo-metrics",
+				ResourceMetricsMonitorNamespace: "default",
 			},
 			goldenDir: "resource-state-metrics",
-			files:     rsmFiles,
+			files:     []string{"resource-metrics-monitor.yaml", "rbac.yaml"},
 		},
 		{
 			name:      "kube-state-metrics",

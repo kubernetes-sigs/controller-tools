@@ -76,7 +76,7 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 
 	// Skip if the store marker is not set. This marker is the opt-in for creating metrics
 	// for a custom resource.
-	if m := typeInfo.Markers.Get(markers.StoreMarkerName); m == nil {
+	if typeInfo.Markers.Get(markers.StoreMarkerName) == nil {
 		return nil
 	}
 
@@ -85,7 +85,10 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 		return err
 	}
 	if object := pkg.Types.Scope().Lookup(typeIdent.Name); object != nil {
-		annotatePathKinds(metrics, object.Type())
+		if err := annotatePathAndValueKinds(metrics, object.Type()); err != nil {
+			pkg.AddError(loader.ErrFromNode(err, typeInfo.RawSpec))
+			return nil
+		}
 	}
 
 	// Initialize the Resource object.
@@ -145,7 +148,7 @@ func (p *parser) NeedMetricsGeneratorFor(typ crd.TypeIdent) ([]model.Generator, 
 	// Types of other packages are only known after the package got indexed.
 	p.NeedPackage(typ.Package)
 
-	if _, recursing := p.inProgress[typ]; recursing {
+	if _, alreadyVisited := p.inProgress[typ]; alreadyVisited {
 		// Self-referencing types would result in an endless path.
 		return nil, nil
 	}

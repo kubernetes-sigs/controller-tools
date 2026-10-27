@@ -26,74 +26,83 @@ import (
 
 func Test_fromModel(t *testing.T) {
 	prefix := "foo"
-	resource := model.Resource{
-		NamePrefix:       &prefix,
-		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-		Labels:           []model.Label{{Name: "name", Path: model.Path{"metadata", "name"}}},
-		Metrics: []model.Generator{
-			{
-				Name: "g", Help: "gauge", Type: model.MetricTypeGauge,
-				Path: model.Path{"spec", "a"}, Value: model.Path{"b"}, KeyLabel: "key", MissingAsZero: true,
-				Labels: []model.Label{{Name: "l", Path: model.Path{"l"}}},
+
+	tests := []struct {
+		name     string
+		resource model.Resource
+		want     Resource
+	}{
+		{
+			name: "all fields are converted",
+			resource: model.Resource{
+				NamePrefix:       &prefix,
+				GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
+				Labels:           []model.Label{{Name: "name", Path: model.Path{"metadata", "name"}}},
+				Metrics: []model.Generator{
+					{
+						Name: "g", Help: "gauge", Type: model.MetricTypeGauge,
+						Path: model.Path{"spec", "a"}, Value: model.Path{"b"}, KeyLabel: "key", MissingAsZero: true,
+						Labels: []model.Label{{Name: "l", Path: model.Path{"l"}}},
+					},
+					{
+						Name: "i", Help: "info", Type: model.MetricTypeInfo,
+						Path: model.Path{"spec", "i"}, KeyLabel: "key",
+					},
+					{
+						Name: "s", Help: "stateset", Type: model.MetricTypeStateSet,
+						Path: model.Path{"spec", "s"}, Value: model.Path{"state"}, List: []string{"a", "b"}, LabelName: "state",
+					},
+				},
 			},
-			{
-				Name: "i", Help: "info", Type: model.MetricTypeInfo,
-				Path: model.Path{"spec", "i"}, KeyLabel: "key",
+			want: Resource{
+				MetricNamePrefix: &prefix,
+				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
+				Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}}},
+				Metrics: []Generator{
+					{Name: "g", Help: "gauge", Each: Metric{Type: MetricTypeGauge, Gauge: &MetricGauge{
+						MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
+						ValueFrom:    []string{"b"},
+						LabelFromKey: "key",
+						NilIsZero:    true,
+					}}},
+					{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
+						MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "i"}},
+						LabelFromKey: "key",
+					}}},
+					{Name: "s", Help: "stateset", Each: Metric{Type: MetricTypeStateSet, StateSet: &MetricStateSet{
+						MetricMeta: MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "s"}},
+						List:       []string{"a", "b"},
+						LabelName:  "state",
+						ValueFrom:  []string{"state"},
+					}}},
+				},
 			},
-			{
-				Name: "s", Help: "stateset", Type: model.MetricTypeStateSet,
-				Path: model.Path{"spec", "s"}, Value: model.Path{"state"}, List: []string{"a", "b"}, LabelName: "state",
+		},
+		{
+			// A nil name prefix and path must stay nil and empty labels must result in an empty map.
+			// Both are omitted in the output.
+			name: "unset values",
+			resource: model.Resource{
+				GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
+				Metrics: []model.Generator{{
+					Name: "i", Help: "info", Type: model.MetricTypeInfo,
+					Path: nil, Labels: []model.Label{},
+				}},
+			},
+			want: Resource{
+				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
+				Labels:           Labels{LabelsFromPath: map[string][]string{}},
+				Metrics: []Generator{{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
+					MetricMeta: MetricMeta{LabelsFromPath: map[string][]string{}},
+				}}}},
 			},
 		},
 	}
-
-	want := Resource{
-		MetricNamePrefix: &prefix,
-		GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-		Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}}},
-		Metrics: []Generator{
-			{Name: "g", Help: "gauge", Each: Metric{Type: MetricTypeGauge, Gauge: &MetricGauge{
-				MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
-				ValueFrom:    []string{"b"},
-				LabelFromKey: "key",
-				NilIsZero:    true,
-			}}},
-			{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
-				MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "i"}},
-				LabelFromKey: "key",
-			}}},
-			{Name: "s", Help: "stateset", Each: Metric{Type: MetricTypeStateSet, StateSet: &MetricStateSet{
-				MetricMeta: MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "s"}},
-				List:       []string{"a", "b"},
-				LabelName:  "state",
-				ValueFrom:  []string{"state"},
-			}}},
-		},
-	}
-
-	if diff := cmp.Diff(want, fromModel(resource)); diff != "" {
-		t.Errorf("fromModel() (-want,+got): %s", diff)
-	}
-}
-
-func Test_fromModel_unsetValues(t *testing.T) {
-	got := fromModel(model.Resource{
-		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-		Metrics: []model.Generator{{
-			Name: "i", Help: "info", Type: model.MetricTypeInfo,
-			// A nil path must stay nil and an empty list of labels must result in an empty map, which is omitted.
-			Path: nil, Labels: []model.Label{},
-		}},
-	})
-
-	if got.MetricNamePrefix != nil {
-		t.Errorf("expected the metric name prefix to stay nil, got %q", *got.MetricNamePrefix)
-	}
-	if len(got.Labels.LabelsFromPath) != 0 {
-		t.Errorf("expected no resource labels, got %v", got.Labels.LabelsFromPath)
-	}
-	info := got.Metrics[0].Each.Info
-	if info == nil || info.Path != nil || len(info.LabelsFromPath) != 0 {
-		t.Errorf("expected nil path and no labels, got %#v", info)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if diff := cmp.Diff(tt.want, fromModel(tt.resource)); diff != "" {
+				t.Errorf("fromModel() (-want,+got): %s", diff)
+			}
+		})
 	}
 }

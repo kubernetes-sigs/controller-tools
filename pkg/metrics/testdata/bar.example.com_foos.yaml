@@ -42,6 +42,13 @@ spec:
               someString:
                 description: SomeString is a string.
                 type: string
+              tags:
+                description: |-
+                  Tags are the tags of a Foo.
+                  The path "." of the label refers to each tag itself, which is a string and has no fields.
+                items:
+                  type: string
+                type: array
             required:
             - someString
             type: object

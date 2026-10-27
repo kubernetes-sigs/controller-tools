@@ -45,8 +45,8 @@ const (
 	defaultName = "resource-metrics"
 )
 
-// familyName is the pattern resource-state-metrics requires for the name of a family.
-var familyName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+// familyNamePattern is the pattern resource-state-metrics requires for the name of a family.
+var familyNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // Builder builds a ResourceMetricsMonitor for resource-state-metrics.
 type Builder struct {
@@ -85,8 +85,8 @@ func (b *Builder) AddResource(resource model.Resource) error {
 		if family.Help == "" {
 			return fmt.Errorf("metric %q of %s: resource-state-metrics requires the help to be set", family.Name, resource.GroupVersionKind)
 		}
-		if !familyName.MatchString(family.Name) {
-			return fmt.Errorf("metric %q of %s: resource-state-metrics requires the name to match %s", family.Name, resource.GroupVersionKind, familyName)
+		if !familyNamePattern.MatchString(family.Name) {
+			return fmt.Errorf("metric %q of %s: resource-state-metrics requires the name to match %s", family.Name, resource.GroupVersionKind, familyNamePattern)
 		}
 	}
 
@@ -115,51 +115,78 @@ func (b *Builder) Write(ctx *genall.GenerationContext) error {
 	return b.rbac.Write(ctx, map[string]string{aggregateLabel: "true"})
 }
 
-// validateLabels checks the names of the labels of the metrics. resource-state-metrics rejects
-// duplicate label names and adds some labels to every sample itself. Labels of the markers
-// `label` and `labels` having the name of an injected label are dropped, which is
-// documented. Labels created from other options are rejected, as they would not be exposed.
+// validateLabels checks the names of the labels of the metrics, as resource-state-metrics
+// rejects duplicate label names and adds the labels group, version, kind, name and namespace
+// to every sample itself.
 func validateLabels(resource model.Resource) error {
 	for _, metric := range resource.Metrics {
-		names := map[string]struct{}{}
-		add := func(option, name string) error {
-			if name == "" {
-				return fmt.Errorf("metric %q of %s: the name of the label of the option %s must not be empty", metric.Name, resource.GroupVersionKind, option)
-			}
-			if _, exists := names[name]; exists {
-				return fmt.Errorf("metric %q of %s: the label %q is set multiple times, resource-state-metrics requires unique label names", metric.Name, resource.GroupVersionKind, name)
-			}
-			names[name] = struct{}{}
-			return nil
+		if err := validateMetricLabels(resource, metric); err != nil {
+			return err
 		}
-		addOption := func(option, name string) error {
-			if isAutoLabel(name) {
-				return fmt.Errorf("metric %q of %s: the label %q of the option %s is added by resource-state-metrics to every metric", metric.Name, resource.GroupVersionKind, name, option)
-			}
-			return add(option, name)
-		}
+	}
+	return nil
+}
 
-		for _, label := range slices.Concat(resource.Labels, metric.Labels) {
-			if isAutoLabel(label.Name) {
-				continue
-			}
-			if err := add("labels", label.Name); err != nil {
-				return err
-			}
-		}
+// labelNames collects the names of the labels exposed by a metric to reject duplicates.
+type labelNames struct {
+	gvk    model.GroupVersionKind
+	metric string
+	names  map[string]struct{}
+}
 
-		if metric.KeyLabel != "" {
-			if metric.PathKind != model.PathKindMap {
-				return fmt.Errorf("metric %q of %s: the option keyLabel can only be used if the path points to a map", metric.Name, resource.GroupVersionKind)
-			}
-			if err := addOption("keyLabel", metric.KeyLabel); err != nil {
-				return err
-			}
+// addUnique registers the name of a label and rejects duplicates and empty names.
+// option is the name of the marker option the label is created from.
+func (l labelNames) addUnique(option, name string) error {
+	if name == "" {
+		return fmt.Errorf("metric %q of %s: the name of the label of the option %s must not be empty", l.metric, l.gvk, option)
+	}
+	if _, exists := l.names[name]; exists {
+		return fmt.Errorf("metric %q of %s: the label %q is set multiple times, resource-state-metrics requires unique label names", l.metric, l.gvk, name)
+	}
+	l.names[name] = struct{}{}
+	return nil
+}
+
+// addUniqueOption is like addUnique, but additionally rejects the names of the labels which are injected
+// by resource-state-metrics. In contrast to the labels of the markers `label` and `labels`, the labels
+// created from the options keyLabel and labelName are not dropped silently, as they usually are an
+// essential part of the metric and would not be exposed.
+func (l labelNames) addUniqueOption(option, name string) error {
+	if isAutoLabel(name) {
+		return fmt.Errorf("metric %q of %s: the label %q of the option %s is added by resource-state-metrics to every metric", l.metric, l.gvk, name, option)
+	}
+	return l.addUnique(option, name)
+}
+
+// validateMetricLabels validates the labels of a single metric. The labels of the resource
+// get exposed on all of its metrics, so they have to be unique together with the labels of the metric.
+func validateMetricLabels(resource model.Resource, metric model.Generator) error {
+	gvk := resource.GroupVersionKind
+	names := labelNames{gvk: gvk, metric: metric.Name, names: map[string]struct{}{}}
+
+	// Labels of the markers `label` and `labels` having the name of a label which is injected
+	// by resource-state-metrics are dropped, which is documented at the markers. Dropping them
+	// allows to use the same markers for all targets.
+	for _, label := range slices.Concat(resource.Labels, metric.Labels) {
+		if isAutoLabel(label.Name) {
+			continue
 		}
-		if metric.Type == model.MetricTypeStateSet {
-			if err := addOption("labelName", metric.LabelName); err != nil {
-				return err
-			}
+		if err := names.addUnique("labels", label.Name); err != nil {
+			return err
+		}
+	}
+
+	if metric.KeyLabel != "" {
+		if metric.PathKind != model.PathKindMap {
+			return fmt.Errorf("metric %q of %s: the option keyLabel can only be used if the path points to a map", metric.Name, gvk)
+		}
+		if err := names.addUniqueOption("keyLabel", metric.KeyLabel); err != nil {
+			return err
+		}
+	}
+	if metric.Type == model.MetricTypeStateSet {
+		if err := names.addUniqueOption("labelName", metric.LabelName); err != nil {
+			return err
 		}
 	}
 	return nil

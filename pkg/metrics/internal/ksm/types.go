@@ -141,7 +141,7 @@ type MetricMeta struct {
 	// LabelsFromPath adds additional labels where the value of the label is taken from a field under Path.
 	LabelsFromPath map[string][]string `json:"labelsFromPath,omitempty"`
 
-	// Path is the path to to generate metric(s) for.
+	// Path is the path to generate metric(s) for.
 	Path []string `json:"path"`
 }
 
@@ -154,6 +154,7 @@ type MetricGauge struct {
 	ValueFrom []string `json:"valueFrom,omitempty"`
 
 	// LabelFromKey adds a label with the given name if Path is an object. The label value will be the object key.
+	// Example: With "pool" and a path pointing to `{a: ..., b: ...}`, the metrics have the labels pool="a" and pool="b".
 	LabelFromKey string `json:"labelFromKey,omitempty"`
 
 	// NilIsZero indicates that if a value is nil it will be treated as zero value.
@@ -166,6 +167,7 @@ type MetricInfo struct {
 	MetricMeta
 
 	// LabelFromKey adds a label with the given name if Path is an object. The label value will be the object key.
+	// Example: With "pool" and a path pointing to `{a: ..., b: ...}`, the metrics have the labels pool="a" and pool="b".
 	LabelFromKey string `json:"labelFromKey,omitempty"`
 }
 

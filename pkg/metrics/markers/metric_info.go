@@ -46,7 +46,9 @@ type infoMarker struct {
 
 	// Name specifies the Name of the metric.
 	Name string
+
 	// MetricHelp specifies the help text for the metric.
+	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
@@ -55,6 +57,7 @@ type infoMarker struct {
 	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
 	// Note: If the path points to a map, at most one label for its entries is supported, either keyLabel or one of labels, as the labels can't be aligned with each other by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
+
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
 	JSONPath jsonPath `marker:"JSONPath,optional"`

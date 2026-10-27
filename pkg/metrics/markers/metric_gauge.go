@@ -49,7 +49,9 @@ type gaugeMarker struct {
 
 	// Name specifies the Name of the metric.
 	Name string
+
 	// MetricHelp specifies the help text for the metric.
+	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
@@ -58,6 +60,7 @@ type gaugeMarker struct {
 	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
+
 	// JSONPath specifies the relative path from this marker.
 	// Note: This field get's appended to the path field in the custom resource configuration.
 	JSONPath jsonPath `marker:"JSONPath,optional"`
@@ -67,10 +70,12 @@ type gaugeMarker struct {
 	// Value specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.
 	// Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime.
 	Value *jsonPath `marker:"value,optional"`
+
 	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
 	// Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.
 	// Note: If the path points to a map, labels for its entries, including this label, are not supported by gauge metrics, as they can't be aligned with the values by all targets.
 	KeyLabel string `marker:"keyLabel,optional"`
+
 	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
 	// Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.
 	MissingAsZero bool `marker:"missingAsZero,optional"`
