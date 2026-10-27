@@ -75,7 +75,8 @@ func Test_addResources_validatesForAllTargets(t *testing.T) {
 		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"},
 		Metrics: []model.Generator{{
 			Name: "foo", Help: "Foo.", Type: model.MetricTypeGauge,
-			Path: model.Path{"spec", "m"}, PathKind: model.PathKindMap, KeyLabel: "key",
+			Path: model.Path{"spec", "m"}, PathKind: model.PathKindMap,
+			Labels: []model.Label{{Name: "key", Path: model.Path{"k"}}},
 		}},
 	}}
 

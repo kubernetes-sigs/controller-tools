@@ -38,8 +38,8 @@ type FooSpec struct {
 
 // Foo is a test object.
 // +k8s:controller-gen:metrics:store:namePrefix="foo"
-// +k8s:controller-gen:metrics:label:name="name",JSONPath=".metadata.name"
-// +k8s:controller-gen:metrics:gauge:name="created",JSONPath=".metadata.creationTimestamp",help="Unix creation timestamp."
+// +k8s:controller-gen:metrics:label:name="name",value=".metadata.name"
+// +k8s:controller-gen:metrics:gauge:name="created",path=".metadata.creationTimestamp",help="Unix creation timestamp."
 // +kubebuilder:storageversion
 type Foo struct {
 	// TypeMeta comments should NOT appear in the CRD spec

@@ -41,15 +41,12 @@ func (g Generator) validateMapLabels(gvk GroupVersionKind) error {
 	}
 
 	labels := len(g.Labels)
-	if g.KeyLabel != "" {
-		labels++
-	}
 
 	switch {
 	case g.Type == MetricTypeInfo && labels > 1:
-		return fmt.Errorf("metric %q of %s: an Info metric on a map supports at most one label (keyLabel or one of labels), got %d", g.Name, gvk, labels)
+		return fmt.Errorf("metric %q of %s: an Info metric on a map supports at most one label, got %d", g.Name, gvk, labels)
 	case g.Type != MetricTypeInfo && labels > 0:
-		return fmt.Errorf("metric %q of %s: a %s metric on a map doesn't support labels (keyLabel, labels)", g.Name, gvk, g.Type)
+		return fmt.Errorf("metric %q of %s: a %s metric on a map doesn't support labels", g.Name, gvk, g.Type)
 	}
 	return nil
 }

@@ -28,8 +28,8 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
 		Category: "Metric type Gauge",
 		DetailedHelp: markers.DetailedHelp{
-			Summary: "defines a Gauge metric and uses the implicit path to the field joined by the provided JSONPath as path for the metric configuration.",
-			Details: "Gauge is a metric which targets a Path that may be a single value, array, or object.\nArrays and objects will generate a metric per element and require Value to be set.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge",
+			Summary: "defines a Gauge metric and uses the path to the field joined by the provided path as path of the metric.",
+			Details: "Gauge is a metric which targets a Path that may be a single value, array, or object.\nLists and maps generate a metric per element. If the elements are objects, Value has to point to the numeric field of each element.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Name": {
@@ -38,23 +38,19 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
+				Details: "",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
 				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
 			},
-			"JSONPath": {
-				Summary: "specifies the relative path from this marker.",
-				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
+			"Path": {
+				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
+				Details: "With the kube-state-metrics target the full path ends up in the path field of the metric.",
 			},
 			"Value": {
 				Summary: "specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.",
 				Details: "Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime.",
-			},
-			"KeyLabel": {
-				Summary: "specifies a label which will be added to the metric having the object's key as value.",
-				Details: "Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.\nNote: If the path points to a map, labels for its entries, including this label, are not supported by gauge metrics, as they can't be aligned with the values by all targets.",
 			},
 			"MissingAsZero": {
 				Summary: "specifies to expose a not-existing field as zero value instead of omitting the metric.",
@@ -78,19 +74,15 @@ func (infoMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
+				Details: "",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
-				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, at most one label for its entries is supported, either keyLabel or one of labels, as the labels can't be aligned with each other by all targets.",
+				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets.",
 			},
-			"JSONPath": {
-				Summary: "specifies the relative path from this marker.",
-				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
-			},
-			"KeyLabel": {
-				Summary: "specifies a label which will be added to the metric having the object's key as value.",
-				Details: "Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.\nNote: If the path points to a map, at most one label for its entries is supported, either this label or one of labels, as the labels can't be aligned with each other by all targets.",
+			"Path": {
+				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
+				Details: "With the kube-state-metrics target the full path ends up in the path field of the metric.",
 			},
 		},
 	}
@@ -101,15 +93,15 @@ func (labelMarker) Help() *markers.DefinitionHelp {
 		Category: "Metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies additional labels for all metrics of the custom resource.",
-			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nNote: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nThe JSONPath is relative to the custom resource.",
+			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nNote: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Name": {
 				Summary: "specifies the name of the label.",
 				Details: "",
 			},
-			"JSONPath": {
-				Summary: "specifies the path to the value for the label, relative to the custom resource.",
+			"Value": {
+				Summary: "specifies the JSONPath to the value of the label, relative to the custom resource.",
 				Details: "",
 			},
 		},
@@ -130,26 +122,26 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 			},
 			"MetricHelp": {
 				Summary: "specifies the help text for the metric.",
-				Details: "Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.",
+				Details: "",
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
 				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
 			},
-			"JSONPath": {
-				Summary: "specifies the relative path from this marker.",
-				Details: "Note: This field get's appended to the path field in the custom resource configuration.",
+			"Path": {
+				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
+				Details: "With the kube-state-metrics target the full path ends up in the path field of the metric.",
 			},
-			"List": {
+			"States": {
 				Summary: "specifies a list of values to compare the given Value against.",
 				Details: "",
 			},
 			"LabelName": {
-				Summary: "specifies the key of the label which is used for each entry in List to expose the value.",
-				Details: "",
+				Summary: "specifies the key of the label which is used for each entry in States to expose the value.",
+				Details: "Note: It is required by the resource-state-metrics target.",
 			},
 			"Value": {
-				Summary: "specifies the JSONPath to the field which gets used as value to compare against the list for equality, relative to the metric path.",
+				Summary: "specifies the JSONPath to the field which gets used as value to compare against the states for equality, relative to the metric path.",
 				Details: "",
 			},
 		},
@@ -166,7 +158,7 @@ func (storeMarker) Help() *markers.DefinitionHelp {
 		FieldHelp: map[string]markers.DetailedHelp{
 			"NamePrefix": {
 				Summary: "specifies the prefix for all metrics of this resource.",
-				Details: "Note: With the kube-state-metrics target this field directly maps to the metricNamePrefix field in the resource's custom resource configuration.\nWith the resource-state-metrics target the prefix and an underscore are added to the name of every metric.",
+				Details: "Note: This field is only used by the kube-state-metrics target, where it directly maps to the metricNamePrefix field and replaces the default prefix kube_customresource, e.g. foo_created.\nIt is ignored by the resource-state-metrics target, which always uses the lowercased kind as prefix and adds it after the prefix kube_customresource_, e.g. kube_customresource_machinedeployment_created for the kind MachineDeployment.",
 			},
 		},
 	}

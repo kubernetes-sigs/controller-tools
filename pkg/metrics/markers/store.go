@@ -43,8 +43,8 @@ func init() {
 // storeMarker enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.
 type storeMarker struct {
 	// NamePrefix specifies the prefix for all metrics of this resource.
-	// Note: With the kube-state-metrics target this field directly maps to the metricNamePrefix field in the resource's custom resource configuration.
-	// With the resource-state-metrics target the prefix and an underscore are added to the name of every metric.
+	// Note: This field is only used by the kube-state-metrics target, where it directly maps to the metricNamePrefix field and replaces the default prefix kube_customresource, e.g. foo_created.
+	// It is ignored by the resource-state-metrics target, which always uses the lowercased kind as prefix and adds it after the prefix kube_customresource_, e.g. kube_customresource_machinedeployment_created for the kind MachineDeployment.
 	NamePrefix string `marker:"namePrefix,optional"`
 }
 

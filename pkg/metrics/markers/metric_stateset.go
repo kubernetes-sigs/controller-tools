@@ -49,8 +49,9 @@ type stateSetMarker struct {
 	// Name specifies the Name of the metric.
 	Name string
 
+	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
+
 	// MetricHelp specifies the help text for the metric.
-	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
@@ -60,26 +61,27 @@ type stateSetMarker struct {
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
-	// JSONPath specifies the relative path from this marker.
-	// Note: This field get's appended to the path field in the custom resource configuration.
-	JSONPath jsonPath `marker:"JSONPath,optional"`
+	// Path specifies the JSONPath of the metric, relative to the field or type the marker is set on.
+	// With the kube-state-metrics target the full path ends up in the path field of the metric.
+	Path jsonPath `marker:"path,optional"`
 
 	// Keys from the MetricStateSet struct.
 
-	// List specifies a list of values to compare the given Value against.
-	List []string `marker:"list"`
+	// States specifies a list of values to compare the given Value against.
+	States []string `marker:"states"`
 
-	// LabelName specifies the key of the label which is used for each entry in List to expose the value.
+	// LabelName specifies the key of the label which is used for each entry in States to expose the value.
+	// Note: It is required by the resource-state-metrics target.
 	LabelName string `marker:"labelName,optional"`
 
-	// Value specifies the JSONPath to the field which gets used as value to compare against the list for equality, relative to the metric path.
+	// Value specifies the JSONPath to the field which gets used as value to compare against the states for equality, relative to the metric path.
 	Value *jsonPath `marker:"value,optional"`
 }
 
 var _ LocalGeneratorMarker = &stateSetMarker{}
 
 func (s stateSetMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
-	path, err := newPath(basePath, s.JSONPath)
+	path, err := newPath(basePath, s.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func (s stateSetMarker) ToGenerator(basePath ...string) (*model.Generator, error
 		Path:      path,
 		Labels:    labels,
 		Value:     value,
-		List:      s.List,
+		List:      s.States,
 		LabelName: s.LabelName,
 	}, nil
 }

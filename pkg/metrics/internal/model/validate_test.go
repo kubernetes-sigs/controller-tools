@@ -30,13 +30,7 @@ func TestResource_Validate(t *testing.T) {
 		wantErrPart string
 	}{
 		{name: "info on a map without labels", generator: Generator{Type: MetricTypeInfo, PathKind: PathKindMap}},
-		{name: "info on a map with a key label", generator: Generator{Type: MetricTypeInfo, PathKind: PathKindMap, KeyLabel: "key"}},
 		{name: "info on a map with one label", generator: Generator{Type: MetricTypeInfo, PathKind: PathKindMap, Labels: label("a")}},
-		{
-			name:        "info on a map with a key label and a label",
-			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindMap, KeyLabel: "key", Labels: label("a")},
-			wantErrPart: "supports at most one label (keyLabel or one of labels), got 2",
-		},
 		{
 			name:        "info on a map with two labels",
 			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindMap, Labels: append(label("a"), label("b")...)},
@@ -44,15 +38,10 @@ func TestResource_Validate(t *testing.T) {
 		},
 		{
 			name:        "label with a name reserved by a target counts",
-			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindMap, KeyLabel: "key", Labels: label("name")},
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindMap, Labels: append(label("name"), label("a")...)},
 			wantErrPart: "supports at most one label",
 		},
 		{name: "gauge on a map without labels", generator: Generator{Type: MetricTypeGauge, PathKind: PathKindMap}},
-		{
-			name:        "gauge on a map with a key label",
-			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindMap, KeyLabel: "key"},
-			wantErrPart: "a Gauge metric on a map doesn't support labels",
-		},
 		{
 			name:        "gauge on a map with a label",
 			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindMap, Labels: label("a")},
@@ -66,7 +55,7 @@ func TestResource_Validate(t *testing.T) {
 		},
 		{
 			name:      "lists and structs are not restricted",
-			generator: Generator{Type: MetricTypeGauge, PathKind: PathKindArray, KeyLabel: "key", Labels: append(label("a"), label("b")...)},
+			generator: Generator{Type: MetricTypeGauge, PathKind: PathKindArray, Labels: append(label("a"), label("b")...)},
 		},
 		{
 			name:      "scalars are not restricted",

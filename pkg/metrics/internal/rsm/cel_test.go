@@ -32,6 +32,7 @@ var equateEmpty = cmpopts.EquateEmpty()
 func Test_toStore(t *testing.T) {
 	prefix := "foo"
 	resource := model.Resource{
+		// The name prefix is ignored, the prefix of the families is derived from the kind.
 		NamePrefix:       &prefix,
 		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
 		Labels: []model.Label{
@@ -66,7 +67,7 @@ func Test_toStore(t *testing.T) {
 		Group: "example.io", Version: "v1", Kind: "Policy", Resource: "policies", Resolver: resolverCEL,
 		Families: []Family{
 			{
-				Name: "foo_condition", Help: "A condition.",
+				Name: "policy_condition", Help: "A condition.",
 				Metrics: []Metric{
 					{
 						Labels: []Label{{Name: "type", Value: typeLabel}, {Name: "status", Value: `"True"`}, {Name: "cluster", Value: clusterLabel}},
@@ -79,7 +80,7 @@ func Test_toStore(t *testing.T) {
 				},
 			},
 			{
-				Name: "foo_transition", Help: "Transition time.",
+				Name: "policy_transition", Help: "Transition time.",
 				Metrics: []Metric{{
 					Labels: []Label{{Name: "cluster", Value: clusterLabel}},
 					Value:  `has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v, has(v.lastTransitionTime)).map(v, unixSeconds(v.lastTransitionTime)) : []`,
@@ -181,14 +182,6 @@ func Test_infoToCEL(t *testing.T) {
 				Value:  `has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v, 1) : []`,
 			},
 		},
-		{
-			name:   "map with a key label",
-			metric: model.Generator{Path: model.Path{"spec", "labels"}, PathKind: model.PathKindMap, KeyLabel: "key"},
-			want: Metric{
-				Labels: []Label{{Name: "key", Value: `has(o.spec) && has(o.spec.labels) ? o.spec.labels.map(k, k) : []`}},
-				Value:  `has(o.spec) && has(o.spec.labels) ? o.spec.labels.map(k, 1) : []`,
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -264,12 +257,10 @@ func Test_gaugeToCEL(t *testing.T) {
 			want:   Metric{Value: `has(o.status) && has(o.status.counts) ? o.status.counts.map(k, o.status.counts[k]) : []`},
 		},
 		{
-			// The key label has to use the same elements as the value.
-			name:   "map with a key label",
-			metric: model.Generator{Path: model.Path{"spec", "pools"}, PathKind: model.PathKindMap, Value: model.Path{"size"}, KeyLabel: "pool"},
+			name:   "map with a value path",
+			metric: model.Generator{Path: model.Path{"spec", "pools"}, PathKind: model.PathKindMap, Value: model.Path{"size"}},
 			want: Metric{
-				Labels: []Label{{Name: "pool", Value: `has(o.spec) && has(o.spec.pools) ? o.spec.pools.filter(k, has(o.spec.pools[k].size)).map(k, k) : []`}},
-				Value:  `has(o.spec) && has(o.spec.pools) ? o.spec.pools.filter(k, has(o.spec.pools[k].size)).map(k, o.spec.pools[k].size) : []`,
+				Value: `has(o.spec) && has(o.spec.pools) ? o.spec.pools.filter(k, has(o.spec.pools[k].size)).map(k, o.spec.pools[k].size) : []`,
 			},
 		},
 		{
@@ -326,5 +317,27 @@ func Test_labelsToCEL_dropsInjectedLabels(t *testing.T) {
 	}, nil, model.PathKindScalar, "")
 	if len(got) != 1 || got[0].Name != "owner" {
 		t.Errorf("expected only the label owner, got %#v", got)
+	}
+}
+
+func Test_namePrefix(t *testing.T) {
+	foo := "foo"
+	tests := []struct {
+		name       string
+		namePrefix *string
+		kind       string
+		want       string
+	}{
+		{name: "derived from the kind", kind: "MachineDeployment", want: "machinedeployment_"},
+		{name: "derived from a kind with an initialism", kind: "HTTPRoute", want: "httproute_"},
+		{name: "the name prefix of the resource is ignored", namePrefix: &foo, kind: "MachineDeployment", want: "machinedeployment_"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource := model.Resource{NamePrefix: tt.namePrefix, GroupVersionKind: model.GroupVersionKind{Kind: tt.kind}}
+			if got := namePrefix(resource); got != tt.want {
+				t.Errorf("namePrefix() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

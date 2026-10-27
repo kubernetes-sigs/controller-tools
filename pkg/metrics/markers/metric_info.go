@@ -47,33 +47,27 @@ type infoMarker struct {
 	// Name specifies the Name of the metric.
 	Name string
 
+	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
+
 	// MetricHelp specifies the help text for the metric.
-	// Note: The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 	MetricHelp string `marker:"help,optional"`
 
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
 	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
-	// Note: If the path points to a map, at most one label for its entries is supported, either keyLabel or one of labels, as the labels can't be aligned with each other by all targets.
+	// Note: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
-	// JSONPath specifies the relative path from this marker.
-	// Note: This field get's appended to the path field in the custom resource configuration.
-	JSONPath jsonPath `marker:"JSONPath,optional"`
-
-	// Keys from the MetricInfo struct.
-
-	// KeyLabel specifies a label which will be added to the metric having the object's key as value.
-	// Note: This is only meaningful if the metric path points to a map. With the resource-state-metrics target this is validated.
-	// Note: If the path points to a map, at most one label for its entries is supported, either this label or one of labels, as the labels can't be aligned with each other by all targets.
-	KeyLabel string `marker:"keyLabel,optional"`
+	// Path specifies the JSONPath of the metric, relative to the field or type the marker is set on.
+	// With the kube-state-metrics target the full path ends up in the path field of the metric.
+	Path jsonPath `marker:"path,optional"`
 }
 
 var _ LocalGeneratorMarker = &infoMarker{}
 
 func (i infoMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
-	path, err := newPath(basePath, i.JSONPath)
+	path, err := newPath(basePath, i.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +78,10 @@ func (i infoMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
 	}
 
 	return &model.Generator{
-		Name:     i.Name,
-		Help:     i.MetricHelp,
-		Type:     model.MetricTypeInfo,
-		Path:     path,
-		Labels:   labels,
-		KeyLabel: i.KeyLabel,
+		Name:   i.Name,
+		Help:   i.MetricHelp,
+		Type:   model.MetricTypeInfo,
+		Path:   path,
+		Labels: labels,
 	}, nil
 }

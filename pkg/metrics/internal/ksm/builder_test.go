@@ -41,12 +41,12 @@ func Test_fromModel(t *testing.T) {
 				Metrics: []model.Generator{
 					{
 						Name: "g", Help: "gauge", Type: model.MetricTypeGauge,
-						Path: model.Path{"spec", "a"}, Value: model.Path{"b"}, KeyLabel: "key", MissingAsZero: true,
+						Path: model.Path{"spec", "a"}, Value: model.Path{"b"}, MissingAsZero: true,
 						Labels: []model.Label{{Name: "l", Path: model.Path{"l"}}},
 					},
 					{
 						Name: "i", Help: "info", Type: model.MetricTypeInfo,
-						Path: model.Path{"spec", "i"}, KeyLabel: "key",
+						Path: model.Path{"spec", "i"},
 					},
 					{
 						Name: "s", Help: "stateset", Type: model.MetricTypeStateSet,
@@ -60,20 +60,18 @@ func Test_fromModel(t *testing.T) {
 				Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}}},
 				Metrics: []Generator{
 					{Name: "g", Help: "gauge", Each: Metric{Type: MetricTypeGauge, Gauge: &MetricGauge{
-						MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
-						ValueFrom:    []string{"b"},
-						LabelFromKey: "key",
-						NilIsZero:    true,
+						MetricMeta:    MetricMeta{Labels: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
+						Value:         []string{"b"},
+						MissingAsZero: true,
 					}}},
 					{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
-						MetricMeta:   MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "i"}},
-						LabelFromKey: "key",
+						MetricMeta: MetricMeta{Labels: map[string][]string{}, Path: []string{"spec", "i"}},
 					}}},
 					{Name: "s", Help: "stateset", Each: Metric{Type: MetricTypeStateSet, StateSet: &MetricStateSet{
-						MetricMeta: MetricMeta{LabelsFromPath: map[string][]string{}, Path: []string{"spec", "s"}},
-						List:       []string{"a", "b"},
+						MetricMeta: MetricMeta{Labels: map[string][]string{}, Path: []string{"spec", "s"}},
+						States:     []string{"a", "b"},
 						LabelName:  "state",
-						ValueFrom:  []string{"state"},
+						Value:      []string{"state"},
 					}}},
 				},
 			},
@@ -93,7 +91,7 @@ func Test_fromModel(t *testing.T) {
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
 				Labels:           Labels{LabelsFromPath: map[string][]string{}},
 				Metrics: []Generator{{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
-					MetricMeta: MetricMeta{LabelsFromPath: map[string][]string{}},
+					MetricMeta: MetricMeta{Labels: map[string][]string{}},
 				}}}},
 			},
 		},
