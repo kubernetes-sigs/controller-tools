@@ -2851,6 +2851,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: embeddedResource
       type:
         namedType: __untyped_atomic_
+    - name: embeddedSelector
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedSelectorSpec
     - name: enumSlice
       type:
         list:
@@ -3166,6 +3169,15 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         scalar: string
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedSelectorSpec
+  map:
+    fields:
+    - name: requirements
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.external.ExternalRequirement
+          elementRelationship: atomic
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmpiableObject
   map:
     fields:
@@ -3293,6 +3305,18 @@ var schemaYAML = typed.YAMLObject(`types:
   scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.URL4
   scalar: string
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.external.ExternalRequirement
+  map:
+    fields:
+    - name: key
+      type:
+        scalar: string
+    - name: values
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
 - name: __untyped_atomic_
   scalar: untyped
   list:

@@ -204,6 +204,9 @@ type CronJobSpecApplyConfiguration struct {
 	OnlyAllowSettingOnUpdate *int32 `json:"onlyAllowSettingOnUpdate,omitempty"`
 	// EmbeddedExternal tests the ExternalApplyConfigurations feature.
 	EmbeddedExternal *EmbeddedExternalSpecApplyConfiguration `json:"embeddedExternal,omitempty"`
+	// EmbeddedSelector embeds a type from another package whose fields refer to
+	// other types of that package.
+	EmbeddedSelector *EmbeddedSelectorSpecApplyConfiguration `json:"embeddedSelector,omitempty"`
 	StructSlice      []RootObjectApplyConfiguration          `json:"structSlice,omitempty"`
 	StructMap        map[string]RootObjectApplyConfiguration `json:"structMap,omitempty"`
 }
@@ -943,6 +946,14 @@ func (b *CronJobSpecApplyConfiguration) WithOnlyAllowSettingOnUpdate(value int32
 // If called multiple times, the EmbeddedExternal field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithEmbeddedExternal(value *EmbeddedExternalSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
 	b.EmbeddedExternal = value
+	return b
+}
+
+// WithEmbeddedSelector sets the EmbeddedSelector field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EmbeddedSelector field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithEmbeddedSelector(value *EmbeddedSelectorSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.EmbeddedSelector = value
 	return b
 }
 

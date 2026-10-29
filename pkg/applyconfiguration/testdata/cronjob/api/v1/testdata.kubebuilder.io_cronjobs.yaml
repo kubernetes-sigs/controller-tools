@@ -211,6 +211,27 @@ spec:
                 type: object
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
+              embeddedSelector:
+                description: |-
+                  EmbeddedSelector embeds a type from another package whose fields refer to
+                  other types of that package.
+                properties:
+                  requirements:
+                    description: Requirements is a list of requirements.
+                    items:
+                      description: ExternalRequirement is referenced by ExternalSelector.
+                      properties:
+                        key:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      type: object
+                    type: array
+                type: object
               enumSlice:
                 description: This tests slice item validation with enum
                 items:

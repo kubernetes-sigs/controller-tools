@@ -23,3 +23,17 @@ type ExternalData struct {
 	Key   string `json:"key,omitempty"`
 	Value string `json:"value,omitempty"`
 }
+
+// ExternalSelector is embedded with json:",inline" by a type of the API
+// package and refers to another type of this package, which must still be
+// found here once its schema is merged into the embedding type.
+type ExternalSelector struct {
+	// Requirements is a list of requirements.
+	Requirements []ExternalRequirement `json:"requirements,omitempty"`
+}
+
+// ExternalRequirement is referenced by ExternalSelector.
+type ExternalRequirement struct {
+	Key    string   `json:"key"`
+	Values []string `json:"values,omitempty"`
+}
