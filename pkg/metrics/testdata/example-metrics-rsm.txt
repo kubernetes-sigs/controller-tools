@@ -1,0 +1,27 @@
+# HELP kube_customresource_foo_created Unix creation timestamp.
+# TYPE kube_customresource_foo_created gauge
+kube_customresource_foo_created{app_name="",foo_name="bar",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1793381716.000000
+# HELP kube_customresource_foo_owner Owner references.
+# TYPE kube_customresource_foo_owner gauge
+kube_customresource_foo_owner{app_name="",foo_name="bar",owner_is_controller="true",owner_kind="foo",owner_name="foo",owner_uid="someuid",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1.000000
+# HELP kube_customresource_foo_status_condition The condition of a foo.
+# TYPE kube_customresource_foo_status_condition gauge
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="True",type="AnotherType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 0.000000
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="True",type="SomeType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1.000000
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="False",type="AnotherType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1.000000
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="False",type="SomeType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 0.000000
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="Unknown",type="AnotherType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 0.000000
+kube_customresource_foo_status_condition{app_name="",foo_name="bar",status="Unknown",type="SomeType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 0.000000
+# HELP kube_customresource_foo_status_condition_last_transition_time The condition last transition time of a foo.
+# TYPE kube_customresource_foo_status_condition_last_transition_time gauge
+kube_customresource_foo_status_condition_last_transition_time{app_name="",foo_name="bar",status="False",type="AnotherType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1697119142.000000
+kube_customresource_foo_status_condition_last_transition_time{app_name="",foo_name="bar",status="True",type="SomeType",group="bar.example.com",version="v1",kind="Foo",name="bar",namespace="default"} 1697119142.000000
+# HELP kube_customresource_foo_tags The tags of a foo.
+# TYPE kube_customresource_foo_tags gauge
+# HELP kube_customresource_foo_created Unix creation timestamp.
+# TYPE kube_customresource_foo_created gauge
+kube_customresource_foo_created{foo_name="bar",group="bar.example.com",version="v2",kind="Foo",name="bar",namespace="default"} 1793381716.000000
+# HELP kube_customresource_foo_limits_max_items The maximum number of items of a foo.
+# TYPE kube_customresource_foo_limits_max_items gauge
+# HELP kube_customresource_foo_settings_replicas The number of replicas of a foo.
+# TYPE kube_customresource_foo_settings_replicas gauge
