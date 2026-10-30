@@ -48,6 +48,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.DurationApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmbeddedExternalSpec"):
 		return &apiv1.EmbeddedExternalSpecApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("EmbeddedSelectorSpec"):
+		return &apiv1.EmbeddedSelectorSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmbeddedStruct"):
 		return &apiv1.EmbeddedStructApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmpiableObject"):

@@ -416,6 +416,11 @@ type CronJobSpec struct {
 	// +optional
 	EmbeddedExternal *EmbeddedExternalSpec `json:"embeddedExternal,omitempty"`
 
+	// EmbeddedSelector embeds a type from another package whose fields refer to
+	// other types of that package.
+	// +optional
+	EmbeddedSelector *EmbeddedSelectorSpec `json:"embeddedSelector,omitempty"`
+
 	StructSlice []RootObject          `json:"structSlice,omitempty"`
 	StructMap   map[string]RootObject `json:"structMap,omitempty"`
 }
@@ -828,6 +833,13 @@ func (in *CronJobList) DeepCopyObject() runtime.Object {
 		panic(err)
 	}
 	return out
+}
+
+// EmbeddedSelectorSpec embeds an external type with json:",inline" that is not
+// mapped to external apply configurations, and whose fields refer to another
+// type of its package.
+type EmbeddedSelectorSpec struct {
+	external.ExternalSelector `json:",inline"`
 }
 
 // EmbeddedExternalSpec embeds an external type with json:",inline".

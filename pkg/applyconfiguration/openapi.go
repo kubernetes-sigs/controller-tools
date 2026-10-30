@@ -175,9 +175,21 @@ func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.Grou
 //
 // We only resolve AllOfs, as nullable, anyOf, oneOf and not are dropped, since swagger
 // v2 doesn't support them.
+//
+// Other local $ref entries are qualified with contextPkg on the way. The schema of an
+// embedded type from another package is merged into its parent, where a local $ref
+// would otherwise be read relative to the parent's package.
 func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loader.Package, p *crd.Parser, pkgByPath map[string]*loader.Package) error {
 	if schema == nil {
 		return nil
+	}
+
+	if schema.Ref != nil && len(*schema.Ref) > 0 && contextPkg != nil {
+		typeName, pkgPath, err := crd.RefParts(*schema.Ref)
+		if err == nil && pkgPath == "" {
+			qualified := crd.TypeRefLink(contextPkg.PkgPath, typeName)
+			schema.Ref = &qualified
+		}
 	}
 
 	for i := range schema.AllOf {
@@ -200,7 +212,8 @@ func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loade
 				return fmt.Errorf("schema not found for type %q in package %q", typeName, pkg.PkgPath)
 			}
 			resolved := refSchema.DeepCopy()
-			// Recurse into the resolved schema to handle nested embeddings.
+			// Recurse into the resolved schema to handle nested embeddings and to
+			// qualify its local refs with its own package.
 			if err := resolveAllOfRefs(resolved, pkg, p, pkgByPath); err != nil {
 				return err
 			}
