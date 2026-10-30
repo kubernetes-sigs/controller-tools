@@ -18,7 +18,8 @@ Metrics are only generated for custom resources having the `store` marker. The `
 and `value` fields use the JSON field names of the types and support simple paths only, e.g.
 `.status.conditions`, without array notation. A path which does not exist in the Go types is an error.
 
-The example metrics below are shown without the labels and the name prefix which the targets add themselves.
+The example metrics below are shown without the labels which the targets add themselves. The names of the metrics
+are shown with the prefix of the resource-state-metrics target for a custom resource of the kind `Foo`.
 
 ## Markers
 
@@ -60,7 +61,7 @@ Can be set on: type.
 
 Specifies additional labels for all metrics of the custom resource.
 It is only considered on the type of the custom resource, which is the type having the store marker.
-Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -98,10 +99,11 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
 | `help` | `string` | no | Specifies the help text for the metric. |
-| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
+| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `value` | `*string` | no | Specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.<br>Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime. |
 | `missingAsZero` | `bool` | no | Specifies to expose a not-existing field as zero value instead of omitting the metric.<br>Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then. |
+| `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error. |
 
 **Examples**
 
@@ -117,9 +119,9 @@ type FooSpec struct {
 Resulting metric for `replicas: 3`:
 
 ```
-# HELP replicas The desired number of replicas.
-# TYPE replicas gauge
-replicas 3
+# HELP kube_customresource_foo_replicas The desired number of replicas.
+# TYPE kube_customresource_foo_replicas gauge
+kube_customresource_foo_replicas 3
 ```
 
 `path`: the marker on the type of the custom resource with a path relative to the custom resource. A `metav1.Time` is exposed as unix timestamp.
@@ -133,9 +135,9 @@ type Foo struct {
 Resulting metric:
 
 ```
-# HELP created Unix creation timestamp.
-# TYPE created gauge
-created 1.724940463e+09
+# HELP kube_customresource_foo_created Unix creation timestamp.
+# TYPE kube_customresource_foo_created gauge
+kube_customresource_foo_created 1.724940463e+09
 ```
 
 `value`: the metric value is taken from a field of the object the path points to.
@@ -150,9 +152,9 @@ type FooSpec struct {
 Resulting metric for `settings: {replicas: 2}`:
 
 ```
-# HELP settings_replicas The replicas of the settings.
-# TYPE settings_replicas gauge
-settings_replicas 2
+# HELP kube_customresource_foo_settings_replicas The replicas of the settings.
+# TYPE kube_customresource_foo_settings_replicas gauge
+kube_customresource_foo_settings_replicas 2
 ```
 
 `labels`: a metric is created for each element of a list. The path of the labels is relative to each element. As the elements are objects, `value` selects the numeric field.
@@ -167,10 +169,10 @@ type FooStatus struct {
 Resulting metrics for the conditions `SomeType` (status `True`) and `AnotherType` (status `False`):
 
 ```
-# HELP status_condition_last_transition_time The condition last transition time of a foo.
-# TYPE status_condition_last_transition_time gauge
-status_condition_last_transition_time{status="False",type="AnotherType"} 1.697119142e+09
-status_condition_last_transition_time{status="True",type="SomeType"} 1.697119142e+09
+# HELP kube_customresource_foo_status_condition_last_transition_time The condition last transition time of a foo.
+# TYPE kube_customresource_foo_status_condition_last_transition_time gauge
+kube_customresource_foo_status_condition_last_transition_time{status="False",type="AnotherType"} 1.697119142e+09
+kube_customresource_foo_status_condition_last_transition_time{status="True",type="SomeType"} 1.697119142e+09
 ```
 
 `missingAsZero`: an unset field is exposed as 0 instead of omitting the metric.
@@ -185,10 +187,22 @@ type FooStatus struct {
 Resulting metric if `readyReplicas` is not set:
 
 ```
-# HELP ready_replicas The number of ready replicas.
-# TYPE ready_replicas gauge
-ready_replicas 0
+# HELP kube_customresource_foo_ready_replicas The number of ready replicas.
+# TYPE kube_customresource_foo_ready_replicas gauge
+kube_customresource_foo_ready_replicas 0
 ```
+
+`ignoreMissing` (resource-state-metrics target only): the generated expressions check that the fields on the path exist, instead of failing the evaluation of the expression.
+
+```go
+type FooSpec struct {
+	// +k8s:controller-gen:metrics:gauge:name="replicas",help="The desired number of replicas.",ignoreMissing=true
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+```
+
+Without `ignoreMissing` the expression is `o.spec.replicas`. Evaluating it fails if `spec` or `replicas` is not set, so resource-state-metrics doesn't expose the metric, logs the failure at verbosity 1 and counts the evaluation with the result `error` in its counter of expression evaluations. With `ignoreMissing` the expression is `has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []`.
+The option is also available for the `info` and `stateset` markers.
 
 The marker on a type other than the custom resource. The path is relative to the type and the metric is generated for the field of the custom resource using the type, here `.spec.settings.replicas`.
 
@@ -215,8 +229,9 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
 | `help` | `string` | no | Specifies the help text for the metric. |
-| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.<br>Note: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets. |
+| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
+| `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error. |
 
 **Examples**
 
@@ -232,10 +247,10 @@ type FooSpec struct {
 Resulting metrics for `tags: [a, b]`:
 
 ```
-# HELP tags The tags of a foo.
-# TYPE tags info
-tags{tag="a"} 1
-tags{tag="b"} 1
+# HELP kube_customresource_foo_tags The tags of a foo.
+# TYPE kube_customresource_foo_tags info
+kube_customresource_foo_tags{tag="a"} 1
+kube_customresource_foo_tags{tag="b"} 1
 ```
 
 `path`: the marker on the type of the custom resource with a path relative to the custom resource. The path of the labels is relative to each owner reference.
@@ -249,9 +264,9 @@ type Foo struct {
 Resulting metric for an owner reference:
 
 ```
-# HELP owner Owner references.
-# TYPE owner info
-owner{owner_kind="foo",owner_name="foo"} 1
+# HELP kube_customresource_foo_owner Owner references.
+# TYPE kube_customresource_foo_owner info
+kube_customresource_foo_owner{owner_kind="foo",owner_name="foo"} 1
 ```
 
 ### `k8s:controller-gen:metrics:stateset`
@@ -266,10 +281,11 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
 | `help` | `string` | no | Specifies the help text for the metric. |
-| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
+| `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `states` | `[]string` | yes | Specifies a list of values to compare the given Value against. |
 | `labelName` | `string` | no | Specifies the key of the label which is used for each entry in States to expose the value.<br>Note: It is required by the resource-state-metrics target. |
+| `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error. |
 | `value` | `*string` | no | Specifies the JSONPath to the field which gets used as value to compare against the states for equality, relative to the metric path. |
 
 **Examples**
@@ -286,11 +302,11 @@ type FooStatus struct {
 Resulting metrics for `phase: Running`:
 
 ```
-# HELP phase The phase of a foo.
-# TYPE phase stateset
-phase{phase="Failed"} 0
-phase{phase="Pending"} 0
-phase{phase="Running"} 1
+# HELP kube_customresource_foo_phase The phase of a foo.
+# TYPE kube_customresource_foo_phase stateset
+kube_customresource_foo_phase{phase="Failed"} 0
+kube_customresource_foo_phase{phase="Pending"} 0
+kube_customresource_foo_phase{phase="Running"} 1
 ```
 
 `value`: the field compared to the states is taken from the object the path points to.
@@ -305,10 +321,10 @@ type FooStatus struct {
 Resulting metrics for `rollout: {phase: Complete}`:
 
 ```
-# HELP rollout_phase The phase of the rollout.
-# TYPE rollout_phase stateset
-rollout_phase{phase="Complete"} 1
-rollout_phase{phase="Progressing"} 0
+# HELP kube_customresource_foo_rollout_phase The phase of the rollout.
+# TYPE kube_customresource_foo_rollout_phase stateset
+kube_customresource_foo_rollout_phase{phase="Complete"} 1
+kube_customresource_foo_rollout_phase{phase="Progressing"} 0
 ```
 
 `labels`: the metrics are created for each element of a list and each state. The path of the labels is relative to each element. As the elements are objects, `value` selects the field compared to the states.
@@ -323,14 +339,14 @@ type FooStatus struct {
 Resulting metrics for the conditions `SomeType` (status `True`) and `AnotherType` (status `False`):
 
 ```
-# HELP status_condition The condition of a foo.
-# TYPE status_condition stateset
-status_condition{status="False",type="AnotherType"} 1
-status_condition{status="False",type="SomeType"} 0
-status_condition{status="True",type="AnotherType"} 0
-status_condition{status="True",type="SomeType"} 1
-status_condition{status="Unknown",type="AnotherType"} 0
-status_condition{status="Unknown",type="SomeType"} 0
+# HELP kube_customresource_foo_status_condition The condition of a foo.
+# TYPE kube_customresource_foo_status_condition stateset
+kube_customresource_foo_status_condition{status="False",type="AnotherType"} 1
+kube_customresource_foo_status_condition{status="False",type="SomeType"} 0
+kube_customresource_foo_status_condition{status="True",type="AnotherType"} 0
+kube_customresource_foo_status_condition{status="True",type="SomeType"} 1
+kube_customresource_foo_status_condition{status="Unknown",type="AnotherType"} 0
+kube_customresource_foo_status_condition{status="Unknown",type="SomeType"} 0
 ```
 
 ## Restrictions and side cases
@@ -339,15 +355,21 @@ status_condition{status="Unknown",type="SomeType"} 0
   `any`, `runtime.RawExtension` and `apiextensionsv1.JSON` can't be used, as their content is unknown.
 * **Lists and maps** generate a metric per element. With the resource-state-metrics target, elements without
   the field of `value` are left out, unless `missingAsZero` is set.
+* **Missing fields**: with the resource-state-metrics target the generated expressions don't check if the fields
+  exist, unless `ignoreMissing` is set on the marker. Use `ignoreMissing` for metrics on optional fields, otherwise
+  every evaluation for a resource without the field is counted as `error` by resource-state-metrics.
+  A `label` of an optional field without `ignoreMissing` is also exposed with the text of its expression as value.
+  The labels of the `label` marker are always checked. The kube-state-metrics target ignores the option.
 * **Labels on maps**: as the targets can't align the labels of the entries of a map with each other and with
   the value, gauge and stateset metrics on a map don't support `labels`, and info metrics on a map support
   at most one label. The key of a map entry can't be exposed.
 * **Timestamps**: with the resource-state-metrics target, values of the types `metav1.Time` and
   `metav1.MicroTime` are converted to unix timestamps.
-* **Labels added by resource-state-metrics**: with the resource-state-metrics target the labels `group`,
-  `version`, `kind`, `name` and `namespace` are added to every metric. Labels of the `label` marker and of
-  `labels` having one of these names are dropped. Using one of them as `labelName` is an error.
+* **Labels added by the targets**: resource-state-metrics adds the labels `group`, `version`, `kind`, `name` and
+  `namespace` to every metric, kube-state-metrics adds `name` (generated as `labelsFromPath` of the resource).
+  To have the same markers work for all targets, using one of the five names as name of a label of the `label`
+  marker, of `labels` or as `labelName` is an error for every target.
 * **Metric names**: with the resource-state-metrics target the name of the metric including the prefix has to
-  match `^[a-zA-Z_][a-zA-Z0-9_]*$` and the label names have to be unique per metric.
+  match `^[a-zA-Z_][a-zA-Z0-9_]*$`. The label names have to be unique.
 * **The `label` marker** is only considered on the type of the custom resource. Defining the same label
   twice is only allowed with the same `value`.

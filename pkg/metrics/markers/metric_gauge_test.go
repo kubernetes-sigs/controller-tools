@@ -58,6 +58,17 @@ func Test_gaugeMarker_ToGenerator(t *testing.T) {
 				MissingAsZero: true,
 			},
 		},
+		{
+			name:        "ignoreMissing",
+			gaugeMarker: gaugeMarker{Path: ".bar", IgnoreMissing: true},
+			basePath:    []string{"spec"},
+			want: &model.Generator{
+				Type:          model.MetricTypeGauge,
+				Path:          model.Path{"spec", "bar"},
+				Labels:        []model.Label{},
+				IgnoreMissing: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

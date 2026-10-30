@@ -57,7 +57,7 @@ type stateSetMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
-	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
@@ -73,6 +73,10 @@ type stateSetMarker struct {
 	// LabelName specifies the key of the label which is used for each entry in States to expose the value.
 	// Note: It is required by the resource-state-metrics target.
 	LabelName string `marker:"labelName,optional"`
+
+	// IgnoreMissing specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.
+	// Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.
+	IgnoreMissing bool `marker:"ignoreMissing,optional"`
 
 	// Value specifies the JSONPath to the field which gets used as value to compare against the states for equality, relative to the metric path.
 	Value *jsonPath `marker:"value,optional"`
@@ -100,13 +104,14 @@ func (s stateSetMarker) ToGenerator(basePath ...string) (*model.Generator, error
 	}
 
 	return &model.Generator{
-		Name:      s.Name,
-		Help:      s.MetricHelp,
-		Type:      model.MetricTypeStateSet,
-		Path:      path,
-		Labels:    labels,
-		Value:     value,
-		List:      s.States,
-		LabelName: s.LabelName,
+		Name:          s.Name,
+		Help:          s.MetricHelp,
+		Type:          model.MetricTypeStateSet,
+		Path:          path,
+		Labels:        labels,
+		Value:         value,
+		List:          s.States,
+		LabelName:     s.LabelName,
+		IgnoreMissing: s.IgnoreMissing,
 	}, nil
 }

@@ -55,11 +55,21 @@ type PathKinds struct {
 	// Duration is a type of metav1, which is no timestamp.
 	Duration metav1.Duration `json:"duration"`
 
+	// Named is a field having a named string type.
+	Named NamedString `json:"named"`
+	// StringPointer is a pointer to a string.
+	StringPointer *string `json:"stringPointer"`
+	// Number is a number.
+	Number int64 `json:"number"`
+
 	// Any, Raw and JSON have no schema in Go, so no path can be resolved below them.
 	Any  any                  `json:"any"`
 	Raw  runtime.RawExtension `json:"raw"`
 	JSON apiextensionsv1.JSON `json:"json"`
 }
+
+// NamedString is a named string type.
+type NamedString string
 
 // Inner is a struct which gets inlined or used as a field.
 type Inner struct {

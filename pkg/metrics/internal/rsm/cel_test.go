@@ -37,12 +37,10 @@ func Test_toStore(t *testing.T) {
 		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
 		Labels: []model.Label{
 			{Name: "cluster", Path: model.Path{"metadata", "labels", "cluster"}},
-			// The label name is injected by resource-state-metrics, so it is dropped automatically.
-			{Name: "name", Path: model.Path{"metadata", "name"}},
 		},
 		Metrics: []model.Generator{
 			{
-				Name: "condition", Help: "A condition.", Type: model.MetricTypeStateSet,
+				IgnoreMissing: true, Name: "condition", Help: "A condition.", Type: model.MetricTypeStateSet,
 				Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
 				Labels:    []model.Label{{Name: "type", Path: model.Path{"type"}}},
 				List:      []string{"True", "False"},
@@ -50,7 +48,7 @@ func Test_toStore(t *testing.T) {
 				Value:     model.Path{"status"},
 			},
 			{
-				Name: "transition", Help: "Transition time.", Type: model.MetricTypeGauge,
+				IgnoreMissing: true, Name: "transition", Help: "Transition time.", Type: model.MetricTypeGauge,
 				Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
 				Value: model.Path{"lastTransitionTime"}, ValueKind: model.ValueKindTimestamp,
 			},
@@ -94,6 +92,213 @@ func Test_toStore(t *testing.T) {
 	}
 }
 
+// Test_toCEL_withoutIgnoreMissing tests the expressions without the checks for missing fields.
+func Test_toCEL_withoutIgnoreMissing(t *testing.T) {
+	t.Run("gauge", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			metric model.Generator
+			want   Metric
+		}{
+			{
+				name:   "scalar",
+				metric: model.Generator{Path: model.Path{"spec", "replicas"}, PathKind: model.PathKindScalar},
+				want:   Metric{Value: `o.spec.replicas`},
+			},
+			{
+				// missingAsZero needs the check independent of ignoreMissing.
+				name:   "missing as zero",
+				metric: model.Generator{Path: model.Path{"spec", "paused"}, PathKind: model.PathKindScalar, MissingAsZero: true},
+				want:   Metric{Value: `has(o.spec) && has(o.spec.paused) ? o.spec.paused : 0`},
+			},
+			{
+				name:   "list",
+				metric: model.Generator{Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray},
+				want:   Metric{Value: `o.status.items.map(v, v.size)`},
+			},
+			{
+				name:   "list elements are zero with missing as zero",
+				metric: model.Generator{Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray, MissingAsZero: true},
+				want:   Metric{Value: `o.status.items.map(v, has(v.size) ? v.size : 0)`},
+			},
+			{
+				name: "list labels fail with the value",
+				metric: model.Generator{
+					Path: model.Path{"status", "items"}, PathKind: model.PathKindArray, Value: model.Path{"size"},
+					Labels: []model.Label{{Name: "id", Path: model.Path{"id"}}},
+				},
+				want: Metric{
+					Labels: []Label{{Name: "id", Value: `o.status.items.map(v, string(v.id))`}},
+					Value:  `o.status.items.map(v, v.size)`,
+				},
+			},
+			{
+				name:   "map",
+				metric: model.Generator{Path: model.Path{"status", "pools"}, Value: model.Path{"size"}, PathKind: model.PathKindMap},
+				want:   Metric{Value: `o.status.pools.map(k, o.status.pools[k].size)`},
+			},
+			{
+				name:   "timestamp",
+				metric: model.Generator{Path: model.Path{"status", "at"}, PathKind: model.PathKindScalar, ValueKind: model.ValueKindTimestamp},
+				want:   Metric{Value: `unixSeconds(o.status.at)`},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				tt.metric.IgnoreMissing = false
+				if diff := cmp.Diff(tt.want, gaugeToCEL(tt.metric), equateEmpty); diff != "" {
+					t.Errorf("gaugeToCEL() (-want,+got): %s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("info", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			metric model.Generator
+			want   Metric
+		}{
+			{
+				name:   "no path",
+				metric: model.Generator{PathKind: model.PathKindScalar},
+				want:   Metric{Value: `1`},
+			},
+			{
+				// The value has to fail like the labels if the object is missing.
+				name: "object",
+				metric: model.Generator{
+					Path: model.Path{"status", "nodeRef"}, PathKind: model.PathKindObject,
+					Labels: []model.Label{{Name: "node_name", Path: model.Path{"name"}}},
+				},
+				want: Metric{
+					Labels: []Label{{Name: "node_name", Value: `string(o.status.nodeRef.name)`}},
+					Value:  `size([o.status.nodeRef])`,
+				},
+			},
+			{
+				name: "list",
+				metric: model.Generator{
+					Path: model.Path{"metadata", "ownerReferences"}, PathKind: model.PathKindArray,
+					Labels: []model.Label{{Name: "owner_kind", Path: model.Path{"kind"}}},
+				},
+				want: Metric{
+					Labels: []Label{{Name: "owner_kind", Value: `o.metadata.ownerReferences.map(v, string(v.kind))`}},
+					Value:  `o.metadata.ownerReferences.map(v, 1)`,
+				},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				tt.metric.IgnoreMissing = false
+				if diff := cmp.Diff(tt.want, infoToCEL(tt.metric), equateEmpty); diff != "" {
+					t.Errorf("infoToCEL() (-want,+got): %s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("stateset", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			metric model.Generator
+			want   []Metric
+		}{
+			{
+				name: "scalar",
+				metric: model.Generator{
+					Path: model.Path{"status", "phase"}, PathKind: model.PathKindScalar,
+					List: []string{"Ready"}, LabelName: "phase",
+				},
+				want: []Metric{{
+					Labels: []Label{{Name: "phase", Value: `"Ready"`}},
+					Value:  `int(o.status.phase == "Ready" ? 1 : 0)`,
+				}},
+			},
+			{
+				name: "list with labels",
+				metric: model.Generator{
+					Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
+					Value: model.Path{"status"}, List: []string{"True"}, LabelName: "status",
+					Labels: []model.Label{{Name: "type", Path: model.Path{"type"}}},
+				},
+				want: []Metric{{
+					Labels: []Label{
+						{Name: "type", Value: `o.status.conditions.map(v, string(v.type))`},
+						{Name: "status", Value: `"True"`},
+					},
+					Value: `o.status.conditions.map(v, int(v.status == "True" ? 1 : 0))`,
+				}},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				tt.metric.IgnoreMissing = false
+				if diff := cmp.Diff(tt.want, stateSetToCEL(tt.metric), equateEmpty); diff != "" {
+					t.Errorf("stateSetToCEL() (-want,+got): %s", diff)
+				}
+			})
+		}
+	})
+}
+
+func Test_labelsToCEL_isString(t *testing.T) {
+	labels := []model.Label{
+		{Name: "text", Path: model.Path{"text"}, IsString: true},
+		{Name: "flag", Path: model.Path{"flag"}},
+	}
+	tests := []struct {
+		name          string
+		ignoreMissing bool
+		path          model.Path
+		kind          model.PathKind
+		want          []Label
+	}{
+		{
+			name: "scalar", path: model.Path{"spec"}, kind: model.PathKindObject,
+			want: []Label{
+				{Name: "text", Value: `o.spec.text`},
+				{Name: "flag", Value: `string(o.spec.flag)`},
+			},
+		},
+		{
+			name: "scalar with ignoreMissing", ignoreMissing: true, path: model.Path{"spec"}, kind: model.PathKindObject,
+			want: []Label{
+				{Name: "text", Value: `has(o.spec) && has(o.spec.text) ? o.spec.text : ""`},
+				{Name: "flag", Value: `has(o.spec) && has(o.spec.flag) ? string(o.spec.flag) : ""`},
+			},
+		},
+		{
+			name: "list", path: model.Path{"status", "items"}, kind: model.PathKindArray,
+			want: []Label{
+				{Name: "text", Value: `o.status.items.map(v, v.text)`},
+				{Name: "flag", Value: `o.status.items.map(v, string(v.flag))`},
+			},
+		},
+		{
+			name: "list with ignoreMissing", ignoreMissing: true, path: model.Path{"status", "items"}, kind: model.PathKindArray,
+			want: []Label{
+				{Name: "text", Value: `has(o.status) && has(o.status.items) ? o.status.items.map(v, has(v.text) ? v.text : "") : []`},
+				{Name: "flag", Value: `has(o.status) && has(o.status.items) ? o.status.items.map(v, has(v.flag) ? string(v.flag) : "") : []`},
+			},
+		},
+		{
+			name: "map", path: model.Path{"status", "pools"}, kind: model.PathKindMap,
+			want: []Label{
+				{Name: "text", Value: `o.status.pools.map(k, o.status.pools[k].text)`},
+				{Name: "flag", Value: `o.status.pools.map(k, string(o.status.pools[k].flag))`},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if diff := cmp.Diff(tt.want, labelsToCEL(labels, tt.path, tt.kind, "", tt.ignoreMissing)); diff != "" {
+				t.Errorf("labelsToCEL() (-want,+got): %s", diff)
+			}
+		})
+	}
+}
+
 func Test_stateSetToCEL(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -102,7 +307,7 @@ func Test_stateSetToCEL(t *testing.T) {
 	}{
 		{
 			name: "scalar",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "phase"}, PathKind: model.PathKindScalar,
 				List: []string{"Ready", "Failed"}, LabelName: "phase",
 			},
@@ -119,7 +324,7 @@ func Test_stateSetToCEL(t *testing.T) {
 		},
 		{
 			name: "list with labels",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
 				Value: model.Path{"status"}, List: []string{"True"}, LabelName: "status",
 				Labels: []model.Label{{Name: "type", Path: model.Path{"type"}}},
@@ -135,7 +340,7 @@ func Test_stateSetToCEL(t *testing.T) {
 		},
 		{
 			name: "map",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "pools"}, PathKind: model.PathKindMap,
 				Value: model.Path{"phase"}, List: []string{"Ready"}, LabelName: "phase",
 			},
@@ -162,7 +367,7 @@ func Test_infoToCEL(t *testing.T) {
 	}{
 		{
 			name: "object",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "nodeRef"}, PathKind: model.PathKindObject,
 				Labels: []model.Label{{Name: "node_name", Path: model.Path{"name"}}},
 			},
@@ -173,7 +378,7 @@ func Test_infoToCEL(t *testing.T) {
 		},
 		{
 			name: "list",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"metadata", "ownerReferences"}, PathKind: model.PathKindArray,
 				Labels: []model.Label{{Name: "owner_kind", Path: model.Path{"kind"}}},
 			},
@@ -200,41 +405,40 @@ func Test_gaugeToCEL(t *testing.T) {
 	}{
 		{
 			name:   "scalar",
-			metric: model.Generator{Path: model.Path{"spec", "replicas"}, PathKind: model.PathKindScalar},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"spec", "replicas"}, PathKind: model.PathKindScalar},
 			want:   Metric{Value: `has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []`},
 		},
 		{
 			name:   "missing as zero",
-			metric: model.Generator{Path: model.Path{"spec", "paused"}, PathKind: model.PathKindScalar, MissingAsZero: true},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"spec", "paused"}, PathKind: model.PathKindScalar, MissingAsZero: true},
 			want:   Metric{Value: `has(o.spec) && has(o.spec.paused) ? o.spec.paused : 0`},
 		},
 		{
 			name:   "value path of an object",
-			metric: model.Generator{Path: model.Path{"status", "ref"}, Value: model.Path{"count"}, PathKind: model.PathKindObject},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "ref"}, Value: model.Path{"count"}, PathKind: model.PathKindObject},
 			want:   Metric{Value: `has(o.status) && has(o.status.ref) && has(o.status.ref.count) ? [o.status.ref.count] : []`},
 		},
 		{
 			name:   "list elements without the value are left out",
-			metric: model.Generator{Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray},
 			want:   Metric{Value: `has(o.status) && has(o.status.items) ? o.status.items.filter(v, has(v.size)).map(v, v.size) : []`},
 		},
 		{
 			name:   "list elements without the value are zero with missing as zero",
-			metric: model.Generator{Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray, MissingAsZero: true},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "items"}, Value: model.Path{"size"}, PathKind: model.PathKindArray, MissingAsZero: true},
 			want:   Metric{Value: `has(o.status) && has(o.status.items) ? o.status.items.map(v, has(v.size) ? v.size : 0) : []`},
 		},
 		{
 			name:   "list of values",
-			metric: model.Generator{Path: model.Path{"status", "sizes"}, PathKind: model.PathKindArray},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "sizes"}, PathKind: model.PathKindArray},
 			want:   Metric{Value: `has(o.status) && has(o.status.sizes) ? o.status.sizes.map(v, v) : []`},
 		},
 		{
 			// The labels use the same filter as the value, as the entries of the lists have to be aligned.
 			name: "list labels use the filter of the value",
-			metric: model.Generator{
+			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "items"}, PathKind: model.PathKindArray, Value: model.Path{"size"},
-				// The label name is injected by resource-state-metrics, so it is dropped automatically.
-				Labels: []model.Label{{Name: "name", Path: model.Path{"name"}}, {Name: "id", Path: model.Path{"id"}}},
+				Labels: []model.Label{{Name: "id", Path: model.Path{"id"}}},
 			},
 			want: Metric{
 				Labels: []Label{{Name: "id", Value: `has(o.status) && has(o.status.items) ? o.status.items.filter(v, has(v.size)).map(v, has(v.id) ? string(v.id) : "") : []`}},
@@ -243,50 +447,50 @@ func Test_gaugeToCEL(t *testing.T) {
 		},
 		{
 			name:   "map entries without the value are left out",
-			metric: model.Generator{Path: model.Path{"status", "pools"}, Value: model.Path{"size"}, PathKind: model.PathKindMap},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "pools"}, Value: model.Path{"size"}, PathKind: model.PathKindMap},
 			want:   Metric{Value: `has(o.status) && has(o.status.pools) ? o.status.pools.filter(k, has(o.status.pools[k].size)).map(k, o.status.pools[k].size) : []`},
 		},
 		{
 			name:   "map entries without the value are zero with missing as zero",
-			metric: model.Generator{Path: model.Path{"status", "pools"}, Value: model.Path{"size"}, PathKind: model.PathKindMap, MissingAsZero: true},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "pools"}, Value: model.Path{"size"}, PathKind: model.PathKindMap, MissingAsZero: true},
 			want:   Metric{Value: `has(o.status) && has(o.status.pools) ? o.status.pools.map(k, has(o.status.pools[k].size) ? o.status.pools[k].size : 0) : []`},
 		},
 		{
 			name:   "map of values",
-			metric: model.Generator{Path: model.Path{"status", "counts"}, PathKind: model.PathKindMap},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "counts"}, PathKind: model.PathKindMap},
 			want:   Metric{Value: `has(o.status) && has(o.status.counts) ? o.status.counts.map(k, o.status.counts[k]) : []`},
 		},
 		{
 			name:   "map with a value path",
-			metric: model.Generator{Path: model.Path{"spec", "pools"}, PathKind: model.PathKindMap, Value: model.Path{"size"}},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"spec", "pools"}, PathKind: model.PathKindMap, Value: model.Path{"size"}},
 			want: Metric{
 				Value: `has(o.spec) && has(o.spec.pools) ? o.spec.pools.filter(k, has(o.spec.pools[k].size)).map(k, o.spec.pools[k].size) : []`,
 			},
 		},
 		{
 			name:   "timestamp type in a map",
-			metric: model.Generator{Path: model.Path{"status", "at"}, Value: model.Path{"time"}, PathKind: model.PathKindMap, ValueKind: model.ValueKindTimestamp},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "at"}, Value: model.Path{"time"}, PathKind: model.PathKindMap, ValueKind: model.ValueKindTimestamp},
 			want:   Metric{Value: `has(o.status) && has(o.status.at) ? o.status.at.filter(k, has(o.status.at[k].time)).map(k, unixSeconds(o.status.at[k].time)) : []`},
 		},
 		{
 			name:   "timestamp type",
-			metric: model.Generator{Path: model.Path{"status", "at"}, PathKind: model.PathKindScalar, ValueKind: model.ValueKindTimestamp},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "at"}, PathKind: model.PathKindScalar, ValueKind: model.ValueKindTimestamp},
 			want:   Metric{Value: `has(o.status) && has(o.status.at) ? [unixSeconds(o.status.at)] : []`},
 		},
 		{
 			// The conversion would fail for numeric fields like these.
 			name:   "no timestamp conversion based on the field name",
-			metric: model.Generator{Path: model.Path{"status", "uptime"}, PathKind: model.PathKindScalar},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"status", "uptime"}, PathKind: model.PathKindScalar},
 			want:   Metric{Value: `has(o.status) && has(o.status.uptime) ? [o.status.uptime] : []`},
 		},
 		{
 			name:   "field names which are CEL keywords",
-			metric: model.Generator{Path: model.Path{"spec", "in", "null"}, PathKind: model.PathKindScalar},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"spec", "in", "null"}, PathKind: model.PathKindScalar},
 			want:   Metric{Value: `has(o.spec) && "in" in o.spec && "null" in o.spec["in"] ? [o.spec["in"]["null"]] : []`},
 		},
 		{
 			name:   "non identifier field name",
-			metric: model.Generator{Path: model.Path{"metadata", "labels", "cluster.x-k8s.io/name"}, PathKind: model.PathKindScalar},
+			metric: model.Generator{IgnoreMissing: true, Path: model.Path{"metadata", "labels", "cluster.x-k8s.io/name"}, PathKind: model.PathKindScalar},
 			want:   Metric{Value: `has(o.metadata) && has(o.metadata.labels) && "cluster.x-k8s.io/name" in o.metadata.labels ? [o.metadata.labels["cluster.x-k8s.io/name"]] : []`},
 		},
 	}
@@ -301,22 +505,12 @@ func Test_gaugeToCEL(t *testing.T) {
 
 func Test_guardedPathCEL_neverSelectsKeywords(t *testing.T) {
 	for _, keyword := range celKeywords {
-		guard, expr := guardedPathCEL("o", model.Path{"spec", keyword})
+		guard, expr := guardedPathCEL("o", model.Path{"spec", keyword}, true)
 		for _, got := range []string{guard, expr} {
 			if strings.Contains(got, "."+keyword) || strings.Contains(got, "has(o.spec."+keyword) {
 				t.Errorf("the keyword %q must not be used as selector: %s", keyword, got)
 			}
 		}
-	}
-}
-
-func Test_labelsToCEL_dropsInjectedLabels(t *testing.T) {
-	got := labelsToCEL([]model.Label{
-		{Name: "group"}, {Name: "version"}, {Name: "kind"}, {Name: "name"}, {Name: "namespace"},
-		{Name: "owner", Path: model.Path{"spec", "owner"}},
-	}, nil, model.PathKindScalar, "")
-	if len(got) != 1 || got[0].Name != "owner" {
-		t.Errorf("expected only the label owner, got %#v", got)
 	}
 }
 

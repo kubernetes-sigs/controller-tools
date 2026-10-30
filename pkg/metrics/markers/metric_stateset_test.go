@@ -61,6 +61,26 @@ func Test_stateSetMarker_ToGenerator(t *testing.T) {
 				LabelName: "state",
 			},
 		},
+		{
+			name: "ignoreMissing",
+			stateSetMarker: stateSetMarker{
+				Path:          ".bar",
+				Value:         jsonPathPointer(".foo"),
+				States:        []string{"a"},
+				LabelName:     "state",
+				IgnoreMissing: true,
+			},
+			basePath: []string{"spec"},
+			want: &model.Generator{
+				Type:          model.MetricTypeStateSet,
+				Path:          model.Path{"spec", "bar"},
+				Labels:        []model.Label{},
+				Value:         model.Path{"foo"},
+				List:          []string{"a"},
+				LabelName:     "state",
+				IgnoreMissing: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

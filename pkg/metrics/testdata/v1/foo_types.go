@@ -28,23 +28,23 @@ type FooSpec struct {
 
 	// Tags are the tags of a Foo.
 	// The path "." of the label refers to each tag itself, which is a string and has no fields.
-	// +k8s:controller-gen:metrics:info:name="tags",help="The tags of a foo.",labels={tag:"."}
+	// +k8s:controller-gen:metrics:info:name="tags",help="The tags of a foo.",labels={tag:"."},ignoreMissing=true
 	Tags []string `json:"tags,omitempty"`
 }
 
 // FooStatus is the status of Foo.
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:stateset:name="status_condition",help="The condition of a foo.",labelName="status",value=".status",states={"True","False","Unknown"},labels={"type":".type"}
+	// +k8s:controller-gen:metrics:stateset:name="status_condition",help="The condition of a foo.",labelName="status",value=".status",states={"True","False","Unknown"},labels={"type":".type"},ignoreMissing=true
 	// +k8s:controller-gen:metrics:gauge:name="status_condition_last_transition_time",help="The condition last transition time of a foo.",value=.lastTransitionTime,labels={"type":".type","status":".status"}
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 // Foo is a test object.
 // +k8s:controller-gen:metrics:store:namePrefix="foo"
-// +k8s:controller-gen:metrics:label:name="name",value=".metadata.name"
+// +k8s:controller-gen:metrics:label:name="foo_name",value=".metadata.name"
 // +k8s:controller-gen:metrics:label:name="app_name",value=.metadata.labels.app\.kubernetes\.io/name
 // +k8s:controller-gen:metrics:gauge:name="created",path=".metadata.creationTimestamp",help="Unix creation timestamp."
-// +k8s:controller-gen:metrics:info:name="owner",path=".metadata.ownerReferences",help="Owner references.",labels={owner_is_controller:".controller",owner_kind:".kind",owner_name:".name",owner_uid:".uid"}
+// +k8s:controller-gen:metrics:info:name="owner",path=".metadata.ownerReferences",help="Owner references.",labels={owner_is_controller:".controller",owner_kind:".kind",owner_name:".name",owner_uid:".uid"},ignoreMissing=true
 type Foo struct {
 	// TypeMeta comments should NOT appear in the CRD spec
 	metav1.TypeMeta `json:",inline"`

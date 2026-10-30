@@ -56,20 +56,6 @@ func TestBuilder_AddResource(t *testing.T) {
 			wantErrPart: "requires the name to match",
 		},
 		{
-			name: "labels with the name of an injected label are dropped",
-			resource: newResource(func(r *model.Resource, m *model.Generator) {
-				m.Labels = []model.Label{label("name"), label("kind")}
-				r.Labels = []model.Label{label("namespace")}
-			}),
-		},
-		{
-			name: "state label with the name of an injected label",
-			resource: newResource(func(_ *model.Resource, m *model.Generator) {
-				m.Type, m.LabelName, m.List = model.MetricTypeStateSet, "kind", []string{"a"}
-			}),
-			wantErrPart: `the label "kind" of the option labelName is added by resource-state-metrics`,
-		},
-		{
 			name: "empty state label",
 			resource: newResource(func(_ *model.Resource, m *model.Generator) {
 				m.Type, m.List = model.MetricTypeStateSet, []string{"a"}

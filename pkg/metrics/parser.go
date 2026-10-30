@@ -84,7 +84,8 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 	if err != nil {
 		return err
 	}
-	if object := pkg.Types.Scope().Lookup(typeIdent.Name); object != nil {
+	object := pkg.Types.Scope().Lookup(typeIdent.Name)
+	if object != nil {
 		if err := annotatePathAndValueKinds(metrics, object.Type()); err != nil {
 			pkg.AddError(loader.ErrFromNode(err, typeInfo.RawSpec))
 			return nil
@@ -117,6 +118,10 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 	slices.SortFunc(resource.Labels, func(a, b model.Label) int {
 		return strings.Compare(a.Name, b.Name)
 	})
+	// The paths of the labels of the resource are relative to the custom resource.
+	if object != nil {
+		annotateLabelKinds(resource.Labels, object.Type(), nil, model.PathKindScalar)
+	}
 
 	p.resources[typeIdent] = &resource
 	return nil

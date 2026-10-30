@@ -37,7 +37,7 @@ func Test_fromModel(t *testing.T) {
 			resource: model.Resource{
 				NamePrefix:       &prefix,
 				GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-				Labels:           []model.Label{{Name: "name", Path: model.Path{"metadata", "name"}}},
+				Labels:           []model.Label{{Name: "app", Path: model.Path{"metadata", "labels", "app"}}},
 				Metrics: []model.Generator{
 					{
 						Name: "g", Help: "gauge", Type: model.MetricTypeGauge,
@@ -57,7 +57,7 @@ func Test_fromModel(t *testing.T) {
 			want: Resource{
 				MetricNamePrefix: &prefix,
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-				Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}}},
+				Labels:           Labels{LabelsFromPath: map[string][]string{"app": {"metadata", "labels", "app"}, "name": {"metadata", "name"}}},
 				Metrics: []Generator{
 					{Name: "g", Help: "gauge", Each: Metric{Type: MetricTypeGauge, Gauge: &MetricGauge{
 						MetricMeta:    MetricMeta{Labels: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
@@ -89,7 +89,7 @@ func Test_fromModel(t *testing.T) {
 			},
 			want: Resource{
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
-				Labels:           Labels{LabelsFromPath: map[string][]string{}},
+				Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}}},
 				Metrics: []Generator{{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
 					MetricMeta: MetricMeta{Labels: map[string][]string{}},
 				}}}},

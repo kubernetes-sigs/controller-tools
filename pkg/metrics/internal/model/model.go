@@ -68,6 +68,11 @@ type Label struct {
 	// Path is the path to the field containing the value of the label.
 	// An empty path means the value of the field the label belongs to.
 	Path Path
+
+	// IsString is true if the Go type of the field at Path is a string, which doesn't have to be
+	// converted to a string by targets which have to do so (e.g. resource-state-metrics). It is
+	// derived from the Go type, which is why it is false if the type is unknown.
+	IsString bool
 }
 
 // MetricType is the type of a metric as defined by OpenMetrics.
@@ -113,6 +118,10 @@ type Generator struct {
 	// MissingAsZero exposes a missing value as zero instead of not exposing the metric.
 	// Only used by Gauge.
 	MissingAsZero bool
+
+	// IgnoreMissing guards the metric against missing fields on the path, which are not exposed then.
+	// Only used by the resource-state-metrics target.
+	IgnoreMissing bool
 
 	// List are the states to expose a value for. Only used by StateSet.
 	List []string

@@ -19,7 +19,6 @@ package rsm
 import (
 	"fmt"
 	"regexp"
-	"slices"
 
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
@@ -32,11 +31,11 @@ const (
 # Generated based on types for resource-state-metrics %s
 `
 
-	// aggregateLabel is set on the generated ClusterRole. resource-state-metrics does not ship a
-	// ClusterRole using this label. It is a convention which allows to aggregate the generated
-	// ClusterRoles into the ClusterRole used by resource-state-metrics via an aggregationRule,
-	// like it is done for kube-state-metrics.
-	aggregateLabel = "resource-state-metrics/aggregate-to-manager"
+	// aggregateLabel is set on the generated ClusterRole. The aggregationRule of the ClusterRole
+	// resource-state-metrics-aggregated, which resource-state-metrics ships in its manifests, selects
+	// the ClusterRoles having it, so the generated ClusterRole is aggregated into the permissions of
+	// the exporter.
+	aggregateLabel = "resource-state-metrics.instrumentation.k8s-sigs.io/aggregate-to-exporter"
 
 	apiVersion = "resource-state-metrics.instrumentation.k8s-sigs.io/v1alpha1"
 	kind       = "ResourceMetricsMonitor"
@@ -116,8 +115,8 @@ func (b *Builder) Write(ctx *genall.GenerationContext) error {
 }
 
 // validateLabels checks the names of the labels of the metrics, as resource-state-metrics
-// rejects duplicate label names and adds the labels group, version, kind, name and namespace
-// to every sample itself.
+// rejects duplicate label names. The labels group, version, kind, name and namespace, which it adds
+// to every sample itself, are rejected for all targets by model.Resource.Validate.
 func validateLabels(resource model.Resource) error {
 	for _, metric := range resource.Metrics {
 		if err := validateMetricLabels(resource, metric); err != nil {
@@ -147,37 +146,25 @@ func (l labelNames) addUnique(option, name string) error {
 	return nil
 }
 
-// addUniqueOption is like addUnique, but additionally rejects the names of the labels which are injected
-// by resource-state-metrics. In contrast to the labels of the markers `label` and `labels`, the label
-// created from the option labelName is not dropped silently, as it is an essential part
-// of the metric and would not be exposed.
-func (l labelNames) addUniqueOption(option, name string) error {
-	if isAutoLabel(name) {
-		return fmt.Errorf("metric %q of %s: the label %q of the option %s is added by resource-state-metrics to every metric", l.metric, l.gvk, name, option)
-	}
-	return l.addUnique(option, name)
-}
-
 // validateMetricLabels validates the labels of a single metric. The labels of the resource
 // get exposed on all of its metrics, so they have to be unique together with the labels of the metric.
 func validateMetricLabels(resource model.Resource, metric model.Generator) error {
 	gvk := resource.GroupVersionKind
 	names := labelNames{gvk: gvk, metric: metric.Name, names: map[string]struct{}{}}
 
-	// Labels of the markers `label` and `labels` having the name of a label which is injected
-	// by resource-state-metrics are dropped, which is documented at the markers. Dropping them
-	// allows to use the same markers for all targets.
-	for _, label := range slices.Concat(resource.Labels, metric.Labels) {
-		if isAutoLabel(label.Name) {
-			continue
+	for _, label := range resource.Labels {
+		if err := names.addUnique("label", label.Name); err != nil {
+			return err
 		}
+	}
+	for _, label := range metric.Labels {
 		if err := names.addUnique("labels", label.Name); err != nil {
 			return err
 		}
 	}
 
 	if metric.Type == model.MetricTypeStateSet {
-		if err := names.addUniqueOption("labelName", metric.LabelName); err != nil {
+		if err := names.addUnique("labelName", metric.LabelName); err != nil {
 			return err
 		}
 	}

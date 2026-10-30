@@ -15,10 +15,11 @@ spec:
         - labels:
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
-          value: 'has(o.metadata) && has(o.metadata.creationTimestamp) ? [unixSeconds(o.metadata.creationTimestamp)]
-            : []'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
+          value: unixSeconds(o.metadata.creationTimestamp)
         name: foo_created
       - help: Owner references.
         metrics:
@@ -28,17 +29,19 @@ spec:
               has(v.controller) ? string(v.controller) : "") : []'
           - name: owner_kind
             value: 'has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v,
-              has(v.kind) ? string(v.kind) : "") : []'
+              has(v.kind) ? v.kind : "") : []'
           - name: owner_name
             value: 'has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v,
-              has(v.name) ? string(v.name) : "") : []'
+              has(v.name) ? v.name : "") : []'
           - name: owner_uid
             value: 'has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v,
-              has(v.uid) ? string(v.uid) : "") : []'
+              has(v.uid) ? v.uid : "") : []'
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
           value: 'has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v,
             1) : []'
         name: foo_owner
@@ -47,37 +50,43 @@ spec:
         - labels:
           - name: type
             value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-              has(v.status)).map(v, has(v.type) ? string(v.type) : "") : []'
+              has(v.status)).map(v, has(v.type) ? v.type : "") : []'
           - name: status
             value: '"True"'
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
           value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
             has(v.status)).map(v, int(v.status == "True" ? 1 : 0)) : []'
         - labels:
           - name: type
             value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-              has(v.status)).map(v, has(v.type) ? string(v.type) : "") : []'
+              has(v.status)).map(v, has(v.type) ? v.type : "") : []'
           - name: status
             value: '"False"'
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
           value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
             has(v.status)).map(v, int(v.status == "False" ? 1 : 0)) : []'
         - labels:
           - name: type
             value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-              has(v.status)).map(v, has(v.type) ? string(v.type) : "") : []'
+              has(v.status)).map(v, has(v.type) ? v.type : "") : []'
           - name: status
             value: '"Unknown"'
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
           value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
             has(v.status)).map(v, int(v.status == "Unknown" ? 1 : 0)) : []'
         name: foo_status_condition
@@ -85,31 +94,28 @@ spec:
         metrics:
         - labels:
           - name: status
-            value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-              has(v.lastTransitionTime)).map(v, has(v.status) ? string(v.status) :
-              "") : []'
+            value: o.status.conditions.map(v, v.status)
           - name: type
-            value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-              has(v.lastTransitionTime)).map(v, has(v.type) ? string(v.type) : "")
-              : []'
+            value: o.status.conditions.map(v, v.type)
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
-          value: 'has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v,
-            has(v.lastTransitionTime)).map(v, unixSeconds(v.lastTransitionTime)) :
-            []'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
+          value: o.status.conditions.map(v, unixSeconds(v.lastTransitionTime))
         name: foo_status_condition_last_transition_time
       - help: The tags of a foo.
         metrics:
         - labels:
           - name: tag
-            value: 'has(o.spec) && has(o.spec.tags) ? o.spec.tags.map(v, true ? string(v)
-              : "") : []'
+            value: 'has(o.spec) && has(o.spec.tags) ? o.spec.tags.map(v, v) : []'
           - name: app_name
             value: 'has(o.metadata) && has(o.metadata.labels) && "app.kubernetes.io/name"
-              in o.metadata.labels ? string(o.metadata.labels["app.kubernetes.io/name"])
-              : ""'
+              in o.metadata.labels ? o.metadata.labels["app.kubernetes.io/name"] :
+              ""'
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
           value: 'has(o.spec) && has(o.spec.tags) ? o.spec.tags.map(v, 1) : []'
         name: foo_tags
       group: bar.example.com
@@ -120,16 +126,24 @@ spec:
     - families:
       - help: Unix creation timestamp.
         metrics:
-        - value: 'has(o.metadata) && has(o.metadata.creationTimestamp) ? [unixSeconds(o.metadata.creationTimestamp)]
-            : []'
+        - labels:
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
+          value: unixSeconds(o.metadata.creationTimestamp)
         name: foo_created
       - help: The maximum number of items of a foo.
         metrics:
-        - value: 'has(o.spec) && has(o.spec.maxItems) ? [o.spec.maxItems] : []'
+        - labels:
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
+          value: o.spec.maxItems
         name: foo_limits_max_items
       - help: The number of replicas of a foo.
         metrics:
-        - value: 'has(o.spec) && has(o.spec.settings) && has(o.spec.settings.replicas)
+        - labels:
+          - name: foo_name
+            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
+          value: 'has(o.spec) && has(o.spec.settings) && has(o.spec.settings.replicas)
             ? [o.spec.settings.replicas] : []'
         name: foo_settings_replicas
       group: bar.example.com

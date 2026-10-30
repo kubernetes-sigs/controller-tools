@@ -15,7 +15,8 @@ limitations under the License.
 */
 
 // Package metrics contain libraries for generating custom resource metrics configurations
-// for kube-state-metrics from metrics markers in Go source files.
+// for resource-state-metrics (default) or kube-state-metrics from metrics markers in Go source files.
+// The generator is experimental and has to be enabled explicitly.
 package metrics
 
 import (

@@ -58,7 +58,7 @@ type gaugeMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
-	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.
 	// Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
@@ -75,6 +75,10 @@ type gaugeMarker struct {
 	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
 	// Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.
 	MissingAsZero bool `marker:"missingAsZero,optional"`
+
+	// IgnoreMissing specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.
+	// Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.
+	IgnoreMissing bool `marker:"ignoreMissing,optional"`
 }
 
 var _ LocalGeneratorMarker = &gaugeMarker{}
@@ -106,5 +110,6 @@ func (g gaugeMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
 		Labels:        labels,
 		Value:         value,
 		MissingAsZero: g.MissingAsZero,
+		IgnoreMissing: g.IgnoreMissing,
 	}, nil
 }

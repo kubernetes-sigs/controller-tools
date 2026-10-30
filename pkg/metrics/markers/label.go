@@ -42,7 +42,7 @@ func init() {
 
 // labelMarker specifies additional labels for all metrics of the custom resource.
 // It is only considered on the type of the custom resource, which is the type having the store marker.
-// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+// Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.
 type labelMarker struct {
 	// Name specifies the name of the label.
 	Name string
