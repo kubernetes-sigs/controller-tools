@@ -47,6 +47,15 @@ func isOrNil(val reflect.Value, valInt any, zeroInt any) bool {
 	}
 }
 
+// enumValues lists the raw values of an enum for error messages.
+func enumValues(enum []apiextensionsv1.JSON) string {
+	vals := make([]string, len(enum))
+	for i, val := range enum {
+		vals[i] = string(val.Raw)
+	}
+	return "[" + strings.Join(vals, ", ") + "]"
+}
+
 // resolveFieldConflict handles conflicts when both src and dst have values for a field
 func resolveFieldConflict(fieldName string, srcField, dstField reflect.Value, srcInt, dstInt any, errRec ErrorRecorder, srcRemVal, dstRemVal reflect.Value, fieldIndex int) bool {
 	zeroVal := reflect.Zero(srcField.Type())
@@ -70,6 +79,31 @@ func resolveFieldConflict(fieldName string, srcField, dstField reflect.Value, sr
 	case "Required":
 		// merge
 		dstField.Set(reflect.AppendSlice(dstField, srcField))
+		return false
+	case "Enum":
+		// keep only the values both enums allow, as a top-level enum; the API
+		// server ignores enums inside allOf when it bounds string lengths for
+		// CEL rule cost estimates
+		srcEnum := srcInt.([]apiextensionsv1.JSON)
+		dstEnum := dstInt.([]apiextensionsv1.JSON)
+		switch {
+		case len(srcEnum) == 0:
+			// an empty enum, such as one from Enum={}, drops out of the
+			// output and allows any value
+		case len(dstEnum) == 0:
+			dstField.Set(srcField)
+		default:
+			common := slices.DeleteFunc(slices.Clone(dstEnum), func(dstVal apiextensionsv1.JSON) bool {
+				return !slices.ContainsFunc(srcEnum, func(srcVal apiextensionsv1.JSON) bool {
+					return string(srcVal.Raw) == string(dstVal.Raw)
+				})
+			})
+			if len(common) == 0 {
+				errRec.AddError(fmt.Errorf("disjoint enums in allOf branches in schema: %s vs %s", enumValues(dstEnum), enumValues(srcEnum)))
+				return false
+			}
+			dstField.Set(reflect.ValueOf(common))
+		}
 		return false
 	case "MinProperties", "MaxProperties":
 		// remove duplicate if values are identical
@@ -157,15 +191,6 @@ func flattenAllOfInto(dst *apiextensionsv1.JSONSchemaProps, src apiextensionsv1.
 			continue
 		case "Title", "Description", "Example", "ExternalDocs":
 			// don't merge because we pre-merge to properly preserve field docs
-			continue
-		case "Enum":
-			// Enum from field markers should be preserved even if the type schema doesn't have it
-			// This is important for types like IntOrString where field-level enum validation
-			// needs to be preserved during flattening
-			if len(src.Enum) > 0 && len(dst.Enum) == 0 {
-				dst.Enum = make([]apiextensionsv1.JSON, len(src.Enum))
-				copy(dst.Enum, src.Enum)
-			}
 			continue
 		}
 		srcField := srcVal.Field(fieldIndex)
