@@ -26,14 +26,21 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-// resolverCEL is the resolver of resource-state-metrics which evaluates CEL expressions.
-const resolverCEL = "cel"
+const (
+	// resolverCEL is the resolver of resource-state-metrics which evaluates CEL expressions.
+	resolverCEL = "cel"
+
+	// noGuard is the guard of a path which doesn't have to be checked for presence.
+	noGuard = "true"
+)
 
 // toStore converts a resource to a resource-state-metrics store. All expressions are
 // CEL expressions, as the store uses the CEL resolver. The object is available as `o`.
 // The name of every family is prefixed with a prefix derived from the kind (see namePrefix).
 func toStore(resource model.Resource) Store {
-	resourceLabels := labelsToCEL(resource.Labels, nil, model.PathKindScalar, "")
+	// The labels of the resource usually point to optional fields (e.g. labels or annotations), which
+	// would fail the evaluation of the label, so they are always guarded.
+	resourceLabels := labelsToCEL(resource.Labels, nil, model.PathKindScalar, "", true)
 	store := Store{
 		Group:    resource.GroupVersionKind.Group,
 		Version:  resource.GroupVersionKind.Version,
@@ -79,15 +86,15 @@ func namePrefix(resource model.Resource) string {
 // elements describes the elements of the list or map a metric is generated for. A list is
 // iterated by its elements (`v`), a map by its keys (`k`) with the element being `base[k]`.
 type elements struct {
-	// guard checks the presence of the list or map.
+	// guard checks the presence of the list or map. It is `true` if the presence is not checked.
 	guard string
 	// base is the expression of the list or map.
 	base string
 	kind model.PathKind
 }
 
-func newElements(path model.Path, kind model.PathKind) elements {
-	guard, base := guardedPathCEL("o", path)
+func newElements(path model.Path, kind model.PathKind, ignoreMissing bool) elements {
+	guard, base := guardedPathCEL("o", path, ignoreMissing)
 	return elements{guard: guard, base: base, kind: kind}
 }
 
@@ -118,33 +125,47 @@ func (e elements) mapCEL(filter, expr string) string {
 	if filter != "" {
 		items = fmt.Sprintf("%s.filter(%s, %s)", e.base, e.variable(), filter)
 	}
-	return fmt.Sprintf("%s ? %s.map(%s, %s) : []", e.guard, items, e.variable(), expr)
+	return ifGuard(e.guard, fmt.Sprintf("%s.map(%s, %s)", items, e.variable(), expr), "[]")
 }
 
-// valueFilter returns the filter for the elements having the value. A list or map entry
-// without the value would otherwise fail the evaluation of the whole metric.
-func (e elements) valueFilter(value model.Path) string {
-	if len(value) == 0 {
+// valueFilter returns the filter for the elements having the value, which is empty if
+// missing fields are not ignored. A list or map entry without the value would otherwise
+// fail the evaluation of the whole metric.
+func (e elements) valueFilter(value model.Path, ignoreMissing bool) string {
+	guard, _ := guardedPathCEL(e.element(), value, ignoreMissing)
+	if guard == noGuard {
 		return ""
 	}
-	guard, _ := guardedPathCEL(e.element(), value)
 	return guard
+}
+
+// ifGuard returns the conditional expression `guard ? then : otherwise`, or then if
+// there is nothing to guard.
+func ifGuard(guard, then, otherwise string) string {
+	if guard == noGuard {
+		return then
+	}
+	return fmt.Sprintf("%s ? %s : %s", guard, then, otherwise)
 }
 
 // gaugeToCEL returns the metric for a gauge. Example of the resulting value expressions:
 //
-//	scalar `spec.replicas`:            has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []
-//	with missingAsZero:                has(o.spec) && has(o.spec.replicas) ? o.spec.replicas : 0
-//	list `status.items`, value `size`: has(o.status) && has(o.status.items) ? o.status.items.filter(v, has(v.size)).map(v, v.size) : []
+//	scalar `spec.replicas`:                           o.spec.replicas
+//	with ignoreMissing:                               has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []
+//	with missingAsZero:                               has(o.spec) && has(o.spec.replicas) ? o.spec.replicas : 0
+//	list `status.items`, value `size`:                o.status.items.map(v, v.size)
+//	with ignoreMissing:                               has(o.status) && has(o.status.items) ? o.status.items.filter(v, has(v.size)).map(v, v.size) : []
 //
-// The expressions evaluate to a list, with an element for each sample of the metric. A scalar
-// which is not set evaluates to an empty list, so no sample is exposed.
+// The expressions evaluate to a number or a list, with an element for each sample of the metric.
+// Without ignoreMissing a missing field fails the evaluation, for which resource-state-metrics doesn't
+// expose the sample. With ignoreMissing a scalar which is not set evaluates to an empty list instead.
 func gaugeToCEL(m model.Generator) Metric {
 	timestamp := m.ValueKind == model.ValueKindTimestamp
 
 	if isIterated(m.Path, m.PathKind) {
-		e := newElements(m.Path, m.PathKind)
-		valueGuard, valueExpr := guardedPathCEL(e.element(), m.Value)
+		e := newElements(m.Path, m.PathKind, m.IgnoreMissing)
+		// missingAsZero needs the guard independent of ignoreMissing.
+		valueGuard, valueExpr := guardedPathCEL(e.element(), m.Value, m.IgnoreMissing || m.MissingAsZero)
 		valueExpr = timestampCEL(valueExpr, timestamp)
 
 		// Elements without the value are exposed as zero or left out, if not set.
@@ -154,47 +175,55 @@ func gaugeToCEL(m model.Generator) Metric {
 		value := valueExpr
 		if len(m.Value) > 0 {
 			if m.MissingAsZero {
-				value = fmt.Sprintf("%s ? %s : 0", valueGuard, valueExpr)
-			} else {
+				value = ifGuard(valueGuard, valueExpr, "0")
+			} else if m.IgnoreMissing {
 				filter = valueGuard
 			}
 		}
 
-		labels := labelsToCEL(m.Labels, m.Path, m.PathKind, filter)
+		labels := labelsToCEL(m.Labels, m.Path, m.PathKind, filter, m.IgnoreMissing)
 		return Metric{Labels: labels, Value: e.mapCEL(filter, value)}
 	}
 
 	valuePath := append(slices.Clone(m.Path), m.Value...)
-	guard, valueExpr := guardedPathCEL("o", valuePath)
+	// missingAsZero needs the guard independent of ignoreMissing.
+	guard, valueExpr := guardedPathCEL("o", valuePath, m.IgnoreMissing || m.MissingAsZero)
 	value := timestampCEL(valueExpr, timestamp)
 	if m.MissingAsZero {
-		value = fmt.Sprintf("%s ? %s : 0", guard, value)
-	} else if len(valuePath) > 0 {
-		value = fmt.Sprintf("%s ? [%s] : []", guard, value)
+		value = ifGuard(guard, value, "0")
+	} else if m.IgnoreMissing {
+		value = ifGuard(guard, "["+value+"]", "[]")
 	}
-	return Metric{Labels: labelsToCEL(m.Labels, m.Path, m.PathKind, ""), Value: value}
+	return Metric{Labels: labelsToCEL(m.Labels, m.Path, m.PathKind, "", m.IgnoreMissing), Value: value}
 }
 
 // infoToCEL returns the metric for an info. An info metric always has the value 1, the information
 // is exposed by the labels. Example of the resulting value expressions:
 //
 //	no path:                            1
-//	object `status.nodeRef`:            has(o.status) && has(o.status.nodeRef) ? [1] : []
-//	list `metadata.ownerReferences`:    has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v, 1) : []
+//	object `status.nodeRef`:            size([o.status.nodeRef])
+//	with ignoreMissing:                 has(o.status) && has(o.status.nodeRef) ? [1] : []
+//	list `metadata.ownerReferences`:    o.metadata.ownerReferences.map(v, 1)
+//	with ignoreMissing:                 has(o.metadata) && has(o.metadata.ownerReferences) ? o.metadata.ownerReferences.map(v, 1) : []
 //
 // For a list or map one sample with the value 1 is exposed for each element.
 func infoToCEL(m model.Generator) Metric {
-	labels := labelsToCEL(m.Labels, m.Path, m.PathKind, "")
+	labels := labelsToCEL(m.Labels, m.Path, m.PathKind, "", m.IgnoreMissing)
 
 	if isIterated(m.Path, m.PathKind) {
-		e := newElements(m.Path, m.PathKind)
+		e := newElements(m.Path, m.PathKind, m.IgnoreMissing)
 		return Metric{Labels: labels, Value: e.mapCEL("", "1")}
 	}
 
 	value := "1"
 	if len(m.Path) > 0 {
-		guard, _ := guardedPathCEL("o", m.Path)
-		value = fmt.Sprintf("%s ? [1] : []", guard)
+		guard, expr := guardedPathCEL("o", m.Path, m.IgnoreMissing)
+		// Without the guard the value has to access the path like the labels do, to fail
+		// together with them. The size of a list with the single element is 1.
+		value = ifGuard(guard, "[1]", "[]")
+		if guard == noGuard {
+			value = fmt.Sprintf("size([%s])", expr)
+		}
 	}
 	return Metric{Labels: labels, Value: value}
 }
@@ -208,6 +237,10 @@ func infoToCEL(m model.Generator) Metric {
 //
 // for an object having `status.phase: "True"`. The value expression of the first one is:
 //
+//	int(o.status.phase == "True" ? 1 : 0)
+//
+// With ignoreMissing it is guarded against the missing field:
+//
 //	has(o.status) && has(o.status.phase) ? [int(o.status.phase == "True" ? 1 : 0)] : []
 func stateSetToCEL(m model.Generator) []Metric {
 	metrics := make([]Metric, 0, len(m.List))
@@ -215,11 +248,11 @@ func stateSetToCEL(m model.Generator) []Metric {
 		quoted := strconv.Quote(state)
 
 		if isIterated(m.Path, m.PathKind) {
-			e := newElements(m.Path, m.PathKind)
-			filter := e.valueFilter(m.Value)
-			_, actual := guardedPathCEL(e.element(), m.Value)
+			e := newElements(m.Path, m.PathKind, m.IgnoreMissing)
+			filter := e.valueFilter(m.Value, m.IgnoreMissing)
+			_, actual := guardedPathCEL(e.element(), m.Value, false)
 
-			labels := labelsToCEL(m.Labels, m.Path, m.PathKind, filter)
+			labels := labelsToCEL(m.Labels, m.Path, m.PathKind, filter, m.IgnoreMissing)
 			labels = append(labels, Label{Name: m.LabelName, Value: quoted})
 			metrics = append(metrics, Metric{
 				Labels: labels,
@@ -228,50 +261,47 @@ func stateSetToCEL(m model.Generator) []Metric {
 			continue
 		}
 
-		labels := labelsToCEL(m.Labels, m.Path, m.PathKind, "")
+		labels := labelsToCEL(m.Labels, m.Path, m.PathKind, "", m.IgnoreMissing)
 		labels = append(labels, Label{Name: m.LabelName, Value: quoted})
 		actualPath := append(slices.Clone(m.Path), m.Value...)
-		guard, actual := guardedPathCEL("o", actualPath)
-		metrics = append(metrics, Metric{
-			Labels: labels,
-			Value:  fmt.Sprintf("%s ? [int(%s == %s ? 1 : 0)] : []", guard, actual, quoted),
-		})
+		guard, actual := guardedPathCEL("o", actualPath, m.IgnoreMissing)
+		value := fmt.Sprintf("int(%s == %s ? 1 : 0)", actual, quoted)
+		if guard != noGuard {
+			value = fmt.Sprintf("%s ? [%s] : []", guard, value)
+		}
+		metrics = append(metrics, Metric{Labels: labels, Value: value})
 	}
 	return metrics
 }
 
 // labelsToCEL converts the labels. The path of the labels is relative to the path, which
 // has to be iterated if it is a list or map. The filter has to be the one of the value of the metric.
-func labelsToCEL(labels []model.Label, path model.Path, kind model.PathKind, filter string) []Label {
+// If missing fields are not ignored, a missing field fails the evaluation of the label, so the value of the
+// metric has to fail with it. Otherwise resource-state-metrics exposes the expression as value of the label.
+func labelsToCEL(labels []model.Label, path model.Path, kind model.PathKind, filter string, ignoreMissing bool) []Label {
 	result := make([]Label, 0, len(labels))
 	for _, label := range labels {
-		// resource-state-metrics injects these labels into every sample.
-		if isAutoLabel(label.Name) {
-			continue
-		}
-
 		var value string
 		if isIterated(path, kind) {
-			e := newElements(path, kind)
-			guard, resolved := guardedPathCEL(e.element(), label.Path)
-			value = e.mapCEL(filter, fmt.Sprintf("%s ? string(%s) : %s", guard, resolved, strconv.Quote("")))
+			e := newElements(path, kind, ignoreMissing)
+			guard, resolved := guardedPathCEL(e.element(), label.Path, ignoreMissing)
+			value = e.mapCEL(filter, ifGuard(guard, labelValueCEL(label, resolved), strconv.Quote("")))
 		} else {
-			guard, resolved := guardedPathCEL("o", append(slices.Clone(path), label.Path...))
-			value = fmt.Sprintf("%s ? string(%s) : %s", guard, resolved, strconv.Quote(""))
+			guard, resolved := guardedPathCEL("o", append(slices.Clone(path), label.Path...), ignoreMissing)
+			value = ifGuard(guard, labelValueCEL(label, resolved), strconv.Quote(""))
 		}
 		result = append(result, Label{Name: label.Name, Value: value})
 	}
 	return result
 }
 
-// isAutoLabel returns true for the labels resource-state-metrics adds to every sample.
-func isAutoLabel(name string) bool {
-	switch name {
-	case "group", "version", "kind", "name", "namespace":
-		return true
-	default:
-		return false
+// labelValueCEL returns the expression of the value of a label, which has to be a string. A field
+// which is not a string, e.g. a bool or a number, is converted.
+func labelValueCEL(label model.Label, expr string) string {
+	if label.IsString {
+		return expr
 	}
+	return "string(" + expr + ")"
 }
 
 // timestampCEL converts a timestamp to unix seconds. The conversion is not done based on the
@@ -290,10 +320,10 @@ var celIdentifier = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 var celKeywords = []string{"in", "true", "false", "null"}
 
 // guardedPathCEL returns a presence guard and the CEL expression for the path. The guard
-// is `true` for an empty path.
+// is `true` for an empty path or if guard is false.
 // Example: for the root `o` and the path "spec", "replicas" it returns the guard
 // `has(o.spec) && has(o.spec.replicas)` and the expression `o.spec.replicas`.
-func guardedPathCEL(root string, path model.Path) (string, string) {
+func guardedPathCEL(root string, path model.Path, guard bool) (string, string) {
 	expr := root
 	guards := make([]string, 0, len(path))
 	for _, part := range path {
@@ -312,8 +342,8 @@ func guardedPathCEL(root string, path model.Path) (string, string) {
 			guards = append(guards, fmt.Sprintf("%s in %s", strconv.Quote(part), parent))
 		}
 	}
-	if len(guards) == 0 {
-		return "true", expr
+	if !guard || len(guards) == 0 {
+		return noGuard, expr
 	}
 	return strings.Join(guards, " && "), expr
 }

@@ -21,6 +21,17 @@ import (
 	"testing"
 )
 
+func TestResource_Validate_resourceLabels(t *testing.T) {
+	gvk := GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"}
+	if err := (Resource{GroupVersionKind: gvk, Labels: []Label{{Name: "app", Path: Path{"x"}}}}).Validate(); err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+	err := Resource{GroupVersionKind: gvk, Labels: []Label{{Name: "name", Path: Path{"metadata", "name"}}}}.Validate()
+	if err == nil || !strings.Contains(err.Error(), `the label "name" of the option label is added to every metric by the targets`) {
+		t.Fatalf("Validate() error = %v, want an error for the label name", err)
+	}
+}
+
 func TestResource_Validate(t *testing.T) {
 	label := func(name string) []Label { return []Label{{Name: name, Path: Path{"x"}}} }
 
@@ -37,9 +48,19 @@ func TestResource_Validate(t *testing.T) {
 			wantErrPart: "supports at most one label",
 		},
 		{
-			name:        "label with a name reserved by a target counts",
-			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindMap, Labels: append(label("name"), label("a")...)},
-			wantErrPart: "supports at most one label",
+			name:        "labels with the name of an added label",
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindScalar, Labels: label("name")},
+			wantErrPart: `the label "name" of the option labels is added to every metric by the targets`,
+		},
+		{
+			name:        "labels with the name of a label added by resource-state-metrics",
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindScalar, Labels: label("namespace")},
+			wantErrPart: `the label "namespace" of the option labels`,
+		},
+		{
+			name:        "state label with the name of an added label",
+			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindScalar, LabelName: "kind"},
+			wantErrPart: `the label "kind" of the option labelName`,
 		},
 		{name: "gauge on a map without labels", generator: Generator{Type: MetricTypeGauge, PathKind: PathKindMap}},
 		{

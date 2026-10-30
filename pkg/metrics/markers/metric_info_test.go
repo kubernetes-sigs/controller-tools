@@ -54,6 +54,17 @@ func Test_infoMarker_ToGenerator(t *testing.T) {
 				Labels: []model.Label{{Name: "a", Path: model.Path{}}, {Name: "b", Path: model.Path{"b"}}},
 			},
 		},
+		{
+			name:       "ignoreMissing",
+			infoMarker: infoMarker{Path: ".bar", IgnoreMissing: true},
+			basePath:   []string{"spec"},
+			want: &model.Generator{
+				Type:          model.MetricTypeInfo,
+				Path:          model.Path{"spec", "bar"},
+				Labels:        []model.Label{},
+				IgnoreMissing: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

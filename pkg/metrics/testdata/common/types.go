@@ -21,7 +21,7 @@ package common
 // Settings are settings of a Foo. It gets used as named field.
 type Settings struct {
 	// Replicas is the number of replicas.
-	// +k8s:controller-gen:metrics:gauge:name="settings_replicas",help="The number of replicas of a foo."
+	// +k8s:controller-gen:metrics:gauge:name="settings_replicas",help="The number of replicas of a foo.",ignoreMissing=true
 	Replicas int32 `json:"replicas"`
 }
 

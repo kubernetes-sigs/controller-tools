@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    resource-state-metrics/aggregate-to-manager: "true"
+    resource-state-metrics.instrumentation.k8s-sigs.io/aggregate-to-exporter: "true"
   name: metrics-role
 rules:
 - apiGroups:

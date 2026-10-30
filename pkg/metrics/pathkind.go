@@ -44,6 +44,7 @@ func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error
 			continue
 		}
 		metric.PathKind = goPathKind(pathType)
+		annotateLabelKinds(metric.Labels, root, metric.Path, metric.PathKind)
 
 		if len(metric.Value) == 0 && metric.Type != model.MetricTypeGauge {
 			continue
@@ -59,6 +60,52 @@ func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// annotateLabelKinds records for each label if the field at its path is a string. The path of the
+// labels is relative to the path, which is a list or map to iterate if the kind is array or map.
+// Labels with a path which can't be resolved are left as they are, the path is not a configuration
+// error for a label.
+func annotateLabelKinds(labels []model.Label, root types.Type, path model.Path, kind model.PathKind) {
+	iterated := len(path) > 0 && (kind == model.PathKindArray || kind == model.PathKindMap)
+
+	for i := range labels {
+		var labelType types.Type
+		if iterated {
+			// The path of the label is relative to the elements of the list or map.
+			if listType := goTypeAtJSONPath(root, path); listType != nil {
+				if elementType := elementTypeOf(listType); elementType != nil {
+					labelType = goTypeAtJSONPath(elementType, labels[i].Path)
+				}
+			}
+		} else {
+			labelType = goTypeAtJSONPath(root, append(slices.Clone(path), labels[i].Path...))
+		}
+		labels[i].IsString = isStringType(labelType)
+	}
+}
+
+// elementTypeOf returns the type of the elements of a list or map, or nil for other types.
+func elementTypeOf(typ types.Type) types.Type {
+	switch typed := dereferenceType(typ).Underlying().(type) {
+	case *types.Slice:
+		return typed.Elem()
+	case *types.Array:
+		return typed.Elem()
+	case *types.Map:
+		return typed.Elem()
+	default:
+		return nil
+	}
+}
+
+// isStringType returns true for strings, including pointers to them and named string types.
+func isStringType(typ types.Type) bool {
+	if typ == nil {
+		return false
+	}
+	basic, ok := dereferenceType(typ).Underlying().(*types.Basic)
+	return ok && basic.Info()&types.IsString != 0
 }
 
 // goPathKind returns the kind of the Go type.

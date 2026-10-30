@@ -42,7 +42,7 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
-				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
+				Details: "Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
 			},
 			"Path": {
 				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
@@ -55,6 +55,10 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 			"MissingAsZero": {
 				Summary: "specifies to expose a not-existing field as zero value instead of omitting the metric.",
 				Details: "Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.",
+			},
+			"IgnoreMissing": {
+				Summary: "specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.",
+				Details: "Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.",
 			},
 		},
 	}
@@ -78,11 +82,15 @@ func (infoMarker) Help() *markers.DefinitionHelp {
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
-				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets.",
+				Details: "Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.\nNote: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets.",
 			},
 			"Path": {
 				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
 				Details: "With the kube-state-metrics target the full path ends up in the path field of the metric.",
+			},
+			"IgnoreMissing": {
+				Summary: "specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.",
+				Details: "Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.",
 			},
 		},
 	}
@@ -93,7 +101,7 @@ func (labelMarker) Help() *markers.DefinitionHelp {
 		Category: "Metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies additional labels for all metrics of the custom resource.",
-			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nNote: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.",
+			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nNote: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Name": {
@@ -126,7 +134,7 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 			},
 			"Labels": {
 				Summary: "specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.",
-				Details: "Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
+				Details: "Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.\nNote: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets.",
 			},
 			"Path": {
 				Summary: "specifies the JSONPath of the metric, relative to the field or type the marker is set on.",
@@ -139,6 +147,10 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 			"LabelName": {
 				Summary: "specifies the key of the label which is used for each entry in States to expose the value.",
 				Details: "Note: It is required by the resource-state-metrics target.",
+			},
+			"IgnoreMissing": {
+				Summary: "specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.",
+				Details: "Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.",
 			},
 			"Value": {
 				Summary: "specifies the JSONPath to the field which gets used as value to compare against the states for equality, relative to the metric path.",

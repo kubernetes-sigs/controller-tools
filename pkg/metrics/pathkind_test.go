@@ -26,7 +26,9 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-func Test_annotatePathAndValueKinds(t *testing.T) {
+// loadTestdataV1 loads and type checks the package testdata/v1.
+func loadTestdataV1(t *testing.T) *loader.Package {
+	t.Helper()
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -39,6 +41,82 @@ func Test_annotatePathAndValueKinds(t *testing.T) {
 	// the types of the imported packages are invalid, like it is in the generator.
 	(&loader.TypeChecker{}).Check(roots[0])
 	roots[0].NeedTypesInfo()
+	return roots[0]
+}
+
+func Test_annotateLabelKinds(t *testing.T) {
+	pkg := loadTestdataV1(t)
+
+	label := func(path ...string) []model.Label { return []model.Label{{Name: "l", Path: path}} }
+
+	tests := []struct {
+		name string
+		// root is the name of the type in testdata/v1 the path starts at. Defaults to Foo.
+		root       string
+		path       model.Path
+		kind       model.PathKind
+		labels     []model.Label
+		wantString bool
+	}{
+		// Labels of a resource or a scalar: the path of the label is relative to the custom resource or the path.
+		{name: "string field", kind: model.PathKindScalar, labels: label("metadata", "name"), wantString: true},
+		{name: "string field below the path", path: model.Path{"spec"}, kind: model.PathKindObject, labels: label("someString"), wantString: true},
+		{name: "entry of a map of strings", kind: model.PathKindScalar, labels: label("metadata", "labels", "app"), wantString: true},
+		{name: "number", kind: model.PathKindScalar, labels: label("metadata", "generation")},
+		{name: "timestamp", kind: model.PathKindScalar, labels: label("metadata", "creationTimestamp")},
+		{name: "object", kind: model.PathKindScalar, labels: label("spec")},
+		{name: "named string type", root: "PathKinds", kind: model.PathKindScalar, labels: label("named"), wantString: true},
+		{name: "pointer to a string", root: "PathKinds", kind: model.PathKindScalar, labels: label("stringPointer"), wantString: true},
+		{name: "int64", root: "PathKinds", kind: model.PathKindScalar, labels: label("number")},
+		{name: "path which can't be resolved is not a string", kind: model.PathKindScalar, labels: label("spec", "doesNotExist")},
+
+		// Labels of a list or map: the path of the label is relative to the elements.
+		{name: "string field of the elements of a list", path: model.Path{"status", "conditions"}, kind: model.PathKindArray, labels: label("type"), wantString: true},
+		{name: "timestamp field of the elements of a list", path: model.Path{"status", "conditions"}, kind: model.PathKindArray, labels: label("lastTransitionTime")},
+		{name: "optional bool field of the elements of a list", path: model.Path{"metadata", "ownerReferences"}, kind: model.PathKindArray, labels: label("controller")},
+		{name: "optional string field of the elements of a list", path: model.Path{"metadata", "ownerReferences"}, kind: model.PathKindArray, labels: label("kind"), wantString: true},
+		{name: "elements of a list of strings", path: model.Path{"spec", "tags"}, kind: model.PathKindArray, labels: label(), wantString: true},
+		{name: "elements of a list of objects", path: model.Path{"status", "conditions"}, kind: model.PathKindArray, labels: label()},
+		{name: "string field of the entries of a map", root: "PathKinds", path: model.Path{"map"}, kind: model.PathKindMap, labels: label("a"), wantString: true},
+		{name: "entries of a map of objects", root: "PathKinds", path: model.Path{"map"}, kind: model.PathKindMap, labels: label()},
+		{name: "entries of a map of strings", path: model.Path{"metadata", "labels"}, kind: model.PathKindMap, labels: label(), wantString: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rootName := tt.root
+			if rootName == "" {
+				rootName = "Foo"
+			}
+			object := pkg.Types.Scope().Lookup(rootName)
+			if object == nil {
+				t.Fatalf("type %s not found", rootName)
+			}
+
+			annotateLabelKinds(tt.labels, object.Type(), tt.path, tt.kind)
+			if tt.labels[0].IsString != tt.wantString {
+				t.Errorf("IsString = %v, want %v", tt.labels[0].IsString, tt.wantString)
+			}
+		})
+	}
+}
+
+func Test_annotatePathAndValueKinds_labels(t *testing.T) {
+	pkg := loadTestdataV1(t)
+	metrics := []model.Generator{{
+		Type: model.MetricTypeInfo, Path: model.Path{"status", "conditions"},
+		Labels: []model.Label{{Name: "type", Path: model.Path{"type"}}, {Name: "time", Path: model.Path{"lastTransitionTime"}}},
+	}}
+	if err := annotatePathAndValueKinds(metrics, pkg.Types.Scope().Lookup("Foo").Type()); err != nil {
+		t.Fatal(err)
+	}
+	if !metrics[0].Labels[0].IsString || metrics[0].Labels[1].IsString {
+		t.Errorf("IsString of the labels = %v, %v, want true, false", metrics[0].Labels[0].IsString, metrics[0].Labels[1].IsString)
+	}
+}
+
+func Test_annotatePathAndValueKinds(t *testing.T) {
+	pkg := loadTestdataV1(t)
+	roots := []*loader.Package{pkg}
 
 	gauge := func(path ...string) model.Generator {
 		return model.Generator{Type: model.MetricTypeGauge, Path: path}

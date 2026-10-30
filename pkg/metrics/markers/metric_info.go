@@ -55,13 +55,17 @@ type infoMarker struct {
 	// Keys from the MetricMeta struct.
 
 	// Labels specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.
-	// Note: With the resource-state-metrics target the label names group, version, kind, name and namespace are dropped, as resource-state-metrics adds them to every metric itself.
+	// Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.
 	// Note: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets.
 	Labels map[string]jsonPath `marker:"labels,optional"`
 
 	// Path specifies the JSONPath of the metric, relative to the field or type the marker is set on.
 	// With the kube-state-metrics target the full path ends up in the path field of the metric.
 	Path jsonPath `marker:"path,optional"`
+
+	// IgnoreMissing specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.
+	// Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.
+	IgnoreMissing bool `marker:"ignoreMissing,optional"`
 }
 
 var _ LocalGeneratorMarker = &infoMarker{}
@@ -78,10 +82,11 @@ func (i infoMarker) ToGenerator(basePath ...string) (*model.Generator, error) {
 	}
 
 	return &model.Generator{
-		Name:   i.Name,
-		Help:   i.MetricHelp,
-		Type:   model.MetricTypeInfo,
-		Path:   path,
-		Labels: labels,
+		Name:          i.Name,
+		Help:          i.MetricHelp,
+		Type:          model.MetricTypeInfo,
+		Path:          path,
+		Labels:        labels,
+		IgnoreMissing: i.IgnoreMissing,
 	}, nil
 }
