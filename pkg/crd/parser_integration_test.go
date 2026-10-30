@@ -476,4 +476,43 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 		cmpOpts := cmpopts.EquateEmpty()
 		Expect(cmp.Equal(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts)).To(BeTrue(), "type not as expected, check pkg/crd/testdata/README.md for more details.\n\nDiff:\n\n%s", cmp.Diff(parser.CustomResourceDefinitions[groupKind], crd, cmpOpts))
 	})
+
+	It("should not add versions where a same-named type is not a Kubernetes object", func() {
+		By("switching into testdata to appease go modules")
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.Chdir("./testdata/multiple_versions")).To(Succeed())
+		defer func() { Expect(os.Chdir(cwd)).To(Succeed()) }()
+
+		By("loading the roots")
+		pkgs, err := loader.LoadRoots("./v1beta1", "./v1beta2")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(pkgs).To(HaveLen(2))
+
+		By("setting up the parser")
+		reg := &markers.Registry{}
+		Expect(crdmarkers.Register(reg)).To(Succeed())
+		parser := &crd.Parser{
+			Collector: &markers.Collector{Registry: reg},
+			Checker:   &loader.TypeChecker{},
+		}
+		crd.AddKnownTypes(parser)
+
+		By("requesting that the package be parsed")
+		for _, pkg := range pkgs {
+			parser.NeedPackage(pkg)
+		}
+
+		By("requesting that the CRD be generated")
+		groupKind := schema.GroupKind{Kind: "Bar", Group: "testdata.kubebuilder.io"}
+		parser.NeedCRDFor(groupKind, nil)
+
+		By("checking that only the version defining the object is present")
+		versions := parser.CustomResourceDefinitions[groupKind].Spec.Versions
+		names := make([]string, 0, len(versions))
+		for _, v := range versions {
+			names = append(names, v.Name)
+		}
+		Expect(names).To(Equal([]string{"v1beta2"}))
+	})
 })
