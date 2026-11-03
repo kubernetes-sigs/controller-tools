@@ -45,3 +45,11 @@ type VersionedResourceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []VersionedResource `json:"items"`
 }
+
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+
+type Bar struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+}
