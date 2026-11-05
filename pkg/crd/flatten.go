@@ -109,6 +109,22 @@ func resolveFieldConflict(fieldName string, srcField, dstField reflect.Value, sr
 		}
 		flattenAllOfInto(dstProps.Schema, *srcProps.Schema, errRec)
 		return false
+	case "Items":
+		// merge the item schemas into a copy, so a field that adds a marker to
+		// the items of a named list does not change the named list's schema
+		srcItems := srcInt.(*apiextensionsv1.JSONSchemaPropsOrArray)
+		dstItems := dstInt.(*apiextensionsv1.JSONSchemaPropsOrArray)
+		if srcItems.Schema == nil || dstItems.Schema == nil {
+			// tuple items are not merged; keep both in allOf
+			srcRemVal.Field(fieldIndex).Set(srcField)
+			dstRemVal.Field(fieldIndex).Set(dstField)
+			dstField.Set(zeroVal)
+			return true
+		}
+		merged := dstItems.Schema.DeepCopy()
+		flattenAllOfInto(merged, *srcItems.Schema, errRec)
+		dstField.Set(reflect.ValueOf(&apiextensionsv1.JSONSchemaPropsOrArray{Schema: merged}))
+		return false
 	case "XPreserveUnknownFields":
 		dstField.Set(srcField)
 		return false

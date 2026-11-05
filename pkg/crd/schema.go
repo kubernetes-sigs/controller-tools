@@ -64,6 +64,8 @@ type applyFirstMarker interface {
 type schemaRequester interface {
 	NeedSchemaFor(typ TypeIdent)
 	LookupType(pkg *loader.Package, name string) *markers.TypeInfo
+	// schemaFor returns the schema generated for the given type, if any.
+	schemaFor(typ TypeIdent) (apiextensionsv1.JSONSchemaProps, bool)
 }
 
 // schemaContext stores and provides information across a hierarchy of schema generation.
@@ -103,12 +105,13 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 }
 
 // requestSchema asks for the schema for a type in the package with the
-// given import path.
-func (c *schemaContext) requestSchema(pkgPath, typeName string) {
-	c.requestSchemaWithPkg(pkgPath, typeName, nil)
+// given import path. It returns the generated schema, or nil when the type
+// could not be resolved.
+func (c *schemaContext) requestSchema(pkgPath, typeName string) *apiextensionsv1.JSONSchemaProps {
+	return c.requestSchemaWithPkg(pkgPath, typeName, nil)
 }
 
-func (c *schemaContext) requestSchemaWithPkg(pkgPath, typeName string, typesPkg *types.Package) {
+func (c *schemaContext) requestSchemaWithPkg(pkgPath, typeName string, typesPkg *types.Package) *apiextensionsv1.JSONSchemaProps {
 	pkg := c.pkg
 	if pkgPath != "" {
 		pkg = c.pkg.Imports()[pkgPath]
@@ -117,13 +120,19 @@ func (c *schemaContext) requestSchemaWithPkg(pkgPath, typeName string, typesPkg 
 		}
 		if pkg == nil {
 			c.pkg.AddError(fmt.Errorf("unable to find package %q for type %s (not in direct imports)", pkgPath, typeName))
-			return
+			return nil
 		}
 	}
-	c.schemaRequester.NeedSchemaFor(TypeIdent{
+	typ := TypeIdent{
 		Package: pkg,
 		Name:    typeName,
-	})
+	}
+	c.schemaRequester.NeedSchemaFor(typ)
+	schema, found := c.schemaRequester.schemaFor(typ)
+	if !found {
+		return nil
+	}
+	return &schema
 }
 
 func (c *schemaContext) findPackageRecursive(pkgPath string) *loader.Package {
@@ -240,16 +249,76 @@ func applyMarkers(ctx *schemaContext, markerSet markers.MarkerValues, props *api
 	}
 
 	for _, schemaMarker := range itemsMarkers {
-		if props.Type != arrayType || props.Items == nil || props.Items.Schema == nil {
+		hasItems := props.Items != nil && props.Items.Schema != nil
+		switch {
+		case props.Type == arrayType && !hasItems && isNamedSliceField(ctx, node):
+			// The items of a named slice live in the named type's schema. Give
+			// this field its own copy, so the marker applies to this field only.
+			items := namedSliceItems(ctx, node)
+			if items == nil {
+				err := fmt.Errorf("must apply %s to an array value, found %s", schemaMarker.Name, props.Type)
+				ctx.pkg.AddError(loader.ErrFromNode(err, node))
+				continue
+			}
+			props.Items = &apiextensionsv1.JSONSchemaPropsOrArray{Schema: items}
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, props.Items.Schema); err != nil {
+				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
+			}
+		case props.Type != arrayType || !hasItems:
 			err := fmt.Errorf("must apply %s to an array value, found %s", schemaMarker.Name, props.Type)
 			ctx.pkg.AddError(loader.ErrFromNode(err, node))
-		} else {
-			itemsSchema := props.Items.Schema
-			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, itemsSchema); err != nil {
+		default:
+			if err := schemaMarker.SchemaMarker.ApplyToSchema(schemaCtx, props.Items.Schema); err != nil {
 				ctx.pkg.AddError(loader.ErrFromNode(err /* an okay guess */, node))
 			}
 		}
 	}
+}
+
+// isNamedSliceField reports whether node is a struct field whose type, or the
+// type it points to, is a named slice type. Such a field references the schema
+// of its named type, so it has no items schema of its own.
+func isNamedSliceField(ctx *schemaContext, node ast.Node) bool {
+	field, ok := node.(*ast.Field)
+	if !ok {
+		return false
+	}
+	typ := ctx.pkg.TypesInfo.TypeOf(field.Type)
+	if ptr, ok := typ.(*types.Pointer); ok {
+		typ = ptr.Elem()
+	}
+	if _, ok := types.Unalias(typ).(*types.Named); !ok {
+		return false
+	}
+	_, ok = typ.Underlying().(*types.Slice)
+	return ok
+}
+
+// namedSliceItems returns a copy of the items schema of the named slice type of
+// the struct field node, or nil when that schema is not known yet.
+func namedSliceItems(ctx *schemaContext, node ast.Node) *apiextensionsv1.JSONSchemaProps {
+	field, ok := node.(*ast.Field)
+	if !ok {
+		return nil
+	}
+	typ := ctx.pkg.TypesInfo.TypeOf(field.Type)
+	if ptr, ok := typ.(*types.Pointer); ok {
+		typ = ptr.Elem()
+	}
+	named, ok := types.Unalias(typ).(*types.Named)
+	if !ok {
+		return nil
+	}
+	obj := named.Obj()
+	pkgPath := loader.NonVendorPath(obj.Pkg().Path())
+	if obj.Pkg() == ctx.pkg.Types {
+		pkgPath = ""
+	}
+	schema := ctx.requestSchemaWithPkg(pkgPath, obj.Name(), obj.Pkg())
+	if schema == nil || schema.Items == nil || schema.Items.Schema == nil {
+		return nil
+	}
+	return schema.Items.Schema.DeepCopy()
 }
 
 // typeToSchema creates a schema for the given AST type.
