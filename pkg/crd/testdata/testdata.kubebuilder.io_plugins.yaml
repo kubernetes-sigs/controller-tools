@@ -1,0 +1,412 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: plugins.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: Plugin
+    listKind: PluginList
+    plural: plugins
+    singular: plugin
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Plugin is an add-on that runs next to an application.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              allowedHosts:
+                description: AllowedHosts is a named list with custom JSON marshalling
+                  and a type marker.
+                type: string
+              annotations:
+                additionalProperties:
+                  type: string
+                description: Annotations is a named map with an explicit type marker.
+                type: object
+                x-kubernetes-map-type: atomic
+              args:
+                description: Args is a named list with an explicit type marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
+              authToken:
+                description: |-
+                  AuthToken is the token used to call the plugin server. Its type is a
+                  named byte slice from another package.
+                format: byte
+                type: string
+              caBundle:
+                description: CABundle is the PEM-encoded CA bundle used to verify
+                  the plugin server.
+                format: byte
+                type: string
+              clientCertificate:
+                description: |-
+                  ClientCertificate is the PEM-encoded client certificate. Its type is a
+                  type alias to a named byte slice.
+                format: byte
+                type: string
+              config:
+                description: Config is the plugin configuration as raw JSON.
+                format: byte
+                type: string
+              containerPorts:
+                description: ContainerPorts is a named list declared from another
+                  named list.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              deniedHosts:
+                description: |-
+                  DeniedHosts is declared from a named list with a type marker, and has its
+                  own custom JSON marshalling.
+                type: string
+              dnsNames:
+                description: DNSNames is a named list declared from another named
+                  list.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
+              excludedTags:
+                description: ExcludedTags is a pointer to a named list.
+                items:
+                  type: string
+                nullable: true
+                type: array
+                x-kubernetes-list-type: atomic
+              exposedPorts:
+                description: |-
+                  ExposedPorts is replaced as a whole on update, so it can have two ports
+                  with the same name.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              headers:
+                additionalProperties:
+                  type: string
+                description: Headers is a named map with custom JSON marshalling and
+                  a field-level map marker.
+                type: object
+                x-kubernetes-map-type: granular
+              healthPorts:
+                description: |-
+                  HealthPorts has at most one port per protocol. It uses the k8s list
+                  markers.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - protocol
+                x-kubernetes-list-type: map
+              keywords:
+                description: Keywords is a type alias to a named list, with a field-level
+                  list marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
+              labels:
+                additionalProperties:
+                  type: string
+                description: Labels is a named map with a field-level map marker.
+                type: object
+                x-kubernetes-map-type: granular
+              metricsPorts:
+                description: |-
+                  MetricsPorts is replaced as a whole on update. It uses the k8s list
+                  marker.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              nameservers:
+                description: Nameservers is a named fixed-size array with a field-level
+                  list marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: NodeSelector is a named map with no field-level marker.
+                type: object
+              ports:
+                description: |-
+                  Ports uses the list type and keys of its named list: a map list keyed
+                  by name.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              protocolPorts:
+                description: |-
+                  ProtocolPorts has at most one port per protocol. It sets its own key on
+                  the named list.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - protocol
+                x-kubernetes-list-type: map
+              requests:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: Requests is a named map from another module, with a field-level
+                  map marker.
+                type: object
+                x-kubernetes-map-type: atomic
+              scopes:
+                description: Scopes is a named list with custom JSON marshalling and
+                  a field-level list marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
+              selector:
+                additionalProperties:
+                  type: string
+                description: Selector is a named map with an atomic field-level map
+                  marker.
+                type: object
+                x-kubernetes-map-type: atomic
+              servicePorts:
+                description: ServicePorts must have between 1 and 10 ports.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                maxItems: 10
+                minItems: 1
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              sidecarPorts:
+                description: |-
+                  SidecarPorts is a named list from another package. It is replaced as a
+                  whole on update.
+                items:
+                  description: Port is a network port exposed by a container.
+                  properties:
+                    name:
+                      description: Name is the name of the port, for example "http".
+                      type: string
+                    port:
+                      description: Port is the port number.
+                      format: int32
+                      type: integer
+                    protocol:
+                      description: Protocol is the protocol of the port, for example
+                        "TCP".
+                      type: string
+                  required:
+                  - name
+                  - port
+                  - protocol
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              specDescriptors:
+                description: |-
+                  SpecDescriptors describe the fields of the plugin spec. Each one has a
+                  default value as raw JSON.
+                items:
+                  description: |-
+                    SpecDescriptor describes a field of the plugin spec, like the spec
+                    descriptors of an Operator Lifecycle Manager ClusterServiceVersion.
+                  properties:
+                    path:
+                      description: Path is the path of the field, for example "spec.replicas".
+                      type: string
+                    value:
+                      description: Value is the default value of the field as raw
+                        JSON.
+                      format: byte
+                      type: string
+                  required:
+                  - path
+                  type: object
+                type: array
+              supportedVersions:
+                description: SupportedVersions is a named list with custom text marshalling.
+                type: string
+              tags:
+                description: Tags is a named list with a field-level list marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
+              topics:
+                description: Topics is an alias of an alias of a named list, with
+                  a field-level list marker.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
+              values:
+                description: |-
+                  Values are the plugin values. Its type is a byte slice typed as an object
+                  by its type markers.
+                format: byte
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true

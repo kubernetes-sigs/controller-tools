@@ -323,6 +323,83 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Plugin API with fields of named types", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./rawmessage"}
+				expPkgLen = 1
+			})
+			It("should generate json.RawMessage and named byte slices as base64-encoded strings", func() {
+				assertCRD(pkgs[0], "Plugin", "testdata.kubebuilder.io_plugins.yaml")
+			})
+			It("should type fields of named types like the schema of the named type", func() {
+				By("requesting the schema of the spec before it is flattened")
+				typeIdent := crd.TypeIdent{Package: pkgs[0], Name: "PluginSpec"}
+				parser.NeedSchemaFor(typeIdent)
+				Expect(packageErrors(pkgs[0], packages.TypeError)).NotTo(HaveOccurred())
+				spec, found := parser.Schemata[typeIdent]
+				Expect(found).To(BeTrue(), "schema for PluginSpec should be generated")
+
+				expectField := func(name, typ, format string) {
+					field, found := spec.Properties[name]
+					ExpectWithOffset(1, found).To(BeTrue(), "field %s should be generated", name)
+					ExpectWithOffset(1, field.Ref).NotTo(BeNil(), "field %s should reference its named type", name)
+					ExpectWithOffset(1, field.Type).To(Equal(typ), "unexpected type for field %s", name)
+					ExpectWithOffset(1, field.Format).To(Equal(format), "unexpected format for field %s", name)
+				}
+
+				By("checking that byte slices are base64-encoded strings, not arrays")
+				for _, name := range []string{"config", "caBundle", "clientCertificate", "authToken"} {
+					expectField(name, "string", "byte")
+				}
+
+				By("checking that type markers on the named type win over its Go type")
+				Expect(spec.Properties["values"].Type).To(Equal("object"))
+				expectField("allowedHosts", "string", "")
+				expectField("deniedHosts", "string", "")
+
+				By("checking that custom text marshalling is a string")
+				expectField("supportedVersions", "string", "")
+
+				By("checking that other named slices and maps keep their type so field-level markers apply")
+				for _, name := range []string{"tags", "keywords", "topics", "scopes"} {
+					expectField(name, "array", "")
+					Expect(spec.Properties[name].XListType).To(HaveValue(Equal("set")), "field %s should keep its list marker", name)
+				}
+				for _, name := range []string{"labels", "headers"} {
+					expectField(name, "object", "")
+					Expect(spec.Properties[name].XMapType).To(HaveValue(Equal("granular")), "field %s should keep its map marker", name)
+				}
+
+				By("checking that every field of a named type has the type and format of that type's schema")
+				for name, field := range spec.Properties {
+					if field.Ref == nil {
+						continue
+					}
+					typeName, pkgPath, err := crd.RefParts(*field.Ref)
+					Expect(err).NotTo(HaveOccurred())
+					pkg := pkgs[0]
+					if pkgPath != "" {
+						pkg = pkgs[0].Imports()[pkgPath]
+						Expect(pkg).NotTo(BeNil(), "package %s of field %s should be loaded", pkgPath, name)
+					}
+					named, found := parser.Schemata[crd.TypeIdent{Package: pkg, Name: typeName}]
+					Expect(found).To(BeTrue(), "schema of %s for field %s should be generated", typeName, name)
+					Expect(field.Type).To(Equal(named.Type), "field %s should have the type of %s", name, typeName)
+					Expect(field.Format).To(Equal(named.Format), "field %s should have the format of %s", name, typeName)
+				}
+			})
+		})
+
+		Context("Extension API with a list marker on a json.RawMessage field", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./rawmessage_error"}
+				expPkgLen = 1
+			})
+			It("should reject the list marker because a byte slice is not an array", func() {
+				assertError(pkgs[0], "Extension", "must apply listType to an array, found string")
+			})
+		})
+
 		Context("Type Alias API", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./typealias_indirect"}

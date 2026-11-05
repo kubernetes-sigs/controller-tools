@@ -10180,6 +10180,11 @@ spec:
                   foo:
                     type: string
                 type: object
+              namedByteSlice:
+                description: This tests that a named byte slice is generated as a
+                  base64-encoded string, like []byte.
+                format: byte
+                type: string
               nestedMap:
                 additionalProperties:
                   additionalProperties:
@@ -10292,6 +10297,11 @@ spec:
                   type: string
                 description: This tests pointers are allowed as map values.
                 type: object
+              rawMessage:
+                description: This tests that json.RawMessage is generated as a base64-encoded
+                  string, like []byte.
+                format: byte
+                type: string
               schedule:
                 description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
                 type: string

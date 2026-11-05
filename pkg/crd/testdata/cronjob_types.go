@@ -17,7 +17,7 @@ limitations under the License.
 // TODO(directxman12): test this across both versions (right now we're just
 // trusting k/k conversion, which is probably fine though)
 
-//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved;./job/...;./immutable;./emptyobjectdefault;./boundsvalidation output:dir=.
+//go:generate ../../../.run-controller-gen.sh crd:ignoreUnexportedFields=true,allowDangerousTypes=true paths=./;./deprecated;./unserved;./job/...;./immutable;./emptyobjectdefault;./boundsvalidation;./rawmessage output:dir=.
 
 // +groupName=testdata.kubebuilder.io
 // +versionName=v1
@@ -85,6 +85,14 @@ type CronJobSpec struct {
 
 	// This tests byte slice schema generation.
 	BinaryName []byte `json:"binaryName"`
+
+	// This tests that json.RawMessage is generated as a base64-encoded string, like []byte.
+	// +optional
+	RawMessage json.RawMessage `json:"rawMessage,omitempty"`
+
+	// This tests that a named byte slice is generated as a base64-encoded string, like []byte.
+	// +optional
+	NamedByteSlice NamedByteSlice `json:"namedByteSlice,omitempty"`
 
 	// This tests that nullable works correctly
 	// +nullable
@@ -669,6 +677,9 @@ type ConditionsWithoutMarker []AssociativeType
 // MapWithoutMarker is a type alias to a map without type-level markers.
 // This tests that +mapType can be applied at the field level (issue #988).
 type MapWithoutMarker map[string][]byte
+
+// NamedByteSlice is a named byte slice. It serializes as a base64-encoded string.
+type NamedByteSlice []byte
 
 // +kubebuilder:validation:MinLength=4
 // This tests that markers that are allowed on both fields and types are applied to types

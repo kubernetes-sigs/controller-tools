@@ -42,6 +42,7 @@ var _ = BeforeSuite(func() {
 		"testdata.kubebuilder.io_emptyobjectdefaults.yaml",
 		"testdata.kubebuilder.io_enums.yaml",
 		"testdata.kubebuilder.io_immutabletypes.yaml",
+		"testdata.kubebuilder.io_plugins.yaml",
 	}}}
 
 	cfg, err := testEnv.Start()
