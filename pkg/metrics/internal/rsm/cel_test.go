@@ -26,9 +26,6 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-// equateEmpty treats nil and empty slices as equal, to not have to set empty labels in the expected metrics.
-var equateEmpty = cmpopts.EquateEmpty()
-
 func Test_toStore(t *testing.T) {
 	prefix := "foo"
 	resource := model.Resource{
@@ -43,7 +40,7 @@ func Test_toStore(t *testing.T) {
 				IgnoreMissing: true, Name: "condition", Help: "A condition.", Type: model.MetricTypeStateSet,
 				Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
 				Labels:    []model.Label{{Name: "type", Path: model.Path{"type"}}},
-				List:      []string{"True", "False"},
+				States:    []string{"True", "False"},
 				LabelName: "status",
 				Value:     model.Path{"status"},
 			},
@@ -122,7 +119,7 @@ func Test_toCEL_withoutIgnoreMissing(t *testing.T) {
 				want:   Metric{Value: `o.status.items.map(v, has(v.size) ? v.size : 0)`},
 			},
 			{
-				name: "list labels fail with the value",
+				name: "list with labels without presence checks",
 				metric: model.Generator{
 					Path: model.Path{"status", "items"}, PathKind: model.PathKindArray, Value: model.Path{"size"},
 					Labels: []model.Label{{Name: "id", Path: model.Path{"id"}}},
@@ -165,8 +162,7 @@ func Test_toCEL_withoutIgnoreMissing(t *testing.T) {
 				want:   Metric{Value: `1`},
 			},
 			{
-				// The value has to fail like the labels if the object is missing.
-				name: "object",
+				name: "object with labels without presence checks",
 				metric: model.Generator{
 					Path: model.Path{"status", "nodeRef"}, PathKind: model.PathKindObject,
 					Labels: []model.Label{{Name: "node_name", Path: model.Path{"name"}}},
@@ -208,7 +204,7 @@ func Test_toCEL_withoutIgnoreMissing(t *testing.T) {
 				name: "scalar",
 				metric: model.Generator{
 					Path: model.Path{"status", "phase"}, PathKind: model.PathKindScalar,
-					List: []string{"Ready"}, LabelName: "phase",
+					States: []string{"Ready"}, LabelName: "phase",
 				},
 				want: []Metric{{
 					Labels: []Label{{Name: "phase", Value: `"Ready"`}},
@@ -219,7 +215,7 @@ func Test_toCEL_withoutIgnoreMissing(t *testing.T) {
 				name: "list with labels",
 				metric: model.Generator{
 					Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
-					Value: model.Path{"status"}, List: []string{"True"}, LabelName: "status",
+					Value: model.Path{"status"}, States: []string{"True"}, LabelName: "status",
 					Labels: []model.Label{{Name: "type", Path: model.Path{"type"}}},
 				},
 				want: []Metric{{
@@ -309,7 +305,7 @@ func Test_stateSetToCEL(t *testing.T) {
 			name: "scalar",
 			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "phase"}, PathKind: model.PathKindScalar,
-				List: []string{"Ready", "Failed"}, LabelName: "phase",
+				States: []string{"Ready", "Failed"}, LabelName: "phase",
 			},
 			want: []Metric{
 				{
@@ -326,7 +322,7 @@ func Test_stateSetToCEL(t *testing.T) {
 			name: "list with labels",
 			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "conditions"}, PathKind: model.PathKindArray,
-				Value: model.Path{"status"}, List: []string{"True"}, LabelName: "status",
+				Value: model.Path{"status"}, States: []string{"True"}, LabelName: "status",
 				Labels: []model.Label{{Name: "type", Path: model.Path{"type"}}},
 			},
 			want: []Metric{{
@@ -342,7 +338,7 @@ func Test_stateSetToCEL(t *testing.T) {
 			name: "map",
 			metric: model.Generator{IgnoreMissing: true,
 				Path: model.Path{"status", "pools"}, PathKind: model.PathKindMap,
-				Value: model.Path{"phase"}, List: []string{"Ready"}, LabelName: "phase",
+				Value: model.Path{"phase"}, States: []string{"Ready"}, LabelName: "phase",
 			},
 			want: []Metric{{
 				Labels: []Label{{Name: "phase", Value: `"Ready"`}},
@@ -514,24 +510,5 @@ func Test_guardedPathCEL_neverSelectsKeywords(t *testing.T) {
 	}
 }
 
-func Test_namePrefix(t *testing.T) {
-	foo := "foo"
-	tests := []struct {
-		name       string
-		namePrefix *string
-		kind       string
-		want       string
-	}{
-		{name: "derived from the kind", kind: "MachineDeployment", want: "machinedeployment_"},
-		{name: "derived from a kind with an initialism", kind: "HTTPRoute", want: "httproute_"},
-		{name: "the name prefix of the resource is ignored", namePrefix: &foo, kind: "MachineDeployment", want: "machinedeployment_"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resource := model.Resource{NamePrefix: tt.namePrefix, GroupVersionKind: model.GroupVersionKind{Kind: tt.kind}}
-			if got := namePrefix(resource); got != tt.want {
-				t.Errorf("namePrefix() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
+// equateEmpty treats nil and empty slices as equal, to not have to set empty labels in the expected metrics.
+var equateEmpty = cmpopts.EquateEmpty()

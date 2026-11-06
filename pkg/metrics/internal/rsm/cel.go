@@ -74,7 +74,8 @@ func toStore(resource model.Resource) Store {
 
 // namePrefix returns the prefix for the names of the families of the resource, including the
 // separating underscore. It is the lowercased kind, e.g. machinedeployment_ for MachineDeployment,
-// following the naming of the metrics of kube-state-metrics, e.g. kube_horizontalpodautoscaler_.
+// following the naming of the metrics kube-state-metrics exposes for built-in resources, which
+// don't contain customresource.
 // resource-state-metrics prefixes the names with kube_customresource_ itself, which results in e.g.
 // kube_customresource_machinedeployment_created. The prefix keeps the families of different resources
 // apart, as resource-state-metrics exposes duplicate HELP and TYPE lines for a family name used by
@@ -160,13 +161,13 @@ func ifGuard(guard, then, otherwise string) string {
 // Without ignoreMissing a missing field fails the evaluation, for which resource-state-metrics doesn't
 // expose the sample. With ignoreMissing a scalar which is not set evaluates to an empty list instead.
 func gaugeToCEL(m model.Generator) Metric {
-	timestamp := m.ValueKind == model.ValueKindTimestamp
+	isTimestamp := m.ValueKind == model.ValueKindTimestamp
 
 	if isIterated(m.Path, m.PathKind) {
 		e := newElements(m.Path, m.PathKind, m.IgnoreMissing)
 		// missingAsZero needs the guard independent of ignoreMissing.
 		valueGuard, valueExpr := guardedPathCEL(e.element(), m.Value, m.IgnoreMissing || m.MissingAsZero)
-		valueExpr = timestampCEL(valueExpr, timestamp)
+		valueExpr = timestampCEL(valueExpr, isTimestamp)
 
 		// Elements without the value are exposed as zero or left out, if not set.
 		// The filter is empty if there is no value path (m.Value is empty). In that case the elements
@@ -188,7 +189,7 @@ func gaugeToCEL(m model.Generator) Metric {
 	valuePath := append(slices.Clone(m.Path), m.Value...)
 	// missingAsZero needs the guard independent of ignoreMissing.
 	guard, valueExpr := guardedPathCEL("o", valuePath, m.IgnoreMissing || m.MissingAsZero)
-	value := timestampCEL(valueExpr, timestamp)
+	value := timestampCEL(valueExpr, isTimestamp)
 	if m.MissingAsZero {
 		value = ifGuard(guard, value, "0")
 	} else if m.IgnoreMissing {
@@ -243,8 +244,8 @@ func infoToCEL(m model.Generator) Metric {
 //
 //	has(o.status) && has(o.status.phase) ? [int(o.status.phase == "True" ? 1 : 0)] : []
 func stateSetToCEL(m model.Generator) []Metric {
-	metrics := make([]Metric, 0, len(m.List))
-	for _, state := range m.List {
+	metrics := make([]Metric, 0, len(m.States))
+	for _, state := range m.States {
 		quoted := strconv.Quote(state)
 
 		if isIterated(m.Path, m.PathKind) {
@@ -306,8 +307,8 @@ func labelValueCEL(label model.Label, expr string) string {
 
 // timestampCEL converts a timestamp to unix seconds. The conversion is not done based on the
 // name of a field, as it would fail for numeric fields.
-func timestampCEL(expr string, timestamp bool) string {
-	if timestamp {
+func timestampCEL(expr string, isTimestamp bool) string {
+	if isTimestamp {
 		return "unixSeconds(" + expr + ")"
 	}
 	return expr

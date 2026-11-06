@@ -135,6 +135,17 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	return builder.Write(ctx)
 }
 
+// CheckFilter indicates the loader.NodeFilter (if any) that should be used
+// to prune out unused types/packages when type-checking (nodes for which
+// the filter returns true are considered "interesting").  This filter acts
+// as a baseline -- all types the pass through this filter will be checked,
+// but more than that may also be checked due to other generators' filters.
+func (Generator) CheckFilter() loader.NodeFilter {
+	// Re-use crd filter to filter out unrelated nodes that aren't used
+	// in CRD generation, like interfaces and struct fields without JSON tag.
+	return crd.Generator{}.CheckFilter()
+}
+
 // addResources adds the resources to the builder. The resources get validated before, to
 // have all targets reject the same unsupported metrics.
 func addResources(builder output.Builder, resources []model.Resource) error {
@@ -170,15 +181,4 @@ func sortedResources(resourceStates map[crd.TypeIdent]*model.Resource) []model.R
 		return strings.Compare(a.GroupVersionKind.String(), b.GroupVersionKind.String())
 	})
 	return resources
-}
-
-// CheckFilter indicates the loader.NodeFilter (if any) that should be used
-// to prune out unused types/packages when type-checking (nodes for which
-// the filter returns true are considered "interesting").  This filter acts
-// as a baseline -- all types the pass through this filter will be checked,
-// but more than that may also be checked due to other generators' filters.
-func (Generator) CheckFilter() loader.NodeFilter {
-	// Re-use crd filter to filter out unrelated nodes that aren't used
-	// in CRD generation, like interfaces and struct fields without JSON tag.
-	return crd.Generator{}.CheckFilter()
 }

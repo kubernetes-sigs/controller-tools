@@ -50,7 +50,7 @@ func Test_fromModel(t *testing.T) {
 					},
 					{
 						Name: "s", Help: "stateset", Type: model.MetricTypeStateSet,
-						Path: model.Path{"spec", "s"}, Value: model.Path{"state"}, List: []string{"a", "b"}, LabelName: "state",
+						Path: model.Path{"spec", "s"}, Value: model.Path{"state"}, States: []string{"a", "b"}, LabelName: "state",
 					},
 				},
 			},

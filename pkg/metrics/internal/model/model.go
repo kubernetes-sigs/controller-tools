@@ -123,8 +123,8 @@ type Generator struct {
 	// Only used by the resource-state-metrics target.
 	IgnoreMissing bool
 
-	// List are the states to expose a value for. Only used by StateSet.
-	List []string
+	// States are the states to expose a value for. Only used by StateSet.
+	States []string
 
 	// LabelName is the name of the label which contains the state. Only used by StateSet.
 	LabelName string

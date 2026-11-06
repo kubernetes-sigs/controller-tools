@@ -41,6 +41,9 @@ func (r Resource) Validate() error {
 		if err := generator.validateMapLabels(r.GroupVersionKind); err != nil {
 			return err
 		}
+		if generator.MissingAsZero && generator.IgnoreMissing {
+			return fmt.Errorf("metric %q of %s: missingAsZero and ignoreMissing are mutually exclusive", generator.Name, r.GroupVersionKind)
+		}
 	}
 	return nil
 }

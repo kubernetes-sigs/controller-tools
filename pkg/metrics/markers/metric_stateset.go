@@ -110,7 +110,7 @@ func (s stateSetMarker) ToGenerator(basePath ...string) (*model.Generator, error
 		Path:          path,
 		Labels:        labels,
 		Value:         value,
-		List:          s.States,
+		States:        s.States,
 		LabelName:     s.LabelName,
 		IgnoreMissing: s.IgnoreMissing,
 	}, nil

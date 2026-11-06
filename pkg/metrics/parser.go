@@ -120,7 +120,10 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 	})
 	// The paths of the labels of the resource are relative to the custom resource.
 	if object != nil {
-		annotateLabelKinds(resource.Labels, object.Type(), nil, model.PathKindScalar)
+		if err := annotateLabelKinds(resource.Labels, object.Type(), nil, model.PathKindScalar); err != nil {
+			pkg.AddError(loader.ErrFromNode(err, typeInfo.RawSpec))
+			return nil
+		}
 	}
 
 	p.resources[typeIdent] = &resource

@@ -34,6 +34,20 @@ const (
 	targetKubeStateMetrics     = "kube-state-metrics"
 )
 
+// newOutputBuilder returns the output.Builder for the selected target.
+// The builder validates the options of the Generator which are relevant for the target.
+// Adding a new target requires an output.Builder implementation and a case here.
+func (g Generator) newOutputBuilder() (output.Builder, error) {
+	switch g.Target {
+	case "", targetResourceStateMetrics:
+		return newRSMBuilder(g)
+	case targetKubeStateMetrics:
+		return newKSMBuilder(g)
+	default:
+		return nil, fmt.Errorf("unsupported metrics target %q, supported targets are %s and %s", g.Target, targetKubeStateMetrics, targetResourceStateMetrics)
+	}
+}
+
 func newRSMBuilder(g Generator) (output.Builder, error) {
 	if g.ResourceMetricsMonitorName != "" {
 		if errs := validation.IsDNS1123Subdomain(g.ResourceMetricsMonitorName); len(errs) > 0 {
@@ -53,18 +67,4 @@ func newKSMBuilder(g Generator) (output.Builder, error) {
 		return nil, errors.New("the resourceMetricsMonitorName and resourceMetricsMonitorNamespace options are only supported for the " + targetResourceStateMetrics + " target")
 	}
 	return ksm.NewBuilder(), nil
-}
-
-// newOutputBuilder returns the output.Builder for the selected target.
-// The builder validates the options of the Generator which are relevant for the target.
-// Adding a new target requires an output.Builder implementation and a case here.
-func (g Generator) newOutputBuilder() (output.Builder, error) {
-	switch g.Target {
-	case "", targetResourceStateMetrics:
-		return newRSMBuilder(g)
-	case targetKubeStateMetrics:
-		return newKSMBuilder(g)
-	default:
-		return nil, fmt.Errorf("unsupported metrics target %q, supported targets are %s and %s", g.Target, targetKubeStateMetrics, targetResourceStateMetrics)
-	}
 }

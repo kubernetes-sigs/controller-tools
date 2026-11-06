@@ -63,15 +63,8 @@ func (n labelMarker) ApplyToResource(resource *model.Resource) error {
 		return err
 	}
 
-	for _, label := range resource.Labels {
-		if label.Name != n.Name {
-			continue
-		}
-		if !slices.Equal(label.Path, path) {
-			return fmt.Errorf("duplicate definition for label %q", n.Name)
-		}
-		// Identical duplicate definitions are fine.
-		return nil
+	if slices.ContainsFunc(resource.Labels, func(label model.Label) bool { return label.Name == n.Name }) {
+		return fmt.Errorf("duplicate definition for label %q", n.Name)
 	}
 
 	resource.Labels = append(resource.Labels, model.Label{Name: n.Name, Path: path})

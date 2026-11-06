@@ -54,11 +54,11 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 			},
 			"MissingAsZero": {
 				Summary: "specifies to expose a not-existing field as zero value instead of omitting the metric.",
-				Details: "Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.",
+				Details: "Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.\nNote: Can't be combined with ignoreMissing.",
 			},
 			"IgnoreMissing": {
 				Summary: "specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.",
-				Details: "Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.",
+				Details: "Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.\nNote: Can't be combined with missingAsZero.",
 			},
 		},
 	}

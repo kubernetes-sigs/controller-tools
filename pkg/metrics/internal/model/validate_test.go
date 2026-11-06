@@ -21,25 +21,23 @@ import (
 	"testing"
 )
 
-func TestResource_Validate_resourceLabels(t *testing.T) {
-	gvk := GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"}
-	if err := (Resource{GroupVersionKind: gvk, Labels: []Label{{Name: "app", Path: Path{"x"}}}}).Validate(); err != nil {
-		t.Fatalf("Validate() unexpected error: %v", err)
-	}
-	err := Resource{GroupVersionKind: gvk, Labels: []Label{{Name: "name", Path: Path{"metadata", "name"}}}}.Validate()
-	if err == nil || !strings.Contains(err.Error(), `the label "name" of the option label is added to every metric by the targets`) {
-		t.Fatalf("Validate() error = %v, want an error for the label name", err)
-	}
-}
-
 func TestResource_Validate(t *testing.T) {
 	label := func(name string) []Label { return []Label{{Name: name, Path: Path{"x"}}} }
 
 	tests := []struct {
-		name        string
+		name string
+		// labels are the labels of the resource.
+		labels      []Label
 		generator   Generator
 		wantErrPart string
 	}{
+		{name: "resource label", labels: label("app"), generator: Generator{Type: MetricTypeInfo, PathKind: PathKindScalar}},
+		{
+			name:        "resource label with the name of an added label",
+			labels:      label("name"),
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindScalar},
+			wantErrPart: `the label "name" of the option label is added to every metric by the targets`,
+		},
 		{name: "info on a map without labels", generator: Generator{Type: MetricTypeInfo, PathKind: PathKindMap}},
 		{name: "info on a map with one label", generator: Generator{Type: MetricTypeInfo, PathKind: PathKindMap, Labels: label("a")}},
 		{
@@ -82,12 +80,20 @@ func TestResource_Validate(t *testing.T) {
 			name:      "scalars are not restricted",
 			generator: Generator{Type: MetricTypeInfo, PathKind: PathKindScalar, Labels: append(label("a"), label("b")...)},
 		},
+		{name: "missing as zero", generator: Generator{Type: MetricTypeGauge, PathKind: PathKindScalar, MissingAsZero: true}},
+		{name: "ignore missing", generator: Generator{Type: MetricTypeGauge, PathKind: PathKindScalar, IgnoreMissing: true}},
+		{
+			name:        "missing as zero and ignore missing",
+			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindScalar, MissingAsZero: true, IgnoreMissing: true},
+			wantErrPart: "missingAsZero and ignoreMissing are mutually exclusive",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.generator.Name = "foo"
 			err := Resource{
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"},
+				Labels:           tt.labels,
 				Metrics:          []Generator{tt.generator},
 			}.Validate()
 			if tt.wantErrPart == "" {

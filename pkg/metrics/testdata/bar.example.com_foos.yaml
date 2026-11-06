@@ -123,10 +123,42 @@ spec:
               someString:
                 description: SomeString is a string.
                 type: string
+              tags:
+                description: |-
+                  Tags are the tags of a Foo.
+                  It has no metrics marker, the metric is only defined in v1. The field is needed so it is not pruned
+                  when a Foo is stored, as v2 is the storage version.
+                items:
+                  type: string
+                type: array
             required:
             - maxItems
             - settings
             - someString
+            type: object
+          status:
+            description: Status comments SHOULD appear in the CRD spec
+            properties:
+              conditions:
+                items:
+                  description: Condition is a test condition.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime of condition.
+                      format: date-time
+                      type: string
+                    status:
+                      description: Status of condition.
+                      type: string
+                    type:
+                      description: Type of condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
             type: object
         type: object
     served: true

@@ -48,6 +48,10 @@ Minimal: enables the metrics generation for the custom resource. With the resour
 type Foo struct {
 ```
 
+If the custom resource has multiple versions, set the marker on only one of them, e.g. the storage version.
+Otherwise the metrics are exposed for every version and the targets expose metrics of the same name per version
+separately, see [Restrictions and side cases](#restrictions-and-side-cases).
+
 `namePrefix`: with the kube-state-metrics target all metrics get the prefix `foo` instead of `kube_customresource`, e.g. `foo_created`. It is ignored by the resource-state-metrics target.
 
 ```go
@@ -102,8 +106,8 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 | `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `value` | `*string` | no | Specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.<br>Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime. |
-| `missingAsZero` | `bool` | no | Specifies to expose a not-existing field as zero value instead of omitting the metric.<br>Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then. |
-| `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error. |
+| `missingAsZero` | `bool` | no | Specifies to expose a not-existing field as zero value instead of omitting the metric.<br>Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.<br>Note: Can't be combined with ignoreMissing. |
+| `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.<br>Note: Can't be combined with missingAsZero. |
 
 **Examples**
 
@@ -201,8 +205,7 @@ type FooSpec struct {
 }
 ```
 
-Without `ignoreMissing` the expression is `o.spec.replicas`. Evaluating it fails if `spec` or `replicas` is not set, so resource-state-metrics doesn't expose the metric, logs the failure at verbosity 1 and counts the evaluation with the result `error` in its counter of expression evaluations. With `ignoreMissing` the expression is `has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []`.
-The option is also available for the `info` and `stateset` markers.
+Without `ignoreMissing` the expression is `o.spec.replicas`. Evaluating it fails if `spec` or `replicas` is not set, so resource-state-metrics counts the evaluation with the result `error` in its counter of expression evaluations and doesn't expose the metric. It logs `error parsing metric value "o.spec.replicas" as float64` as error for every object without the field. With `ignoreMissing` the expression is `has(o.spec) && has(o.spec.replicas) ? [o.spec.replicas] : []`.
 
 The marker on a type other than the custom resource. The path is relative to the type and the metric is generated for the field of the custom resource using the type, here `.spec.settings.replicas`.
 
@@ -257,9 +260,11 @@ kube_customresource_foo_tags{tag="b"} 1
 
 ```go
 // +k8s:controller-gen:metrics:store
-// +k8s:controller-gen:metrics:info:name="owner",help="Owner references.",path=".metadata.ownerReferences",labels={owner_kind:".kind",owner_name:".name"}
+// +k8s:controller-gen:metrics:info:name="owner",help="Owner references.",path=".metadata.ownerReferences",labels={owner_kind:".kind",owner_name:".name"},ignoreMissing=true
 type Foo struct {
 ```
+
+With `ignoreMissing` no metric is exposed for a foo without owner references. Without it, the evaluation fails for such a foo.
 
 Resulting metric for an owner reference:
 
@@ -349,17 +354,31 @@ kube_customresource_foo_status_condition{status="Unknown",type="AnotherType"} 0
 kube_customresource_foo_status_condition{status="Unknown",type="SomeType"} 0
 ```
 
+`ignoreMissing` (resource-state-metrics target only): the same metric for a foo which might not have conditions yet, e.g. right after creation.
+
+```go
+type FooStatus struct {
+	// +k8s:controller-gen:metrics:stateset:name="status_condition",help="The condition of a foo.",states={"True","False","Unknown"},labelName="status",value=".status",labels={"type":".type"},ignoreMissing=true
+	Conditions []Condition `json:"conditions,omitempty"`
+}
+```
+
+No metrics are exposed for a foo without `status.conditions`, instead of the evaluation failing. Conditions without a `status` are left out. The expression of the value for the state `True` is `has(o.status) && has(o.status.conditions) ? o.status.conditions.filter(v, has(v.status)).map(v, int(v.status == "True" ? 1 : 0)) : []`.
+
 ## Restrictions and side cases
 
-* **Paths** have to exist in the Go types, otherwise the generation fails. Paths below fields of the types
+* **Paths** of metrics, values and labels have to exist in the Go types, otherwise the generation fails. Paths below fields of the types
   `any`, `runtime.RawExtension` and `apiextensionsv1.JSON` can't be used, as their content is unknown.
 * **Lists and maps** generate a metric per element. With the resource-state-metrics target, elements without
   the field of `value` are left out, unless `missingAsZero` is set.
 * **Missing fields**: with the resource-state-metrics target the generated expressions don't check if the fields
   exist, unless `ignoreMissing` is set on the marker. Use `ignoreMissing` for metrics on optional fields, otherwise
   every evaluation for a resource without the field is counted as `error` by resource-state-metrics.
-  A `label` of an optional field without `ignoreMissing` is also exposed with the text of its expression as value.
-  The labels of the `label` marker are always checked. The kube-state-metrics target ignores the option.
+  This also applies to the fields of `labels`: if the field of a label doesn't exist in a resource while the value
+  does, resource-state-metrics exposes the sample with the text of the label's expression as label value. With
+  `ignoreMissing` the label value is empty instead. The fields of the `label` marker are always checked, a missing
+  one results in an empty label value. `missingAsZero` and `ignoreMissing` can't be combined. The
+  kube-state-metrics target ignores `ignoreMissing`.
 * **Labels on maps**: as the targets can't align the labels of the entries of a map with each other and with
   the value, gauge and stateset metrics on a map don't support `labels`, and info metrics on a map support
   at most one label. The key of a map entry can't be exposed.
@@ -371,5 +390,10 @@ kube_customresource_foo_status_condition{status="Unknown",type="SomeType"} 0
   marker, of `labels` or as `labelName` is an error for every target.
 * **Metric names**: with the resource-state-metrics target the name of the metric including the prefix has to
   match `^[a-zA-Z_][a-zA-Z0-9_]*$`. The label names have to be unique.
-* **The `label` marker** is only considered on the type of the custom resource. Defining the same label
-  twice is only allowed with the same `value`.
+* **The `label` marker** is only considered on the type of the custom resource. The label names have to be unique.
+* **Multiple versions**: every version having the `store` marker gets its own configuration, so every object is
+  exposed once per version, only differing in the version label. Metrics with the same name in multiple versions
+  are not grouped together by the targets: kube-state-metrics writes `HELP` and `TYPE` only for the first
+  version, so the samples of the other versions end up below the metric written before them, and
+  resource-state-metrics writes `HELP` and `TYPE` again for every version. Set the `store` marker on only one
+  version of a custom resource.

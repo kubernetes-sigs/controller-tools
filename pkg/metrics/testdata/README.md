@@ -41,9 +41,7 @@ The example metrics file got created by:
     kind create cluster
     ```
 
-3. Applying the CRD and example CR to the cluster. The CRD has `v2` as storage version, which has no status, so the
-   status of the example CR would be pruned. Make `v1` the storage version of the CRD (`kubectl edit crd foos.bar.example.com`)
-   before applying the example CR:
+3. Applying the CRD and example CR to the cluster:
 
     ```sh
     kubectl apply -f ./pkg/metrics/testdata/bar.example.com_foos.yaml
@@ -99,9 +97,6 @@ The example metrics file got created by:
     kubectl apply -f ./pkg/metrics/testdata/example-foo.yaml
     kubectl apply -f ./pkg/metrics/testdata/resource-state-metrics/resource-metrics-monitor.yaml
     ```
-
-    The CRD has `v2` as storage version, which has no status, so the status of the example CR is pruned. Make `v1`
-    the storage version of the CRD (`kubectl edit crd foos.bar.example.com`) and apply the example CR again.
 
 5. Running resource-state-metrics against the cluster. The binary is built from the commit of step 3 (`make resource-state-metrics`).
    The release v0.1.0 is not used, as it does not keep the values of list metrics aligned with their labels (fixed by
