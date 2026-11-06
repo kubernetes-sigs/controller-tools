@@ -138,7 +138,7 @@ func generatorFromModel(metric model.Generator) Generator {
 		each.Type = MetricTypeStateSet
 		each.StateSet = &MetricStateSet{
 			MetricMeta: meta,
-			States:     metric.List,
+			States:     metric.States,
 			LabelName:  metric.LabelName,
 			Value:      metric.Value,
 		}

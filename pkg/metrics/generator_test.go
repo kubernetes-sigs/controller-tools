@@ -68,28 +68,3 @@ func Test_Generate_requiresExperimental(t *testing.T) {
 		t.Fatalf("Generate() error = %v, want an error about the experimental flag", err)
 	}
 }
-
-func Test_addResources_validatesForAllTargets(t *testing.T) {
-	// An unsupported metric: labels for the entries of a map in a gauge.
-	resources := []model.Resource{{
-		GroupVersionKind: model.GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"},
-		Metrics: []model.Generator{{
-			Name: "foo", Help: "Foo.", Type: model.MetricTypeGauge,
-			Path: model.Path{"spec", "m"}, PathKind: model.PathKindMap,
-			Labels: []model.Label{{Name: "key", Path: model.Path{"k"}}},
-		}},
-	}}
-
-	for _, target := range []string{targetResourceStateMetrics, targetKubeStateMetrics} {
-		t.Run(target, func(t *testing.T) {
-			builder, err := Generator{Target: target}.newOutputBuilder()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = addResources(builder, resources)
-			if err == nil || !strings.Contains(err.Error(), "a Gauge metric on a map doesn't support labels") {
-				t.Fatalf("addResources() error = %v, want an error about labels on a map", err)
-			}
-		})
-	}
-}

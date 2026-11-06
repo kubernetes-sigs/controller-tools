@@ -74,10 +74,12 @@ type gaugeMarker struct {
 
 	// MissingAsZero specifies to expose a not-existing field as zero value instead of omitting the metric.
 	// Note: With the resource-state-metrics target this also applies to the entries of lists and maps having no value, which are not left out then.
+	// Note: Can't be combined with ignoreMissing.
 	MissingAsZero bool `marker:"missingAsZero,optional"`
 
 	// IgnoreMissing specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.
 	// Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error.
+	// Note: Can't be combined with missingAsZero.
 	IgnoreMissing bool `marker:"ignoreMissing,optional"`
 }
 

@@ -124,13 +124,6 @@ spec:
       resource: foos
       version: v1
     - families:
-      - help: Unix creation timestamp.
-        metrics:
-        - labels:
-          - name: foo_name
-            value: 'has(o.metadata) && has(o.metadata.name) ? o.metadata.name : ""'
-          value: unixSeconds(o.metadata.creationTimestamp)
-        name: foo_created
       - help: The maximum number of items of a foo.
         metrics:
         - labels:

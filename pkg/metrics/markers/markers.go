@@ -23,12 +23,9 @@ import (
 )
 
 var (
-	// MarkerDefinitions contains all marker definitions defined by this package so
-	// they can get used in a generator.
 	MarkerDefinitions = []*markerDefinitionWithHelp{
-		// GroupName is a marker copied from the crd generator (pkg/crd/markers) to identify the API Group.
-		// It needs to get added as marker so the parser will be able to read the API
-		// which is Group set for a package.
+		// groupName is a marker copied from the crd generator (pkg/crd/markers). It has to be
+		// registered so the parser can read the API group set on a package.
 		must(markers.MakeDefinition("groupName", markers.DescribesPackage, "")),
 	}
 )
@@ -42,7 +39,6 @@ type ResourceMarker interface {
 
 // LocalGeneratorMarker is a marker that defines a metric of a custom resource.
 type LocalGeneratorMarker interface {
-	// ToGenerator creates the metric. The basePath is the path to the field the marker is set on,
-	// relative to the type the marker is set on.
+	// ToGenerator creates the metric. The basePath is the relative path to the field the marker is set on.
 	ToGenerator(basePath ...string) (*model.Generator, error)
 }

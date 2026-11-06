@@ -34,12 +34,33 @@ type FooSpec struct {
 
 	// Limits are inlined, no additional path element must get added for them.
 	common.Limits `json:",inline"`
+
+	// Tags are the tags of a Foo.
+	// It has no metrics marker, the metric is only defined in v1. The field is needed so it is not pruned
+	// when a Foo is stored, as v2 is the storage version.
+	Tags []string `json:"tags,omitempty"`
+}
+
+// FooStatus is the status of Foo.
+// It has no metrics markers, the metrics are only defined in v1. The status is needed so it is not
+// pruned when a Foo is stored, as v2 is the storage version.
+type FooStatus struct {
+	Conditions []Condition `json:"conditions,omitempty"`
+}
+
+// Condition is a test condition.
+type Condition struct {
+	// Type of condition.
+	Type string `json:"type"`
+	// Status of condition.
+	Status string `json:"status"`
+	// LastTransitionTime of condition.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 }
 
 // Foo is a test object.
 // +k8s:controller-gen:metrics:store:namePrefix="foo"
 // +k8s:controller-gen:metrics:label:name="foo_name",value=".metadata.name"
-// +k8s:controller-gen:metrics:gauge:name="created",path=".metadata.creationTimestamp",help="Unix creation timestamp."
 // +kubebuilder:storageversion
 type Foo struct {
 	// TypeMeta comments should NOT appear in the CRD spec
@@ -49,4 +70,6 @@ type Foo struct {
 
 	// Spec comments SHOULD appear in the CRD spec
 	Spec FooSpec `json:"spec,omitempty"`
+	// Status comments SHOULD appear in the CRD spec
+	Status FooStatus `json:"status,omitempty"`
 }

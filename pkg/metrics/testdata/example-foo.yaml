@@ -1,8 +1,10 @@
 ---
-apiVersion: bar.example.com/v1
+apiVersion: bar.example.com/v2
 kind: Foo
 metadata:
   name: bar
+  labels:
+    app.kubernetes.io/name: foo
   ownerReferences:
   - apiVersion: v1
     kind: foo
@@ -11,6 +13,12 @@ metadata:
     uid: someuid
 spec:
   someString: test
+  tags:
+  - a
+  - b
+  maxItems: 10
+  settings:
+    replicas: 3
 status:
   conditions:
   - lastTransitionTime: "2023-10-12T13:59:02Z"

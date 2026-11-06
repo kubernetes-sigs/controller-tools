@@ -30,8 +30,8 @@ import (
 // annotatePathAndValueKinds records the kind of the Go type at the path of each metric and
 // how its value has to be converted, which is needed by targets which have to know
 // how to iterate over the path or convert the value.
-// It returns an error for each metric having a path (or value path) which does not exist in the
-// Go types, which is a configuration error. This includes paths into fields without a
+// It returns an error for each metric having a path (value path or label path) which does not
+// exist in the Go types, which is a configuration error. This includes paths into fields without a
 // schema in Go like `any`, `runtime.RawExtension` or `apiextensionsv1.JSON`.
 func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error {
 	var errs []error
@@ -44,7 +44,10 @@ func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error
 			continue
 		}
 		metric.PathKind = goPathKind(pathType)
-		annotateLabelKinds(metric.Labels, root, metric.Path, metric.PathKind)
+		if err := annotateLabelKinds(metric.Labels, root, metric.Path, metric.PathKind); err != nil {
+			errs = append(errs, fmt.Errorf("metric %q: %w", metric.Name, err))
+			continue
+		}
 
 		if len(metric.Value) == 0 && metric.Type != model.MetricTypeGauge {
 			continue
@@ -64,11 +67,11 @@ func annotatePathAndValueKinds(metrics []model.Generator, root types.Type) error
 
 // annotateLabelKinds records for each label if the field at its path is a string. The path of the
 // labels is relative to the path, which is a list or map to iterate if the kind is array or map.
-// Labels with a path which can't be resolved are left as they are, the path is not a configuration
-// error for a label.
-func annotateLabelKinds(labels []model.Label, root types.Type, path model.Path, kind model.PathKind) {
+// It returns an error for each label having a path which does not exist in the Go types.
+func annotateLabelKinds(labels []model.Label, root types.Type, path model.Path, kind model.PathKind) error {
 	iterated := len(path) > 0 && (kind == model.PathKindArray || kind == model.PathKindMap)
 
+	var errs []error
 	for i := range labels {
 		var labelType types.Type
 		if iterated {
@@ -81,8 +84,13 @@ func annotateLabelKinds(labels []model.Label, root types.Type, path model.Path, 
 		} else {
 			labelType = goTypeAtJSONPath(root, append(slices.Clone(path), labels[i].Path...))
 		}
+		if labelType == nil {
+			errs = append(errs, fmt.Errorf("the path %q of the label %q does not exist in the type", strings.Join(labels[i].Path, "."), labels[i].Name))
+			continue
+		}
 		labels[i].IsString = isStringType(labelType)
 	}
+	return errors.Join(errs...)
 }
 
 // elementTypeOf returns the type of the elements of a list or map, or nil for other types.

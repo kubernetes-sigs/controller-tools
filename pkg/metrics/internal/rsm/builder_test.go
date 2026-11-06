@@ -58,7 +58,7 @@ func TestBuilder_AddResource(t *testing.T) {
 		{
 			name: "empty state label",
 			resource: newResource(func(_ *model.Resource, m *model.Generator) {
-				m.Type, m.List = model.MetricTypeStateSet, []string{"a"}
+				m.Type, m.States = model.MetricTypeStateSet, []string{"a"}
 			}),
 			wantErrPart: "the name of the label of the option labelName must not be empty",
 		},
@@ -80,7 +80,7 @@ func TestBuilder_AddResource(t *testing.T) {
 		{
 			name: "state label and label",
 			resource: newResource(func(_ *model.Resource, m *model.Generator) {
-				m.Type, m.LabelName, m.List = model.MetricTypeStateSet, "a", []string{"a"}
+				m.Type, m.LabelName, m.States = model.MetricTypeStateSet, "a", []string{"a"}
 				m.Labels = []model.Label{label("a")}
 			}),
 			wantErrPart: `the label "a" is set multiple times`,

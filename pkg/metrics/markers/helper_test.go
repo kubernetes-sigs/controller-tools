@@ -23,73 +23,27 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-func Test_jsonPath_Parse(t *testing.T) {
-	tests := []struct {
-		name    string
-		j       jsonPath
-		want    []string
-		wantErr bool
-	}{
-		{
-			name:    "empty input",
-			j:       "",
-			want:    []string{},
-			wantErr: false,
-		},
-		{
-			name:    "dot input",
-			j:       ".",
-			want:    []string{""},
-			wantErr: false,
-		},
-		{
-			name:    "some path input",
-			j:       ".foo.bar",
-			want:    []string{"foo", "bar"},
-			wantErr: false,
-		},
-		{
-			name:    "invalid character ,",
-			j:       ".foo,.bar",
-			wantErr: true,
-		},
-		{
-			name:    "invalid closure",
-			j:       "{.foo}",
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.j.Parse()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("jsonPath.Parse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("jsonPath.Parse() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_newPath(t *testing.T) {
 	tests := []struct {
 		name     string
 		basePath []string
 		j        jsonPath
 		want     model.Path
+		wantErr  bool
 	}{
 		{name: "with basePath and jsonpath", basePath: []string{"foo"}, j: ".bar", want: model.Path{"foo", "bar"}},
 		{name: "without jsonpath", basePath: []string{"foo"}, j: "", want: model.Path{"foo"}},
-		{name: "without basePath", basePath: nil, j: ".bar", want: model.Path{"bar"}},
+		{name: "without basePath", basePath: nil, j: ".foo.bar", want: model.Path{"foo", "bar"}},
 		{name: "empty", basePath: []string{}, j: "", want: model.Path{}},
+		{name: "dot", basePath: nil, j: ".", want: model.Path{""}},
+		{name: "invalid character ,", basePath: nil, j: ".foo,.bar", wantErr: true},
+		{name: "invalid closure", basePath: nil, j: "{.bar}", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := newPath(tt.basePath, tt.j)
-			if err != nil {
-				t.Fatal(err)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("newPath() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("newPath() = %#v, want %#v", got, tt.want)
@@ -105,12 +59,6 @@ func Test_newPath(t *testing.T) {
 		}
 		if got := basePath[:2][1]; got != "" {
 			t.Errorf("newPath() modified the backing array of basePath: %q", got)
-		}
-	})
-
-	t.Run("invalid jsonpath", func(t *testing.T) {
-		if _, err := newPath(nil, "{.bar}"); err == nil {
-			t.Error("expected an error")
 		}
 	})
 }

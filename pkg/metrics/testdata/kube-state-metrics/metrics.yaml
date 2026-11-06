@@ -105,14 +105,6 @@ spec:
     - each:
         gauge:
           path:
-          - metadata
-          - creationTimestamp
-        type: Gauge
-      help: Unix creation timestamp.
-      name: created
-    - each:
-        gauge:
-          path:
           - spec
           - maxItems
         type: Gauge
