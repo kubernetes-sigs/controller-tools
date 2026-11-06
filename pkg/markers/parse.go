@@ -343,8 +343,12 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		if nextTok := subScanner.Scan(); nextTok == sc.Ident {
 			switch subScanner.TokenText() {
 			case "true", "false":
-				// definitely a bool
-				return &Argument{Type: BoolType}
+				// only a bool if nothing else follows it, so that strings
+				// like "true-positive" or "false.example.com" stay strings
+				followTok := peekNoSpace(subScanner)
+				if followTok == ',' || followTok == ';' || followTok == sc.EOF || followTok == '}' {
+					return &Argument{Type: BoolType}
+				}
 			}
 			// probably a string
 			probablyString = true
