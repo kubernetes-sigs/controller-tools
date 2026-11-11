@@ -20,9 +20,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	cronjobsv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
 	cronjobsv1acs "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/api/v1"
+	"sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external"
 )
 
 var _ = Describe("ApplyConfigurations", func() {
@@ -41,5 +43,45 @@ var _ = Describe("ApplyConfigurations", func() {
 		first, err := cronjobsv1acs.ExtractCronJob(&cronJob, "first")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(first.Finalizers).To(Equal([]string{"foo.bar"}))
+	})
+
+	It("should extract the fields of an embedded alias and a defined type", func() {
+		requirements := []external.ExternalRequirement{{Key: "zone", Values: []string{"a"}}}
+		var replicas int32 = 2
+		cronJob := &cronjobsv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				ManagedFields: []metav1.ManagedFieldsEntry{{
+					Manager:    "owner",
+					Operation:  metav1.ManagedFieldsOperationApply,
+					APIVersion: cronjobsv1.GroupVersion.String(),
+					FieldsType: "FieldsV1",
+					FieldsV1: &metav1.FieldsV1{Raw: []byte(`{"f:spec":{` +
+						`"f:embeddedAliasSelector":{"f:requirements":{},"f:replicas":{}},` +
+						`"f:embeddedDefinedSelector":{"f:requirements":{},"f:replicas":{}}}}`)},
+				}},
+			},
+			Spec: cronjobsv1.CronJobSpec{
+				EmbeddedAliasSelector: &cronjobsv1.EmbeddedAliasSelectorSpec{
+					ExternalSelectorAlias: external.ExternalSelectorAlias{Requirements: requirements},
+					Replicas:              &replicas,
+				},
+				EmbeddedDefinedSelector: &cronjobsv1.EmbeddedDefinedSelectorSpec{
+					ExternalSelectorDefined: external.ExternalSelectorDefined{Requirements: requirements},
+					Replicas:                &replicas,
+				},
+			},
+		}
+
+		extracted, err := cronjobsv1acs.ExtractCronJob(cronJob, "owner")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(extracted.Spec).NotTo(BeNil())
+		Expect(extracted.Spec.EmbeddedAliasSelector).To(Equal(cronjobsv1acs.EmbeddedAliasSelectorSpec().
+			WithRequirements(requirements...).
+			WithReplicas(replicas)))
+		Expect(extracted.Spec.EmbeddedDefinedSelector).To(Equal(cronjobsv1acs.EmbeddedDefinedSelectorSpec().
+			WithRequirements(requirements...).
+			WithReplicas(replicas)))
 	})
 })
