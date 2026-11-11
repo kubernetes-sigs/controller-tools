@@ -195,6 +195,54 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              embeddedAliasSelector:
+                description: EmbeddedAliasSelector tests an embedded alias from another
+                  package.
+                properties:
+                  replicas:
+                    description: Replicas is the number of replicas.
+                    format: int32
+                    type: integer
+                  requirements:
+                    description: Requirements is a list of requirements.
+                    items:
+                      description: ExternalRequirement is referenced by ExternalSelector.
+                      properties:
+                        key:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      type: object
+                    type: array
+                type: object
+              embeddedDefinedSelector:
+                description: EmbeddedDefinedSelector tests an embedded defined type
+                  from another package.
+                properties:
+                  replicas:
+                    description: Replicas is the number of replicas.
+                    format: int32
+                    type: integer
+                  requirements:
+                    description: Requirements is a list of requirements.
+                    items:
+                      description: ExternalRequirement is referenced by ExternalSelector.
+                      properties:
+                        key:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      type: object
+                    type: array
+                type: object
               embeddedExternal:
                 description: EmbeddedExternal tests the ExternalApplyConfigurations
                   feature.

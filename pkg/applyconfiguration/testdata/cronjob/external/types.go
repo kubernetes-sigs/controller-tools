@@ -37,3 +37,11 @@ type ExternalRequirement struct {
 	Key    string   `json:"key"`
 	Values []string `json:"values,omitempty"`
 }
+
+// ExternalSelectorAlias is only another name for ExternalSelector. For Go, both are the same type.
+// Used to test that the fields are kept when an alias from another package is embedded.
+type ExternalSelectorAlias = ExternalSelector
+
+// ExternalSelectorDefined is a new type made from ExternalSelector. For Go, they are two different types.
+// Used to test that the fields are kept when a defined type from another package is embedded.
+type ExternalSelectorDefined ExternalSelector
