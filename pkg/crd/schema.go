@@ -76,6 +76,7 @@ type schemaContext struct {
 
 	allowDangerousTypes    bool
 	ignoreUnexportedFields bool
+	opaque                 bool
 }
 
 // newSchemaContext constructs a new schemaContext for the given package and schema requester.
@@ -99,7 +100,18 @@ func (c *schemaContext) ForInfo(info *markers.TypeInfo) *schemaContext {
 		schemaRequester:        c.schemaRequester,
 		allowDangerousTypes:    c.allowDangerousTypes,
 		ignoreUnexportedFields: c.ignoreUnexportedFields,
+		opaque:                 c.opaque,
 	}
+}
+
+// ForInfoOpaque produces a new schemaContext with containing the same information
+// as this one, except with the given type information and marked as opaque.
+// An opaque context prevents the emission of $ref to the type's schema, suppressing
+// inherited type-level validations.
+func (c *schemaContext) ForInfoOpaque(info *markers.TypeInfo) *schemaContext {
+	ctx := c.ForInfo(info)
+	ctx.opaque = true
+	return ctx
 }
 
 // requestSchema asks for the schema for a type in the package with the
@@ -324,6 +336,12 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		// > Otherwise, the alias information is only in the type name, which
 		// > points directly to the actual (aliased) type.
 		if typeInfo.Name() != ident.Name {
+			if ctx.opaque {
+				return &apiextensionsv1.JSONSchemaProps{
+					Type:   typ,
+					Format: fmt,
+				}
+			}
 			ctx.requestSchema("", ident.Name)
 			link := TypeRefLink("", ident.Name)
 			return &apiextensionsv1.JSONSchemaProps{
@@ -348,12 +366,8 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		if pkg == ctx.pkg.Types {
 			pkgPath = ""
 		}
-		ctx.requestSchemaWithPkg(pkgPath, typeNameInfo.Name(), pkg)
-		link := TypeRefLink(pkgPath, typeNameInfo.Name())
 
-		props := &apiextensionsv1.JSONSchemaProps{
-			Ref: &link,
-		}
+		props := &apiextensionsv1.JSONSchemaProps{}
 
 		// Set the type for slice and map aliases so field-level markers like +listType
 		// and +mapType can work. Structs are skipped — they use a $ref only.
@@ -372,6 +386,12 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 			namedSchema := infoToSchema(ctx.ForInfo(namedTypeInfo))
 			props.Type = namedSchema.Type
 			props.Format = namedSchema.Format
+		}
+
+		if !ctx.opaque {
+			ctx.requestSchemaWithPkg(pkgPath, typeNameInfo.Name(), pkg)
+			link := TypeRefLink(pkgPath, typeNameInfo.Name())
+			props.Ref = &link
 		}
 
 		return props
@@ -396,6 +416,36 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 	typeNameInfo := typeInfo.Obj()
 	typesPkg := typeNameInfo.Pkg()
 	nonVendorPath := loader.NonVendorPath(typesPkg.Path())
+
+	if ctx.opaque {
+		typeInfoToCheck := typeInfoRaw
+		if aliasInfo, isAlias := typeInfoToCheck.(*types.Alias); isAlias {
+			typeInfoToCheck = aliasInfo.Rhs()
+		}
+		if namedInfo, isNamed := typeInfoToCheck.(*types.Named); isNamed {
+			if basic, isBasic := namedInfo.Underlying().(*types.Basic); isBasic {
+				typ, fmt, err := builtinToType(basic, ctx.allowDangerousTypes)
+				if err != nil {
+					ctx.pkg.AddError(loader.ErrFromNode(err, named))
+				}
+				return &apiextensionsv1.JSONSchemaProps{
+					Type:   typ,
+					Format: fmt,
+				}
+			}
+		}
+		if basic, isBasic := typeInfoToCheck.(*types.Basic); isBasic {
+			typ, fmt, err := builtinToType(basic, ctx.allowDangerousTypes)
+			if err != nil {
+				ctx.pkg.AddError(loader.ErrFromNode(err, named))
+			}
+			return &apiextensionsv1.JSONSchemaProps{
+				Type:   typ,
+				Format: fmt,
+			}
+		}
+	}
+
 	ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
 	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
 	// Set the type for slice and map aliases so field-level markers like +listType
@@ -607,9 +657,12 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		}
 
 		var propSchema *apiextensionsv1.JSONSchemaProps
-		if field.Markers.Get(crdmarkers.SchemalessName) != nil {
+		switch {
+		case field.Markers.Get(crdmarkers.SchemalessName) != nil:
 			propSchema = &apiextensionsv1.JSONSchemaProps{}
-		} else {
+		case field.Markers.Get(crdmarkers.OpaqueTypeFieldName) != nil:
+			propSchema = typeToSchema(ctx.ForInfoOpaque(&markers.TypeInfo{}), field.RawField.Type)
+		default:
 			propSchema = typeToSchema(ctx.ForInfo(&markers.TypeInfo{}), field.RawField.Type)
 		}
 		propSchema.Description = field.Doc
