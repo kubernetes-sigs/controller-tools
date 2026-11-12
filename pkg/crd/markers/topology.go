@@ -76,6 +76,8 @@ func init() {
 //   - "atomic": All the fields in the list are treated as a single value,
 //     are typically manipulated together by the same actor.
 //
+// It can be set on a type, a slice field, or a field of a named slice type.
+//
 // Examples:
 //
 //	// Map list (associative list) - items are merged by key
@@ -90,6 +92,11 @@ func init() {
 //	// Atomic list - entire list is replaced on update
 //	// +listType=atomic
 //	Args []string
+//
+//	// A field can set its own list type
+//	// type Ports []Port
+//	// +listType=atomic
+//	ExposedPorts Ports
 type ListType string
 
 const (
@@ -110,6 +117,8 @@ const (
 // must be used. It can only be used when ListType is set to map, and the keys
 // should be scalar types.
 //
+// It can also be set on a field of a named slice type, with +listType=map.
+//
 // Examples:
 //
 //	// Single key
@@ -122,6 +131,12 @@ const (
 //	// +listMapKey=name
 //	// +listMapKey=protocol
 //	Ports []Port
+//
+//	// A field can set its own keys
+//	// type Ports []Port
+//	// +listType=map
+//	// +listMapKey=protocol
+//	ProtocolPorts Ports
 type ListMapKey string
 
 // +controllertools:marker:generateHelp:category="CRD processing"
@@ -140,6 +155,8 @@ type ListMapKey string
 //
 //   - "atomic": all fields are treated as one unit.
 //     Any changes have to replace the entire map.
+//
+// It can be set on a type, a map field, or a field of a named map type.
 //
 // Examples:
 //

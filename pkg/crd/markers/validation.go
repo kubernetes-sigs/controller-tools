@@ -323,6 +323,8 @@ type Pattern string
 
 // MaxItems specifies the maximum length for this list.
 //
+// It can be set on a type, a slice field, or a field of a named slice type.
+//
 // Example:
 //
 //	// +kubebuilder:validation:MaxItems=10
@@ -341,6 +343,8 @@ func (m *MaxItems) ParseMarker(_, name, restFields string) error {
 }
 
 // MinItems specifies the minimum length for this list.
+//
+// It can be set on a type, a slice field, or a field of a named slice type.
 //
 // Example:
 //
@@ -362,6 +366,8 @@ type UniqueItems bool
 
 // MaxProperties restricts the number of keys in an object
 //
+// It can be set on a type, a map field, or a field of a named map type.
+//
 // Example:
 //
 //	// +kubebuilder:validation:MaxProperties=10
@@ -371,6 +377,8 @@ type UniqueItems bool
 type MaxProperties int
 
 // MinProperties restricts the number of keys in an object
+//
+// It can be set on a type, a map field, or a field of a named map type.
 //
 // Example:
 //
