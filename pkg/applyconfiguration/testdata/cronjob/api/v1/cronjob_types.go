@@ -421,6 +421,10 @@ type CronJobSpec struct {
 	// +optional
 	EmbeddedSelector *EmbeddedSelectorSpec `json:"embeddedSelector,omitempty"`
 
+	// SecretRef uses a type that embeds corev1.LocalObjectReference.
+	// +optional
+	SecretRef *EmbeddedSecretRefSpec `json:"secretRef,omitempty"`
+
 	StructSlice []RootObject          `json:"structSlice,omitempty"`
 	StructMap   map[string]RootObject `json:"structMap,omitempty"`
 }
@@ -840,6 +844,15 @@ func (in *CronJobList) DeepCopyObject() runtime.Object {
 // type of its package.
 type EmbeddedSelectorSpec struct {
 	external.ExternalSelector `json:",inline"`
+}
+
+// EmbeddedSecretRefSpec embeds corev1.LocalObjectReference inline.
+// Its apply configuration must use the one from client-go.
+type EmbeddedSecretRefSpec struct {
+	corev1.LocalObjectReference `json:",inline"`
+
+	// Key is the key in the Secret.
+	Key string `json:"key"`
 }
 
 // EmbeddedExternalSpec embeds an external type with json:",inline".

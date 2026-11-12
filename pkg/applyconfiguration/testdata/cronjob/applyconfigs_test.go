@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	cronjobsv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
 	cronjobsv1acs "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1/applyconfiguration/api/v1"
@@ -41,5 +43,34 @@ var _ = Describe("ApplyConfigurations", func() {
 		first, err := cronjobsv1acs.ExtractCronJob(&cronJob, "first")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(first.Finalizers).To(Equal([]string{"foo.bar"}))
+	})
+
+	It("should build and extract a type that embeds corev1.LocalObjectReference", func() {
+		cronJob := &cronjobsv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+				ManagedFields: []metav1.ManagedFieldsEntry{{
+					Manager:    "owner",
+					Operation:  metav1.ManagedFieldsOperationApply,
+					APIVersion: cronjobsv1.GroupVersion.String(),
+					FieldsType: "FieldsV1",
+					FieldsV1:   &metav1.FieldsV1{Raw: []byte(`{"f:spec":{"f:secretRef":{}}}`)},
+				}},
+			},
+			Spec: cronjobsv1.CronJobSpec{
+				SecretRef: &cronjobsv1.EmbeddedSecretRefSpec{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "db-secret"},
+					Key:                  "password",
+				},
+			},
+		}
+
+		extracted, err := cronjobsv1acs.ExtractCronJob(cronJob, "owner")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(extracted.Spec).NotTo(BeNil())
+		Expect(extracted.Spec.SecretRef).To(Equal(cronjobsv1acs.EmbeddedSecretRefSpec().
+			WithName("db-secret").
+			WithKey("password")))
 	})
 })
