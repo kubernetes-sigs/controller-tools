@@ -184,8 +184,6 @@ release-controller-gen: clean-release ## Build controller-gen binaries.
 	RELEASE_BINARY=controller-gen-linux-s390x       GOOS=linux   GOARCH=s390x   $(MAKE) release-binary
 	RELEASE_BINARY=controller-gen-darwin-amd64      GOOS=darwin  GOARCH=amd64   $(MAKE) release-binary
 	RELEASE_BINARY=controller-gen-darwin-arm64      GOOS=darwin  GOARCH=arm64   $(MAKE) release-binary
-	RELEASE_BINARY=controller-gen-windows-amd64.exe GOOS=windows GOARCH=amd64   $(MAKE) release-binary
-	RELEASE_BINARY=controller-gen-windows-arm64.exe GOOS=windows GOARCH=arm64   $(MAKE) release-binary
 
 .PHONY: release-binary
 release-binary: $(RELEASE_DIR)
