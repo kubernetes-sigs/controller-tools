@@ -34,13 +34,11 @@ Compatible k8s.io/*, client-go and minimum Go versions can be looked up in our [
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
 
-controller-tools is a subproject of the [kubebuilder](https://sigs.k8s.io/kubebuilder) project
-in sig apimachinery.
+controller-tools is a subproject of [sig apimachinery](https://github.com/kubernetes/community/tree/main/sig-api-machinery#server-sdk).
 
 You can reach the maintainers of this project at:
 
-- Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
-- Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
+- Slack channel: [#controller-runtime](http://slack.k8s.io/#controller-runtime)
 
 ### Code of conduct
 
