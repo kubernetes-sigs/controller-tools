@@ -51,6 +51,17 @@ limitations under the License.
 // mark optional fields (a struct tag, below, may also be used).  The empty
 // interface will match any type.
 //
+// When an argument takes any type, such as the value of +kubebuilder:default,
+// its type is guessed from the value.  `true` and `false` are bools, and `{...}`
+// and `;` form lists and maps as above.  A value is a number only when the whole
+// value is a number, such as `42`, `-7` or `1.5`.  Other bare text is a string,
+// so `100Mi`, `2024-01-15`, `087bdd` and `/tmp/tmp.4paHkdEcpK` stay as written.
+// A `:` is part of the string, as in `sha256:08a7b` or `bad value: fix it`.
+// Inside `{...}`, a key ends at its `:`, and `: ` ends a value, so
+// `{cpu: 500m memory: 1Gi}` is an error.  `{image: registry.k8s.io/pause:3.9}`
+// keeps its tag.  Quote a value to keep it as written, as in `"42"` or
+// `{msg: "a: b"}`.
+//
 // Struct fields may optionally be annotated with the `marker` struct tag.  The
 // first argument is a name override.  If it's left blank (or the tag isn't
 // present), the camelCase version of the name will be used.  The only
