@@ -452,6 +452,10 @@ type CronJobSpec struct {
 	// imported package. We can create our own in a separate package if needed.
 	AliasFromPackage corev1.IPFamilyPolicyType `json:"aliasFromPackage,omitempty"`
 
+	// This tests that a local alias, with a different name, of a named type
+	// from another package is handled correctly.
+	LocalAliasOfExternalType AliasedProtocol `json:"localAliasOfExternalType,omitempty"`
+
 	// This tests that string alias is handled correctly.
 	StringAlias    StringAlias  `json:"stringAlias,omitempty"`
 	StringAliasPtr *StringAlias `json:"stringAliasPtr,omitempty"`
@@ -554,6 +558,9 @@ type InlinePointerStruct struct {
 }
 
 type StringAlias = string
+
+// AliasedProtocol is a local alias of a named type from another package.
+type AliasedProtocol = corev1.Protocol
 
 // +kubebuilder:title="title on type"
 type StringAliasWithTitle = string

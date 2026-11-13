@@ -10122,6 +10122,11 @@ spec:
                 - name
                 - secondary
                 x-kubernetes-list-type: map
+              localAliasOfExternalType:
+                description: |-
+                  This tests that a local alias, with a different name, of a named type
+                  from another package is handled correctly.
+                type: string
               locallyBoundedInteger:
                 description: |-
                   This tests that unmarkered types are handled correctly.
