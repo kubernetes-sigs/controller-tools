@@ -19,6 +19,7 @@ package markers_test
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"reflect"
 	sc "text/scanner"
 
@@ -74,6 +75,7 @@ var _ = Describe("Parsing", func() {
 			mustDefine(reg, "testing:tripleDefined", DescribesPackage, 0)
 			mustDefine(reg, "testing:tripleDefined", DescribesField, "")
 			mustDefine(reg, "testing:tripleDefined", DescribesType, false)
+			mustDefine(reg, "testing:map", DescribesPackage, map[string]string{})
 
 			defn, err := MakeAnyTypeDefinition("testing:custom", DescribesPackage, CustomType{})
 			Expect(err).NotTo(HaveOccurred())
@@ -161,6 +163,59 @@ var _ = Describe("Parsing", func() {
 			It("should consider anonymously-named ones before considering fields", parseTestCase{reg: &reg, raw: "+testing:parent:optStr=other string", output: allOptionalStruct{OptStr: "other string"}}.Run)
 		})
 
+		Context("when parsing map markers", func() {
+			It("should error out for a map missing a comma", func() {
+				By("looking up the marker definition")
+				raw := "+testing:map={cpu: 500m memory: 1Gi}"
+				defn := reg.Lookup(raw, DescribesPackage)
+				Expect(defn).NotTo(BeNil())
+
+				By("trying to parse the marker")
+				_, err := defn.Parse(raw)
+				Expect(err).To(HaveOccurred())
+			})
+			It("should error out for a map key with a missing value before a comma", func() {
+				By("looking up the marker definition")
+				raw := "+testing:map={replicas: , enabled: true}"
+				defn := reg.Lookup(raw, DescribesPackage)
+				Expect(defn).NotTo(BeNil())
+
+				By("trying to parse the marker")
+				_, err := defn.Parse(raw)
+				Expect(err).To(HaveOccurred())
+			})
+			It("should error out for a map key with a missing value before a comma and no spaces", func() {
+				By("looking up the marker definition")
+				raw := "+testing:map={replicas:,enabled:true}"
+				defn := reg.Lookup(raw, DescribesPackage)
+				Expect(defn).NotTo(BeNil())
+
+				By("trying to parse the marker")
+				_, err := defn.Parse(raw)
+				Expect(err).To(HaveOccurred())
+			})
+			It("should error out for an unquoted map value with a colon and space", parseErrorTestCase{reg: &reg, raw: "+testing:map={msg: hello world: again}"}.Run)
+			It("should keep a quoted map value with a colon and space", parseTestCase{reg: &reg, raw: `+testing:map={msg: "hello world: again"}`, output: map[string]string{"msg": "hello world: again"}}.Run)
+		})
+
+		Context("when a value outside a map has a colon and space", func() {
+			one := 1
+			It("should keep it in a string", parseTestCase{reg: &reg, raw: "+testing:anonymous:literal=Use v2: it is better", output: "Use v2: it is better"}.Run)
+			It("should keep it in a string field", parseTestCase{reg: &reg, raw: "+testing:parent:optStr=bad value: fix it", output: allOptionalStruct{OptStr: "bad value: fix it"}}.Run)
+			It("should keep it in a string field before another field", parseTestCase{reg: &reg, raw: "+testing:allOptional:optStr=bad value: fix it,optInt=1", output: allOptionalStruct{OptStr: "bad value: fix it", OptInt: &one}}.Run)
+			It("should keep it in a value of any type", parseTestCase{reg: &reg, raw: "+testing:custom=key: value", output: CustomType{Value: "key: value"}}.Run)
+		})
+
+		Context("when a value cannot be read", func() {
+			It("should error out for an integer above the largest int64", parseErrorTestCase{reg: &reg, raw: "+testing:custom=9223372036854775808"}.Run)
+			It("should error out for an integer below the smallest int64", parseErrorTestCase{reg: &reg, raw: "+testing:custom=-9223372036854775809"}.Run)
+			It("should error out for a float too large for a float64", parseErrorTestCase{reg: &reg, raw: "+testing:custom=1e1000"}.Run)
+			It("should error out for a word given to an integer marker", parseErrorTestCase{reg: &reg, raw: "+testing:multi:segment=abc"}.Run)
+			It("should error out for digits followed by letters given to an integer marker", parseErrorTestCase{reg: &reg, raw: "+testing:multi:segment=12abc"}.Run)
+			It("should error out for a map that is never closed", parseErrorTestCase{reg: &reg, raw: "+testing:custom={replicas: 3"}.Run)
+			It("should error out for a map key with a missing value", parseErrorTestCase{reg: &reg, raw: "+testing:custom={replicas: }"}.Run)
+		})
+
 		Context("when dealing with markers describing multiple things", func() {
 			It("should properly parse the package-level one", parseTestCase{reg: &reg, raw: "+testing:tripleDefined=42", output: 42, target: DescribesPackage}.Run)
 			It("should properly parse the field-level one", parseTestCase{reg: &reg, raw: "+testing:tripleDefined=foo", output: "foo", target: DescribesField}.Run)
@@ -177,6 +232,8 @@ var _ = Describe("Parsing", func() {
 		It("should support raw strings", argParseTestCase{arg: Argument{Type: StringType}, raw: "`some; string, \\nhere`", output: `some; string, \nhere`}.Run)
 		It("should support integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "42", output: 42}.Run)
 		It("should support negative integers", argParseTestCase{arg: Argument{Type: IntType}, raw: "-42", output: -42}.Run)
+		It("should support numbers with grouped digits", argParseTestCase{arg: Argument{Type: NumberType}, raw: "1_000", output: 1000.0}.Run)
+		It("should support negative numbers with a space after the sign", argParseTestCase{arg: Argument{Type: NumberType}, raw: "- 7", output: -7.0}.Run)
 		It("should support false booleans", argParseTestCase{arg: Argument{Type: BoolType}, raw: "false", output: false}.Run)
 		It("should support true booleans", argParseTestCase{arg: Argument{Type: BoolType}, raw: "true", output: true}.Run)
 
@@ -194,10 +251,14 @@ var _ = Describe("Parsing", func() {
 		Context("with any value", func() {
 			anyArg := Argument{Type: AnyType}
 			It("should support bare strings", argParseTestCase{arg: anyArg, raw: `some string here!`, output: "some string here!"}.Run)
+			It("should keep a bare string whole when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{small , large}`, output: []string{"small", "large"}}.Run)
+			It("should keep a number-ish string whole when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{100Mi , 200Mi}`, output: []string{"100Mi", "200Mi"}}.Run)
 			It("should support double-quoted strings", argParseTestCase{arg: anyArg, raw: `"some; string, \nhere"`, output: "some; string, \nhere"}.Run)
 			It("should support raw strings", argParseTestCase{arg: anyArg, raw: "`some; string, \\nhere`", output: `some; string, \nhere`}.Run)
 			It("should support integers", argParseTestCase{arg: anyArg, raw: "42", output: 42}.Run)
 			It("should support negative integers", argParseTestCase{arg: anyArg, raw: "-42", output: -42}.Run)
+			It("should support floats", argParseTestCase{arg: anyArg, raw: "1.5", output: 1.5}.Run)
+			It("should support negative floats", argParseTestCase{arg: anyArg, raw: "-1.5", output: -1.5}.Run)
 			It("should support false booleans", argParseTestCase{arg: anyArg, raw: "false", output: false}.Run)
 			It("should support true booleans", argParseTestCase{arg: anyArg, raw: "true", output: true}.Run)
 
@@ -234,6 +295,38 @@ var _ = Describe("Parsing", func() {
 			It("should parse bool-prefixed path as string", argParseTestCase{arg: anyArg, raw: `true/false`, output: "true/false"}.Run)
 			It("should parse slices of bool-prefixed strings", argParseTestCase{arg: anyArg, raw: `true-positive;false-positive`, output: []string{"true-positive", "false-positive"}}.Run)
 			It("should still parse booleans in slices", argParseTestCase{arg: anyArg, raw: `{true, false}`, output: []bool{true, false}}.Run)
+			It("should parse dotted digits with a slash as string", argParseTestCase{arg: anyArg, raw: `10.96.0.0/12`, output: "10.96.0.0/12"}.Run)
+			It("should parse a hex prefix with no digits as string", argParseTestCase{arg: anyArg, raw: `0x`, output: "0x"}.Run)
+			It("should parse an exponent with no digits as string", argParseTestCase{arg: anyArg, raw: `1e`, output: "1e"}.Run)
+			It("should parse a trailing digit separator as string", argParseTestCase{arg: anyArg, raw: `1_`, output: "1_"}.Run)
+			It("should parse a negative float followed by a letter as string", argParseTestCase{arg: anyArg, raw: `-1e5x`, output: "-1e5x"}.Run)
+			It("should parse a negative integer followed by letters as string", argParseTestCase{arg: anyArg, raw: `-42nd`, output: "-42nd"}.Run)
+			It("should parse a bare slice of number-ish strings", argParseTestCase{arg: anyArg, raw: `2024-01-15;2024-06-01`, output: []string{"2024-01-15", "2024-06-01"}}.Run)
+			It("should parse a delimitted slice of number-ish strings", argParseTestCase{arg: anyArg, raw: `{100Mi,200Mi,500Mi}`, output: []string{"100Mi", "200Mi", "500Mi"}}.Run)
+			It("should parse a map of number-ish strings", argParseTestCase{arg: anyArg, raw: `{memory: 100Mi, cpu: 500m}`, output: map[string]any{"memory": "100Mi", "cpu": "500m"}}.Run)
+			It("should parse a nested map of number-ish strings", argParseTestCase{arg: anyArg, raw: `{host: 10.0.0.1, labels: {commit: 087bdd}}`, output: map[string]any{"host": "10.0.0.1", "labels": map[string]any{"commit": "087bdd"}}}.Run)
+			It("should keep a slice item with a colon and space", argParseTestCase{arg: anyArg, raw: `a: b;c`, output: []string{"a: b", "c"}}.Run)
+			It("should keep a colon inside a map value", argParseTestCase{arg: anyArg, raw: `{digest: sha256:08a7b, image: registry.k8s.io/pause:3.9, time: 12:30}`, output: map[string]any{"digest": "sha256:08a7b", "image": "registry.k8s.io/pause:3.9", "time": "12:30"}}.Run)
+
+			It("should keep the largest int64 exact", argParseTestCase{arg: anyArg, raw: `9223372036854775807`, output: math.MaxInt64}.Run)
+			It("should keep the smallest int64 exact", argParseTestCase{arg: anyArg, raw: `-9223372036854775808`, output: math.MinInt64}.Run)
+			It("should keep a slice of integers above 2^53 exact", argParseTestCase{arg: anyArg, raw: `{-9223372036854775808,9007199254740993}`, output: []int{math.MinInt64, 9007199254740993}}.Run)
+			It("should support floats with grouped digits", argParseTestCase{arg: anyArg, raw: `1_000.5`, output: 1000.5}.Run)
+			It("should support floats with no leading digit", argParseTestCase{arg: anyArg, raw: `.5`, output: 0.5}.Run)
+			It("should support floats with an exponent", argParseTestCase{arg: anyArg, raw: `1e3`, output: 1000.0}.Run)
+			It("should support floats with a fraction and an exponent", argParseTestCase{arg: anyArg, raw: `1.5e3`, output: 1500.0}.Run)
+			It("should support hexadecimal floats", argParseTestCase{arg: anyArg, raw: `0x1p2`, output: 4.0}.Run)
+			It("should support negative integers with a space after the sign", argParseTestCase{arg: anyArg, raw: `- 7`, output: -7}.Run)
+			It("should support negative floats with a space after the sign", argParseTestCase{arg: anyArg, raw: `- 1.5`, output: -1.5}.Run)
+			It("should keep integers when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{42 , 43}`, output: []int{42, 43}}.Run)
+			It("should keep floats when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{1.5 , 2.5}`, output: []float64{1.5, 2.5}}.Run)
+			It("should keep booleans when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{true , false}`, output: []bool{true, false}}.Run)
+			It("should keep map value types when a space comes before the next item", argParseTestCase{arg: anyArg, raw: `{replicas: 42 , enabled: true , ratio: 1.5 }`, output: map[string]any{"replicas": 42, "enabled": true, "ratio": 1.5}}.Run)
+			It("should parse a value starting with a plus sign as string", argParseTestCase{arg: anyArg, raw: `+0530`, output: "+0530"}.Run)
+			It("should parse a slice of values starting with a plus sign as strings", argParseTestCase{arg: anyArg, raw: `+1;+44;+81`, output: []string{"+1", "+44", "+81"}}.Run)
+			It("should parse a short flag as string", argParseTestCase{arg: anyArg, raw: `-v`, output: "-v"}.Run)
+			It("should parse a long flag as string", argParseTestCase{arg: anyArg, raw: `--leader-elect`, output: "--leader-elect"}.Run)
+			It("should parse a boolean word after a dash as string", argParseTestCase{arg: anyArg, raw: `-true`, output: "-true"}.Run)
 		})
 	})
 })
@@ -259,6 +352,23 @@ func (tc parseTestCase) Run() {
 	Expect(outVal).To(Equal(tc.output))
 }
 
+type parseErrorTestCase struct {
+	reg    **Registry
+	raw    string
+	target TargetType
+}
+
+func (tc parseErrorTestCase) Run() {
+	reg := *tc.reg
+	By("looking up the marker definition")
+	defn := reg.Lookup(tc.raw, tc.target)
+	Expect(defn).NotTo(BeNil())
+
+	By("trying to parse the marker")
+	_, err := defn.Parse(tc.raw)
+	Expect(err).To(HaveOccurred())
+}
+
 type argParseTestCase struct {
 	arg    Argument
 	raw    string
@@ -268,7 +378,7 @@ type argParseTestCase struct {
 func (tc argParseTestCase) Run() {
 	scanner := sc.Scanner{}
 	scanner.Init(bytes.NewBufferString(tc.raw))
-	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
+	scanner.Mode = sc.ScanIdents | sc.ScanInts | sc.ScanFloats | sc.ScanStrings | sc.ScanRawStrings | sc.SkipComments
 	scanner.Error = func(scanner *sc.Scanner, msg string) {
 		Fail(fmt.Sprintf("%s (at %s)", msg, scanner.Position))
 	}

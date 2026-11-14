@@ -220,7 +220,11 @@ type ObjectGenCtx struct {
 // generateForPackage generates apply configuration implementations for
 // types in the given package, writing the formatted result to given writer.
 func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
-	enabled, _ := enabledOnPackage(ctx.Collector, root)
+	enabled, err := enabledOnPackage(ctx.Collector, root)
+	if err != nil {
+		root.AddError(err)
+		return nil
+	}
 	if !enabled {
 		return nil
 	}
