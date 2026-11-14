@@ -368,10 +368,17 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		case *types.Basic:
 			// We don't want/need to do this for structs, maps, or arrays.
 			// These are already handled in infoToSchema if they have custom marshalling.
-			namedTypeInfo := ctx.schemaRequester.LookupType(ctx.pkg, typeNameInfo.Name())
-			namedSchema := infoToSchema(ctx.ForInfo(namedTypeInfo))
-			props.Type = namedSchema.Type
-			props.Format = namedSchema.Format
+			namedPkg := ctx.pkg
+			if pkgPath != "" {
+				namedPkg = ctx.findPackageRecursive(pkg.Path())
+			}
+			if namedTypeInfo := ctx.schemaRequester.LookupType(namedPkg, typeNameInfo.Name()); namedTypeInfo != nil {
+				namedCtx := ctx.ForInfo(namedTypeInfo)
+				namedCtx.pkg = namedPkg
+				namedSchema := infoToSchema(namedCtx)
+				props.Type = namedSchema.Type
+				props.Format = namedSchema.Format
+			}
 		}
 
 		return props
