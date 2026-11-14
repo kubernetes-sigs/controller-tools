@@ -2845,6 +2845,12 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - name
+    - name: embeddedAliasSelector
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedAliasSelectorSpec
+    - name: embeddedDefinedSelector
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedDefinedSelectorSpec
     - name: embeddedExternal
       type:
         namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedExternalSpec
@@ -3157,6 +3163,30 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         namedType: Duration.time
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedAliasSelectorSpec
+  map:
+    fields:
+    - name: replicas
+      type:
+        scalar: numeric
+    - name: requirements
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.external.ExternalRequirement
+          elementRelationship: atomic
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedDefinedSelectorSpec
+  map:
+    fields:
+    - name: replicas
+      type:
+        scalar: numeric
+    - name: requirements
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.external.ExternalRequirement
+          elementRelationship: atomic
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedExternalSpec
   map:
     fields:

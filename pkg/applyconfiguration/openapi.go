@@ -195,23 +195,10 @@ func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loade
 	for i := range schema.AllOf {
 		entry := &schema.AllOf[i]
 		if entry.Ref != nil && len(*entry.Ref) > 0 {
-			typeName, pkgPath, err := crd.RefParts(*entry.Ref)
+			resolved, pkg, err := followRefs(entry.DeepCopy(), contextPkg, p, pkgByPath)
 			if err != nil {
-				return fmt.Errorf("failed to parse ref %q: %w", *entry.Ref, err)
+				return err
 			}
-			pkg := contextPkg
-			if pkgPath != "" {
-				pkg = pkgByPath[pkgPath]
-			}
-			if pkg == nil {
-				return fmt.Errorf("package %q not found for ref %q", pkgPath, *entry.Ref)
-			}
-			refIdent := crd.TypeIdent{Package: pkg, Name: typeName}
-			refSchema, found := p.Schemata[refIdent]
-			if !found {
-				return fmt.Errorf("schema not found for type %q in package %q", typeName, pkg.PkgPath)
-			}
-			resolved := refSchema.DeepCopy()
 			// Recurse into the resolved schema to handle nested embeddings and to
 			// qualify its local refs with its own package.
 			if err := resolveAllOfRefs(resolved, pkg, p, pkgByPath); err != nil {
@@ -244,6 +231,35 @@ func resolveAllOfRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loade
 		}
 	}
 	return nil
+}
+
+// followRefs returns the schema behind a $ref, and its package. The schema of
+// `type A B` or `type A = B` is only a $ref to B, so we need B to get the fields.
+func followRefs(schema *apiextensionsv1.JSONSchemaProps, pkg *loader.Package, p *crd.Parser, pkgByPath map[string]*loader.Package) (*apiextensionsv1.JSONSchemaProps, *loader.Package, error) {
+	seen := map[crd.TypeIdent]bool{}
+	for schema.Ref != nil && len(*schema.Ref) > 0 {
+		typeName, pkgPath, err := crd.RefParts(*schema.Ref)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse ref %q: %w", *schema.Ref, err)
+		}
+		if pkgPath != "" {
+			pkg = pkgByPath[pkgPath]
+		}
+		if pkg == nil {
+			return nil, nil, fmt.Errorf("package %q not found for ref %q", pkgPath, *schema.Ref)
+		}
+		ident := crd.TypeIdent{Package: pkg, Name: typeName}
+		if seen[ident] {
+			return nil, nil, fmt.Errorf("type %q in package %q refers to itself", typeName, pkg.PkgPath)
+		}
+		seen[ident] = true
+		next, found := p.Schemata[ident]
+		if !found {
+			return nil, nil, fmt.Errorf("schema not found for type %q in package %q", typeName, pkg.PkgPath)
+		}
+		schema = next.DeepCopy()
+	}
+	return schema, pkg, nil
 }
 
 // convertRefs walks the schema and converts internal $ref links from the

@@ -421,6 +421,14 @@ type CronJobSpec struct {
 	// +optional
 	EmbeddedSelector *EmbeddedSelectorSpec `json:"embeddedSelector,omitempty"`
 
+	// EmbeddedAliasSelector tests an embedded alias from another package.
+	// +optional
+	EmbeddedAliasSelector *EmbeddedAliasSelectorSpec `json:"embeddedAliasSelector,omitempty"`
+
+	// EmbeddedDefinedSelector tests an embedded defined type from another package.
+	// +optional
+	EmbeddedDefinedSelector *EmbeddedDefinedSelectorSpec `json:"embeddedDefinedSelector,omitempty"`
+
 	StructSlice []RootObject          `json:"structSlice,omitempty"`
 	StructMap   map[string]RootObject `json:"structMap,omitempty"`
 }
@@ -833,6 +841,24 @@ func (in *CronJobList) DeepCopyObject() runtime.Object {
 		panic(err)
 	}
 	return out
+}
+
+// EmbeddedAliasSelectorSpec embeds external.ExternalSelectorAlias inline.
+type EmbeddedAliasSelectorSpec struct {
+	external.ExternalSelectorAlias `json:",inline"`
+
+	// Replicas is the number of replicas.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
+// EmbeddedDefinedSelectorSpec embeds external.ExternalSelectorDefined inline.
+type EmbeddedDefinedSelectorSpec struct {
+	external.ExternalSelectorDefined `json:",inline"`
+
+	// Replicas is the number of replicas.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // EmbeddedSelectorSpec embeds an external type with json:",inline" that is not

@@ -46,6 +46,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.CronJobStatusApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Duration"):
 		return &apiv1.DurationApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("EmbeddedAliasSelectorSpec"):
+		return &apiv1.EmbeddedAliasSelectorSpecApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("EmbeddedDefinedSelectorSpec"):
+		return &apiv1.EmbeddedDefinedSelectorSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmbeddedExternalSpec"):
 		return &apiv1.EmbeddedExternalSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("EmbeddedSelectorSpec"):
