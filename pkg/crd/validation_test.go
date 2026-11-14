@@ -26,8 +26,9 @@ import (
 	"strings"
 	"testing"
 
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1apiserver "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsvalidation "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
 	apiserverschema "k8s.io/apiextensions-apiserver/pkg/apiserver/schema"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/cel"
@@ -356,7 +357,7 @@ func parseCRDs(path string) ([]*apiextensions.CustomResourceDefinition, error) {
 			FromUnstructured(raw.UnstructuredContent(), crdv1); err != nil {
 			return nil, err
 		}
-		if err := apiextensionsv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crdv1, crd, nil); err != nil {
+		if err := apiextensionsv1apiserver.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crdv1, crd, nil); err != nil {
 			return nil, err
 		}
 
