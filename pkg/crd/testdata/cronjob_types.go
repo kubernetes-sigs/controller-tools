@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -85,6 +86,22 @@ type CronJobSpec struct {
 
 	// This tests byte slice schema generation.
 	BinaryName []byte `json:"binaryName"`
+
+	// This tests that json.RawMessage is a base64 string, like []byte (issue #1500).
+	// +optional
+	RawMessage json.RawMessage `json:"rawMessage,omitempty"`
+
+	// This tests that a named []byte is a base64 string, like []byte (issue #1500).
+	// +optional
+	NamedByteSlice NamedByteSlice `json:"namedByteSlice,omitempty"`
+
+	// This tests that a named list with text marshalling is a string (issue #1500).
+	// +optional
+	Scopes Scopes `json:"scopes,omitempty"`
+
+	// This tests the same for an alias of that named list (issue #1500).
+	// +optional
+	GrantedScopes GrantedScopes `json:"grantedScopes,omitempty"`
 
 	// This tests that nullable works correctly
 	// +nullable
@@ -254,6 +271,18 @@ type CronJobSpec struct {
 	// +listMapKey=name
 	// +listMapKey=secondary
 	ListTypeFromTypeAndField NestedAssociativeList `json:"listTypeFromTypeAndField"`
+
+	// This tests that a field can make a map list atomic. The map keys of the
+	// named list must be dropped (issue #1500).
+	// +listType=atomic
+	// +optional
+	AtomicFromMapList NestedAssociativeList `json:"atomicFromMapList,omitempty"`
+
+	// This tests that a field can make an atomic list a map list (issue #1500).
+	// +listType=map
+	// +listMapKey=name
+	// +optional
+	MapFromAtomicList AtomicAssociativeList `json:"mapFromAtomicList,omitempty"`
 
 	// A map that allows different actors to manage different fields
 	// +mapType=granular
@@ -669,6 +698,28 @@ type ConditionsWithoutMarker []AssociativeType
 // MapWithoutMarker is a type alias to a map without type-level markers.
 // This tests that +mapType can be applied at the field level (issue #988).
 type MapWithoutMarker map[string][]byte
+
+// NamedByteSlice is a named []byte.
+type NamedByteSlice []byte
+
+// +listType=atomic
+type AtomicAssociativeList []AssociativeType
+
+// Scopes is written as text, like "read,write".
+// +kubebuilder:validation:MaxLength=16
+type Scopes []string
+
+func (s Scopes) MarshalText() ([]byte, error) {
+	return []byte(strings.Join(s, ",")), nil
+}
+
+func (s *Scopes) UnmarshalText(text []byte) error {
+	*s = strings.Split(string(text), ",")
+	return nil
+}
+
+// GrantedScopes is an alias of Scopes.
+type GrantedScopes = Scopes
 
 // +kubebuilder:validation:MinLength=4
 // This tests that markers that are allowed on both fields and types are applied to types

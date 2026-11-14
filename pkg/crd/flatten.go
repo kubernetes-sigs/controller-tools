@@ -202,6 +202,12 @@ func flattenAllOfInto(dst *apiextensionsv1.JSONSchemaProps, src apiextensionsv1.
 		dst.AllOf = append(dst.AllOf, dstRemainder, srcRemainder)
 	}
 
+	// Map keys only apply to a map list, so a field that sets another list type
+	// drops the keys of its named type.
+	if src.XListType != nil && *src.XListType != "map" {
+		dst.XListMapKeys = nil
+	}
+
 	// dedup required
 	if len(dst.Required) > 0 {
 		reqUniq := make(map[string]struct{})

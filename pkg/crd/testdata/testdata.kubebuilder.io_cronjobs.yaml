@@ -78,6 +78,25 @@ spec:
                 - name
                 - secondary
                 x-kubernetes-list-type: map
+              atomicFromMapList:
+                description: |-
+                  This tests that a field can make a map list atomic. The map keys of the
+                  named list must be dropped (issue #1500).
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               baz:
                 description: This tests that exported fields are not skipped in the
                   schema generation
@@ -382,6 +401,11 @@ spec:
                   was used through an alias type.
                 type: string
               fromPointer:
+                type: string
+              grantedScopes:
+                description: 'This tests the same for an alias of that named list
+                  (issue #1500).'
+                maxLength: 16
                 type: string
               hosts:
                 description: This tests string slice item validation.
@@ -10146,6 +10170,26 @@ spec:
                   type: string
                 minItems: 3
                 type: array
+              mapFromAtomicList:
+                description: 'This tests that a field can make an atomic list a map
+                  list (issue #1500).'
+                items:
+                  properties:
+                    foo:
+                      type: string
+                    name:
+                      type: string
+                    secondary:
+                      type: integer
+                  required:
+                  - foo
+                  - name
+                  - secondary
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               mapOfArraysOfFloats:
                 additionalProperties:
                   items:
@@ -10180,6 +10224,11 @@ spec:
                   foo:
                     type: string
                 type: object
+              namedByteSlice:
+                description: 'This tests that a named []byte is a base64 string, like
+                  []byte (issue #1500).'
+                format: byte
+                type: string
               nestedMap:
                 additionalProperties:
                   additionalProperties:
@@ -10292,11 +10341,21 @@ spec:
                   type: string
                 description: This tests pointers are allowed as map values.
                 type: object
+              rawMessage:
+                description: 'This tests that json.RawMessage is a base64 string,
+                  like []byte (issue #1500).'
+                format: byte
+                type: string
               schedule:
                 description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
                 type: string
               schemaless:
                 description: This tests that the schemaless marker works
+                type: string
+              scopes:
+                description: 'This tests that a named list with text marshalling is
+                  a string (issue #1500).'
+                maxLength: 16
                 type: string
               selectableFieldString:
                 description: This tests that selectable field.
