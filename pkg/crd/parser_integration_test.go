@@ -201,6 +201,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("KnownTypes API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./known_types/..."}
+				expPkgLen = 1
+			})
+			It("should generate schemas for the other types of packages with known overrides", func() {
+				assertCRD(pkgs[0], "KnownType", "testdata.kubebuilder.io_knowntypes.yaml")
+			})
+		})
+
 		Context("EmptyObjectDefault API", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./emptyobjectdefault/..."}
