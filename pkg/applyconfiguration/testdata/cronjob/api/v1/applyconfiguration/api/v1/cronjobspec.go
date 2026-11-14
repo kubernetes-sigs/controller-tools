@@ -207,8 +207,10 @@ type CronJobSpecApplyConfiguration struct {
 	// EmbeddedSelector embeds a type from another package whose fields refer to
 	// other types of that package.
 	EmbeddedSelector *EmbeddedSelectorSpecApplyConfiguration `json:"embeddedSelector,omitempty"`
-	StructSlice      []RootObjectApplyConfiguration          `json:"structSlice,omitempty"`
-	StructMap        map[string]RootObjectApplyConfiguration `json:"structMap,omitempty"`
+	// SecretRef uses a type that embeds corev1.LocalObjectReference.
+	SecretRef   *EmbeddedSecretRefSpecApplyConfiguration `json:"secretRef,omitempty"`
+	StructSlice []RootObjectApplyConfiguration           `json:"structSlice,omitempty"`
+	StructMap   map[string]RootObjectApplyConfiguration  `json:"structMap,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with
@@ -954,6 +956,14 @@ func (b *CronJobSpecApplyConfiguration) WithEmbeddedExternal(value *EmbeddedExte
 // If called multiple times, the EmbeddedSelector field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithEmbeddedSelector(value *EmbeddedSelectorSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
 	b.EmbeddedSelector = value
+	return b
+}
+
+// WithSecretRef sets the SecretRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SecretRef field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithSecretRef(value *EmbeddedSecretRefSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.SecretRef = value
 	return b
 }
 

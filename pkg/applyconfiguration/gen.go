@@ -307,6 +307,10 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 		arguments.OpenAPISchemaFilePath = schemaFile
 	}
 
+	if err := mapEmbeddedKubeTypes(root.Dir, pkg, arguments.ExternalApplyConfigurations); err != nil {
+		return err
+	}
+
 	targets := generators.GetTargets(c, arguments)
 	if err := c.ExecuteTargets(targets); err != nil {
 		return fmt.Errorf("failed executing generator: %w", err)

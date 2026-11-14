@@ -3038,6 +3038,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: schemaless
       type:
         scalar: string
+    - name: secretRef
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedSecretRefSpec
     - name: selectableFieldString
       type:
         scalar: string
@@ -3169,6 +3172,17 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         scalar: string
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedSecretRefSpec
+  map:
+    fields:
+    - name: key
+      type:
+        scalar: string
+    - name: name
+      type:
+        scalar: string
+      default: ""
+    elementRelationship: atomic
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.EmbeddedSelectorSpec
   map:
     fields:
