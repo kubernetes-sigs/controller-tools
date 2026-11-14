@@ -19,7 +19,7 @@ package crd
 import (
 	"maps"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )
 
@@ -91,13 +91,13 @@ var KnownPackages = map[string]PackageOverride{
 		// No point in calling AddPackage, this is the sole inhabitant
 	},
 
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1": func(p *Parser, pkg *loader.Package) {
+	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1beta1": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
 			XPreserveUnknownFields: new(true),
 		}
 		p.AddPackage(pkg) // get the rest of the types
 	},
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1": func(p *Parser, pkg *loader.Package) {
+	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1": func(p *Parser, pkg *loader.Package) {
 		p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
 			XPreserveUnknownFields: new(true),
 		}

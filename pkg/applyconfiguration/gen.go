@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 	"k8s.io/gengo/v2/types"
 
 	"k8s.io/apimachinery/pkg/util/sets"

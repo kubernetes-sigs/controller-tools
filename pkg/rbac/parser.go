@@ -28,7 +28,6 @@ import (
 	"strings"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -420,26 +419,18 @@ func GenerateRoles(ctx *genall.GenerationContext, roleName string) ([]any, error
 		}
 		if key.namespace == "" {
 			objs = append(objs, rbacv1.ClusterRole{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ClusterRole",
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: key.roleName,
-				},
-				Rules: policyRules,
+				Kind:       "ClusterRole",
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Name:       key.roleName,
+				Rules:      policyRules,
 			})
 		} else {
 			objs = append(objs, rbacv1.Role{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Role",
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.roleName,
-					Namespace: key.namespace,
-				},
-				Rules: policyRules,
+				Kind:       "Role",
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Name:       key.roleName,
+				Namespace:  key.namespace,
+				Rules:      policyRules,
 			})
 		}
 	}

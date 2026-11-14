@@ -19,9 +19,13 @@ package crd
 import (
 	"fmt"
 
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
+	apiextv1beta1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1beta1"
 	apiextinternal "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+
+	// The scheme with registered conversion functions lives in apiextensions-apiserver;
+	// k8s.io/apiextensions-api only contains the types.
+	apiextensionsv1conversion "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -34,7 +38,7 @@ func init() {
 	if err := apiextinternal.AddToScheme(conversionScheme); err != nil {
 		panic("must be able to add internal apiextensions to the CRD conversion Scheme")
 	}
-	if err := apiextensionsv1.AddToScheme(conversionScheme); err != nil {
+	if err := apiextensionsv1conversion.AddToScheme(conversionScheme); err != nil {
 		panic("must be able to add apiextensions/v1 to the CRD conversion Scheme")
 	}
 }

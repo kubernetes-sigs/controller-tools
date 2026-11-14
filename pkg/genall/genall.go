@@ -232,15 +232,13 @@ func (g Generators) ForRootsWithConfig(cfg *packages.Config, rootPaths ...string
 	}
 	rt := &Runtime{
 		Generators: g,
-		GenerationContext: GenerationContext{
-			Collector: &markers.Collector{
-				Registry: &markers.Registry{},
-			},
-			Roots:     roots,
-			InputRule: InputFromFileSystem,
-			Checker: &loader.TypeChecker{
-				NodeFilters: g.CheckFilters(),
-			},
+		Collector: &markers.Collector{
+			Registry: &markers.Registry{},
+		},
+		Roots:     roots,
+		InputRule: InputFromFileSystem,
+		Checker: &loader.TypeChecker{
+			NodeFilters: g.CheckFilters(),
 		},
 		OutputRules: OutputRules{Default: OutputToNothing},
 	}

@@ -29,7 +29,6 @@ import (
 	"strings"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -425,9 +424,7 @@ func (c WebhookConfig) ToMutatingWebhookConfiguration() (admissionregv1.Mutating
 	}
 
 	return admissionregv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: c.Name,
-		},
+		Name: c.Name,
 	}, nil
 }
 
@@ -438,9 +435,7 @@ func (c WebhookConfig) ToValidatingWebhookConfiguration() (admissionregv1.Valida
 	}
 
 	return admissionregv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: c.Name,
-		},
+		Name: c.Name,
 	}, nil
 }
 
@@ -519,12 +514,10 @@ func (c Config) ToValidatingWebhook() (admissionregv1.ValidatingWebhook, error) 
 // resources/subresources a webhook should care about.
 func (c Config) rules() []admissionregv1.RuleWithOperations {
 	whConfig := admissionregv1.RuleWithOperations{
-		Rule: admissionregv1.Rule{
-			APIGroups:   c.Groups,
-			APIVersions: c.Versions,
-			Resources:   c.Resources,
-		},
-		Operations: make([]admissionregv1.OperationType, len(c.Verbs)),
+		APIGroups:   c.Groups,
+		APIVersions: c.Versions,
+		Resources:   c.Resources,
+		Operations:  make([]admissionregv1.OperationType, len(c.Verbs)),
 	}
 
 	for i, verbRaw := range c.Verbs {

@@ -64,8 +64,8 @@ func (d *DefinitionHelp) FieldsHelp(def *Definition) map[string]DetailedHelp {
 // generation isn't possible).
 func SimpleHelp(category, summary string) *DefinitionHelp {
 	return &DefinitionHelp{
-		Category:     category,
-		DetailedHelp: DetailedHelp{Summary: summary},
+		Category: category,
+		Summary:  summary,
 	}
 }
 
@@ -75,7 +75,7 @@ func SimpleHelp(category, summary string) *DefinitionHelp {
 func DeprecatedHelp(inFavorOf, category, summary string) *DefinitionHelp {
 	return &DefinitionHelp{
 		Category:            category,
-		DetailedHelp:        DetailedHelp{Summary: summary},
+		Summary:             summary,
 		DeprecatedInFavorOf: &inFavorOf,
 	}
 }
