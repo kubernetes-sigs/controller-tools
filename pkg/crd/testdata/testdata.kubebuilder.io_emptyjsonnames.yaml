@@ -1,0 +1,70 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: emptyjsonnames.testdata.kubebuilder.io
+spec:
+  group: testdata.kubebuilder.io
+  names:
+    kind: EmptyJsonName
+    listKind: EmptyJsonNameList
+    plural: emptyjsonnames
+    singular: emptyjsonname
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: EmptyJsonName is the Schema for the emptyjsonnames API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              EmptyJsonNameSpec checks that a named field with an empty JSON name keeps the
+              Go field name, while an embedded field with an empty JSON name stays inline.
+            properties:
+              Archive:
+                description: An explicitly empty name behaves the same way.
+                properties:
+                  days:
+                    format: int32
+                    type: integer
+                type: object
+              Retention:
+                description: omitempty alone does not make a named field anonymous.
+                properties:
+                  days:
+                    format: int32
+                    type: integer
+                type: object
+              mode:
+                type: string
+              schedule:
+                type: string
+            required:
+            - Archive
+            - schedule
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true

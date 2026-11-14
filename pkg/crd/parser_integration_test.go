@@ -212,6 +212,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("EmptyJSONName API", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./emptyjsonname/..."}
+				expPkgLen = 1
+			})
+			It("should name fields with an empty JSON name after the Go field", func() {
+				assertCRD(pkgs[0], "EmptyJsonName", "testdata.kubebuilder.io_emptyjsonnames.yaml")
+			})
+		})
+
 		Context("Enum API with marker on field", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./enum_error/..."}
