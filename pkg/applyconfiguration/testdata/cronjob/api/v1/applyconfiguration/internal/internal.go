@@ -2521,6 +2521,8 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: key
       type:
         scalar: string
+- name: io.k8s.apimachinery.pkg.api.resource.Format
+  scalar: string
 - name: io.k8s.apimachinery.pkg.api.resource.Quantity
   scalar: untyped
   list:
@@ -2714,6 +2716,8 @@ var schemaYAML = typed.YAMLObject(`types:
     elementType:
       namedType: __untyped_deduced_
     elementRelationship: separable
+- name: io.k8s.apimachinery.pkg.util.intstr.Type
+  scalar: numeric
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.AssociativeType
   map:
     fields:
@@ -3064,6 +3068,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: selectableFieldString
       type:
         scalar: string
+    - name: sizeFormat
+      type:
+        namedType: io.k8s.apimachinery.pkg.api.resource.Format
     - name: startingDeadlineSeconds
       type:
         scalar: numeric
@@ -3123,6 +3130,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: suspend
       type:
         scalar: boolean
+    - name: targetType
+      type:
+        namedType: io.k8s.apimachinery.pkg.util.intstr.Type
     - name: twoOfAKindPart0
       type:
         scalar: string
