@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -287,7 +288,6 @@ func convertRefs(schema *apiextensionsv1.JSONSchemaProps, contextPkg *loader.Pac
 // definitions, so we resolve them by copying the target definition's schema and
 // preserving any additional extensions (like x-kubernetes-map-type).
 func resolveRefDefinitions(definitions map[string]any) {
-	const refPrefix = "#/definitions/"
 	for key, def := range definitions {
 		defMap, ok := def.(map[string]any)
 		if !ok {
@@ -297,21 +297,25 @@ func resolveRefDefinitions(definitions map[string]any) {
 		if !hasRef {
 			continue
 		}
-		// Resolve the $ref to the target definition.
-		targetKey := strings.TrimPrefix(ref, refPrefix)
-		targetDef, found := definitions[targetKey]
-		if !found {
-			continue
-		}
-		targetMap, ok := targetDef.(map[string]any)
-		if !ok {
+
+		chain, target := resolveRefChain(key, ref, definitions)
+		if target == nil {
 			continue
 		}
 
-		// Copy the target definition and merge any extra extensions
-		// (e.g., x-kubernetes-map-type) from the original.
-		resolved := make(map[string]any, len(targetMap)+len(defMap))
-		maps.Copy(resolved, targetMap)
+		// Copy the schema at the end of the chain and merge the extensions
+		// declared on the definitions along it (e.g., x-kubernetes-map-type),
+		// starting with the furthest one so that the closest wins.
+		resolved := make(map[string]any, len(target)+len(chain)+len(defMap))
+		maps.Copy(resolved, target)
+		for i := range slices.Backward(chain) {
+			for k, v := range chain[i] {
+				if k == "$ref" {
+					continue
+				}
+				resolved[k] = v
+			}
+		}
 		for k, v := range defMap {
 			if k == "$ref" {
 				continue
@@ -319,6 +323,38 @@ func resolveRefDefinitions(definitions map[string]any) {
 			resolved[k] = v
 		}
 		definitions[key] = resolved
+	}
+}
+
+// resolveRefChain follows a $ref until it reaches a definition with a schema of
+// its own, and returns the definitions that were only a $ref along the way,
+// closest to the source first. A definition can point at one that is a $ref
+// itself, because `type Foo Bar` where `type Bar Baz` gives Foo a $ref to a
+// definition that has nothing but a $ref; resolving a single hop per definition
+// would only work when the map order happened to visit the targets before the
+// sources. The chain has no end when it is broken or loops, which nil target
+// reports.
+func resolveRefChain(start, ref string, definitions map[string]any) (chain []map[string]any, target map[string]any) {
+	const refPrefix = "#/definitions/"
+
+	seen := map[string]bool{start: true}
+	for {
+		key := strings.TrimPrefix(ref, refPrefix)
+		if seen[key] {
+			return nil, nil
+		}
+		seen[key] = true
+
+		defMap, ok := definitions[key].(map[string]any)
+		if !ok {
+			return nil, nil
+		}
+		nextRef, isRef := defMap["$ref"].(string)
+		if !isRef {
+			return chain, defMap
+		}
+		chain = append(chain, defMap)
+		ref = nextRef
 	}
 }
 
