@@ -562,7 +562,13 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 			}
 		}
 		fieldName := jsonOpts[0]
-		inline = inline || fieldName == "" // anonymous fields are inline fields in YAML/JSON
+		if fieldName == "" {
+			if field.Name == "" {
+				inline = true // anonymous fields are inline fields in YAML/JSON
+			} else {
+				fieldName = field.Name
+			}
+		}
 
 		// if no default required mode is set, default to required
 		defaultMode := "required"
