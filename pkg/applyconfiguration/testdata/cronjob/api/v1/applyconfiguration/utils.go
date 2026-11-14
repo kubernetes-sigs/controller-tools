@@ -56,6 +56,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.EmpiableObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ExportedStruct"):
 		return &apiv1.ExportedStructApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("GPUWorkerSettings"):
+		return &apiv1.GPUWorkerSettingsApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("JustNestedObject"):
 		return &apiv1.JustNestedObjectApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("MinMaxObject"):
@@ -72,6 +74,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1.PreservedApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("RootObject"):
 		return &apiv1.RootObjectApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("WorkerSettings"):
+		return &apiv1.WorkerSettingsApplyConfiguration{}
 
 	}
 	return nil

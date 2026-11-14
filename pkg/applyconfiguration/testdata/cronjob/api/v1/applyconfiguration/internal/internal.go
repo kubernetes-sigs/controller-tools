@@ -2910,6 +2910,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: fromEmbedded
       type:
         scalar: string
+    - name: gpuWorkers
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.GPUWorkerSettings
     - name: hosts
       type:
         list:
@@ -3141,6 +3144,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: unprunedJSON
       type:
         namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.NestedObject
+    - name: workers
+      type:
+        namedType: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.WorkerSettings
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.CronJobStatus
   map:
     fields:
@@ -3211,6 +3217,18 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: forty-two
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.GPUWorkerSettings
+  map:
+    fields:
+    - name: args
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
+    - name: image
+      type:
+        scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.Hosts
   list:
     elementType:
@@ -3328,6 +3346,18 @@ var schemaYAML = typed.YAMLObject(`types:
   scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.URL4
   scalar: string
+- name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.api.v1.WorkerSettings
+  map:
+    fields:
+    - name: args
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
+    - name: image
+      type:
+        scalar: string
 - name: io.k8s.sigs.controller-tools.pkg.applyconfiguration.testdata.cronjob.external.ExternalRequirement
   map:
     fields:
