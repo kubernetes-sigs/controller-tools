@@ -154,6 +154,12 @@ func (p *Parser) LookupType(pkg *loader.Package, name string) *markers.TypeInfo 
 	return p.Types[TypeIdent{Package: pkg, Name: name}]
 }
 
+// schemaFor returns the schema generated for the given type, if any.
+func (p *Parser) schemaFor(typ TypeIdent) (apiextensionsv1.JSONSchemaProps, bool) {
+	schema, known := p.Schemata[typ]
+	return schema, known
+}
+
 // NeedSchemaFor indicates that a schema should be generated for the given type.
 func (p *Parser) NeedSchemaFor(typ TypeIdent) {
 	p.init()

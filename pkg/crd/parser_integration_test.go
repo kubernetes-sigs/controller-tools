@@ -323,6 +323,16 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Extension API with a list marker on a json.RawMessage field", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./rawmessage_error"}
+				expPkgLen = 1
+			})
+			It("should reject the list marker because json.RawMessage is a string", func() {
+				assertError(pkgs[0], "Extension", "must apply listType to an array, found string")
+			})
+		})
+
 		Context("Type Alias API", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./typealias_indirect"}
