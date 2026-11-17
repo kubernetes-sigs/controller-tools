@@ -323,6 +323,36 @@ var _ = Describe("CRD Generation From Parsing to CustomResourceDefinition", func
 			})
 		})
 
+		Context("Route API with an items marker on a field of a named list", func() {
+			BeforeEach(func() {
+				pkgPaths = []string{"./itemsmarker"}
+				expPkgLen = 1
+			})
+			It("should apply the items marker to that field only", func() {
+				By("requesting that the Route CRD be generated")
+				groupKind := schema.GroupKind{Kind: "Route", Group: "testdata.kubebuilder.io"}
+				parser.NeedCRDFor(groupKind, nil)
+				Expect(packageErrors(pkgs[0], packages.TypeError)).NotTo(HaveOccurred())
+
+				crdDef, found := parser.CustomResourceDefinitions[groupKind]
+				Expect(found).To(BeTrue(), "the Route CRD should be generated")
+				spec := crdDef.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+
+				By("checking that the marked field limits the length of each item")
+				hostnames := spec.Properties["hostnames"]
+				Expect(hostnames.Type).To(Equal("array"))
+				Expect(hostnames.Items).NotTo(BeNil())
+				Expect(hostnames.Items.Schema.Type).To(Equal("string"))
+				Expect(hostnames.Items.Schema.MaxLength).To(HaveValue(BeEquivalentTo(253)))
+
+				By("checking that a field of the same type without the marker has no limit")
+				aliases := spec.Properties["aliases"]
+				Expect(aliases.Type).To(Equal("array"))
+				Expect(aliases.Items).NotTo(BeNil())
+				Expect(aliases.Items.Schema.MaxLength).To(BeNil())
+			})
+		})
+
 		Context("Type Alias API", func() {
 			BeforeEach(func() {
 				pkgPaths = []string{"./typealias_indirect"}
