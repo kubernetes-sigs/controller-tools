@@ -18,6 +18,7 @@ package crd
 
 import (
 	"go/ast"
+	"go/token"
 	"strings"
 	"testing"
 
@@ -243,6 +244,42 @@ func Test_Schema_ApplyMarkers(t *testing.T) {
 		}}, props, nil)
 
 	g.Expect(invocations).To(gomega.Equal([]string{"0", "applyFirst", "2", "default", "11"}))
+}
+
+func Test_Schema_ApplyMarkersPreservesSourceOrderForEqualPriorities(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	props := &apiextensionsv1.JSONSchemaProps{}
+	ctx := &schemaContext{}
+
+	var invocations []string
+	field := &ast.Field{
+		Doc: &ast.CommentGroup{
+			List: []*ast.Comment{
+				{Slash: token.Pos(1), Text: "// +zz:marker"},
+				{Slash: token.Pos(2), Text: "// +aa:marker"},
+				{Slash: token.Pos(3), Text: "// +zz:marker"},
+			},
+		},
+	}
+
+	applyMarkers(ctx, markers.MarkerValues{
+		"aa:marker": []any{
+			&defaultPriorityMarker{callback: func() {
+				invocations = append(invocations, "aa")
+			}},
+		},
+		"zz:marker": []any{
+			&defaultPriorityMarker{callback: func() {
+				invocations = append(invocations, "zz-1")
+			}},
+			&defaultPriorityMarker{callback: func() {
+				invocations = append(invocations, "zz-2")
+			}},
+		},
+	}, props, nil, field)
+
+	g.Expect(invocations).To(gomega.Equal([]string{"zz-1", "aa", "zz-2"}))
 }
 
 type defaultPriorityMarker struct {
