@@ -88,7 +88,7 @@ func TestBuilder_AddResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBuilder("", "")
+			b := NewBuilder("", "", "")
 			err := b.AddResource(tt.resource)
 			if tt.wantErrPart == "" {
 				if err != nil {

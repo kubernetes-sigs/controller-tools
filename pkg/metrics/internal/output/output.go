@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/rbac"
 )
 
-// ClusterRoleName is the name of the ClusterRole granting access to the custom resources.
-const ClusterRoleName = "metrics-role"
+// DefaultClusterRoleName is the default name of the ClusterRole granting access to the custom resources.
+const DefaultClusterRoleName = "state-metrics-role"
 
 // Builder builds the output files for one target.
 // The builder gets created before the types get parsed, so the selected target and
@@ -47,7 +47,17 @@ type Builder interface {
 
 // RBAC collects the RBAC rules needed to read the custom resources of all added resources.
 type RBAC struct {
-	rules []*rbac.Rule
+	roleName string
+	rules    []*rbac.Rule
+}
+
+// NewRBAC returns a new RBAC which writes a ClusterRole with the given name.
+// If the name is empty the default name is used.
+func NewRBAC(roleName string) RBAC {
+	if roleName == "" {
+		roleName = DefaultClusterRoleName
+	}
+	return RBAC{roleName: roleName}
 }
 
 // Add adds the rule to read the resource.
@@ -67,7 +77,7 @@ func (r *RBAC) Write(ctx *genall.GenerationContext, labels map[string]string) er
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   ClusterRoleName,
+			Name:   r.roleName,
 			Labels: labels,
 		},
 		Rules: rbac.NormalizeRules(r.rules),

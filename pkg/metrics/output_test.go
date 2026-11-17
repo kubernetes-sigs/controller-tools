@@ -42,6 +42,9 @@ func Test_newOutputBuilder(t *testing.T) {
 		{name: "kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics}, wantKSM: true},
 		{name: "name is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, ResourceMetricsMonitorName: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
 		{name: "namespace is not supported for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, ResourceMetricsMonitorNamespace: "foo"}, wantErrPart: "only supported for the resource-state-metrics target"},
+		{name: "role name for resource-state-metrics", generator: Generator{RoleName: "foo-role"}, wantRSM: true},
+		{name: "role name for kube-state-metrics", generator: Generator{Target: targetKubeStateMetrics, RoleName: "system:foo-role"}, wantKSM: true},
+		{name: "invalid role name", generator: Generator{RoleName: "foo/bar"}, wantErrPart: `invalid roleName "foo/bar"`},
 		{name: "unsupported target", generator: Generator{Target: "foo"}, wantErrPart: `unsupported metrics target "foo", supported targets are kube-state-metrics and resource-state-metrics`},
 	}
 	for _, tt := range tests {
