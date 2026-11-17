@@ -44,3 +44,7 @@ type VersionedResourceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []VersionedResource `json:"items"`
 }
+
+// Bar shares its name with the Bar kind in v1beta2, but is not a
+// Kubernetes object here, so it must not add a version to that CRD.
+type Bar struct{}
