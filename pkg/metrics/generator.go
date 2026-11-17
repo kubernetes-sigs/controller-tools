@@ -38,10 +38,12 @@ import (
 // Generator generates custom resource metrics configuration files for resource-state-metrics
 // (default) or kube-state-metrics.
 //
+// No files are generated if no type has the store marker.
+//
 // This generator is experimental. The markers, the flags and the generated output might change
 // incompatibly in any release. It has to be enabled explicitly by setting the experimental flag.
 type Generator struct {
-	// Experimental enables the experimental metrics generator.
+	// Experimental enables the experimental state-metrics-config generator.
 	// It has to be set to true to acknowledge that markers and output might change incompatibly.
 	Experimental bool `marker:",optional"`
 
@@ -62,6 +64,11 @@ type Generator struct {
 	//
 	// Left unspecified, the namespace is not set.
 	ResourceMetricsMonitorNamespace string `marker:",optional"`
+
+	// RoleName sets the name of the generated ClusterRole, which grants access to the custom resources.
+	//
+	// Left unspecified, the default is state-metrics-role.
+	RoleName string `marker:",optional"`
 }
 
 var _ genall.Generator = &Generator{}
@@ -83,7 +90,7 @@ func (g Generator) RegisterMarkers(into *ctrlmarkers.Registry) error {
 // It's called after RegisterMarkers has been called.
 func (g Generator) Generate(ctx *genall.GenerationContext) error {
 	if !g.Experimental {
-		return errors.New("the metrics generator is experimental and might change incompatibly in future releases, set `metrics:experimental=true` to use it")
+		return errors.New("the state-metrics-config generator is experimental and might change incompatibly in future releases, set `state-metrics-config:experimental=true` to use it")
 	}
 
 	// Create the builder for the selected target first, to fail early on invalid options.
@@ -127,8 +134,16 @@ func (g Generator) Generate(ctx *genall.GenerationContext) error {
 		}
 	}
 
-	// Add the resources to the output. Resources and their metrics get sorted to get a deterministic output.
-	if err := addResources(builder, sortedResources(parser.resources)); err != nil {
+	// Resources and their metrics get sorted to get a deterministic output.
+	resources := sortedResources(parser.resources)
+
+	// Don't write any files if no resource has metrics, so the generator can be
+	// enabled for projects which don't use the metrics markers.
+	if len(resources) == 0 {
+		return nil
+	}
+
+	if err := addResources(builder, resources); err != nil {
 		return err
 	}
 

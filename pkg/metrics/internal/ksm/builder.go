@@ -48,9 +48,11 @@ type Builder struct {
 
 var _ output.Builder = &Builder{}
 
-// NewBuilder returns a new Builder.
-func NewBuilder() *Builder {
+// NewBuilder returns a new Builder which writes a ClusterRole with the given role name.
+// If the role name is empty a default name is used.
+func NewBuilder(roleName string) *Builder {
 	return &Builder{
+		rbac: output.NewRBAC(roleName),
 		metrics: CustomResourceStateMetrics{
 			Spec: CustomResourceStateMetricsSpec{
 				Resources: []Resource{},

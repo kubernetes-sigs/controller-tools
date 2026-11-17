@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/validate/content"
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/ksm"
@@ -38,6 +39,12 @@ const (
 // The builder validates the options of the Generator which are relevant for the target.
 // Adding a new target requires an output.Builder implementation and a case here.
 func (g Generator) newOutputBuilder() (output.Builder, error) {
+	if g.RoleName != "" {
+		if errs := content.IsPathSegmentName(g.RoleName); len(errs) > 0 {
+			return nil, fmt.Errorf("invalid roleName %q: %s", g.RoleName, strings.Join(errs, ", "))
+		}
+	}
+
 	switch g.Target {
 	case "", targetResourceStateMetrics:
 		return newRSMBuilder(g)
@@ -59,12 +66,12 @@ func newRSMBuilder(g Generator) (output.Builder, error) {
 			return nil, fmt.Errorf("invalid resourceMetricsMonitorNamespace %q: %s", g.ResourceMetricsMonitorNamespace, strings.Join(errs, ", "))
 		}
 	}
-	return rsm.NewBuilder(g.ResourceMetricsMonitorName, g.ResourceMetricsMonitorNamespace), nil
+	return rsm.NewBuilder(g.ResourceMetricsMonitorName, g.ResourceMetricsMonitorNamespace, g.RoleName), nil
 }
 
 func newKSMBuilder(g Generator) (output.Builder, error) {
 	if g.ResourceMetricsMonitorName != "" || g.ResourceMetricsMonitorNamespace != "" {
 		return nil, errors.New("the resourceMetricsMonitorName and resourceMetricsMonitorNamespace options are only supported for the " + targetResourceStateMetrics + " target")
 	}
-	return ksm.NewBuilder(), nil
+	return ksm.NewBuilder(g.RoleName), nil
 }

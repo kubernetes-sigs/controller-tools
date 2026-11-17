@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package testdata contains the types used to test and demonstrate the metrics generator.
+// Package testdata contains the types used to test and demonstrate the state-metrics-config generator.
 //
 // Changes to the packages below this directory may require to regenerate the expected output:
 // the CustomResourceDefinition `bar.example.com_foos.yaml` and the files in the directories
@@ -26,6 +26,6 @@ limitations under the License.
 // The default target of the generator is resource-state-metrics.
 //
 //go:generate sh -c "go run ../../../cmd/controller-gen crd paths=./... output:dir=."
-//go:generate sh -c "go run ../../../cmd/controller-gen metrics:experimental=true,resourceMetricsMonitorName=foo-metrics,resourceMetricsMonitorNamespace=default paths=./... output:dir=./resource-state-metrics"
-//go:generate sh -c "go run ../../../cmd/controller-gen metrics:experimental=true,target=kube-state-metrics paths=./... output:dir=./kube-state-metrics"
+//go:generate sh -c "go run ../../../cmd/controller-gen state-metrics-config:experimental=true,resourceMetricsMonitorName=foo-metrics,resourceMetricsMonitorNamespace=default paths=./... output:dir=./resource-state-metrics"
+//go:generate sh -c "go run ../../../cmd/controller-gen state-metrics-config:experimental=true,target=kube-state-metrics paths=./... output:dir=./kube-state-metrics"
 package testdata

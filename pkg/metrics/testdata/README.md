@@ -1,6 +1,6 @@
 # Testdata for generator tests
 
-The files in this directory are used for testing the `controller-gen metrics` generator and to provide an example.
+The files in this directory are used for testing the `controller-gen state-metrics-config` generator and to provide an example.
 
 ## Expected output
 

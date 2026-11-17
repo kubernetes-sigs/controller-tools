@@ -58,9 +58,10 @@ type Builder struct {
 
 var _ output.Builder = &Builder{}
 
-// NewBuilder returns a new Builder for a ResourceMetricsMonitor with the given name and namespace.
-// If the name is empty a default name is used. If the namespace is empty it is not set.
-func NewBuilder(name, namespace string) *Builder {
+// NewBuilder returns a new Builder for a ResourceMetricsMonitor with the given name and namespace
+// and a ClusterRole with the given role name.
+// If the name or the role name is empty a default name is used. If the namespace is empty it is not set.
+func NewBuilder(name, namespace, roleName string) *Builder {
 	if name == "" {
 		name = defaultName
 	}
@@ -68,6 +69,7 @@ func NewBuilder(name, namespace string) *Builder {
 		name:      name,
 		namespace: namespace,
 		stores:    []Store{},
+		rbac:      output.NewRBAC(roleName),
 	}
 }
 

@@ -1,6 +1,6 @@
 # Metrics markers
 
-The experimental `metrics` generator of controller-gen creates the configuration to expose metrics
+The experimental `state-metrics-config` generator of controller-gen creates the configuration to expose metrics
 for custom resources, using the markers described on this page. The configuration can be generated for
 one of the following targets, which is selected with the `target` option:
 
@@ -10,11 +10,17 @@ one of the following targets, which is selected with the `target` option:
   [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics).
 
 ```sh
-controller-gen metrics:experimental=true paths=./... output:dir=./config/metrics
-controller-gen metrics:experimental=true,target=kube-state-metrics paths=./... output:dir=./config/metrics
+controller-gen state-metrics-config:experimental=true paths=./...
+controller-gen state-metrics-config:experimental=true,target=kube-state-metrics paths=./...
 ```
 
-Metrics are only generated for custom resources having the `store` marker. The `path`
+The files are written to `config/state-metrics-config` by default, which can be changed with an output rule, e.g.
+`output:state-metrics-config:dir=./config/foo`. Next to the configuration a ClusterRole is generated, which grants
+read access to the custom resources. Its name defaults to `state-metrics-role` and can be changed with the
+`roleName` option, e.g. `state-metrics-config:experimental=true,roleName=foo-state-metrics-role`.
+
+Metrics are only generated for custom resources having the `store` marker. If no custom resource has the
+`store` marker, no files are generated. The `path`
 and `value` fields use the JSON field names of the types and support simple paths only, e.g.
 `.status.conditions`, without array notation. A path which does not exist in the Go types is an error.
 

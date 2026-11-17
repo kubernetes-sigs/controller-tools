@@ -44,7 +44,30 @@ func Test_Generate(t *testing.T) {
 		goldenDir string
 		// files are the names of the files the generator is expected to write.
 		files []string
+		// paths are the packages to load, relative to testdata. Defaults to all packages.
+		paths string
+		// wantRoleName is the expected name of the ClusterRole, if it differs from the golden file.
+		wantRoleName string
 	}{
+		{
+			name:      "no files without store markers",
+			generator: Generator{Experimental: true},
+			paths:     "common",
+			files:     []string{},
+		},
+		{
+			name:      "no files without store markers for kube-state-metrics",
+			generator: Generator{Experimental: true, Target: targetKubeStateMetrics},
+			paths:     "common",
+			files:     []string{},
+		},
+		{
+			name:         "custom role name",
+			generator:    Generator{Experimental: true, Target: targetKubeStateMetrics, RoleName: "foo-role"},
+			goldenDir:    "kube-state-metrics",
+			files:        []string{"metrics.yaml", "rbac.yaml"},
+			wantRoleName: "foo-role",
+		},
 		{
 			name:      "default",
 			generator: Generator{Experimental: true, ResourceMetricsMonitorName: "foo-metrics", ResourceMetricsMonitorNamespace: "default"},
@@ -78,7 +101,11 @@ func Test_Generate(t *testing.T) {
 			}
 
 			// Load the passed packages as roots.
-			roots, err := loader.LoadRoots(path.Join(cwd, "testdata", "..."))
+			paths := tt.paths
+			if paths == "" {
+				paths = "..."
+			}
+			roots, err := loader.LoadRoots(path.Join(cwd, "testdata", paths))
 			if err != nil {
 				t.Fatalf("loading packages %v", err)
 			}
@@ -108,6 +135,10 @@ func Test_Generate(t *testing.T) {
 				expected, err := os.ReadFile(path.Clean(path.Join(cwd, "testdata", tt.goldenDir, golden)))
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				if tt.wantRoleName != "" && golden == "rbac.yaml" {
+					expected = bytes.ReplaceAll(expected, []byte("name: state-metrics-role"), []byte("name: "+tt.wantRoleName))
 				}
 
 				generated := out.files[golden].String()

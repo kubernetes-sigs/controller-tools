@@ -53,13 +53,13 @@ var (
 	// each turns into a command line option,
 	// and has options for output forms.
 	allGenerators = map[string]genall.Generator{
-		"crd":                crd.Generator{},
-		"rbac":               rbac.Generator{},
-		"object":             deepcopy.Generator{},
-		"applyconfiguration": applyconfiguration.Generator{},
-		"webhook":            webhook.Generator{},
-		"schemapatch":        schemapatcher.Generator{},
-		"metrics":            metrics.Generator{},
+		"crd":                  crd.Generator{},
+		"rbac":                 rbac.Generator{},
+		"object":               deepcopy.Generator{},
+		"applyconfiguration":   applyconfiguration.Generator{},
+		"webhook":              webhook.Generator{},
+		"schemapatch":          schemapatcher.Generator{},
+		"state-metrics-config": metrics.Generator{},
 	}
 
 	// allOutputRules defines the list of all known output rules, giving
