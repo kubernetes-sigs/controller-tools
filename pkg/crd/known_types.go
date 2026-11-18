@@ -91,18 +91,25 @@ var KnownPackages = map[string]PackageOverride{
 		// No point in calling AddPackage, this is the sole inhabitant
 	},
 
-	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1beta1": func(p *Parser, pkg *loader.Package) {
-		p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
-			XPreserveUnknownFields: new(true),
-		}
-		p.AddPackage(pkg) // get the rest of the types
-	},
-	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1": func(p *Parser, pkg *loader.Package) {
-		p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
-			XPreserveUnknownFields: new(true),
-		}
-		p.AddPackage(pkg) // get the rest of the types
-	},
+	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1beta1": apiextensionsJSONOverride,
+	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1":      apiextensionsJSONOverride,
+	// The apiextensions types moved to k8s.io/apiextensions-api in k8s v0.38, but the
+	// old packages stick around as deprecated aliases, so downstream projects may still
+	// import them. Overrides are matched by exact package path, so the old paths have
+	// to be handled as well until apiextensions-apiserver drops them.
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1": apiextensionsJSONOverride,
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1":      apiextensionsJSONOverride,
+}
+
+// apiextensionsJSONOverride registers the JSON type as an arbitrary object
+// (x-kubernetes-preserve-unknown-fields), since it can't be represented
+// structurally. It is shared between the apiextensions-api packages and the
+// deprecated alias packages in apiextensions-apiserver.
+func apiextensionsJSONOverride(p *Parser, pkg *loader.Package) {
+	p.Schemata[TypeIdent{Name: "JSON", Package: pkg}] = apiextensionsv1.JSONSchemaProps{
+		XPreserveUnknownFields: new(true),
+	}
+	p.AddPackage(pkg) // get the rest of the types
 }
 
 // ObjectMetaPackages overrides the ObjectMeta in all types
