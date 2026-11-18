@@ -10180,6 +10180,13 @@ spec:
                   foo:
                     type: string
                 type: object
+              narrowedConcurrencyPolicy:
+                description: This tests that a field-level enum narrows its type's
+                  enum.
+                enum:
+                - Allow
+                - Forbid
+                type: string
               nestedMap:
                 additionalProperties:
                   additionalProperties:
@@ -10292,6 +10299,14 @@ spec:
                   type: string
                 description: This tests pointers are allowed as map values.
                 type: object
+              repeatedConcurrencyPolicy:
+                description: This tests that a field-level enum equal to its type's
+                  enum appears once.
+                enum:
+                - Allow
+                - Forbid
+                - Replace
+                type: string
               schedule:
                 description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
                 type: string
