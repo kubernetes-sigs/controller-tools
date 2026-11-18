@@ -86,6 +86,36 @@ var _ = Describe("Collecting", func() {
 			By("checking that it doesn't contain any markers it's not supposed to")
 			Expect(pkgMarkers).To(HaveKeyWithValue("testing:pkglvl", Not(ContainElement(ContainSubstring("not here")))))
 		})
+
+		It("should re-associate package-level markers from var declarations", func() {
+			By("grabbing package markers")
+			pkgMarkers, err := PackageMarkers(col, fakePkg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakePkg.Errors).To(HaveLen(0))
+
+			By("checking that the marker got reassociated from var")
+			Expect(pkgMarkers).To(HaveKeyWithValue("testing:pkglvl", ContainElement("here reassociated from var")))
+		})
+
+		It("should re-associate package-level markers from const declarations", func() {
+			By("grabbing package markers")
+			pkgMarkers, err := PackageMarkers(col, fakePkg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakePkg.Errors).To(HaveLen(0))
+
+			By("checking that the marker got reassociated from const")
+			Expect(pkgMarkers).To(HaveKeyWithValue("testing:pkglvl", ContainElement("here reassociated from const")))
+		})
+
+		It("should re-associate package-level markers from func declarations", func() {
+			By("grabbing package markers")
+			pkgMarkers, err := PackageMarkers(col, fakePkg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakePkg.Errors).To(HaveLen(0))
+
+			By("checking that the marker got reassociated from func")
+			Expect(pkgMarkers).To(HaveKeyWithValue("testing:pkglvl", ContainElement("here reassociated from func")))
+		})
 	})
 
 	Context("of type-level markers", func() {
