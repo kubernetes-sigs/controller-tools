@@ -202,6 +202,7 @@ func (p *Parser) NeedFlattenedSchemaFor(typ TypeIdent) {
 	p.NeedSchemaFor(typ)
 	partialFlattened := p.flattener.FlattenType(typ)
 	fullyFlattened := FlattenEmbedded(partialFlattened, typ.Package)
+	RepairListMapKeys(fullyFlattened)
 
 	p.FlattenedSchemata[typ] = *fullyFlattened
 }
