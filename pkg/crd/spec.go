@@ -22,8 +22,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/flect"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 )
@@ -64,13 +63,9 @@ func (p *Parser) NeedCRDFor(groupKind schema.GroupKind, maxDescLen *int) {
 
 	defaultPlural := strings.ToLower(flect.Pluralize(groupKind.Kind))
 	crd := apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
-			Kind:       "CustomResourceDefinition",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: defaultPlural + "." + groupKind.Group,
-		},
+		APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
+		Kind:       "CustomResourceDefinition",
+		Name:       defaultPlural + "." + groupKind.Group,
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: groupKind.Group,
 			Names: apiextensionsv1.CustomResourceDefinitionNames{

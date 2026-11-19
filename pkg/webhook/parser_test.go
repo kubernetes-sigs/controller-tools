@@ -125,12 +125,10 @@ var _ = Describe("applyPatch", func() {
 		It("should replace the whole rules list", func() {
 			By("populating a rule from marker fields")
 			webhook.Rules = []admissionregv1.RuleWithOperations{{
-				Operations: []admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-				Rule: admissionregv1.Rule{
-					APIGroups:   []string{"apps"},
-					APIVersions: []string{"v1"},
-					Resources:   []string{"widgets"},
-				},
+				Operations:  []admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
+				APIGroups:   []string{"apps"},
+				APIVersions: []string{"v1"},
+				Resources:   []string{"widgets"},
 			}}
 
 			By("applying a patch with a partial rule")

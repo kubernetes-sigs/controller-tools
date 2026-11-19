@@ -22,7 +22,7 @@ import (
 	fmt "fmt"
 	sync "sync"
 
-	typed "sigs.k8s.io/structured-merge-diff/v6/typed"
+	typed "sigs.k8s.io/structured-merge-diff/v7/typed"
 )
 
 func Parser() *typed.Parser {
@@ -48,21 +48,21 @@ var schemaYAML = typed.YAMLObject(`types:
     fields:
     - name: disruptionMode
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupDisruptionMode
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupDisruptionMode
     - name: resourceClaims
       type:
         list:
           elementType:
-            namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupResourceClaim
+            namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupResourceClaim
           elementRelationship: associative
           keys:
           - name
     - name: schedulingConstraints
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSchedulingConstraints
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupSchedulingConstraints
     - name: schedulingPolicy
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupSchedulingPolicy
 - name: io.k8s.api.batch.v1.JobSpec
   map:
     fields:
@@ -1951,6 +1951,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: localhostProfile
       type:
         scalar: string
+    - name: oci
+      type:
+        namedType: io.k8s.api.core.v1.SecurityProfileOCI
     - name: type
       type:
         namedType: io.k8s.api.core.v1.SeccompProfileType
@@ -2058,6 +2061,26 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: windowsOptions
       type:
         namedType: io.k8s.api.core.v1.WindowsSecurityContextOptions
+- name: io.k8s.api.core.v1.SecurityProfileOCI
+  map:
+    fields:
+    - name: baseProfile
+      type:
+        namedType: io.k8s.api.core.v1.SecurityProfileOCIBase
+    - name: ref
+      type:
+        scalar: string
+- name: io.k8s.api.core.v1.SecurityProfileOCIBase
+  map:
+    fields:
+    - name: localhostProfile
+      type:
+        scalar: string
+    - name: type
+      type:
+        namedType: io.k8s.api.core.v1.SecurityProfileOCIBaseType
+- name: io.k8s.api.core.v1.SecurityProfileOCIBaseType
+  scalar: string
 - name: io.k8s.api.core.v1.ServiceAccountTokenProjection
   map:
     fields:
@@ -2411,13 +2434,7 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: runAsUserName
       type:
         scalar: string
-- name: io.k8s.api.scheduling.v1alpha3.TopologyConstraint
-  map:
-    fields:
-    - name: key
-      type:
-        scalar: string
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupAllDisruptionMode
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupAllDisruptionMode
   map:
     elementType:
       scalar: untyped
@@ -2429,7 +2446,7 @@ var schemaYAML = typed.YAMLObject(`types:
         elementType:
           namedType: __untyped_deduced_
         elementRelationship: separable
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupBasicSchedulingPolicy
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupBasicSchedulingPolicy
   map:
     elementType:
       scalar: untyped
@@ -2441,22 +2458,22 @@ var schemaYAML = typed.YAMLObject(`types:
         elementType:
           namedType: __untyped_deduced_
         elementRelationship: separable
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupDisruptionMode
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupDisruptionMode
   map:
     fields:
     - name: all
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupAllDisruptionMode
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupAllDisruptionMode
     - name: single
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSingleDisruptionMode
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupGangSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupSingleDisruptionMode
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupGangSchedulingPolicy
   map:
     fields:
     - name: minCount
       type:
         scalar: numeric
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupResourceClaim
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupResourceClaim
   map:
     fields:
     - name: name
@@ -2468,25 +2485,25 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: resourceClaimTemplateName
       type:
         scalar: string
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSchedulingConstraints
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupSchedulingConstraints
   map:
     fields:
     - name: topology
       type:
         list:
           elementType:
-            namedType: io.k8s.api.scheduling.v1alpha3.TopologyConstraint
+            namedType: io.k8s.api.scheduling.v1.WorkloadTopologyConstraint
           elementRelationship: atomic
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSchedulingPolicy
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupSchedulingPolicy
   map:
     fields:
     - name: basic
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupBasicSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupBasicSchedulingPolicy
     - name: gang
       type:
-        namedType: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupGangSchedulingPolicy
-- name: io.k8s.api.scheduling.v1alpha3.WorkloadPodGroupSingleDisruptionMode
+        namedType: io.k8s.api.scheduling.v1.WorkloadPodGroupGangSchedulingPolicy
+- name: io.k8s.api.scheduling.v1.WorkloadPodGroupSingleDisruptionMode
   map:
     elementType:
       scalar: untyped
@@ -2498,6 +2515,12 @@ var schemaYAML = typed.YAMLObject(`types:
         elementType:
           namedType: __untyped_deduced_
         elementRelationship: separable
+- name: io.k8s.api.scheduling.v1.WorkloadTopologyConstraint
+  map:
+    fields:
+    - name: key
+      type:
+        scalar: string
 - name: io.k8s.apimachinery.pkg.api.resource.Quantity
   scalar: untyped
   list:

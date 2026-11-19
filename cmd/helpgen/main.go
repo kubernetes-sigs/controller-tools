@@ -116,10 +116,8 @@ func (Generator) RegisterMarkers(reg *markers.Registry) error {
 	}
 	reg.AddHelp(defn, &markers.DefinitionHelp{
 		Category: "markers",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "generate help based on the godoc of this marker type.",
-			Details: "Type-level godoc becomes general marker summary (first line) and details (other lines).  Field-level godoc similarly becomes marker field help.",
-		},
+		Summary:  "generate help based on the godoc of this marker type.",
+		Details:  "Type-level godoc becomes general marker summary (first line) and details (other lines).  Field-level godoc similarly becomes marker field help.",
 		FieldHelp: map[string]markers.DetailedHelp{
 			"Category": {
 				Summary: "indicates the general category to which this marker belongs",
@@ -209,9 +207,7 @@ func (Generator) Help() *markers.DefinitionHelp {
 	// need to write this by hand, otherwise we'd have a bootstrap issue
 	return &markers.DefinitionHelp{
 		Category: "",
-		DetailedHelp: markers.DetailedHelp{
-			Summary: "generates marker help using godoc, based on the presence of a particular marker",
-		},
+		Summary:  "generates marker help using godoc, based on the presence of a particular marker",
 		FieldHelp: map[string]markers.DetailedHelp{
 			"HeaderFile": {Summary: "the file containing the header to use for generated files"},
 			"Year":       {Summary: "replace \" YEAR\" in the header with this value."},

@@ -149,7 +149,7 @@ func ForDefinition(defn *markers.Definition, maybeHelp *markers.DefinitionHelp) 
 		Category:            help.Category,
 		DeprecatedInFavorOf: help.DeprecatedInFavorOf,
 		Target:              defn.Target.String(),
-		DetailedHelp:        DetailedHelp{Summary: help.Summary, Details: help.Details},
+		Summary:             help.Summary, Details: help.Details,
 	}
 
 	helpByField := help.FieldsHelp(defn)
@@ -158,9 +158,9 @@ func ForDefinition(defn *markers.Definition, maybeHelp *markers.DefinitionHelp) 
 	for fieldName, fieldHelpRaw := range helpByField {
 		fieldInfo := defn.Fields[fieldName]
 		fieldHelp := FieldHelp{
-			Name:         fieldName,
-			DetailedHelp: DetailedHelp{Summary: fieldHelpRaw.Summary, Details: fieldHelpRaw.Details},
-			Argument:     ForArgument(fieldInfo),
+			Name:    fieldName,
+			Summary: fieldHelpRaw.Summary, Details: fieldHelpRaw.Details,
+			Argument: ForArgument(fieldInfo),
 		}
 
 		res.Fields = append(res.Fields, fieldHelp)
