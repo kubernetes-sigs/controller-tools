@@ -233,6 +233,62 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		Entry("with the an alternative output package", "other"),
 		Entry("with a package outside of the current directory", "../../clients"),
 	)
+
+	// runWithExtraFile adds the given Go file to the CronJob API package and runs the generator.
+	runWithExtraFile := func(source string) bool {
+		Expect(os.WriteFile(filepath.Join("api/v1", "extra_types.go"), []byte(source), 0644)).To(Succeed())
+
+		optionsRegistry := &markers.Registry{}
+		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
+
+		rt, err := genall.FromOptions(optionsRegistry, []string{
+			"applyconfiguration:externalApplyConfigurations=sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external.ExternalData@sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/externalac",
+			"paths=./api/v1",
+		})
+		Expect(err).NotTo(HaveOccurred())
+		rt.OutputRules = genall.OutputRules{Default: make(outputToMap)}
+
+		return rt.Run()
+	}
+
+	It("should generate for a package whose marker values look like numbers", func() {
+		const numberLikeValues = `package v1
+
+// ExtraSpec has markers whose values look like numbers but are text.
+type ExtraSpec struct {
+	// +kubebuilder:default=100Mi
+	Size string
+
+	// +kubebuilder:default=/tmp/tmp.4paHkdEcpK
+	WorkDir string
+
+	// +kubebuilder:validation:Enum=087bdd;0987
+	ID string
+
+	// +kubebuilder:example=sha256:08a7b
+	Digest string
+}
+`
+		hadErrs := runWithExtraFile(numberLikeValues)
+
+		Expect(hadErrs).To(BeFalse(), "Generator should run without errors")
+		Expect(filepath.Join("api/v1", applyConfigurationDir, "api/v1", "cronjob.go")).To(BeAnExistingFile(), "Generator should write the apply configurations")
+	})
+
+	It("should report a marker it cannot read instead of generating nothing", func() {
+		const invalidMarker = `package v1
+
+// ExtraSpec has a marker that cannot be read: MaxLength takes a number.
+type ExtraSpec struct {
+	// +kubebuilder:validation:MaxLength=abc
+	Name string
+}
+`
+		hadErrs := runWithExtraFile(invalidMarker)
+
+		Expect(hadErrs).To(BeTrue(), "Generator should report the marker error")
+	})
 })
 
 var _ = Describe("ApplyConfiguration OmitToolVersion", func() {
