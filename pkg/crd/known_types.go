@@ -61,7 +61,9 @@ var KnownPackages = map[string]PackageOverride{
 			},
 			Pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$",
 		}
-		// No point in calling AddPackage, this is the sole inhabitant
+		// Format is a plain string type that APIs reference directly, so it
+		// gets its schema from the package itself.
+		p.AddPackage(pkg)
 	},
 
 	"k8s.io/apimachinery/pkg/runtime": func(p *Parser, pkg *loader.Package) {
@@ -88,7 +90,9 @@ var KnownPackages = map[string]PackageOverride{
 				{Type: "string"},
 			},
 		}
-		// No point in calling AddPackage, this is the sole inhabitant
+		// Type is a plain integer type that APIs reference directly, so it
+		// gets its schema from the package itself.
+		p.AddPackage(pkg)
 	},
 
 	"k8s.io/apiextensions-api/pkg/apis/apiextensions/v1beta1": apiextensionsJSONOverride,
