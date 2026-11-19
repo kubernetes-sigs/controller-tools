@@ -37,3 +37,9 @@ type ExternalRequirement struct {
 	Key    string   `json:"key"`
 	Values []string `json:"values,omitempty"`
 }
+
+// ExternalSelectorAlias is an alias of ExternalSelector.
+type ExternalSelectorAlias = ExternalSelector
+
+// ExternalSelectorDefined is a type defined from ExternalSelector.
+type ExternalSelectorDefined ExternalSelector
