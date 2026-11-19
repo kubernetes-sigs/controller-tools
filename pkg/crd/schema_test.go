@@ -277,3 +277,60 @@ func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiexte
 	m.callback()
 	return nil
 }
+
+const emptyJSONNamePackage = `
+	package crd
+
+	type RetentionPolicy struct {
+		Days int32 ` + "`json:\"days,omitempty\"`" + `
+	}
+
+	type Common struct {
+		Owner string ` + "`json:\"owner,omitempty\"`" + `
+	}
+
+	type BackupSpec struct {
+		Common    ` + "`json:\",inline\"`" + `
+		Schedule  string          ` + "`json:\"schedule\"`" + `
+		Retention RetentionPolicy ` + "`json:\",omitempty\"`" + `
+	}
+`
+
+func Test_Schema_NamedFieldWithEmptyJSONName(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
+	modules := []pkgstest.Module{
+		{
+			Name: moduleName,
+			Files: map[string]any{
+				"test.go": emptyJSONNamePackage,
+			},
+		},
+	}
+
+	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
+	if exported != nil {
+		t.Cleanup(exported.Cleanup)
+	}
+	g.Expect(err).NotTo(gomega.HaveOccurred())
+	g.Expect(pkgs).To(gomega.HaveLen(1))
+
+	reg := &markers.Registry{}
+	g.Expect(crdmarkers.Register(reg)).To(gomega.Succeed())
+	parser := &Parser{
+		Collector: &markers.Collector{Registry: reg},
+		Checker:   &loader.TypeChecker{},
+	}
+
+	ident := TypeIdent{Package: pkgs[0], Name: "BackupSpec"}
+	parser.NeedSchemaFor(ident)
+	failIfErrors(t, pkgs[0].Errors)
+
+	output := parser.Schemata[ident]
+	g.Expect(output.Properties).To(gomega.HaveKey("Retention"))
+	g.Expect(output.Properties).To(gomega.HaveKey("schedule"))
+	g.Expect(output.Properties).NotTo(gomega.HaveKey("days"))
+	g.Expect(output.Required).To(gomega.Equal([]string{"schedule"}))
+	g.Expect(output.AllOf).To(gomega.HaveLen(1))
+}
