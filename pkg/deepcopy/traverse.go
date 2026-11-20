@@ -768,6 +768,8 @@ func fineToShallowCopy(typeInfo types.Type) bool {
 	case *types.Named:
 		// aliases are fine to shallow-copy as long as they resolve to a shallow-copyable type
 		return fineToShallowCopy(typeInfo.Underlying())
+	case *types.Alias:
+		return fineToShallowCopy(types.Unalias(typeInfo))
 	case *types.Struct:
 		// structs are fine to shallow-copy if they have all shallow-copyable fields
 		for field := range typeInfo.Fields() {
