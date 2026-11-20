@@ -166,6 +166,10 @@ type SpecificCases struct {
 
 	// Case: kubernetes-sigs/controller-tools#1312
 	NestedAliasMaps *MapAlias `json:"nestedAliasMaps,omitempty"`
+
+	// Case: map with a type alias to a basic type as value or key
+	StringAliasValueMap map[string]StringAlias `json:"stringAliasValueMap,omitempty"`
+	StringAliasKeyMap   map[StringAlias]string `json:"stringAliasKeyMap,omitempty"`
 }
 
 type StringAlias = string
