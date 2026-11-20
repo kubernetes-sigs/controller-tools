@@ -525,6 +525,8 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 			keyInfo = nil // stop iterating
 		case *types.Named:
 			keyInfo = typedKey.Underlying()
+		case *types.Alias:
+			keyInfo = types.Unalias(typedKey)
 		default:
 			if implements(keyType, textMarshaler) {
 				keyInfo = nil // stop iterating

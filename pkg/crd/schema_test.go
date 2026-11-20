@@ -173,6 +173,31 @@ func Test_Schema_MapOfNonStringKey(t *testing.T) {
 	g.Expect(pkg.Errors[0].Msg).To(gomega.ContainSubstring("map keys must be strings"))
 }
 
+const aliasKeyPackage = `
+	package crd
+
+	type stringAlias = string
+
+	type AliasKeyMap map[stringAlias]string
+`
+
+// Test_Schema_MapOfAliasKey verifies that a map keyed by a type alias to string is accepted.
+func Test_Schema_MapOfAliasKey(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	output, pkg := transformPackage(t, aliasKeyPackage, "AliasKeyMap")
+	failIfErrors(t, pkg.Errors)
+	g.Expect(output).To(gomega.Equal(&apiextensionsv1.JSONSchemaProps{
+		Type: "object",
+		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+			Allows: true,
+			Schema: &apiextensionsv1.JSONSchemaProps{
+				Type: "string",
+			},
+		},
+	}))
+}
+
 func failIfErrors(t *testing.T, errs []packages.Error) {
 	if len(errs) > 0 {
 		msgs := make([]string, 0, len(errs))
