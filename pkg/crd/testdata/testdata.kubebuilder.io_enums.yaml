@@ -36,10 +36,19 @@ spec:
           spec:
             description: EnumSpec defines the desired state of Enum
             properties:
+              addressType:
+                description: AddressType declares its values as conversions.
+                enum:
+                - FQDN
+                - IPv4
+                - IPv6
+                type: string
               field:
                 enum:
                 - Value1
                 - Value2
+                - Value3
+                - Value4
                 type: string
             type: object
         type: object

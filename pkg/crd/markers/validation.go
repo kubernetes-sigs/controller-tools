@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
 	"go/types"
 	"math"
@@ -1206,23 +1207,19 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 				if !ok {
 					continue
 				}
-				for i, name := range valueSpec.Names {
-					obj := pkg.TypesInfo.Defs[name]
-					if obj == nil || obj.Type() != typeInfo {
+				for _, name := range valueSpec.Names {
+					// Use the value the type checker computed instead of the
+					// literal in the source, so that a constant declared as a
+					// conversion, as a reference to another constant or by
+					// implicit repetition counts too.
+					obj, ok := pkg.TypesInfo.Defs[name].(*types.Const)
+					if !ok || obj.Type() != typeInfo || obj.Val().Kind() != constant.String {
 						continue
 					}
-					val := valueSpec.Values[i]
-					basicLit, ok := val.(*ast.BasicLit)
-					if !ok || basicLit.Kind != token.STRING {
-						continue
-					}
-					unquoted, err := strconv.Unquote(basicLit.Value)
+					value := constant.StringVal(obj.Val())
+					raw, err := json.Marshal(value)
 					if err != nil {
-						return fmt.Errorf("failed to unquote enum value %q: %w", basicLit.Value, err)
-					}
-					raw, err := json.Marshal(unquoted)
-					if err != nil {
-						return fmt.Errorf("failed to json marshal enum value %q: %w", unquoted, err)
+						return fmt.Errorf("failed to json marshal enum value %q: %w", value, err)
 					}
 					enumValues = append(enumValues, apiextensionsv1.JSON{Raw: raw})
 				}
@@ -1232,6 +1229,10 @@ func (K8sEnum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONSch
 
 	slices.SortFunc(enumValues, func(a, b apiextensionsv1.JSON) int {
 		return strings.Compare(string(a.Raw), string(b.Raw))
+	})
+	// Constants that refer to or repeat another constant have the same value.
+	enumValues = slices.CompactFunc(enumValues, func(a, b apiextensionsv1.JSON) bool {
+		return string(a.Raw) == string(b.Raw)
 	})
 
 	if len(enumValues) == 0 {
