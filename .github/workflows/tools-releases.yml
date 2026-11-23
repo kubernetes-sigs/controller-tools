@@ -39,7 +39,7 @@ jobs:
         run: |
           make release-envtest KUBERNETES_VERSION=${{ env.KUBERNETES_VERSION }}
       - name: Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # tag=v3.0.2
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # tag=v3.0.4
         with:
           tag_name: envtest-${{ env.KUBERNETES_VERSION }}
           draft: false
@@ -49,7 +49,7 @@ jobs:
             out/envtest-*.tar.gz.sha512
           fail_on_unmatched_files: true
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # tag=v8.1.1
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # tag=v8.1.3
         with:
           commit-message: Promote envtest release for Kubernetes ${{ env.KUBERNETES_VERSION }}
           title: ":seedling: Promotion of envtest release for Kubernetes ${{ env.KUBERNETES_VERSION }}"
