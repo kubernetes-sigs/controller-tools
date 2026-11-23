@@ -228,6 +228,21 @@ type CronJobSpec struct {
 	// +k8s:listMapKey=name
 	DuplicateListMapKey []AssociativeType `json:"duplicateListMapKey"`
 
+	// This tests that a listMapKey naming an optional property is promoted to
+	// required. The API Server rejects an associative list whose keys are
+	// neither required nor defaulted, and k8s.io/api v0.37.0 carries exactly
+	// that combination on the apps/v1 workload condition types, where Type is
+	// marked +optional but is still the +listMapKey.
+	// +listType=map
+	// +listMapKey=type
+	OptionalListMapKey []OptionalKeyAssociativeType `json:"optionalListMapKey"`
+
+	// This tests that a listMapKey naming a defaulted property is left alone,
+	// since a default also satisfies the API Server.
+	// +listType=map
+	// +listMapKey=protocol
+	DefaultedListMapKey []DefaultedKeyAssociativeType `json:"defaultedListMapKey"`
+
 	// This tests that +k8s:listType=set works.
 	// +k8s:listType=set
 	K8sSetList []string `json:"k8sSetList,omitempty"`
@@ -647,6 +662,26 @@ type AssociativeType struct {
 	Name      string `json:"name"`
 	Secondary int    `json:"secondary"`
 	Foo       string `json:"foo"`
+}
+
+// OptionalKeyAssociativeType mirrors the shape of the apps/v1 workload
+// condition types, whose list map key is marked optional upstream.
+type OptionalKeyAssociativeType struct {
+	// +optional
+	Type string `json:"type"`
+	// +optional
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+// DefaultedKeyAssociativeType has an optional list map key carrying a default,
+// which already satisfies the API Server.
+type DefaultedKeyAssociativeType struct {
+	// +optional
+	// +kubebuilder:default=TCP
+	Protocol string `json:"protocol"`
+	// +optional
+	Port int `json:"port"`
 }
 
 // +listType=map
