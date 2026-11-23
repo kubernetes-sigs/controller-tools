@@ -36,5 +36,8 @@ func init() {
 
 		must(markers.MakeDefinition("kubebuilder:skip", markers.DescribesPackage, struct{}{})).
 			WithHelp(markers.SimpleHelp("CRD", "don't consider this package as an API version. Use this to exclude internal or helper packages from CRD generation.")),
+
+		must(markers.MakeDefinition("kubebuilder:skip:description", markers.DescribesPackage, struct{}{})).
+			WithHelp(markers.SimpleHelp("CRD", "omit all descriptions in this package to reduce CRD size.")),
 	)
 }
