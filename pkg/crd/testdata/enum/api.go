@@ -19,6 +19,7 @@ limitations under the License.
 package enum
 
 import (
+	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,6 +29,18 @@ type EnumType string
 const (
 	Value1 EnumType = "Value1"
 	Value2 EnumType = "Value2"
+)
+
+// Value3 is declared as a conversion, which still makes it an enum value.
+const Value3 = EnumType("Value3")
+
+// DefaultValue refers to another value, so it adds no duplicate.
+const DefaultValue = Value1
+
+// Value4Alias repeats the value of Value4, so it adds no duplicate either.
+const (
+	Value4 EnumType = "Value4"
+	Value4Alias
 )
 
 // +kubebuilder:object:root=true
@@ -43,6 +56,9 @@ type Enum struct {
 // EnumSpec defines the desired state of Enum
 type EnumSpec struct {
 	Field EnumType `json:"field,omitempty"`
+
+	// AddressType declares its values as conversions.
+	AddressType discoveryv1.AddressType `json:"addressType,omitempty"`
 }
 
 // +kubebuilder:object:root=true
