@@ -317,7 +317,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 			// might be a map or slice, parse the string and check for colon
 			// (blech, basically arbitrary look-ahead due to raw strings).
 			var keyVal string // just ignore this
-			(&Argument{Type: StringType}).parseString(subScanner, raw, reflect.Indirect(reflect.ValueOf(&keyVal)), true)
+			(&Argument{Type: StringType}).parseString(subScanner, raw, reflect.Indirect(reflect.ValueOf(&keyVal)), true, false)
 
 			if token := subScanner.Scan(); token == ':' || hint == '}' {
 				// it's got a string followed by a colon -- it's a map
@@ -375,8 +375,7 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 		//    "100Mi", "2024-01-15" start with a valid numeric token but
 		//    contain additional characters and must be treated as strings.
 		if !hadScanError && (nextTok == sc.Int || nextTok == sc.Float) {
-			followTok := peekNoSpace(subScanner)
-			if followTok == ',' || followTok == ';' || followTok == sc.EOF || followTok == '}' {
+			if isBareStringDelim(peekNoSpace(subScanner), false) {
 				if nextTok == sc.Int {
 					return &Argument{Type: IntType}
 				}
@@ -389,9 +388,34 @@ func guessType(scanner *sc.Scanner, raw string, allowSlice bool) *Argument {
 	return &Argument{Type: StringType}
 }
 
+// isBareStringDelim reports whether token ends a bare (unquoted) value: ',', ';',
+// '}' or the end of the input.  ':' only ends a map key.
+func isBareStringDelim(token rune, inMap bool) bool {
+	switch token {
+	case ',', ';', '}', sc.EOF:
+		return true
+	case ':':
+		return inMap
+	}
+	return false
+}
+
+// isKeySeparator reports whether token is a ':' followed by a space or tab, as in
+// `{name: web}`.  A ':' with no space after it, as in `sha256:08a7b`, is text.
+// pos is the position of token in text.
+func isKeySeparator(token rune, text string, pos int) bool {
+	if token != ':' || pos+1 >= len(text) {
+		return false
+	}
+	next := text[pos+1]
+	return next == ' ' || next == '\t'
+}
+
 // parseString parses either of the two accepted string forms (quoted, or bare tokens).
-// When inMap is true, ':' is treated as a delimiter (map key separator).
-func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Value, inMap bool) {
+// When inMap is true, ':' ends the value (a map key).
+// When inMapValue is true, ': ' also ends the value, so a missing comma in a map,
+// as in `{cpu: 500m memory: 1Gi}`, is an error.
+func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Value, inMap, inMapValue bool) {
 	// we need to temporarily disable the scanner's int/float parsing, since we want to
 	// prevent number parsing errors.
 	oldMode := scanner.Mode
@@ -415,21 +439,24 @@ func (a *Argument) parseString(scanner *sc.Scanner, raw string, out reflect.Valu
 		return
 	}
 
-	// the "hard" case -- bare tokens not including ',' (the argument
-	// separator), ';' (the slice separator), or '}' (delimitted slice ender).
-	// ':' (the map separator) is only a delimiter when parsing inside a map.
+	// the "hard" case -- bare tokens up to the next delimiter.  Keep the end of
+	// the last token, because peeking past spaces clears the token text.
+	startPos := scanner.Position.Offset
+	endPos := startPos + len(scanner.TokenText())
+	// a map value that starts with ',' is missing, as in `{replicas:,enabled:true}`,
+	// so the next ':' belongs to the next key.
+	missingValue := inMapValue && tok == ','
 	isDelim := func(hint rune) bool {
-		if hint == ',' || hint == ';' || hint == '}' || hint == sc.EOF {
+		if isBareStringDelim(hint, inMap || missingValue) {
 			return true
 		}
-		return inMap && hint == ':'
+		return inMapValue && isKeySeparator(hint, raw, scanner.Pos().Offset)
 	}
-	startPos := scanner.Position.Offset
 	for hint := peekNoSpace(scanner); !isDelim(hint); hint = peekNoSpace(scanner) {
 		// skip this token
 		scanner.Scan()
+		endPos = scanner.Position.Offset + len(scanner.TokenText())
 	}
-	endPos := scanner.Position.Offset + len(scanner.TokenText())
 	castAndSet(out, reflect.ValueOf(raw[startPos:endPos]))
 }
 
@@ -448,7 +475,7 @@ func (a *Argument) parseSlice(scanner *sc.Scanner, raw string, out reflect.Value
 
 		scanner.Scan() // skip '{'
 		for hint := peekNoSpace(scanner); hint != '}' && hint != sc.EOF; hint = peekNoSpace(scanner) {
-			a.ItemType.parse(scanner, raw, elem, true /* parsing a slice */)
+			a.ItemType.parse(scanner, raw, elem, true /* parsing a slice */, false)
 			resSlice = reflect.Append(resSlice, elem)
 			tok := peekNoSpace(scanner)
 			if tok == '}' {
@@ -467,7 +494,7 @@ func (a *Argument) parseSlice(scanner *sc.Scanner, raw string, out reflect.Value
 
 	// legacy case
 	for hint := peekNoSpace(scanner); hint != ',' && hint != '}' && hint != sc.EOF; hint = peekNoSpace(scanner) {
-		a.ItemType.parse(scanner, raw, elem, true /* parsing a slice */)
+		a.ItemType.parse(scanner, raw, elem, true /* parsing a slice */, false)
 		resSlice = reflect.Append(resSlice, elem)
 		tok := peekNoSpace(scanner)
 		if tok == ',' || tok == '}' || tok == sc.EOF {
@@ -493,11 +520,11 @@ func (a *Argument) parseMap(scanner *sc.Scanner, raw string, out reflect.Value) 
 	}
 
 	for hint := peekNoSpace(scanner); hint != '}' && hint != sc.EOF; hint = peekNoSpace(scanner) {
-		a.parseString(scanner, raw, key, true)
+		a.parseString(scanner, raw, key, true, false)
 		if !expect(scanner, ':', "colon") {
 			return
 		}
-		a.ItemType.parse(scanner, raw, elem, false /* not in a slice */)
+		a.ItemType.parse(scanner, raw, elem, false /* not in a slice */, true /* in a map value */)
 		resMap.SetMapIndex(key, elem)
 
 		if peekNoSpace(scanner) == '}' {
@@ -516,8 +543,9 @@ func (a *Argument) parseMap(scanner *sc.Scanner, raw string, out reflect.Value) 
 }
 
 // parse functions like Parse, except that it allows passing down whether or not we're
-// already in a slice, to avoid duplicate legacy slice detection for AnyType
-func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inSlice bool) {
+// already in a slice, to avoid duplicate legacy slice detection for AnyType, and
+// whether we're in a map value.
+func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inSlice, inMapValue bool) {
 	if a.Type == InvalidType {
 		scanner.Error(scanner, "cannot parse invalid type")
 		return
@@ -589,7 +617,7 @@ func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inS
 		// strings are a bit weird -- the "easy" case is quoted strings (tokenized as strings),
 		// the "hard" case (present for backwards compat) is a bare sequence of tokens that aren't
 		// a comma.
-		a.parseString(scanner, raw, out, false)
+		a.parseString(scanner, raw, out, false, inMapValue)
 	case BoolType:
 		if !expect(scanner, sc.Ident, "true or false") {
 			return
@@ -628,7 +656,7 @@ func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inS
 		if !newOut.CanSet() {
 			panic("at the disco") // TODO(directxman12): this is left over from debugging -- it might need to be an error
 		}
-		guessedType.Parse(scanner, raw, newOut)
+		guessedType.parse(scanner, raw, newOut, false, inMapValue)
 		castAndSet(out, newOut)
 	case SliceType:
 		// slices have two supported formats, like string:
@@ -645,7 +673,7 @@ func (a *Argument) parse(scanner *sc.Scanner, raw string, out reflect.Value, inS
 // raw input as well for collecting ranges of content), and places the output value
 // in the given reflect.Value.  Errors are reported via the given scanner.
 func (a *Argument) Parse(scanner *sc.Scanner, raw string, out reflect.Value) {
-	a.parse(scanner, raw, out, false)
+	a.parse(scanner, raw, out, false, false)
 }
 
 // ArgumentFromType constructs an Argument by examining the given
