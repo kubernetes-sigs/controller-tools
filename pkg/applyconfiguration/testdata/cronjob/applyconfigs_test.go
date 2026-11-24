@@ -19,6 +19,7 @@ package cronjob
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	cronjobsv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
@@ -41,5 +42,35 @@ var _ = Describe("ApplyConfigurations", func() {
 		first, err := cronjobsv1acs.ExtractCronJob(&cronJob, "first")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(first.Finalizers).To(Equal([]string{"foo.bar"}))
+	})
+
+	It("should extract fields whose types are a chain of declared types", func() {
+		cronJob := &cronjobsv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "chained-declared-types",
+				ManagedFields: []metav1.ManagedFieldsEntry{{
+					Manager:    "test",
+					Operation:  metav1.ManagedFieldsOperationApply,
+					APIVersion: cronjobsv1.GroupVersion.String(),
+					FieldsType: "FieldsV1",
+					FieldsV1: metav1.NewFieldsV1(
+						`{"f:spec":{"f:schedule":{},"f:workers":{"f:image":{}},"f:gpuWorkers":{"f:image":{}}}}`,
+					),
+				}},
+			},
+			Spec: cronjobsv1.CronJobSpec{
+				Schedule:   "* * * * *",
+				Workers:    &cronjobsv1.WorkerSettings{Image: "worker"},
+				GPUWorkers: &cronjobsv1.GPUWorkerSettings{Image: "gpu-worker"},
+			},
+		}
+
+		extracted, err := cronjobsv1acs.ExtractCronJob(cronJob, "test")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(extracted.Spec).ToNot(BeNil())
+		Expect(extracted.Spec.Workers).ToNot(BeNil())
+		Expect(extracted.Spec.Workers.Image).To(HaveValue(Equal("worker")))
+		Expect(extracted.Spec.GPUWorkers).ToNot(BeNil())
+		Expect(extracted.Spec.GPUWorkers.Image).To(HaveValue(Equal("gpu-worker")))
 	})
 })

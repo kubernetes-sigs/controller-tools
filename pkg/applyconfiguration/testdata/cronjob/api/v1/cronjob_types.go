@@ -238,6 +238,12 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:optional
 	JustNestedObject *JustNestedObject `json:"justNestedObject,omitempty"`
 
+	// This tests that a type declared from another declared type is resolved.
+	Workers *WorkerSettings `json:"workers,omitempty"`
+
+	// This tests that a chain of declared types is resolved.
+	GPUWorkers *GPUWorkerSettings `json:"gpuWorkers,omitempty"`
+
 	// This tests explicitly optional kubebuilder fields
 	// +kubebuilder:validation:Optional
 	ExplicitlyOptionalKubebuilder string `json:"explicitlyOptionalKubebuilder"`
@@ -483,6 +489,18 @@ type NestedObject struct {
 type NestedStructWithSeveralFields NestedObject
 
 type JustNestedObject NestedObject
+
+// ContainerSettings is the struct that the declared types below are based on.
+type ContainerSettings struct {
+	Image string   `json:"image"`
+	Args  []string `json:"args,omitempty"`
+}
+
+// WorkerSettings is declared from ContainerSettings.
+type WorkerSettings ContainerSettings
+
+// GPUWorkerSettings is declared from WorkerSettings, which is declared itself.
+type GPUWorkerSettings WorkerSettings
 
 // +kubebuilder:validation:MinProperties=1
 // +kubebuilder:validation:MaxProperties=2

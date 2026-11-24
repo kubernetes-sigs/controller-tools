@@ -128,6 +128,10 @@ type CronJobSpecApplyConfiguration struct {
 	NestedStructWithSeveralFieldsDoubleMarked *NestedStructWithSeveralFieldsApplyConfiguration `json:"nestedStructWithSeveralFieldsDoubleMarked,omitempty"`
 	// This tests that type references are properly flattened
 	JustNestedObject *JustNestedObjectApplyConfiguration `json:"justNestedObject,omitempty"`
+	// This tests that a type declared from another declared type is resolved.
+	Workers *WorkerSettingsApplyConfiguration `json:"workers,omitempty"`
+	// This tests that a chain of declared types is resolved.
+	GPUWorkers *GPUWorkerSettingsApplyConfiguration `json:"gpuWorkers,omitempty"`
 	// This tests explicitly optional kubebuilder fields
 	ExplicitlyOptionalKubebuilder *string `json:"explicitlyOptionalKubebuilder,omitempty"`
 	// This tests explicitly optional kubernetes fields
@@ -632,6 +636,22 @@ func (b *CronJobSpecApplyConfiguration) WithNestedStructWithSeveralFieldsDoubleM
 // If called multiple times, the JustNestedObject field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithJustNestedObject(value *JustNestedObjectApplyConfiguration) *CronJobSpecApplyConfiguration {
 	b.JustNestedObject = value
+	return b
+}
+
+// WithWorkers sets the Workers field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Workers field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithWorkers(value *WorkerSettingsApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.Workers = value
+	return b
+}
+
+// WithGPUWorkers sets the GPUWorkers field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the GPUWorkers field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithGPUWorkers(value *GPUWorkerSettingsApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.GPUWorkers = value
 	return b
 }
 

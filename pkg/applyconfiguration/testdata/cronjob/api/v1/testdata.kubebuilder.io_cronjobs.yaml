@@ -278,6 +278,18 @@ spec:
                 description: FromEmbedded is a field from the embedded struct that
                   was used through an alias type.
                 type: string
+              gpuWorkers:
+                description: This tests that a chain of declared types is resolved.
+                properties:
+                  args:
+                    items:
+                      type: string
+                    type: array
+                  image:
+                    type: string
+                required:
+                - image
+                type: object
               hosts:
                 description: This tests string slice item validation.
                 items:
@@ -10513,6 +10525,19 @@ spec:
                 - foo
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              workers:
+                description: This tests that a type declared from another declared
+                  type is resolved.
+                properties:
+                  args:
+                    items:
+                      type: string
+                    type: array
+                  image:
+                    type: string
+                required:
+                - image
+                type: object
             required:
             - associativeList
             - baz
