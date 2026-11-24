@@ -21,6 +21,7 @@ package v1
 import (
 	v1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	apiv1 "sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/api/v1"
@@ -144,6 +145,12 @@ type CronJobSpecApplyConfiguration struct {
 	// This can be useful if you want to limit the string to a percentage or integer.
 	// The XIntOrString marker is a requirement for having a pattern on this type.
 	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
+	// This tests that a type of a package with known-type overrides gets its
+	// schema from the package itself.
+	SizeFormat *resource.Format `json:"sizeFormat,omitempty"`
+	// This tests that a type of a package with known-type overrides gets its
+	// schema from the package itself.
+	TargetType *intstr.Type `json:"targetType,omitempty"`
 	// Checks that nested maps work
 	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
 	// Checks that multiply-nested maps work
@@ -690,6 +697,22 @@ func (b *CronJobSpecApplyConfiguration) WithSchemaless(values ...byte) *CronJobS
 // If called multiple times, the IntOrStringWithAPattern field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithIntOrStringWithAPattern(value intstr.IntOrString) *CronJobSpecApplyConfiguration {
 	b.IntOrStringWithAPattern = &value
+	return b
+}
+
+// WithSizeFormat sets the SizeFormat field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SizeFormat field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithSizeFormat(value resource.Format) *CronJobSpecApplyConfiguration {
+	b.SizeFormat = &value
+	return b
+}
+
+// WithTargetType sets the TargetType field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TargetType field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithTargetType(value intstr.Type) *CronJobSpecApplyConfiguration {
+	b.TargetType = &value
 	return b
 }
 

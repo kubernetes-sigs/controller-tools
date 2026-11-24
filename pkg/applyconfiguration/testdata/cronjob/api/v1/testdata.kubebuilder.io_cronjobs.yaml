@@ -10359,6 +10359,11 @@ spec:
               selectableFieldString:
                 description: This tests that selectable field.
                 type: string
+              sizeFormat:
+                description: |-
+                  This tests that a type of a package with known-type overrides gets its
+                  schema from the package itself.
+                type: string
               startingDeadlineSeconds:
                 description: |-
                   Optional deadline in seconds for starting the job if it misses scheduled
@@ -10479,6 +10484,12 @@ spec:
                   This flag tells the controller to suspend subsequent executions, it does
                   not apply to already started executions.  Defaults to false.
                 type: boolean
+              targetType:
+                description: |-
+                  This tests that a type of a package with known-type overrides gets its
+                  schema from the package itself.
+                format: int64
+                type: integer
               twoOfAKindPart0:
                 description: This tests that markers that are allowed on both fields
                   and types are applied to fields

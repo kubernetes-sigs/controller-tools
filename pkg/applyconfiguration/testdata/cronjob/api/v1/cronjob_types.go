@@ -34,6 +34,7 @@ import (
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -270,6 +271,14 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:MinLength=2
 	// +kubebuilder:validation:Pattern="^((100|[0-9]{1,2})%|[0-9]+)$"
 	IntOrStringWithAPattern *intstr.IntOrString `json:"intOrStringWithAPattern,omitempty"`
+
+	// This tests that a type of a package with known-type overrides gets its
+	// schema from the package itself.
+	SizeFormat resource.Format `json:"sizeFormat,omitempty"`
+
+	// This tests that a type of a package with known-type overrides gets its
+	// schema from the package itself.
+	TargetType intstr.Type `json:"targetType,omitempty"`
 
 	// Checks that nested maps work
 	NestedMap map[string]map[string]string `json:"nestedMap,omitempty"`
