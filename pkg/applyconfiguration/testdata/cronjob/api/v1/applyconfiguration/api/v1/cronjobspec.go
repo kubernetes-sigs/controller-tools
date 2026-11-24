@@ -207,8 +207,12 @@ type CronJobSpecApplyConfiguration struct {
 	// EmbeddedSelector embeds a type from another package whose fields refer to
 	// other types of that package.
 	EmbeddedSelector *EmbeddedSelectorSpecApplyConfiguration `json:"embeddedSelector,omitempty"`
-	StructSlice      []RootObjectApplyConfiguration          `json:"structSlice,omitempty"`
-	StructMap        map[string]RootObjectApplyConfiguration `json:"structMap,omitempty"`
+	// EmbeddedAliasSelector tests an embedded alias from another package.
+	EmbeddedAliasSelector *EmbeddedAliasSelectorSpecApplyConfiguration `json:"embeddedAliasSelector,omitempty"`
+	// EmbeddedDefinedSelector tests an embedded defined type from another package.
+	EmbeddedDefinedSelector *EmbeddedDefinedSelectorSpecApplyConfiguration `json:"embeddedDefinedSelector,omitempty"`
+	StructSlice             []RootObjectApplyConfiguration                 `json:"structSlice,omitempty"`
+	StructMap               map[string]RootObjectApplyConfiguration        `json:"structMap,omitempty"`
 }
 
 // CronJobSpecApplyConfiguration constructs a declarative configuration of the CronJobSpec type for use with
@@ -954,6 +958,22 @@ func (b *CronJobSpecApplyConfiguration) WithEmbeddedExternal(value *EmbeddedExte
 // If called multiple times, the EmbeddedSelector field is set to the value of the last call.
 func (b *CronJobSpecApplyConfiguration) WithEmbeddedSelector(value *EmbeddedSelectorSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
 	b.EmbeddedSelector = value
+	return b
+}
+
+// WithEmbeddedAliasSelector sets the EmbeddedAliasSelector field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EmbeddedAliasSelector field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithEmbeddedAliasSelector(value *EmbeddedAliasSelectorSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.EmbeddedAliasSelector = value
+	return b
+}
+
+// WithEmbeddedDefinedSelector sets the EmbeddedDefinedSelector field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EmbeddedDefinedSelector field is set to the value of the last call.
+func (b *CronJobSpecApplyConfiguration) WithEmbeddedDefinedSelector(value *EmbeddedDefinedSelectorSpecApplyConfiguration) *CronJobSpecApplyConfiguration {
+	b.EmbeddedDefinedSelector = value
 	return b
 }
 
