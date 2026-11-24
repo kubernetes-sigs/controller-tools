@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
@@ -175,6 +176,39 @@ var _ = Describe("CRD Generation proper defaulting", func() {
 
 		By("searching for version annotation")
 		Expect(out.buf.String()).NotTo(ContainSubstring("controller-gen.kubebuilder.io/version"))
+	})
+
+	It("should generate the same CRD, only without the version annotation, when OmitToolVersion is true", func() {
+		By("calling Generate")
+		yes := true
+		gen := &crd.Generator{
+			CRDVersions:     []string{"v1"},
+			OmitToolVersion: &yes,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("loading the desired YAML and removing the version annotation from it")
+		expectedFile, err := os.ReadFile(filepath.Join(genDir, "bar.example.com_foos.yaml"))
+		Expect(err).NotTo(HaveOccurred())
+		versionAnnotation := "  annotations:\n    controller-gen.kubebuilder.io/version: (devel)\n"
+		Expect(string(expectedFile)).To(ContainSubstring(versionAnnotation))
+		expectedOut := strings.Replace(string(expectedFile), versionAnnotation, "", 1)
+
+		By("comparing the two")
+		Expect(out.buf.String()).To(Equal(expectedOut), cmp.Diff(out.buf.String(), expectedOut))
+	})
+
+	It("should add controller-gen version annotation when OmitToolVersion is false", func() {
+		By("calling Generate")
+		no := false
+		gen := &crd.Generator{
+			CRDVersions:     []string{"v1"},
+			OmitToolVersion: &no,
+		}
+		Expect(gen.Generate(ctx)).NotTo(HaveOccurred())
+
+		By("searching for version annotation")
+		Expect(out.buf.String()).To(ContainSubstring("controller-gen.kubebuilder.io/version"))
 	})
 
 	It("should truncate CRD descriptions", func() {
