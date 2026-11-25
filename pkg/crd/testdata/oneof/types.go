@@ -46,6 +46,12 @@ type OneofSpec struct {
 
 	TypeWithOmitZeroAtLeastOneOf *TypeWithOmitZeroAtLeastOneOf `json:"typeWithOmitZeroAtLeastOneOf,omitempty"`
 
+	TypeWithDashedNamesExactlyOneOf *TypeWithDashedNamesExactlyOneOf `json:"typeWithDashedNamesExactlyOneOf,omitempty"`
+
+	TypeWithDashedNamesAtLeastOneOf *TypeWithDashedNamesAtLeastOneOf `json:"typeWithDashedNamesAtLeastOneOf,omitempty"`
+
+	TypeWithReservedWordNamesExactlyOneOf *TypeWithReservedWordNamesExactlyOneOf `json:"typeWithReservedWordNamesExactlyOneOf,omitempty"`
+
 	FirstCustomTypeAlias CustomTypeAlias `json:"firstCustomTypeAlias,omitempty"`
 
 	// This verifies if the custom type alias XValidation is not duplicated.
@@ -125,6 +131,27 @@ type TypeWithOmitZeroExact struct {
 type TypeWithOmitZeroAtLeastOneOf struct {
 	C *string `json:"c,omitzero"`
 	D *string `json:"d,omitzero"`
+}
+
+// The rule has to escape the dashes in these names.
+// +kubebuilder:validation:ExactlyOneOf=token-file;token-secret
+type TypeWithDashedNamesExactlyOneOf struct {
+	TokenFile   *string `json:"token-file,omitempty"`
+	TokenSecret *string `json:"token-secret,omitempty"`
+}
+
+// The rule has to escape the dashes in these names.
+// +kubebuilder:validation:AtLeastOneOf=token-file;token-secret
+type TypeWithDashedNamesAtLeastOneOf struct {
+	TokenFile   *string `json:"token-file,omitempty"`
+	TokenSecret *string `json:"token-secret,omitempty"`
+}
+
+// The rule has to escape these names, which are CEL reserved words.
+// +kubebuilder:validation:ExactlyOneOf=in;namespace
+type TypeWithReservedWordNamesExactlyOneOf struct {
+	In        *string `json:"in,omitempty"`
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 // CustomTypeAlias is a custom alias

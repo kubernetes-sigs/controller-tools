@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/controller-tools/pkg/internal/crd"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
@@ -1139,7 +1140,7 @@ func fieldsToOneOfSumExpr(fields []string) string {
 			b.WriteString("+")
 		}
 		b.WriteString("(has(self.")
-		b.WriteString(f)
+		b.WriteString(crd.EscapeCELFieldName(f))
 		b.WriteString(")?1:0)")
 	}
 	return b.String()
@@ -1159,7 +1160,7 @@ func fieldsToOneOfOrExpr(fields []string) string {
 			b.WriteString("||")
 		}
 		b.WriteString("has(self.")
-		b.WriteString(f)
+		b.WriteString(crd.EscapeCELFieldName(f))
 		b.WriteString(")")
 	}
 	return b.String()

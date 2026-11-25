@@ -229,6 +229,72 @@ spec:
 `,
 			wantErr: `spec.typeWithOmitZeroAtLeastOneOf: Invalid value: at least one of the fields in [c d] must be set`,
 		},
+		{
+			name: "satisfies ExactlyOneOf and AtLeastOneOf constraints with dashed field names",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithDashedNamesExactlyOneOf:
+    token-file: "file"
+  typeWithDashedNamesAtLeastOneOf:
+    token-secret: "secret"
+`,
+		},
+		{
+			name: "ExactlyOneOf constraint violated by specifying both dashed fields",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithDashedNamesExactlyOneOf:
+    token-file: "file"
+    token-secret: "secret"
+`,
+			wantErr: `spec.typeWithDashedNamesExactlyOneOf: Invalid value: exactly one of the fields in [token-file token-secret] must be set`,
+		},
+		{
+			name: "AtLeastOneOf constraint violated by specifying no dashed fields",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithDashedNamesAtLeastOneOf: {}
+`,
+			wantErr: `spec.typeWithDashedNamesAtLeastOneOf: Invalid value: at least one of the fields in [token-file token-secret] must be set`,
+		},
+		{
+			name: "satisfies ExactlyOneOf constraint with reserved word field names",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithReservedWordNamesExactlyOneOf:
+    in: "value"
+`,
+		},
+		{
+			name: "ExactlyOneOf constraint violated by specifying both reserved word fields",
+			obj: `---
+kind: Oneof
+apiVersion: testdata.kubebuilder.io/v1beta1
+metadata:
+  name: test
+spec:
+  typeWithReservedWordNamesExactlyOneOf:
+    in: "value"
+    namespace: "value"
+`,
+			wantErr: `spec.typeWithReservedWordNamesExactlyOneOf: Invalid value: exactly one of the fields in [in namespace] must be set`,
+		},
 	}
 
 	validator, err := newValidator(t.Context(), "./testdata/testdata.kubebuilder.io_oneofs.yaml")

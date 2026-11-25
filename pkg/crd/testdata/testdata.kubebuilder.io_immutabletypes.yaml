@@ -37,6 +37,18 @@ spec:
             type: object
           spec:
             properties:
+              dashed-name:
+                description: CEL rules have to escape the dash in this name.
+                type: string
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
+              in:
+                description: CEL rules have to escape this name, a CEL reserved word.
+                type: string
+                x-kubernetes-validations:
+                - message: field is immutable
+                  rule: self == oldSelf
               mutableString:
                 type: string
               optionalLiteralString:
@@ -141,6 +153,10 @@ spec:
               rule: '!has(oldSelf.optionalSlice) || has(self.optionalSlice)'
             - message: field optionalMap is immutable once set
               rule: '!has(oldSelf.optionalMap) || has(self.optionalMap)'
+            - message: field dashed-name is immutable once set
+              rule: '!has(oldSelf.dashed__dash__name) || has(self.dashed__dash__name)'
+            - message: field in is immutable once set
+              rule: '!has(oldSelf.__in__) || has(self.__in__)'
         required:
         - spec
         type: object
