@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 
 	"golang.org/x/tools/go/packages"
@@ -491,6 +492,8 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	// a loop below
 	cfgDir := cfg.Dir
 
+	var walkRoot string
+
 	// addNestedGoModulesToRoots is given to filepath.WalkDir and adds the
 	// directory part of p to the list of filesystem path roots IFF p is the
 	// path to a file named "go.mod"
@@ -500,6 +503,9 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 		e error) error {
 		if e != nil {
 			return e
+		}
+		if d.IsDir() && p != walkRoot && ignoredByGoCommand(d.Name()) {
+			return filepath.SkipDir
 		}
 		if !d.IsDir() && filepath.Base(p) == "go.mod" {
 			fspRoots = append(fspRoots, filepath.Join(filepath.Dir(p), "..."))
@@ -552,6 +558,7 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 		// there are any nested Go modules we want to add to the list of file-
 		// system path roots to process
 		if b == "..." {
+			walkRoot = d
 			if err := filepath.WalkDir(
 				d,
 				addNestedGoModulesToRoots); err != nil {
@@ -604,6 +611,12 @@ func LoadRootsWithConfig(cfg *packages.Config, roots ...string) ([]*Package, err
 	}
 
 	return l.Roots, nil
+}
+
+// ignoredByGoCommand reports whether "go help packages" excludes directories
+// with this name from "..." patterns.
+func ignoredByGoCommand(name string) bool {
+	return name == "vendor" || name == "testdata" || strings.HasPrefix(name, "_") || strings.HasPrefix(name, ".")
 }
 
 // visitImports walks a dependency graph, replacing imported package
