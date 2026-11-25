@@ -28,6 +28,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
+	"sigs.k8s.io/controller-tools/pkg/internal/crd"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
@@ -707,8 +708,9 @@ func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensio
 		if slices.Contains(props.Required, fieldName) {
 			continue
 		}
+		celName := crd.EscapeCELFieldName(fieldName)
 		props.XValidations = append(props.XValidations, apiextensionsv1.ValidationRule{
-			Rule:    fmt.Sprintf("!has(oldSelf.%s) || has(self.%s)", fieldName, fieldName),
+			Rule:    fmt.Sprintf("!has(oldSelf.%s) || has(self.%s)", celName, celName),
 			Message: fmt.Sprintf("field %s is immutable once set", fieldName),
 		})
 	}

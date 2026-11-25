@@ -74,6 +74,16 @@ type ImmutableSpec struct {
 	// +optional
 	OptionalMap map[string]string `json:"optionalMap,omitempty"`
 
+	// CEL rules have to escape the dash in this name.
+	// +k8s:immutable
+	// +optional
+	DashedName *string `json:"dashed-name,omitempty"`
+
+	// CEL rules have to escape this name, a CEL reserved word.
+	// +k8s:immutable
+	// +optional
+	In *string `json:"in,omitempty"`
+
 	MutableString string `json:"mutableString"`
 }
 

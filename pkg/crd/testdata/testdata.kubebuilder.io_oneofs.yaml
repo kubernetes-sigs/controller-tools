@@ -130,6 +130,31 @@ spec:
                   rule: (has(self.c)?1:0)+(has(self.d)?1:0) == 1
                 - message: at least one of the fields in [e f] must be set
                   rule: has(self.e)||has(self.f)
+              typeWithDashedNamesAtLeastOneOf:
+                description: The rule has to escape the dashes in these names.
+                properties:
+                  token-file:
+                    type: string
+                  token-secret:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: at least one of the fields in [token-file token-secret]
+                    must be set
+                  rule: has(self.token__dash__file)||has(self.token__dash__secret)
+              typeWithDashedNamesExactlyOneOf:
+                description: The rule has to escape the dashes in these names.
+                properties:
+                  token-file:
+                    type: string
+                  token-secret:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [token-file token-secret]
+                    must be set
+                  rule: (has(self.token__dash__file)?1:0)+(has(self.token__dash__secret)?1:0)
+                    == 1
               typeWithMultipleAtLeastOneOf:
                 properties:
                   a:
@@ -176,6 +201,18 @@ spec:
                 x-kubernetes-validations:
                 - message: exactly one of the fields in [a b] must be set
                   rule: (has(self.a)?1:0)+(has(self.b)?1:0) == 1
+              typeWithReservedWordNamesExactlyOneOf:
+                description: The rule has to escape these names, which are CEL reserved
+                  words.
+                properties:
+                  in:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of the fields in [in namespace] must be set
+                  rule: (has(self.__in__)?1:0)+(has(self.__namespace__)?1:0) == 1
             type: object
         required:
         - spec

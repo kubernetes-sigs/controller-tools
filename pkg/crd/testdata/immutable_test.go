@@ -216,5 +216,27 @@ var _ = Describe("Immutable CRD", func() {
 				unstructured.RemoveNestedField(obj.Object, "spec", "optionalMap")
 			},
 		),
+		Entry("dashed name", "test-opt-dashed-name",
+			func(obj *unstructured.Unstructured) {
+				Expect(unstructured.SetNestedField(obj.Object, "first-value", "spec", "dashed-name")).To(Succeed())
+			},
+			func(obj *unstructured.Unstructured) {
+				Expect(unstructured.SetNestedField(obj.Object, "second-value", "spec", "dashed-name")).To(Succeed())
+			},
+			func(obj *unstructured.Unstructured) {
+				unstructured.RemoveNestedField(obj.Object, "spec", "dashed-name")
+			},
+		),
+		Entry("reserved word name", "test-opt-in",
+			func(obj *unstructured.Unstructured) {
+				Expect(unstructured.SetNestedField(obj.Object, "first-value", "spec", "in")).To(Succeed())
+			},
+			func(obj *unstructured.Unstructured) {
+				Expect(unstructured.SetNestedField(obj.Object, "second-value", "spec", "in")).To(Succeed())
+			},
+			func(obj *unstructured.Unstructured) {
+				unstructured.RemoveNestedField(obj.Object, "spec", "in")
+			},
+		),
 	)
 })
