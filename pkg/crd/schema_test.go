@@ -276,6 +276,11 @@ const emptyJSONNamePackage = `
 		Retention RetentionPolicy ` + "`json:\",omitempty\"`" + `
 		Count     int32           ` + "`json:\",omitempty\"`" + `
 	}
+
+	type ArchiveSpec struct {
+		Common ` + "`json:\",omitempty\"`" + `
+		Path   string ` + "`json:\"path\"`" + `
+	}
 `
 
 func Test_Schema_NamedFieldWithEmptyJSONName(t *testing.T) {
@@ -303,4 +308,14 @@ func Test_Schema_NamedFieldWithEmptyJSONName(t *testing.T) {
 	g.Expect(output.Properties).NotTo(gomega.HaveKey("days"))
 	g.Expect(output.Required).To(gomega.Equal([]string{"schedule"}))
 	g.Expect(output.AllOf).To(gomega.HaveLen(1))
+
+	archiveIdent := TypeIdent{Package: pkg, Name: "ArchiveSpec"}
+	parser.NeedSchemaFor(archiveIdent)
+	failIfErrors(t, pkg.Errors)
+
+	archive := parser.Schemata[archiveIdent]
+	g.Expect(archive.Properties).To(gomega.HaveKey("path"))
+	g.Expect(archive.Properties).NotTo(gomega.HaveKey("Common"))
+	g.Expect(archive.Required).To(gomega.Equal([]string{"path"}))
+	g.Expect(archive.AllOf).To(gomega.Equal(output.AllOf))
 }
