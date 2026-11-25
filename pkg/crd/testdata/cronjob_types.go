@@ -36,6 +36,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"testdata.kubebuilder.io/cronjob/externaltypes"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -501,6 +503,25 @@ type CronJobSpec struct {
 	// +optional
 	// +default="TCP"
 	Protocol corev1.Protocol `json:"protocol,omitempty" protobuf:"bytes,4,opt,name=protocol,casttype=Protocol"`
+
+	// This tests that markers which need the schema type apply to a field whose
+	// type is a named string from another package.
+	// +kubebuilder:validation:MaxLength=11
+	// +kubebuilder:validation:Pattern=`^[A-Z]`
+	ExternalNamedString externaltypes.Name `json:"externalNamedString,omitempty"`
+
+	// This tests the same for a named integer from another package.
+	// +kubebuilder:validation:Maximum=1
+	ExternalNamedInteger externaltypes.Count `json:"externalNamedInteger,omitempty"`
+
+	// This tests the same for a pointer to a named integer from another package.
+	// +kubebuilder:validation:Minimum=1
+	ExternalNamedIntegerPointer *externaltypes.Count `json:"externalNamedIntegerPointer,omitempty"`
+
+	// This tests that +k8s:required on a named string from another package
+	// sets minLength, as it does on a string, instead of minProperties.
+	// +k8s:required
+	ExplicitlyRequiredK8sExternalNamedString externaltypes.Name `json:"explicitlyRequiredK8sExternalNamedString,omitempty"`
 
 	// This tests that selectable field.
 	SelectableFieldString string `json:"selectableFieldString,omitempty"`

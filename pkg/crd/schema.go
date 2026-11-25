@@ -450,7 +450,10 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 	}
 }
 
-// namedSchema creates a schema (ref) for an explicitly external type reference.
+// namedToSchema creates a schema for an explicitly external type reference:
+// a $ref to the type, with the type of a named slice, map or basic type, and
+// the format of a basic one, set too, so that field markers which check them
+// also apply.
 func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1.JSONSchemaProps {
 	typeInfoRaw := ctx.pkg.TypesInfo.TypeOf(named)
 	if typeInfoRaw == types.Typ[types.Invalid] {
@@ -465,10 +468,11 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 	typeNameInfo := typeInfo.Obj()
 	typesPkg := typeNameInfo.Pkg()
 	nonVendorPath := loader.NonVendorPath(typesPkg.Path())
-	ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
+	namedSchema := ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
 	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
-	// Set the type for slice and map aliases so field-level markers like +listType
-	// and +mapType can work. Structs are skipped — they use a $ref only.
+	// Set the type for slice, map and basic named types so field-level markers
+	// like +listType, +mapType, MaxLength or Maximum can work. Structs are
+	// skipped, they use a $ref only.
 	props := &apiextensionsv1.JSONSchemaProps{
 		Ref: &link,
 	}
@@ -477,6 +481,12 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 		props.Type = arrayType
 	case *types.Map:
 		props.Type = "object"
+	case *types.Basic:
+		// Take the type and format from the named type, like localNamedToSchema.
+		if namedSchema != nil {
+			props.Type = namedSchema.Type
+			props.Format = namedSchema.Format
+		}
 	}
 	// NB(directxman12): we special-case things like resource.Quantity during the "collapse" phase.
 	return props

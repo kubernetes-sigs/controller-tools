@@ -238,6 +238,12 @@ spec:
                 description: This tests explicitly required k8s fields
                 minLength: 1
                 type: string
+              explicitlyRequiredK8sExternalNamedString:
+                description: |-
+                  This tests that +k8s:required on a named string from another package
+                  sets minLength, as it does on a string, instead of minProperties.
+                minLength: 1
+                type: string
               explicitlyRequiredK8sMap:
                 additionalProperties:
                   type: string
@@ -303,6 +309,25 @@ spec:
                 type: string
               explicitlyRequiredKubernetes:
                 description: This tests explicitly required kubernetes fields
+                type: string
+              externalNamedInteger:
+                description: This tests the same for a named integer from another
+                  package.
+                format: int32
+                maximum: 1
+                type: integer
+              externalNamedIntegerPointer:
+                description: This tests the same for a pointer to a named integer
+                  from another package.
+                format: int32
+                minimum: 1
+                type: integer
+              externalNamedString:
+                description: |-
+                  This tests that markers which need the schema type apply to a field whose
+                  type is a named string from another package.
+                maxLength: 11
+                pattern: ^[A-Z]
                 type: string
               failedJobsHistoryLimit:
                 description: |-
@@ -10760,6 +10785,7 @@ spec:
             - duplicateListMapKey
             - embeddedResource
             - explicitlyRequiredK8s
+            - explicitlyRequiredK8sExternalNamedString
             - explicitlyRequiredK8sMap
             - explicitlyRequiredK8sMapWithMinProperties
             - explicitlyRequiredK8sPointer
