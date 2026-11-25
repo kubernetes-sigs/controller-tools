@@ -18,6 +18,8 @@ package loader_test
 
 import (
 	"os"
+	"path/filepath"
+	"testing/fstest"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -185,6 +187,36 @@ var _ = Describe("Loader parsing root module", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(pkgs).To(HaveLen(1))
 			assertPkgExists(testmodPkg+"/submod1/subdir1", pkgs)
+		})
+	})
+
+	Context("with nested modules in a directory that the go command ignores", func() {
+		var dir string
+		BeforeEach(func() {
+			dir = GinkgoT().TempDir()
+			Expect(os.CopyFS(dir, fstest.MapFS{
+				"go.mod":             {Data: []byte("module example.com/root\n")},
+				"root.go":            {Data: []byte("package root\n")},
+				".hidden/go.mod":     {Data: []byte("module example.com/hidden\n")},
+				".hidden/hidden.go":  {Data: []byte("package hidden\n")},
+				".hidden/sub/go.mod": {Data: []byte("module example.com/sub\n")},
+				".hidden/sub/sub.go": {Data: []byte("package sub\n")},
+			})).To(Succeed())
+		})
+
+		It("should skip them with roots=[<dir>/...]", func() {
+			pkgs, err := loader.LoadRoots(filepath.Join(dir, "..."))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(1))
+			assertPkgExists("example.com/root", pkgs)
+		})
+
+		It("should load them with roots=[<dir>/.hidden/...]", func() {
+			pkgs, err := loader.LoadRoots(filepath.Join(dir, ".hidden", "..."))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pkgs).To(HaveLen(2))
+			assertPkgExists("example.com/hidden", pkgs)
+			assertPkgExists("example.com/sub", pkgs)
 		})
 	})
 })
