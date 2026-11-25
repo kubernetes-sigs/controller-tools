@@ -320,6 +320,64 @@ var _ = Describe("ApplyConfiguration OmitToolVersion", func() {
 	})
 })
 
+var _ = Describe("ApplyConfiguration generation without a package marker", func() {
+	var originalCWD string
+
+	BeforeEach(func() {
+		var tmpDir string
+
+		By("Setting up a temporary directory", func() {
+			var err error
+			tmpDir, err = os.MkdirTemp("", "applyconfiguration-no-package-marker-test")
+			Expect(err).NotTo(HaveOccurred(), "Should be able to create a temporary directory")
+			DeferCleanup(os.RemoveAll, tmpDir)
+
+			Expect(os.CopyFS(tmpDir, os.DirFS(cronjobDir))).To(Succeed(), "Should be able to copy source files")
+			Expect(os.RemoveAll(filepath.Join(tmpDir, "api/v1", applyConfigurationDir))).To(Succeed(), "Should be able to remove generated file from temp directory")
+			Expect(removePackageEnableMarker(filepath.Join(tmpDir, "api/v1"))).To(Succeed(), "Should be able to remove the package marker")
+		})
+
+		By("Switching into testdata to appease go modules", func() {
+			cwd, err := os.Getwd()
+			Expect(err).NotTo(HaveOccurred())
+
+			originalCWD = cwd
+
+			// Cleanups run last-in-first-out, so the working directory is restored before the temporary directory is removed.
+			DeferCleanup(os.Chdir, originalCWD)
+			Expect(os.Chdir(tmpDir)).To(Succeed()) // go modules are directory-sensitive
+		})
+	})
+
+	It("should generate the types that set the type marker and skip packages without a group name", func() {
+		output := make(outputToMap)
+
+		By("Initializing the runtime")
+		optionsRegistry := &markers.Registry{}
+		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
+
+		rt, err := genall.FromOptions(optionsRegistry, []string{
+			"applyconfiguration:externalApplyConfigurations=sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/external.ExternalData@sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/externalac",
+			"paths=./...",
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		rt.OutputRules = genall.OutputRules{Default: output}
+
+		By("Running the generator")
+		Expect(rt.Run()).To(BeFalse(), "Generator should run without errors")
+
+		generatedDir := filepath.Join("api/v1", applyConfigurationDir, "api/v1")
+
+		_, err = os.Stat(filepath.Join(generatedDir, "nomarkerjob.go"))
+		Expect(err).NotTo(HaveOccurred(), "NoMarkerJob opts in with the type marker and should be generated")
+
+		_, err = os.Stat(filepath.Join(generatedDir, "cronjob.go"))
+		Expect(os.IsNotExist(err)).To(BeTrue(), "CronJob does not opt in with the type marker and should not be generated")
+	})
+})
+
 func replaceOutputPkgMarker(dir string, newOutputPackage string) error {
 	f, err := os.Open(filepath.Join(dir, "groupversion_info.go"))
 	if err != nil {
@@ -335,6 +393,23 @@ func replaceOutputPkgMarker(dir string, newOutputPackage string) error {
 	newData := strings.Replace(string(data), "// +kubebuilder:ac:output:package=\"applyconfiguration\"", fmt.Sprintf("// +kubebuilder:ac:output:package=\"%s\"", newOutputPackage), 1)
 
 	if err := os.WriteFile(filepath.Join(dir, "groupversion_info.go"), []byte(newData), 0644); err != nil {
+		return fmt.Errorf("error writing groupversion_info.go: %w", err)
+	}
+
+	return nil
+}
+
+func removePackageEnableMarker(dir string) error {
+	path := filepath.Join(dir, "groupversion_info.go")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("error reading groupversion_info.go: %w", err)
+	}
+
+	newData := strings.Replace(string(data), "// +kubebuilder:ac:generate=true\n", "", 1)
+
+	if err := os.WriteFile(path, []byte(newData), 0644); err != nil {
 		return fmt.Errorf("error writing groupversion_info.go: %w", err)
 	}
 
