@@ -31,54 +31,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/markers"
 )
 
-func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
-	// this is *very* hacky but I haven’t found a simple way
-	// to get an ast.Expr with all the associated metadata required
-	// to run typeToSchema upon it:
-
-	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
-	modules := []pkgstest.Module{
-		{
-			Name: moduleName,
-			Files: map[string]any{
-				"test.go": `
-				package crd 
-				type Test ` + expr,
-			},
-		},
-	}
-
-	pkgs, exported, err := testloader.LoadFakeRoots(pkgstest.Modules, modules, moduleName)
-	if exported != nil {
-		t.Cleanup(exported.Cleanup)
-	}
-
-	if err != nil {
-		t.Fatalf("unable to load fake package: %s", err)
-	}
-
-	if len(pkgs) != 1 {
-		t.Fatal("expected to parse only one package")
-	}
-
-	pkg := pkgs[0]
-	pkg.NeedTypesInfo()
-	failIfErrors(t, pkg.Errors)
-
-	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
-	// yick: grab the only type definition
-	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
-	result := typeToSchema(schemaContext, definedType)
-	failIfErrors(t, pkg.Errors)
-	return result
-}
-
-// transformPackage loads pkgContents as a fake package and returns the schema
-// produced for the type definition named typeName, together with the package so
-// callers can inspect (or assert) any errors raised during schema generation.
-// Unlike transform, it does not fail the test when schema generation errors,
-// which lets negative cases assert that an error was produced.
-func transformPackage(t *testing.T, pkgContents, typeName string) (*apiextensionsv1.JSONSchemaProps, *loader.Package) {
+func loadFakePackage(t *testing.T, pkgContents string) *loader.Package {
 	moduleName := "sigs.k8s.io/controller-tools/pkg/crd"
 	modules := []pkgstest.Module{
 		{
@@ -102,7 +55,35 @@ func transformPackage(t *testing.T, pkgContents, typeName string) (*apiextension
 		t.Fatal("expected to parse only one package")
 	}
 
-	pkg := pkgs[0]
+	return pkgs[0]
+}
+
+func transform(t *testing.T, expr string) *apiextensionsv1.JSONSchemaProps {
+	// this is *very* hacky but I haven’t found a simple way
+	// to get an ast.Expr with all the associated metadata required
+	// to run typeToSchema upon it:
+
+	pkg := loadFakePackage(t, `
+				package crd 
+				type Test `+expr)
+	pkg.NeedTypesInfo()
+	failIfErrors(t, pkg.Errors)
+
+	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
+	// yick: grab the only type definition
+	definedType := pkg.Syntax[0].Decls[0].(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Type
+	result := typeToSchema(schemaContext, definedType)
+	failIfErrors(t, pkg.Errors)
+	return result
+}
+
+// transformPackage loads pkgContents as a fake package and returns the schema
+// produced for the type definition named typeName, together with the package so
+// callers can inspect (or assert) any errors raised during schema generation.
+// Unlike transform, it does not fail the test when schema generation errors,
+// which lets negative cases assert that an error was produced.
+func transformPackage(t *testing.T, pkgContents, typeName string) (*apiextensionsv1.JSONSchemaProps, *loader.Package) {
+	pkg := loadFakePackage(t, pkgContents)
 	pkg.NeedTypesInfo()
 
 	schemaContext := newSchemaContext(pkg, nil, true, false).ForInfo(&markers.TypeInfo{})
@@ -276,4 +257,65 @@ func (m *testapplyFirstMarker) ApplyFirst() {}
 func (m *testapplyFirstMarker) ApplyToSchema(*crdmarkers.SchemaContext, *apiextensionsv1.JSONSchemaProps) error {
 	m.callback()
 	return nil
+}
+
+const emptyJSONNamePackage = `
+	package crd
+
+	type RetentionPolicy struct {
+		Days int32 ` + "`json:\"days,omitempty\"`" + `
+	}
+
+	type Common struct {
+		Owner string ` + "`json:\"owner,omitempty\"`" + `
+	}
+
+	type BackupSpec struct {
+		Common    ` + "`json:\",inline\"`" + `
+		Schedule  string          ` + "`json:\"schedule\"`" + `
+		Retention RetentionPolicy ` + "`json:\",omitempty\"`" + `
+		Count     int32           ` + "`json:\",omitempty\"`" + `
+	}
+
+	type ArchiveSpec struct {
+		Common ` + "`json:\",omitempty\"`" + `
+		Path   string ` + "`json:\"path\"`" + `
+	}
+`
+
+func Test_Schema_NamedFieldWithEmptyJSONName(t *testing.T) {
+	g := gomega.NewWithT(t)
+
+	pkg := loadFakePackage(t, emptyJSONNamePackage)
+
+	reg := &markers.Registry{}
+	g.Expect(crdmarkers.Register(reg)).To(gomega.Succeed())
+	parser := &Parser{
+		Collector: &markers.Collector{Registry: reg},
+		Checker:   &loader.TypeChecker{},
+	}
+
+	ident := TypeIdent{Package: pkg, Name: "BackupSpec"}
+	parser.NeedSchemaFor(ident)
+	failIfErrors(t, pkg.Errors)
+
+	output := parser.Schemata[ident]
+	g.Expect(output.Properties).To(gomega.HaveKey("Retention"))
+	g.Expect(output.Properties).To(gomega.HaveKey("schedule"))
+	g.Expect(output.Properties).To(gomega.HaveKey("Count"))
+	g.Expect(output.Properties["Count"].Type).To(gomega.Equal("integer"))
+	g.Expect(output.Properties["Count"].Format).To(gomega.Equal("int32"))
+	g.Expect(output.Properties).NotTo(gomega.HaveKey("days"))
+	g.Expect(output.Required).To(gomega.Equal([]string{"schedule"}))
+	g.Expect(output.AllOf).To(gomega.HaveLen(1))
+
+	archiveIdent := TypeIdent{Package: pkg, Name: "ArchiveSpec"}
+	parser.NeedSchemaFor(archiveIdent)
+	failIfErrors(t, pkg.Errors)
+
+	archive := parser.Schemata[archiveIdent]
+	g.Expect(archive.Properties).To(gomega.HaveKey("path"))
+	g.Expect(archive.Properties).NotTo(gomega.HaveKey("Common"))
+	g.Expect(archive.Required).To(gomega.Equal([]string{"path"}))
+	g.Expect(archive.AllOf).To(gomega.Equal(output.AllOf))
 }
