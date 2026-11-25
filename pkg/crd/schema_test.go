@@ -173,6 +173,67 @@ func Test_Schema_MapOfNonStringKey(t *testing.T) {
 	g.Expect(pkg.Errors[0].Msg).To(gomega.ContainSubstring("map keys must be strings"))
 }
 
+const aliasKeyPackage = `
+	package crd
+
+	// textKey implements encoding.TextMarshaler, so it is a valid map key.
+	type textKey struct{}
+
+	func (textKey) MarshalText() ([]byte, error) { return nil, nil }
+
+	// nonStringKey is a struct that does not implement encoding.TextMarshaler.
+	type nonStringKey struct{}
+
+	// stringAlias and textKeyAlias resolve to valid map key types.
+	type stringAlias = string
+	type textKeyAlias = textKey
+
+	// intAlias and nonStringKeyAlias resolve to invalid map key types.
+	type intAlias = int
+	type nonStringKeyAlias = nonStringKey
+
+	type AliasKeyMap map[stringAlias]string
+	type TextMarshalerAliasKeyMap map[textKeyAlias]string
+	type IntAliasKeyMap map[intAlias]string
+	type NonStringAliasKeyMap map[nonStringKeyAlias]string
+`
+
+// Test_Schema_MapOfAliasKey verifies that a map keyed by a type alias to string
+// or to a type that implements encoding.TextMarshaler is accepted.
+func Test_Schema_MapOfAliasKey(t *testing.T) {
+	for _, typeName := range []string{"AliasKeyMap", "TextMarshalerAliasKeyMap"} {
+		t.Run(typeName, func(t *testing.T) {
+			g := gomega.NewWithT(t)
+
+			output, pkg := transformPackage(t, aliasKeyPackage, typeName)
+			failIfErrors(t, pkg.Errors)
+			g.Expect(output).To(gomega.Equal(&apiextensionsv1.JSONSchemaProps{
+				Type: "object",
+				AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
+					Allows: true,
+					Schema: &apiextensionsv1.JSONSchemaProps{
+						Type: "string",
+					},
+				},
+			}))
+		})
+	}
+}
+
+// Test_Schema_MapOfNonStringAliasKey verifies that a map keyed by a type alias
+// to a non-string type is still rejected.
+func Test_Schema_MapOfNonStringAliasKey(t *testing.T) {
+	for _, typeName := range []string{"IntAliasKeyMap", "NonStringAliasKeyMap"} {
+		t.Run(typeName, func(t *testing.T) {
+			g := gomega.NewWithT(t)
+
+			_, pkg := transformPackage(t, aliasKeyPackage, typeName)
+			g.Expect(pkg.Errors).ToNot(gomega.BeEmpty())
+			g.Expect(pkg.Errors[0].Msg).To(gomega.ContainSubstring("map keys must be strings"))
+		})
+	}
+}
+
 func failIfErrors(t *testing.T, errs []packages.Error) {
 	if len(errs) > 0 {
 		msgs := make([]string, 0, len(errs))
