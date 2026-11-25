@@ -41,6 +41,9 @@ const (
 
 	// arrayType is the JSON schema type for arrays.
 	arrayType = "array"
+
+	// objectType is the JSON schema type for objects.
+	objectType = "object"
 )
 
 // byteType is the types.Type for byte (see the types documention
@@ -63,7 +66,6 @@ type applyFirstMarker interface {
 // schemaRequester knows how to marker that another schema (e.g. via an external reference) is necessary.
 type schemaRequester interface {
 	NeedSchemaFor(typ TypeIdent)
-	LookupType(pkg *loader.Package, name string) *markers.TypeInfo
 	// schemaFor returns the schema generated for the given type, if any.
 	schemaFor(typ TypeIdent) (apiextensionsv1.JSONSchemaProps, bool)
 }
@@ -417,33 +419,8 @@ func localNamedToSchema(ctx *schemaContext, ident *ast.Ident) *apiextensionsv1.J
 		if pkg == ctx.pkg.Types {
 			pkgPath = ""
 		}
-		ctx.requestSchemaWithPkg(pkgPath, typeNameInfo.Name(), pkg)
-		link := TypeRefLink(pkgPath, typeNameInfo.Name())
-
-		props := &apiextensionsv1.JSONSchemaProps{
-			Ref: &link,
-		}
-
-		// Set the type for slice and map aliases so field-level markers like +listType
-		// and +mapType can work. Structs are skipped — they use a $ref only.
-		// Go 1.23+ (gotypesalias=1) represents `type Foo = []T` as *types.Alias, so
-		// unalias first to reach the real underlying type.
-		switch types.Unalias(typeInfo.(types.Type)).Underlying().(type) {
-		case *types.Slice:
-			props.Type = arrayType
-		case *types.Map:
-			//nolint:goconst
-			props.Type = "object"
-		case *types.Basic:
-			// We don't want/need to do this for structs, maps, or arrays.
-			// These are already handled in infoToSchema if they have custom marshalling.
-			namedTypeInfo := ctx.schemaRequester.LookupType(ctx.pkg, typeNameInfo.Name())
-			namedSchema := infoToSchema(ctx.ForInfo(namedTypeInfo))
-			props.Type = namedSchema.Type
-			props.Format = namedSchema.Format
-		}
-
-		return props
+		namedSchema := ctx.requestSchemaWithPkg(pkgPath, typeNameInfo.Name(), pkg)
+		return refToSchema(namedSchema, TypeRefLink(pkgPath, typeNameInfo.Name()))
 	default:
 		ctx.pkg.AddError(loader.ErrFromNode(fmt.Errorf("unsupported type %T for identifier %s", typeInfo, ident.Name), ident))
 		return &apiextensionsv1.JSONSchemaProps{}
@@ -465,20 +442,21 @@ func namedToSchema(ctx *schemaContext, named *ast.SelectorExpr) *apiextensionsv1
 	typeNameInfo := typeInfo.Obj()
 	typesPkg := typeNameInfo.Pkg()
 	nonVendorPath := loader.NonVendorPath(typesPkg.Path())
-	ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
-	link := TypeRefLink(nonVendorPath, typeNameInfo.Name())
-	// Set the type for slice and map aliases so field-level markers like +listType
-	// and +mapType can work. Structs are skipped — they use a $ref only.
+	namedSchema := ctx.requestSchemaWithPkg(nonVendorPath, typeNameInfo.Name(), typesPkg)
+	return refToSchema(namedSchema, TypeRefLink(nonVendorPath, typeNameInfo.Name()))
+}
+
+// refToSchema returns a $ref to a named type, with the type and format of the
+// named type's schema. Field markers like +listType need the type, and it must
+// match the named type when the $ref is flattened.
+func refToSchema(namedSchema *apiextensionsv1.JSONSchemaProps, link string) *apiextensionsv1.JSONSchemaProps {
 	props := &apiextensionsv1.JSONSchemaProps{
 		Ref: &link,
 	}
-	switch typeInfoRaw.Underlying().(type) {
-	case *types.Slice:
-		props.Type = arrayType
-	case *types.Map:
-		props.Type = "object"
+	if namedSchema != nil {
+		props.Type = namedSchema.Type
+		props.Format = namedSchema.Format
 	}
-	// NB(directxman12): we special-case things like resource.Quantity during the "collapse" phase.
 	return props
 }
 
@@ -557,7 +535,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 	}
 
 	return &apiextensionsv1.JSONSchemaProps{
-		Type: "object",
+		Type: objectType,
 		AdditionalProperties: &apiextensionsv1.JSONSchemaPropsOrBool{
 			Schema: valSchema,
 			Allows: true, /* set automatically by serialization, but useful for testing */
@@ -571,7 +549,7 @@ func mapToSchema(ctx *schemaContext, mapType *ast.MapType) *apiextensionsv1.JSON
 //nolint:gocyclo
 func structToSchema(ctx *schemaContext, structType *ast.StructType) *apiextensionsv1.JSONSchemaProps {
 	props := &apiextensionsv1.JSONSchemaProps{
-		Type:       "object",
+		Type:       objectType,
 		Properties: make(map[string]apiextensionsv1.JSONSchemaProps),
 	}
 

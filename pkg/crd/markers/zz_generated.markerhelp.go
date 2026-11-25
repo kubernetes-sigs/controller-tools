@@ -212,7 +212,7 @@ func (ListMapKey) Help() *markers.DefinitionHelp {
 		Category: "CRD processing",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the keys to map listTypes.",
-			Details: "It indicates the index of a map list. They can be repeated if multiple keys\nmust be used. It can only be used when ListType is set to map, and the keys\nshould be scalar types.\n\nExamples:\n\n\t// Single key\n\t// +listType=map\n\t// +listMapKey=name\n\tContainers []Container\n\n\t// Composite key (multiple keys)\n\t// +listType=map\n\t// +listMapKey=name\n\t// +listMapKey=protocol\n\tPorts []Port",
+			Details: "It indicates the index of a map list. They can be repeated if multiple keys\nmust be used. It can only be used when ListType is set to map, and the keys\nshould be scalar types.\n\nIt can also be set on a field of a named slice type, with +listType=map.\n\nExamples:\n\n\t// Single key\n\t// +listType=map\n\t// +listMapKey=name\n\tContainers []Container\n\n\t// Composite key (multiple keys)\n\t// +listType=map\n\t// +listMapKey=name\n\t// +listMapKey=protocol\n\tPorts []Port\n\n\t// A field can set its own keys\n\t// type Ports []Port\n\t// +listType=map\n\t// +listMapKey=protocol\n\tProtocolPorts Ports",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -223,7 +223,7 @@ func (ListType) Help() *markers.DefinitionHelp {
 		Category: "CRD processing",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the type of data-structure that the list",
-			Details: "represents (map, set, atomic).\n\nThis is important for Server-Side Apply to correctly merge list updates.\n\nPossible data-structure types of a list are:\n\n  - \"map\": it needs to have a key field, which will be used to build an\n    associative list. A typical example is a the pod container list,\n    which is indexed by the container name.\n\n  - \"set\": Fields need to be \"scalar\", and there can be only one\n    occurrence of each.\n\n  - \"atomic\": All the fields in the list are treated as a single value,\n    are typically manipulated together by the same actor.\n\nExamples:\n\n\t// Map list (associative list) - items are merged by key\n\t// +listType=map\n\t// +listMapKey=name\n\tContainers []Container\n\n\t// Set list - items must be unique scalars\n\t// +listType=set\n\tTags []string\n\n\t// Atomic list - entire list is replaced on update\n\t// +listType=atomic\n\tArgs []string",
+			Details: "represents (map, set, atomic).\n\nThis is important for Server-Side Apply to correctly merge list updates.\n\nPossible data-structure types of a list are:\n\n  - \"map\": it needs to have a key field, which will be used to build an\n    associative list. A typical example is a the pod container list,\n    which is indexed by the container name.\n\n  - \"set\": Fields need to be \"scalar\", and there can be only one\n    occurrence of each.\n\n  - \"atomic\": All the fields in the list are treated as a single value,\n    are typically manipulated together by the same actor.\n\nIt can be set on a type, a slice field, or a field of a named slice type.\n\nExamples:\n\n\t// Map list (associative list) - items are merged by key\n\t// +listType=map\n\t// +listMapKey=name\n\tContainers []Container\n\n\t// Set list - items must be unique scalars\n\t// +listType=set\n\tTags []string\n\n\t// Atomic list - entire list is replaced on update\n\t// +listType=atomic\n\tArgs []string\n\n\t// A field can set its own list type\n\t// type Ports []Port\n\t// +listType=atomic\n\tExposedPorts Ports",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -234,7 +234,7 @@ func (MapType) Help() *markers.DefinitionHelp {
 		Category: "CRD processing",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the level of atomicity of the map;",
-			Details: "i.e. whether each item in the map is independent of the others,\nor all fields are treated as a single unit.\n\nThis is important for Server-Side Apply to correctly merge map updates.\n\nPossible values:\n\n  - \"granular\": items in the map are independent of each other,\n    and can be manipulated by different actors.\n    This is the default behavior.\n\n  - \"atomic\": all fields are treated as one unit.\n    Any changes have to replace the entire map.\n\nExamples:\n\n\t// Granular map (default) - individual keys can be updated independently\n\t// +mapType=granular\n\tLabels map[string]string\n\n\t// Atomic map - entire map is replaced on update\n\t// +mapType=atomic\n\tConfig map[string]string",
+			Details: "i.e. whether each item in the map is independent of the others,\nor all fields are treated as a single unit.\n\nThis is important for Server-Side Apply to correctly merge map updates.\n\nPossible values:\n\n  - \"granular\": items in the map are independent of each other,\n    and can be manipulated by different actors.\n    This is the default behavior.\n\n  - \"atomic\": all fields are treated as one unit.\n    Any changes have to replace the entire map.\n\nIt can be set on a type, a map field, or a field of a named map type.\n\nExamples:\n\n\t// Granular map (default) - individual keys can be updated independently\n\t// +mapType=granular\n\tLabels map[string]string\n\n\t// Atomic map - entire map is replaced on update\n\t// +mapType=atomic\n\tConfig map[string]string",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -245,7 +245,7 @@ func (MaxItems) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the maximum length for this list.",
-			Details: "Example:\n\n\t// +kubebuilder:validation:MaxItems=10\n\tItems []string",
+			Details: "It can be set on a type, a slice field, or a field of a named slice type.\n\nExample:\n\n\t// +kubebuilder:validation:MaxItems=10\n\tItems []string",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -267,7 +267,7 @@ func (MaxProperties) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "restricts the number of keys in an object",
-			Details: "Example:\n\n\t// +kubebuilder:validation:MaxProperties=10\n\tLabels map[string]string",
+			Details: "It can be set on a type, a map field, or a field of a named map type.\n\nExample:\n\n\t// +kubebuilder:validation:MaxProperties=10\n\tLabels map[string]string",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -309,7 +309,7 @@ func (MinItems) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies the minimum length for this list.",
-			Details: "Example:\n\n\t// +kubebuilder:validation:MinItems=1\n\tEndpoints []string",
+			Details: "It can be set on a type, a slice field, or a field of a named slice type.\n\nExample:\n\n\t// +kubebuilder:validation:MinItems=1\n\tEndpoints []string",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
@@ -331,7 +331,7 @@ func (MinProperties) Help() *markers.DefinitionHelp {
 		Category: "CRD validation",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "restricts the number of keys in an object",
-			Details: "Example:\n\n\t// +kubebuilder:validation:MinProperties=1\n\tMetadata map[string]string",
+			Details: "It can be set on a type, a map field, or a field of a named map type.\n\nExample:\n\n\t// +kubebuilder:validation:MinProperties=1\n\tMetadata map[string]string",
 		},
 		FieldHelp: map[string]markers.DetailedHelp{},
 	}
