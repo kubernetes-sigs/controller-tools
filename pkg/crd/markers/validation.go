@@ -665,7 +665,7 @@ func (m Immutable) ApplyToSchema(_ *SchemaContext, schema *apiextensionsv1.JSONS
 }
 
 func hasNumericType(schema *apiextensionsv1.JSONSchemaProps) bool {
-	return schema.Type == string(Integer) || schema.Type == string(Number)
+	return schema.Type == string(Integer) || schema.Type == string(Number) || schema.XIntOrString
 }
 
 func hasTextualType(schema *apiextensionsv1.JSONSchemaProps) bool {
@@ -791,7 +791,7 @@ func (m Maximum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONS
 		return fmt.Errorf("must apply maximum to a numeric value, found %s", schema.Type)
 	}
 
-	if schema.Type == string(Integer) && !isIntegral(m.Value()) {
+	if (schema.Type == string(Integer) || schema.XIntOrString) && !isIntegral(m.Value()) {
 		return fmt.Errorf("cannot apply non-integral maximum validation (%v) to integer value", m.Value())
 	}
 
@@ -805,7 +805,7 @@ func (m Minimum) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JSONS
 		return fmt.Errorf("must apply minimum to a numeric value, found %s", schema.Type)
 	}
 
-	if schema.Type == "integer" && !isIntegral(m.Value()) {
+	if (schema.Type == "integer" || schema.XIntOrString) && !isIntegral(m.Value()) {
 		return fmt.Errorf("cannot apply non-integral minimum validation (%v) to integer value", m.Value())
 	}
 
@@ -836,7 +836,7 @@ func (m MultipleOf) ApplyToSchema(ctx *SchemaContext, schema *apiextensionsv1.JS
 		return fmt.Errorf("must apply multipleof to a numeric value, found %s", schema.Type)
 	}
 
-	if schema.Type == "integer" && !isIntegral(m.Value()) {
+	if (schema.Type == "integer" || schema.XIntOrString) && !isIntegral(m.Value()) {
 		return fmt.Errorf("cannot apply non-integral multipleof validation (%v) to integer value", m.Value())
 	}
 
