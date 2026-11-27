@@ -233,6 +233,45 @@ var _ = Describe("ApplyConfiguration generation from API types", func() {
 		Entry("with the an alternative output package", "other"),
 		Entry("with a package outside of the current directory", "../../clients"),
 	)
+
+	// Each entry covers a code-generator bug. Once controller-tools uses a code-generator
+	// with the fix, the entry has to be moved to a test that checks the generated output.
+	DescribeTable("should fail to generate apply configurations that applyconfiguration-gen would break", func(pkgPath string, expectedErrs []string, unexpected string) {
+		By("Initializing the runtime")
+		optionsRegistry := &markers.Registry{}
+		Expect(genall.RegisterOptionsMarkers(optionsRegistry)).To(Succeed())
+		Expect(optionsRegistry.Register(markers.Must(markers.MakeDefinition("applyconfiguration", markers.DescribesPackage, Generator{})))).To(Succeed())
+
+		rt, err := genall.FromOptions(optionsRegistry, []string{"applyconfiguration", "paths=" + pkgPath})
+		Expect(err).NotTo(HaveOccurred())
+
+		errOut := &strings.Builder{}
+		rt.ErrorWriter = errOut
+		rt.OutputRules = genall.OutputRules{Default: make(outputToMap)}
+
+		By("Running the generator")
+		Expect(rt.Run()).To(BeTrue(), "Generator should fail")
+
+		By("Checking the generation errors")
+		for _, expectedErr := range expectedErrs {
+			Expect(errOut.String()).To(ContainSubstring(expectedErr))
+		}
+		Expect(errOut.String()).NotTo(ContainSubstring(unexpected))
+		Expect(filepath.Join(pkgPath, applyConfigurationDir)).NotTo(BeADirectory(), "No apply configurations should be generated")
+	},
+		Entry("for an embedded unexported struct", "./invalid/unexportedembed/v1", []string{
+			"type sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/invalid/unexportedembed/v1.Network embeds the unexported type common",
+			"https://github.com/kubernetes/kubernetes/issues/143414",
+		}, "WidgetSpec"),
+		Entry("for a struct with custom JSON methods that is not serialized as an object", "./invalid/customjson/v1", []string{
+			"type sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/invalid/customjson/v1.Address has a custom MarshalJSON method and +kubebuilder:validation:Type=string",
+			"https://github.com/kubernetes/kubernetes/issues/143415",
+		}, "Interval"),
+		Entry("for a field that shadows a promoted field", "./invalid/shadowedfield/v1", []string{
+			"field Enabled of type sigs.k8s.io/controller-tools/pkg/applyconfiguration/testdata/cronjob/invalid/shadowedfield/v1.Override shadows the promoted field Base.Enabled",
+			"https://github.com/kubernetes/kubernetes/issues/143416",
+		}, "FieldFirst"),
+	)
 })
 
 var _ = Describe("ApplyConfiguration OmitToolVersion", func() {

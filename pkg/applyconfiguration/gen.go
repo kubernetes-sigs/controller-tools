@@ -298,6 +298,10 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 		return err
 	}
 
+	if err := ctx.checkUnsupportedTypes(root, pkg); err != nil {
+		return err
+	}
+
 	schemaFile, err := ctx.buildOpenAPISchema(root, gv)
 	if err != nil {
 		return fmt.Errorf("failed to build OpenAPI schema: %w", err)
