@@ -38,7 +38,7 @@ import (
 // namedType entries in the structured-merge-diff schema. The definition keys
 // match the convention used by code-generator (via kube-openapi
 // util.ToRESTFriendlyName).
-func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.GroupVersion) (string, error) {
+func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.GroupVersion, packageMarkerSet bool) (string, error) {
 	p := &crd.Parser{
 		Collector:              ctx.Collector,
 		Checker:                ctx.Checker,
@@ -69,7 +69,7 @@ func (ctx *ObjectGenCtx) buildOpenAPISchema(root *loader.Package, gv schema.Grou
 	// $ref references in the schemas.
 	crdTypeSet := make(map[string]bool)
 	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
-		if !enabledOnType(info) {
+		if !enabledOnType(info, packageMarkerSet) {
 			return
 		}
 		crdTypeSet[info.Name] = true

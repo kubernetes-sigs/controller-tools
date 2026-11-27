@@ -102,7 +102,7 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	into.AddHelp(isCRDMarker,
 		markers.SimpleHelp("apply", "enables apply configuration generation for this type"))
 	into.AddHelp(
-		enableTypeMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfiguration generation for the type, can be used to generate applyconfiguration for a single type when the package generation is disabled, or to disable generation for a single type when the package generation is enabled"))
+		enableTypeMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfiguration generation for the type, can be used to generate applyconfiguration for a single type when the package has no kubebuilder:ac:generate marker, or to disable generation for a single type when the package generation is enabled"))
 	into.AddHelp(
 		enablePkgMarker, markers.SimpleHelp("apply", "overrides enabling or disabling applyconfiguration generation for the package"))
 	into.AddHelp(
@@ -110,23 +110,45 @@ func (Generator) RegisterMarkers(into *markers.Registry) error {
 	return nil
 }
 
-func enabledOnPackage(col *markers.Collector, pkg *loader.Package) (bool, error) {
+// enabledOnPackage reports whether the package enables applyconfiguration
+// generation and whether the package marker is set at all.
+func enabledOnPackage(col *markers.Collector, pkg *loader.Package) (enabled bool, markerSet bool, err error) {
 	pkgMarkers, err := markers.PackageMarkers(col, pkg)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
 	pkgMarker := pkgMarkers.Get(enablePkgMarker.Name)
 	if pkgMarker != nil {
-		return pkgMarker.(bool), nil
+		return pkgMarker.(bool), true, nil
 	}
-	return false, nil
+	return false, false, nil
 }
 
-func enabledOnType(info *markers.TypeInfo) bool {
+// enabledOnType reports whether applyconfiguration generation is enabled for
+// the type. Without a package marker only types that opt in explicitly with
+// the type marker are generated; an explicit package marker keeps the
+// resource marker as the default.
+func enabledOnType(info *markers.TypeInfo, packageMarkerSet bool) bool {
 	if typeMarker := info.Markers.Get(enableTypeMarker.Name); typeMarker != nil {
 		return typeMarker.(bool)
 	}
+	if !packageMarkerSet {
+		return false
+	}
 	return isCRD(info)
+}
+
+// hasOptedInType reports whether at least one type in the package sets the type
+// marker to true. Without a package marker only those types are generated, so
+// packages that opt in nowhere are skipped before group name detection.
+func hasOptedInType(col *markers.Collector, pkg *loader.Package) (bool, error) {
+	found := false
+	err := markers.EachType(col, pkg, func(info *markers.TypeInfo) {
+		if typeMarker := info.Markers.Get(enableTypeMarker.Name); typeMarker != nil && typeMarker.(bool) {
+			found = true
+		}
+	})
+	return found, err
 }
 
 func outputPkg(col *markers.Collector, pkg *loader.Package) string {
@@ -220,12 +242,25 @@ type ObjectGenCtx struct {
 // generateForPackage generates apply configuration implementations for
 // types in the given package, writing the formatted result to given writer.
 func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
-	enabled, _ := enabledOnPackage(ctx.Collector, root)
-	if !enabled {
+	enabled, packageMarkerSet, err := enabledOnPackage(ctx.Collector, root)
+	if err != nil || (packageMarkerSet && !enabled) {
 		return nil
 	}
 	if len(root.GoFiles) == 0 {
 		return nil
+	}
+
+	// Without a package marker the package is only relevant when a type opts in;
+	// skip it otherwise so packages without a group name (cmd/, internal/, ...)
+	// are never routed through group name detection.
+	if !packageMarkerSet {
+		optedIn, err := hasOptedInType(ctx.Collector, root)
+		if err != nil {
+			return err
+		}
+		if !optedIn {
+			return nil
+		}
 	}
 
 	arguments := args.New()
@@ -274,7 +309,7 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 	// For each type we think should be generated, make sure it has a genclient
 	// marker else the apply generator will not generate it.
 	if err := markers.EachType(ctx.Collector, root, func(info *markers.TypeInfo) {
-		if !enabledOnType(info) {
+		if !enabledOnType(info, packageMarkerSet) {
 			return
 		}
 
@@ -298,7 +333,7 @@ func (ctx *ObjectGenCtx) generateForPackage(root *loader.Package) error {
 		return err
 	}
 
-	schemaFile, err := ctx.buildOpenAPISchema(root, gv)
+	schemaFile, err := ctx.buildOpenAPISchema(root, gv, packageMarkerSet)
 	if err != nil {
 		return fmt.Errorf("failed to build OpenAPI schema: %w", err)
 	}
