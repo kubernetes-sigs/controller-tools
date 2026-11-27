@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	infoMarkerName = "k8s:controller-gen:metrics:info"
+	infoMarkerName = "k8s:controller-gen:state-metrics:info"
 )
 
 func init() {
@@ -36,7 +36,7 @@ func init() {
 	)
 }
 
-// +controllertools:marker:generateHelp:category=Metric type Info
+// +controllertools:marker:generateHelp:category=State metrics
 
 // infoMarker defines a Info metric and uses the implicit path to the field as path for the metric configuration.
 // Info is a metric which is used to expose textual information.
@@ -50,7 +50,7 @@ type infoMarker struct {
 	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 
 	// MetricHelp specifies the help text for the metric.
-	MetricHelp string `marker:"help,optional"`
+	MetricHelp string `marker:"help"`
 
 	// Keys from the MetricMeta struct.
 

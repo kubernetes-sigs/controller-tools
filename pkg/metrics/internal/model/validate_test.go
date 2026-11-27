@@ -23,6 +23,8 @@ import (
 
 func TestResource_Validate(t *testing.T) {
 	label := func(name string) []Label { return []Label{{Name: name, Path: Path{"x"}}} }
+	// noHelp is set as help of a generator to test a generator without help.
+	const noHelp = "<none>"
 
 	tests := []struct {
 		name string
@@ -66,10 +68,10 @@ func TestResource_Validate(t *testing.T) {
 			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindMap, Labels: label("a")},
 			wantErrPart: "a Gauge metric on a map doesn't support labels",
 		},
-		{name: "stateset on a map without labels", generator: Generator{Type: MetricTypeStateSet, PathKind: PathKindMap}},
+		{name: "stateset on a map without labels", generator: Generator{Type: MetricTypeStateSet, PathKind: PathKindMap, LabelName: "state"}},
 		{
 			name:        "stateset on a map with a label",
-			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindMap, Labels: label("a")},
+			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindMap, LabelName: "state", Labels: label("a")},
 			wantErrPart: "a StateSet metric on a map doesn't support labels",
 		},
 		{
@@ -87,10 +89,51 @@ func TestResource_Validate(t *testing.T) {
 			generator:   Generator{Type: MetricTypeGauge, PathKind: PathKindScalar, MissingAsZero: true, IgnoreMissing: true},
 			wantErrPart: "missingAsZero and ignoreMissing are mutually exclusive",
 		},
+		{name: "name starting with a digit", generator: Generator{Name: "1foo", Type: MetricTypeInfo, PathKind: PathKindScalar}},
+		{
+			name:        "name has to match the pattern",
+			generator:   Generator{Name: "foo-info", Type: MetricTypeInfo, PathKind: PathKindScalar},
+			wantErrPart: `metric "foo-info" of example.io_v1_Foo: the name has to match`,
+		},
+		{
+			name:        "help is required",
+			generator:   Generator{Help: noHelp, Type: MetricTypeInfo, PathKind: PathKindScalar},
+			wantErrPart: "the help has to be set",
+		},
+		{
+			name:        "empty state label",
+			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindScalar, States: []string{"a"}},
+			wantErrPart: "the name of the label of the option labelName must not be empty",
+		},
+		{
+			name:        "duplicate label in a metric",
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindScalar, Labels: append(label("a"), label("a")...)},
+			wantErrPart: `the label "a" is set multiple times`,
+		},
+		{
+			name:        "label of the metric and of the resource",
+			labels:      label("a"),
+			generator:   Generator{Type: MetricTypeInfo, PathKind: PathKindScalar, Labels: label("a")},
+			wantErrPart: `the label "a" is set multiple times`,
+		},
+		{
+			name:        "state label and label",
+			generator:   Generator{Type: MetricTypeStateSet, PathKind: PathKindScalar, LabelName: "a", Labels: label("a")},
+			wantErrPart: `the label "a" is set multiple times`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.generator.Name = "foo"
+			// The name and the help default to valid values.
+			if tt.generator.Name == "" {
+				tt.generator.Name = "foo"
+			}
+			switch tt.generator.Help {
+			case "":
+				tt.generator.Help = "Foo."
+			case noHelp:
+				tt.generator.Help = ""
+			}
 			err := Resource{
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Foo"},
 				Labels:           tt.labels,

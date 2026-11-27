@@ -1,4 +1,4 @@
-# Metrics markers
+# State metrics markers
 
 The experimental `state-metrics-config` generator of controller-gen creates the configuration to expose metrics
 for custom resources, using the markers described on this page. The configuration can be generated for
@@ -17,7 +17,8 @@ controller-gen state-metrics-config:experimental=true,target=kube-state-metrics 
 The files are written to `config/state-metrics-config` by default, which can be changed with an output rule, e.g.
 `output:state-metrics-config:dir=./config/foo`. Next to the configuration a ClusterRole is generated, which grants
 read access to the custom resources. Its name defaults to `state-metrics-role` and can be changed with the
-`roleName` option, e.g. `state-metrics-config:experimental=true,roleName=foo-state-metrics-role`.
+`roleName` option, e.g. `state-metrics-config:experimental=true,roleName=foo-state-metrics-role`. The resource
+name of a custom resource is taken from the `+kubebuilder:resource:path` marker if it is set.
 
 Metrics are only generated for custom resources having the `store` marker. If no custom resource has the
 `store` marker, no files are generated. The `path`
@@ -29,13 +30,13 @@ are shown with the prefix of the resource-state-metrics target for a custom reso
 
 ## Markers
 
-* [`k8s:controller-gen:metrics:store`](#k8scontroller-genmetricsstore)
-* [`k8s:controller-gen:metrics:label`](#k8scontroller-genmetricslabel)
-* [`k8s:controller-gen:metrics:gauge`](#k8scontroller-genmetricsgauge)
-* [`k8s:controller-gen:metrics:info`](#k8scontroller-genmetricsinfo)
-* [`k8s:controller-gen:metrics:stateset`](#k8scontroller-genmetricsstateset)
+* [`k8s:controller-gen:state-metrics:store`](#k8scontroller-genmetricsstore)
+* [`k8s:controller-gen:state-metrics:label`](#k8scontroller-genmetricslabel)
+* [`k8s:controller-gen:state-metrics:gauge`](#k8scontroller-genmetricsgauge)
+* [`k8s:controller-gen:state-metrics:info`](#k8scontroller-genmetricsinfo)
+* [`k8s:controller-gen:state-metrics:stateset`](#k8scontroller-genmetricsstateset)
 
-### `k8s:controller-gen:metrics:store`
+### `k8s:controller-gen:state-metrics:store`
 
 Can be set on: type.
 
@@ -50,7 +51,7 @@ Enables the creation of a custom resource configuration entry and uses the given
 Minimal: enables the metrics generation for the custom resource. With the resource-state-metrics target the metrics get the lowercased kind as prefix, e.g. `kube_customresource_foo_created`.
 
 ```go
-// +k8s:controller-gen:metrics:store
+// +k8s:controller-gen:state-metrics:store
 type Foo struct {
 ```
 
@@ -61,11 +62,11 @@ separately, see [Restrictions and side cases](#restrictions-and-side-cases).
 `namePrefix`: with the kube-state-metrics target all metrics get the prefix `foo` instead of `kube_customresource`, e.g. `foo_created`. It is ignored by the resource-state-metrics target.
 
 ```go
-// +k8s:controller-gen:metrics:store:namePrefix="foo"
+// +k8s:controller-gen:state-metrics:store:namePrefix="foo"
 type Foo struct {
 ```
 
-### `k8s:controller-gen:metrics:label`
+### `k8s:controller-gen:state-metrics:label`
 
 Can be set on: type.
 
@@ -83,20 +84,20 @@ Note: The label names group, version, kind, name and namespace can't be used, as
 Adds the label `name` with the name of the custom resource to all metrics.
 
 ```go
-// +k8s:controller-gen:metrics:store
-// +k8s:controller-gen:metrics:label:name="name",value=".metadata.name"
+// +k8s:controller-gen:state-metrics:store
+// +k8s:controller-gen:state-metrics:label:name="name",value=".metadata.name"
 type Foo struct {
 ```
 
 A `value` with a map key containing dots, which have to be escaped: adds the label `app_name` with the value of the label `app.kubernetes.io/name` to all metrics.
 
 ```go
-// +k8s:controller-gen:metrics:store
-// +k8s:controller-gen:metrics:label:name="app_name",value=.metadata.labels.app\.kubernetes\.io/name
+// +k8s:controller-gen:state-metrics:store
+// +k8s:controller-gen:state-metrics:label:name="app_name",value=.metadata.labels.app\.kubernetes\.io/name
 type Foo struct {
 ```
 
-### `k8s:controller-gen:metrics:gauge`
+### `k8s:controller-gen:state-metrics:gauge`
 
 Can be set on: field or type.
 
@@ -108,7 +109,7 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
-| `help` | `string` | no | Specifies the help text for the metric. |
+| `help` | `string` | yes | Specifies the help text for the metric. |
 | `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `value` | `*string` | no | Specifies the JSONPath to a numeric field that will be the metric value, relative to the metric path.<br>Note: With the resource-state-metrics target, the value is converted to a unix timestamp if the field is a metav1.Time or metav1.MicroTime. |
@@ -121,7 +122,7 @@ Minimal gauge on a field (`name`, `help`). Without `path`, the metric uses the f
 
 ```go
 type FooSpec struct {
-	// +k8s:controller-gen:metrics:gauge:name="replicas",help="The desired number of replicas."
+	// +k8s:controller-gen:state-metrics:gauge:name="replicas",help="The desired number of replicas."
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 ```
@@ -137,8 +138,8 @@ kube_customresource_foo_replicas 3
 `path`: the marker on the type of the custom resource with a path relative to the custom resource. A `metav1.Time` is exposed as unix timestamp.
 
 ```go
-// +k8s:controller-gen:metrics:store
-// +k8s:controller-gen:metrics:gauge:name="created",help="Unix creation timestamp.",path=".metadata.creationTimestamp"
+// +k8s:controller-gen:state-metrics:store
+// +k8s:controller-gen:state-metrics:gauge:name="created",help="Unix creation timestamp.",path=".metadata.creationTimestamp"
 type Foo struct {
 ```
 
@@ -154,7 +155,7 @@ kube_customresource_foo_created 1.724940463e+09
 
 ```go
 type FooSpec struct {
-	// +k8s:controller-gen:metrics:gauge:name="settings_replicas",help="The replicas of the settings.",value=".replicas"
+	// +k8s:controller-gen:state-metrics:gauge:name="settings_replicas",help="The replicas of the settings.",value=".replicas"
 	Settings Settings `json:"settings"`
 }
 ```
@@ -171,7 +172,7 @@ kube_customresource_foo_settings_replicas 2
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:gauge:name="status_condition_last_transition_time",help="The condition last transition time of a foo.",value=".lastTransitionTime",labels={"type":".type","status":".status"}
+	// +k8s:controller-gen:state-metrics:gauge:name="status_condition_last_transition_time",help="The condition last transition time of a foo.",value=".lastTransitionTime",labels={"type":".type","status":".status"}
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 ```
@@ -189,7 +190,7 @@ kube_customresource_foo_status_condition_last_transition_time{status="True",type
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:gauge:name="ready_replicas",help="The number of ready replicas.",missingAsZero=true
+	// +k8s:controller-gen:state-metrics:gauge:name="ready_replicas",help="The number of ready replicas.",missingAsZero=true
 	ReadyReplicas *int32 `json:"readyReplicas,omitempty"`
 }
 ```
@@ -206,7 +207,7 @@ kube_customresource_foo_ready_replicas 0
 
 ```go
 type FooSpec struct {
-	// +k8s:controller-gen:metrics:gauge:name="replicas",help="The desired number of replicas.",ignoreMissing=true
+	// +k8s:controller-gen:state-metrics:gauge:name="replicas",help="The desired number of replicas.",ignoreMissing=true
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 ```
@@ -216,7 +217,7 @@ Without `ignoreMissing` the expression is `o.spec.replicas`. Evaluating it fails
 The marker on a type other than the custom resource. The path is relative to the type and the metric is generated for the field of the custom resource using the type, here `.spec.settings.replicas`.
 
 ```go
-// +k8s:controller-gen:metrics:gauge:name="settings_replicas",help="The replicas of the settings.",path=".replicas"
+// +k8s:controller-gen:state-metrics:gauge:name="settings_replicas",help="The replicas of the settings.",path=".replicas"
 type Settings struct {
 	Replicas int32 `json:"replicas"`
 }
@@ -226,7 +227,7 @@ type FooSpec struct {
 }
 ```
 
-### `k8s:controller-gen:metrics:info`
+### `k8s:controller-gen:state-metrics:info`
 
 Can be set on: field or type.
 
@@ -237,7 +238,7 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
-| `help` | `string` | no | Specifies the help text for the metric. |
+| `help` | `string` | yes | Specifies the help text for the metric. |
 | `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, at most one label for its entries is supported, as the labels can't be aligned with each other by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `ignoreMissing` | `bool` | no | Specifies to leave the metric out silently if a field on its path doesn't exist, e.g. because the status is not set yet.<br>Note: Only used by the resource-state-metrics target. Without it the evaluation of the expression fails for such a resource, which resource-state-metrics logs and counts as an error. |
@@ -248,7 +249,7 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 
 ```go
 type FooSpec struct {
-	// +k8s:controller-gen:metrics:info:name="tags",help="The tags of a foo.",labels={tag:"."}
+	// +k8s:controller-gen:state-metrics:info:name="tags",help="The tags of a foo.",labels={tag:"."}
 	Tags []string `json:"tags,omitempty"`
 }
 ```
@@ -265,8 +266,8 @@ kube_customresource_foo_tags{tag="b"} 1
 `path`: the marker on the type of the custom resource with a path relative to the custom resource. The path of the labels is relative to each owner reference.
 
 ```go
-// +k8s:controller-gen:metrics:store
-// +k8s:controller-gen:metrics:info:name="owner",help="Owner references.",path=".metadata.ownerReferences",labels={owner_kind:".kind",owner_name:".name"},ignoreMissing=true
+// +k8s:controller-gen:state-metrics:store
+// +k8s:controller-gen:state-metrics:info:name="owner",help="Owner references.",path=".metadata.ownerReferences",labels={owner_kind:".kind",owner_name:".name"},ignoreMissing=true
 type Foo struct {
 ```
 
@@ -280,7 +281,7 @@ Resulting metric for an owner reference:
 kube_customresource_foo_owner{owner_kind="foo",owner_name="foo"} 1
 ```
 
-### `k8s:controller-gen:metrics:stateset`
+### `k8s:controller-gen:state-metrics:stateset`
 
 Can be set on: field or type.
 
@@ -291,7 +292,7 @@ Ref: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/Op
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `name` | `string` | yes | Specifies the Name of the metric. |
-| `help` | `string` | no | Specifies the help text for the metric. |
+| `help` | `string` | yes | Specifies the help text for the metric. |
 | `labels` | `map[string]string` | no | Specifies additional labels where the value is taken from the given JSONPath, relative to the metric path.<br>Note: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.<br>Note: If the path points to a map, labels for its entries are not supported, as they can't be aligned with the values by all targets. |
 | `path` | `string` | no | Specifies the JSONPath of the metric, relative to the field or type the marker is set on.<br>With the kube-state-metrics target the full path ends up in the path field of the metric. |
 | `states` | `[]string` | yes | Specifies a list of values to compare the given Value against. |
@@ -305,7 +306,7 @@ Minimal stateset on a string field (`name`, `help`, `states`, `labelName`). A me
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:stateset:name="phase",help="The phase of a foo.",states={"Pending","Running","Failed"},labelName="phase"
+	// +k8s:controller-gen:state-metrics:stateset:name="phase",help="The phase of a foo.",states={"Pending","Running","Failed"},labelName="phase"
 	Phase string `json:"phase,omitempty"`
 }
 ```
@@ -324,7 +325,7 @@ kube_customresource_foo_phase{phase="Running"} 1
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:stateset:name="rollout_phase",help="The phase of the rollout.",states={"Progressing","Complete"},labelName="phase",value=".phase"
+	// +k8s:controller-gen:state-metrics:stateset:name="rollout_phase",help="The phase of the rollout.",states={"Progressing","Complete"},labelName="phase",value=".phase"
 	Rollout RolloutStatus `json:"rollout,omitempty"`
 }
 ```
@@ -342,7 +343,7 @@ kube_customresource_foo_rollout_phase{phase="Progressing"} 0
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:stateset:name="status_condition",help="The condition of a foo.",states={"True","False","Unknown"},labelName="status",value=".status",labels={"type":".type"}
+	// +k8s:controller-gen:state-metrics:stateset:name="status_condition",help="The condition of a foo.",states={"True","False","Unknown"},labelName="status",value=".status",labels={"type":".type"}
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 ```
@@ -364,7 +365,7 @@ kube_customresource_foo_status_condition{status="Unknown",type="SomeType"} 0
 
 ```go
 type FooStatus struct {
-	// +k8s:controller-gen:metrics:stateset:name="status_condition",help="The condition of a foo.",states={"True","False","Unknown"},labelName="status",value=".status",labels={"type":".type"},ignoreMissing=true
+	// +k8s:controller-gen:state-metrics:stateset:name="status_condition",help="The condition of a foo.",states={"True","False","Unknown"},labelName="status",value=".status",labels={"type":".type"},ignoreMissing=true
 	Conditions []Condition `json:"conditions,omitempty"`
 }
 ```
@@ -391,11 +392,13 @@ No metrics are exposed for a foo without `status.conditions`, instead of the eva
 * **Timestamps**: with the resource-state-metrics target, values of the types `metav1.Time` and
   `metav1.MicroTime` are converted to unix timestamps.
 * **Labels added by the targets**: resource-state-metrics adds the labels `group`, `version`, `kind`, `name` and
-  `namespace` to every metric, kube-state-metrics adds `name` (generated as `labelsFromPath` of the resource).
+  `namespace` to every metric, kube-state-metrics adds `name` and `namespace` (generated as `labelsFromPath` of the
+  resource, `namespace` is not exposed for cluster-scoped custom resources).
   To have the same markers work for all targets, using one of the five names as name of a label of the `label`
   marker, of `labels` or as `labelName` is an error for every target.
-* **Metric names**: with the resource-state-metrics target the name of the metric including the prefix has to
-  match `^[a-zA-Z_][a-zA-Z0-9_]*$`. The label names have to be unique.
+* **Validation**: the markers are validated the same way for every target, so they either work for all
+  targets or for none: the name of a metric has to match `^[a-zA-Z0-9_]+$`, the `help` has to be set and the
+  label names of a metric (including the labels of the `label` marker and `labelName`) have to be unique.
 * **The `label` marker** is only considered on the type of the custom resource. The label names have to be unique.
 * **Multiple versions**: every version having the `store` marker gets its own configuration, so every object is
   exposed once per version, only differing in the version label. Metrics with the same name in multiple versions

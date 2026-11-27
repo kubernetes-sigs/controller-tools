@@ -27,12 +27,17 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-tools/pkg/crd"
+	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	ctrlmarkers "sigs.k8s.io/controller-tools/pkg/markers"
 
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 	"sigs.k8s.io/controller-tools/pkg/metrics/markers"
 )
+
+// crdResourceMarkerName is the name of the marker of the crd generator which configures the
+// resource of a custom resource, e.g. its plural name.
+const crdResourceMarkerName = "kubebuilder:resource"
 
 type parser struct {
 	*crd.Parser
@@ -57,6 +62,13 @@ func newParser(p *crd.Parser) *parser {
 // NeedResourceFor creates the model.Resource object for the given
 // GroupKind located at the package identified by packageID.
 func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind) error {
+	// crd.FindKubeKinds returns the kinds of all packages parsed so far. Skip the kinds of
+	// other groups, otherwise a kind which exists in multiple groups would be created with
+	// the group of another package.
+	if p.GroupVersions[pkg].Group != groupKind.Group {
+		return nil
+	}
+
 	typeIdent := crd.TypeIdent{Package: pkg, Name: groupKind.Kind}
 	// Skip if type was already processed.
 	if _, exists := p.resources[typeIdent]; exists {
@@ -101,6 +113,11 @@ func (p *parser) NeedResourceFor(pkg *loader.Package, groupKind schema.GroupKind
 		},
 		// Create the metrics generators for the custom resource.
 		Metrics: metrics,
+	}
+
+	// Use the plural name of the kubebuilder:resource marker if it is set, as the crd generator does.
+	if resourceMarker, ok := typeInfo.Markers.Get(crdResourceMarkerName).(crdmarkers.Resource); ok {
+		resource.PluralName = resourceMarker.Path
 	}
 
 	// Iterate through all markers and run the ApplyToResource function of the ResourceMarkers.

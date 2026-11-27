@@ -59,8 +59,8 @@ type Condition struct {
 }
 
 // Foo is a test object.
-// +k8s:controller-gen:metrics:store:namePrefix="foo"
-// +k8s:controller-gen:metrics:label:name="foo_name",value=".metadata.name"
+// +k8s:controller-gen:state-metrics:store:namePrefix="foo"
+// +k8s:controller-gen:state-metrics:label:name="foo_name",value=".metadata.name"
 // +kubebuilder:storageversion
 type Foo struct {
 	// TypeMeta comments should NOT appear in the CRD spec

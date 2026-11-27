@@ -26,7 +26,7 @@ import (
 
 func (gaugeMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "Metric type Gauge",
+		Category: "State metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "defines a Gauge metric and uses the path to the field joined by the provided path as path of the metric.",
 			Details: "Gauge is a metric which targets a Path that may be a single value, array, or object.\nLists and maps generate a metric per element. If the elements are objects, Value has to point to the numeric field of each element.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#gauge",
@@ -66,7 +66,7 @@ func (gaugeMarker) Help() *markers.DefinitionHelp {
 
 func (infoMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "Metric type Info",
+		Category: "State metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "defines a Info metric and uses the implicit path to the field as path for the metric configuration.",
 			Details: "Info is a metric which is used to expose textual information.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#info",
@@ -98,7 +98,7 @@ func (infoMarker) Help() *markers.DefinitionHelp {
 
 func (labelMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "Metrics",
+		Category: "State metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "specifies additional labels for all metrics of the custom resource.",
 			Details: "It is only considered on the type of the custom resource, which is the type having the store marker.\nNote: The label names group, version, kind, name and namespace can't be used, as the targets add labels with these names to every metric themselves. Using one of them is an error.",
@@ -118,7 +118,7 @@ func (labelMarker) Help() *markers.DefinitionHelp {
 
 func (stateSetMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "Metric type StateSet",
+		Category: "State metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "defines a StateSet metric and uses the implicit path to the field as path for the metric configuration.",
 			Details: "A StateSet is a metric which represent a series of related boolean values, also called a bitset.\nRef: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#stateset",
@@ -162,7 +162,7 @@ func (stateSetMarker) Help() *markers.DefinitionHelp {
 
 func (storeMarker) Help() *markers.DefinitionHelp {
 	return &markers.DefinitionHelp{
-		Category: "Metrics",
+		Category: "State metrics",
 		DetailedHelp: markers.DetailedHelp{
 			Summary: "enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.",
 			Details: "",

@@ -18,7 +18,6 @@ package rsm
 
 import (
 	"fmt"
-	"regexp"
 
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
@@ -43,9 +42,6 @@ const (
 	// defaultName is the name of the generated ResourceMetricsMonitor if none is set.
 	defaultName = "resource-metrics"
 )
-
-// familyNamePattern is the pattern resource-state-metrics requires for the name of a family.
-var familyNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // Builder builds a ResourceMetricsMonitor for resource-state-metrics.
 type Builder struct {
@@ -73,25 +69,11 @@ func NewBuilder(name, namespace, roleName string) *Builder {
 	}
 }
 
-// AddResource adds a store for the resource. It returns an error if the metrics of
-// the resource don't fulfill the requirements of resource-state-metrics.
+// AddResource adds a store for the resource. The requirements of resource-state-metrics
+// for the metrics (e.g. the help, the pattern of the name and unique label names) are checked
+// for all targets by model.Resource.Validate.
 func (b *Builder) AddResource(resource model.Resource) error {
-	if err := validateLabels(resource); err != nil {
-		return err
-	}
-
-	store := toStore(resource)
-
-	for _, family := range store.Families {
-		if family.Help == "" {
-			return fmt.Errorf("metric %q of %s: resource-state-metrics requires the help to be set", family.Name, resource.GroupVersionKind)
-		}
-		if !familyNamePattern.MatchString(family.Name) {
-			return fmt.Errorf("metric %q of %s: resource-state-metrics requires the name to match %s", family.Name, resource.GroupVersionKind, familyNamePattern)
-		}
-	}
-
-	b.stores = append(b.stores, store)
+	b.stores = append(b.stores, toStore(resource))
 	b.rbac.Add(resource)
 	return nil
 }
@@ -114,61 +96,4 @@ func (b *Builder) Write(ctx *genall.GenerationContext) error {
 	}
 
 	return b.rbac.Write(ctx, map[string]string{aggregateLabel: "true"})
-}
-
-// validateLabels checks the names of the labels of the metrics, as resource-state-metrics
-// rejects duplicate label names. The labels group, version, kind, name and namespace, which it adds
-// to every sample itself, are rejected for all targets by model.Resource.Validate.
-func validateLabels(resource model.Resource) error {
-	for _, metric := range resource.Metrics {
-		if err := validateMetricLabels(resource, metric); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// labelNames collects the names of the labels exposed by a metric to reject duplicates.
-type labelNames struct {
-	gvk    model.GroupVersionKind
-	metric string
-	names  map[string]struct{}
-}
-
-// addUnique registers the name of a label and rejects duplicates and empty names.
-// option is the name of the marker option the label is created from.
-func (l labelNames) addUnique(option, name string) error {
-	if name == "" {
-		return fmt.Errorf("metric %q of %s: the name of the label of the option %s must not be empty", l.metric, l.gvk, option)
-	}
-	if _, exists := l.names[name]; exists {
-		return fmt.Errorf("metric %q of %s: the label %q is set multiple times, resource-state-metrics requires unique label names", l.metric, l.gvk, name)
-	}
-	l.names[name] = struct{}{}
-	return nil
-}
-
-// validateMetricLabels validates the labels of a single metric. The labels of the resource
-// get exposed on all of its metrics, so they have to be unique together with the labels of the metric.
-func validateMetricLabels(resource model.Resource, metric model.Generator) error {
-	gvk := resource.GroupVersionKind
-	names := labelNames{gvk: gvk, metric: metric.Name, names: map[string]struct{}{}}
-
-	for _, label := range resource.Labels {
-		if err := names.addUnique("label", label.Name); err != nil {
-			return err
-		}
-	}
-	for _, label := range metric.Labels {
-		if err := names.addUnique("labels", label.Name); err != nil {
-			return err
-		}
-	}
-
-	if metric.Type == model.MetricTypeStateSet {
-		if err := names.addUnique("labelName", metric.LabelName); err != nil {
-			return err
-		}
-	}
-	return nil
 }

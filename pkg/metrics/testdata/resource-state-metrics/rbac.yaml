@@ -7,6 +7,14 @@ metadata:
   name: state-metrics-role
 rules:
 - apiGroups:
+  - another.example.com
+  resources:
+  - foobars
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - bar.example.com
   resources:
   - foos

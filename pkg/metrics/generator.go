@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/controller-tools/pkg/crd"
+	crdmarkers "sigs.k8s.io/controller-tools/pkg/crd/markers"
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/loader"
 	ctrlmarkers "sigs.k8s.io/controller-tools/pkg/markers"
@@ -71,12 +72,30 @@ type Generator struct {
 	RoleName string `marker:",optional"`
 }
 
+// crdMarkerNames are the names of the markers of the crd generator which are used by this generator:
+// groupName and versionName for the API group and version of a package and
+// kubebuilder:resource for the plural name of a custom resource.
+var crdMarkerNames = []string{"groupName", "versionName", "kubebuilder:resource"}
+
 var _ genall.Generator = &Generator{}
 var _ genall.NeedsTypeChecking = &Generator{}
 
 // RegisterMarkers registers all markers needed by this Generator
 // into the given registry.
 func (g Generator) RegisterMarkers(into *ctrlmarkers.Registry) error {
+	// Some markers of the crd generator are needed to parse the types. Their definitions are
+	// taken from the crd generator instead of being copied, so their help is kept if both
+	// generators are used. The other markers of the crd generator are not registered, as
+	// this generator doesn't use them.
+	for _, def := range crdmarkers.AllDefinitions {
+		if !slices.Contains(crdMarkerNames, def.Name) {
+			continue
+		}
+		if err := def.Register(into); err != nil {
+			return err
+		}
+	}
+
 	for _, m := range markers.MarkerDefinitions {
 		if err := m.Register(into); err != nil {
 			return err

@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	labelMarkerName = "k8s:controller-gen:metrics:label"
+	labelMarkerName = "k8s:controller-gen:state-metrics:label"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func init() {
 	)
 }
 
-// +controllertools:marker:generateHelp:category=Metrics
+// +controllertools:marker:generateHelp:category=State metrics
 
 // labelMarker specifies additional labels for all metrics of the custom resource.
 // It is only considered on the type of the custom resource, which is the type having the store marker.

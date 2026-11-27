@@ -5,6 +5,26 @@ kind: CustomResourceStateMetrics
 spec:
   resources:
   - groupVersionKind:
+      group: another.example.com
+      kind: Foo
+      version: v1
+    labelsFromPath:
+      name:
+      - metadata
+      - name
+      namespace:
+      - metadata
+      - namespace
+    metrics:
+    - each:
+        gauge:
+          path:
+          - spec
+          - size
+        type: Gauge
+      help: The size of a foo.
+      name: size
+  - groupVersionKind:
       group: bar.example.com
       kind: Foo
       version: v1
@@ -19,6 +39,9 @@ spec:
       name:
       - metadata
       - name
+      namespace:
+      - metadata
+      - namespace
     metricNamePrefix: foo
     metrics:
     - each:
@@ -100,6 +123,9 @@ spec:
       name:
       - metadata
       - name
+      namespace:
+      - metadata
+      - namespace
     metricNamePrefix: foo
     metrics:
     - each:

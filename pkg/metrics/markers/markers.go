@@ -17,18 +17,13 @@ limitations under the License.
 package markers
 
 import (
-	"sigs.k8s.io/controller-tools/pkg/markers"
-
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
 )
 
-var (
-	MarkerDefinitions = []*markerDefinitionWithHelp{
-		// groupName is a marker copied from the crd generator (pkg/crd/markers). It has to be
-		// registered so the parser can read the API group set on a package.
-		must(markers.MakeDefinition("groupName", markers.DescribesPackage, "")),
-	}
-)
+// MarkerDefinitions are the markers of the state-metrics-config generator.
+// The markers of the crd generator, which are needed to parse the types (e.g. groupName), are
+// not part of it. They get registered by the generator from the definitions of the crd generator.
+var MarkerDefinitions = []*markerDefinitionWithHelp{}
 
 // ResourceMarker is a marker that configures a custom resource.
 type ResourceMarker interface {

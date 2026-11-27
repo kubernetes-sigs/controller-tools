@@ -10,6 +10,16 @@ spec:
   configuration:
     stores:
     - families:
+      - help: The size of a foo.
+        metrics:
+        - value: o.spec.size
+        name: foo_size
+      group: another.example.com
+      kind: Foo
+      resolver: cel
+      resource: foobars
+      version: v1
+    - families:
       - help: Unix creation timestamp.
         metrics:
         - labels:

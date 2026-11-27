@@ -9,7 +9,10 @@ The generator creates the configuration for one target, which is selected with t
 * [resource-state-metrics/](resource-state-metrics/): a `ResourceMetricsMonitor` using the CEL resolver and a ClusterRole carrying the `resource-state-metrics.instrumentation.k8s-sigs.io/aggregate-to-exporter` label.
 * [kube-state-metrics/](kube-state-metrics/): the custom resource state configuration and a ClusterRole carrying the `kube-state-metrics/aggregate-to-manager` label.
 
-Next to them [bar.example.com_foos.yaml](bar.example.com_foos.yaml) is the CustomResourceDefinition of the types.
+Next to them [bar.example.com_foos.yaml](bar.example.com_foos.yaml) and
+[another.example.com_foobars.yaml](another.example.com_foobars.yaml) are the CustomResourceDefinitions of the types.
+The latter is the one of the Foo in [samekind/](samekind/), which has the same kind in another API group and a
+plural name set by the `+kubebuilder:resource:path` marker. It is not used for the example metrics below.
 
 These files are used in the test at [generator_integration_test.go](../generator_integration_test.go) to verify that the resulting output does not change during changes in the codebase.
 

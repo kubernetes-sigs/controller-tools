@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	stateSetMarkerName = "k8s:controller-gen:metrics:stateset"
+	stateSetMarkerName = "k8s:controller-gen:state-metrics:stateset"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func init() {
 	)
 }
 
-// +controllertools:marker:generateHelp:category=Metric type StateSet
+// +controllertools:marker:generateHelp:category=State metrics
 
 // stateSetMarker defines a StateSet metric and uses the implicit path to the field as path for the metric configuration.
 // A StateSet is a metric which represent a series of related boolean values, also called a bitset.
@@ -52,7 +52,7 @@ type stateSetMarker struct {
 	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 
 	// MetricHelp specifies the help text for the metric.
-	MetricHelp string `marker:"help,optional"`
+	MetricHelp string `marker:"help"`
 
 	// Keys from the MetricMeta struct.
 

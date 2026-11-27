@@ -27,7 +27,7 @@ const (
 	// (identified by its group, version and kind) to generate metrics for.
 	// Without a set StoreMarkerName the generator will not generate any configuration
 	// for this custom resource.
-	StoreMarkerName = "k8s:controller-gen:metrics:store"
+	StoreMarkerName = "k8s:controller-gen:state-metrics:store"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func init() {
 	)
 }
 
-// +controllertools:marker:generateHelp:category=Metrics
+// +controllertools:marker:generateHelp:category=State metrics
 
 // storeMarker enables the creation of a custom resource configuration entry and uses the given prefix for the metrics if configured.
 type storeMarker struct {

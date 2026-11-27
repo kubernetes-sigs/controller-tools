@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	gaugeMarkerName = "k8s:controller-gen:metrics:gauge"
+	gaugeMarkerName = "k8s:controller-gen:state-metrics:gauge"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func init() {
 	)
 }
 
-// +controllertools:marker:generateHelp:category=Metric type Gauge
+// +controllertools:marker:generateHelp:category=State metrics
 
 // gaugeMarker defines a Gauge metric and uses the path to the field joined by the provided path as path of the metric.
 // Gauge is a metric which targets a Path that may be a single value, array, or object.
@@ -53,7 +53,7 @@ type gaugeMarker struct {
 	// The Go field is not named Help like the marker field, as this would collide with the Help method generated for the marker help.
 
 	// MetricHelp specifies the help text for the metric.
-	MetricHelp string `marker:"help,optional"`
+	MetricHelp string `marker:"help"`
 
 	// Keys from the MetricMeta struct.
 

@@ -17,7 +17,7 @@ limitations under the License.
 // Package testdata contains the types used to test and demonstrate the state-metrics-config generator.
 //
 // Changes to the packages below this directory may require to regenerate the expected output:
-// the CustomResourceDefinition `bar.example.com_foos.yaml` and the files in the directories
+// the CustomResourceDefinitions `bar.example.com_foos.yaml` and `another.example.com_foobars.yaml` and the files in the directories
 // `resource-state-metrics` and `kube-state-metrics`, one for each target of the generator.
 // Otherwise the tests in ../generator_integration_test.go may fail.
 // The below markers can be used to regenerate the files by running the following command:

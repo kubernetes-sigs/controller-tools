@@ -29,6 +29,10 @@ import (
 type Resource struct {
 	GroupVersionKind GroupVersionKind
 
+	// PluralName is the plural name of the resource, as set by the kubebuilder:resource marker.
+	// If empty, the plural name is derived from the kind.
+	PluralName string
+
 	// NamePrefix is the prefix for the names of all metrics of the resource.
 	// Only used by the kube-state-metrics target.
 	// If nil, the default prefix kube_customresource is used. If set to "", no prefix will be added.
@@ -42,8 +46,12 @@ type Resource struct {
 	Metrics []Generator
 }
 
-// Plural returns the lowercase plural name of the resource.
+// Plural returns the lowercase plural name of the resource. It is PluralName if set,
+// otherwise it is derived from the kind, the same way the crd generator does.
 func (r Resource) Plural() string {
+	if r.PluralName != "" {
+		return r.PluralName
+	}
 	return strings.ToLower(flect.Pluralize(r.GroupVersionKind.Kind))
 }
 

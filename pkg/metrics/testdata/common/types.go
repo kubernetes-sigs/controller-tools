@@ -21,13 +21,13 @@ package common
 // Settings are settings of a Foo. It gets used as named field.
 type Settings struct {
 	// Replicas is the number of replicas.
-	// +k8s:controller-gen:metrics:gauge:name="settings_replicas",help="The number of replicas of a foo.",ignoreMissing=true
+	// +k8s:controller-gen:state-metrics:gauge:name="settings_replicas",help="The number of replicas of a foo.",ignoreMissing=true
 	Replicas int32 `json:"replicas"`
 }
 
 // Limits are limits of a Foo. It gets used as inline field.
 type Limits struct {
 	// MaxItems is the maximum number of items.
-	// +k8s:controller-gen:metrics:gauge:name="limits_max_items",help="The maximum number of items of a foo."
+	// +k8s:controller-gen:state-metrics:gauge:name="limits_max_items",help="The maximum number of items of a foo."
 	MaxItems int32 `json:"maxItems"`
 }

@@ -1,0 +1,53 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (devel)
+  name: foobars.another.example.com
+spec:
+  group: another.example.com
+  names:
+    kind: Foo
+    listKind: FooList
+    plural: foobars
+    singular: foo
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Foo is a test object, which has the same kind as the Foo of the group bar.example.com
+          and a plural name which is not derived from the kind.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FooSpec is the spec of Foo.
+            properties:
+              size:
+                description: Size is the size of a Foo.
+                format: int32
+                type: integer
+            required:
+            - size
+            type: object
+        type: object
+    served: true
+    storage: true
