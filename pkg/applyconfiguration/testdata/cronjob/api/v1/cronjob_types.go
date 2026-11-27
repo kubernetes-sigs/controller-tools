@@ -871,7 +871,7 @@ func (in *ClusterScopedResource) DeepCopyObject() runtime.Object {
 	if in == nil {
 		return nil
 	}
-	out := new(CronJob)
+	out := new(ClusterScopedResource)
 	buf, err := json.Marshal(in)
 	if err != nil {
 		panic(err)
