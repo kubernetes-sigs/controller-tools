@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/genall/help"
 	prettyhelp "sigs.k8s.io/controller-tools/pkg/genall/help/pretty"
 	"sigs.k8s.io/controller-tools/pkg/markers"
+	"sigs.k8s.io/controller-tools/pkg/metrics"
 	"sigs.k8s.io/controller-tools/pkg/rbac"
 	"sigs.k8s.io/controller-tools/pkg/schemapatcher"
 	"sigs.k8s.io/controller-tools/pkg/version"
@@ -52,12 +53,13 @@ var (
 	// each turns into a command line option,
 	// and has options for output forms.
 	allGenerators = map[string]genall.Generator{
-		"crd":                crd.Generator{},
-		"rbac":               rbac.Generator{},
-		"object":             deepcopy.Generator{},
-		"applyconfiguration": applyconfiguration.Generator{},
-		"webhook":            webhook.Generator{},
-		"schemapatch":        schemapatcher.Generator{},
+		"crd":                  crd.Generator{},
+		"rbac":                 rbac.Generator{},
+		"object":               deepcopy.Generator{},
+		"applyconfiguration":   applyconfiguration.Generator{},
+		"webhook":              webhook.Generator{},
+		"schemapatch":          schemapatcher.Generator{},
+		"state-metrics-config": metrics.Generator{},
 	}
 
 	// allOutputRules defines the list of all known output rules, giving
