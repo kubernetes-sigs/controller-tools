@@ -60,18 +60,18 @@ func Test_fromModel(t *testing.T) {
 				Labels:           Labels{LabelsFromPath: map[string][]string{"app": {"metadata", "labels", "app"}, "name": {"metadata", "name"}, "namespace": {"metadata", "namespace"}}},
 				Metrics: []Generator{
 					{Name: "g", Help: "gauge", Each: Metric{Type: MetricTypeGauge, Gauge: &MetricGauge{
-						MetricMeta:    MetricMeta{Labels: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"}},
+						Labels: map[string][]string{"l": {"l"}}, Path: []string{"spec", "a"},
 						Value:         []string{"b"},
 						MissingAsZero: true,
 					}}},
 					{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
-						MetricMeta: MetricMeta{Labels: map[string][]string{}, Path: []string{"spec", "i"}},
+						Labels: map[string][]string{}, Path: []string{"spec", "i"},
 					}}},
 					{Name: "s", Help: "stateset", Each: Metric{Type: MetricTypeStateSet, StateSet: &MetricStateSet{
-						MetricMeta: MetricMeta{Labels: map[string][]string{}, Path: []string{"spec", "s"}},
-						States:     []string{"a", "b"},
-						LabelName:  "state",
-						Value:      []string{"state"},
+						Labels: map[string][]string{}, Path: []string{"spec", "s"},
+						States:    []string{"a", "b"},
+						LabelName: "state",
+						Value:     []string{"state"},
 					}}},
 				},
 			},
@@ -91,7 +91,7 @@ func Test_fromModel(t *testing.T) {
 				GroupVersionKind: GroupVersionKind{Group: "example.io", Version: "v1", Kind: "Policy"},
 				Labels:           Labels{LabelsFromPath: map[string][]string{"name": {"metadata", "name"}, "namespace": {"metadata", "namespace"}}},
 				Metrics: []Generator{{Name: "i", Help: "info", Each: Metric{Type: MetricTypeInfo, Info: &MetricInfo{
-					MetricMeta: MetricMeta{Labels: map[string][]string{}},
+					Labels: map[string][]string{},
 				}}}},
 			},
 		},

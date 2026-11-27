@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-tools/pkg/genall"
 	"sigs.k8s.io/controller-tools/pkg/metrics/internal/model"
@@ -72,15 +71,11 @@ func (r *RBAC) Add(resource model.Resource) {
 // Write writes a ClusterRole with the collected rules and the given labels to rbac.yaml.
 func (r *RBAC) Write(ctx *genall.GenerationContext, labels map[string]string) error {
 	clusterRole := rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterRole",
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   r.roleName,
-			Labels: labels,
-		},
-		Rules: rbac.NormalizeRules(r.rules),
+		Kind:       "ClusterRole",
+		APIVersion: rbacv1.SchemeGroupVersion.String(),
+		Name:       r.roleName,
+		Labels:     labels,
+		Rules:      rbac.NormalizeRules(r.rules),
 	}
 
 	const virtualFilePath = "rbac.yaml"

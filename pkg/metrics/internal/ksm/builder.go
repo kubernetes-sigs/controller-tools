@@ -106,8 +106,8 @@ func fromModel(resource model.Resource) Resource {
 			Version: resource.GroupVersionKind.Version,
 			Kind:    resource.GroupVersionKind.Kind,
 		},
-		Labels:  Labels{LabelsFromPath: resourceLabelsFromModel(resource.Labels)},
-		Metrics: metrics,
+		LabelsFromPath: resourceLabelsFromModel(resource.Labels),
+		Metrics:        metrics,
 	}
 }
 
